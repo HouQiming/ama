@@ -1,0 +1,31 @@
+// //// JC version: 3
+#include "./quickjs/src/quickjs.h"
+#pragma add("jc_files", "./jsenv.jc");
+#pragma add('h_files', './quickjs/src/quickjs.h');
+#pragma add('h_files', './quickjs/src/cutils.h');
+#pragma add('h_files', './quickjs/src/list.h');
+#pragma add('h_files', './quickjs/src/quickjs.h');
+#pragma add('h_files', './quickjs/src/libregexp.h');
+#pragma add('h_files', './quickjs/src/libregexp-opcode.h');
+#pragma add('h_files', './quickjs/src/libunicode.h');
+#pragma add('h_files', './quickjs/src/libunicode-table.h');
+#pragma add('h_files', './quickjs/src/quickjs-opcode.h');
+#pragma add('h_files', './quickjs/src/quickjs-atom.h');
+#pragma add('c_files', './quickjs/src/quickjs.c');
+#pragma add('c_files', './quickjs/src/libregexp.c');
+#pragma add('c_files', './quickjs/src/libunicode.c');
+#pragma add('c_files', './quickjs/src/cutils.c');
+extern JSContext*+! jsctx;
+extern JSRuntime*+! g_runtime_handle;
+
+inline char[|]! UnwrapString(JSValueConst! val) {
+	size_t! len = 0uLL;
+	char*! ptr = JS_ToCStringLen(::jsctx, &len, val);
+	return new char[|]!(ptr, intptr_t(len));
+}
+
+inline JSValueConst! WrapString(char[...]! s) {
+	return JS_NewStringLen(::jsctx, s.data(), s.length);
+}
+void! DumpError(JSContext*+! ctx);
+extern char[+]! std_module_dir;

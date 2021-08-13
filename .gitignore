@@ -1,0 +1,7 @@
+build/
+*.jcs.js
+*.jc.cpp
+*.jch.hpp
+*.audit.jc
+*.bak
+/default.qpad_notebook

@@ -1,0 +1,16 @@
+// //// JC version: 3
+#include <stdio.h>
+#include "./jsenv.jch"
+
+JSContext*+! jsctx = NULL;
+JSRuntime*+! g_runtime_handle = NULL;
+char[+]! std_module_dir;
+
+void! DumpError(JSContext*+! ctx) {
+	JSValueConst! ret = JS_GetException(ctx);
+	fprintf(stderr, "%s\n", JS_ToCString(ctx, ret));
+	JSValueConst! err_stack = JS_GetPropertyStr(ctx, ret, 'stack');
+	fprintf(stderr, "%s", JS_ToCString(ctx, err_stack));
+	fflush(stderr);
+	JS_FreeValue(ctx, err_stack);
+}

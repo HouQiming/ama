@@ -1,0 +1,294 @@
+// //// JC version: 3
+#include <json.jch>
+#include <path.jch>
+#include <fs.jch>
+#include <console.jch>
+#include <unicode/case.jch>
+#include "./quickjs/src/quickjs.h"
+#include "./jsenv.jch"
+
+private JSValueConst! g_require_cache = JS_NULL;
+
+private class PackageJSON {
+	char[|]! main = NULL;
+};
+
+private char[|]! CommonJSLoadAsFile(char[|]! fn) {
+	if( fs::existsSync(fn) ) {
+		return fn;
+	}
+	if( fs::existsSync(fn + '.js') ) {
+		return new char[|]!(fn + '.js');
+	}
+	if( fs::existsSync(fn + '.json') ) {
+		return new char[|]!(fn + '.json');
+	}
+	return NULL;
+}
+
+private char[|]! CommonJSTryOnePath(char[|]! fn) {
+	if( fs.DirExists(fn) ) {
+		if( fs::existsSync(fn + '.js') ) {
+			return new char[|]!(fn + '.js');
+		}
+		if( fs::existsSync(fn + '.json') ) {
+			return new char[|]!(fn + '.json');
+		}
+		char[|]! fn_index = fn;
+		char[+]^+! s_package_json = fs.readFileSync(path.join(fn, 'package.json'));
+		if( s_package_json != NULL ) {
+			PackageJSON! package_json = JSON.parse<PackageJSON>(s_package_json);
+			if( package_json.main != NULL ) {
+				char[|]! fn_main = path.join(fn, package_json.main);
+				char[|]! ret = CommonJSLoadAsFile(fn_main);
+				if( ret != NULL ) {
+					return ret;
+				}
+				fn_index = fn_main;
+			}
+		}
+		if( fs.existsSync(fn_index + '/index.js') ) {
+			return new char[|]!(fn_index + '/index.js');
+		}
+		if( fs.existsSync(fn_index + '/index.json') ) {
+			return new char[|]!(fn_index + '/index.json');
+		}
+		return NULL;
+	}
+	return CommonJSLoadAsFile(fn);
+}
+
+private char[|]! FindCommonJSModule(char[|]! fn_required, char[|]! dir_base) {
+	char[|]! ret = NULL;
+	//try extras first
+	//for(char[|]! dir_extra : OPTIONS::extra_module_dirs) {
+	//	ret = CommonJSTryOnePath(path.join(dir_extra, fn_required));
+	//	if( ret != NULL ) {
+	//		return ret;
+	//	}
+	//}
+	ret = CommonJSTryOnePath(path.join(::std_module_dir, fn_required));
+	if( ret != NULL ) {
+		return ret;
+	}
+	char[|]! dir = dir_base;
+	for(;;) {
+		if( path.basename(dir) != 'node_modules' ) {
+			ret = CommonJSTryOnePath(path.join(dir, 'node_modules', fn_required));
+			if( ret != NULL ) {
+				return ret;
+			}
+		}
+		char[+]! dir_upper = path.dirname(dir);
+		if( dir == dir_upper ) {
+			break;
+		}
+		dir = new char[|]!(dir_upper);
+	}
+	return NULL;
+}
+
+private char[+]! GetScriptJSCode(char[...]! fn) {
+	char[+]! their_extname = unicode::toLowerASCII(path::extname(fn));
+	char[+]?^! s_code = fs::readFileSync(fn);
+	if( s_code == NULL ) {
+		//console::error('failed to read', fn);
+		return new char[+]!();
+	}
+	if( their_extname == '.json' ) {
+		return '(function(exports,module){module.exports=JSON.parse(' + JSON.stringify(s_code) + ')})';
+	} else {
+		return '(function(exports,module,__filename,__dirname){let require=__require.bind(null,__filename);' + s_code + '\n})\n';
+	}
+}
+
+private JSValueConst! JSRequire(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+	//custom CommonJS module loader
+	const char[|]! fn_base = UnwrapString(argv[0L]);
+	const char[|]! fn_required = UnwrapString(argv[1L]);
+	char[+]! dir_base = path::dirname(path::resolve(fn_base));
+	char[+]^+! fn_final = path::resolve(dir_base, fn_required);
+	char[|]! fn_commonjs;
+	if( !fn_required.startsWith(".") && !fn_required.startsWith("/") ) {
+		//it's a standard module
+		fn_commonjs = FindCommonJSModule(fn_required, new char[|]!(dir_base));
+		if( fn_commonjs != NULL ) {
+			fn_final = new (char[+]^+!)(fn_commonjs);
+		}
+	} else {
+		fn_commonjs = CommonJSTryOnePath(new char[|]!(fn_final));
+		if( fn_commonjs != NULL ) {
+			fn_final = new (char[+]^+!)(fn_commonjs);
+		}
+	}
+	/////////////
+	JSValueConst! obj_module = JS_GetPropertyStr(ctx, g_require_cache, fn_final.str());
+	if( JS_IsUndefined(obj_module) ) {
+		obj_module = JS_NewObject(jsctx);
+		const JSValueConst! obj_exports = JS_NewObject(ctx);
+		JS_SetPropertyStr(ctx, obj_module, 'exports', obj_exports);
+		JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), obj_module);
+		//char![+]! loader_key = path.extname(fn_final) + ' loader';
+		//JSValue! custom_loader = JS_GetPropertyStr(ctx, g_obj_compiler, loader_key.str());
+		JSValueConst[4L]! module_args = new JSValueConst[4L]! {
+			obj_exports, //
+			obj_module, WrapString(fn_final), WrapString(path::dirname(fn_final))
+		};
+		//if( !JS_IsUndefined(custom_loader) ) {
+		//	//use custom_loader
+		//	const JSValueConst! ret_module = JS_Call(ctx, JS_DupValue(ctx, custom_loader), JS_GetGlobalObject(ctx), 4, module_args.data());
+		//	if( JS_IsException(ret_module) ) {
+		//		JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
+		//		return ret_module;
+		//	}
+		//} else {
+		const char[+]! s_fixed_code = GetScriptJSCode(fn_final);
+		if( !s_fixed_code.length ) {
+			JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
+			return JS_ThrowReferenceError(ctx, 'module `%s` not found', fn_required.str());
+		}
+		JSValueConst! ret = JS_Eval(
+			ctx, (char*)(s_fixed_code.data()),
+			uint64_t(uintptr_t(s_fixed_code.length)), fn_final.str(), JS_EVAL_TYPE_GLOBAL
+		);
+		//console.log(fn_final,raw.JS_IsException(ret))
+		if( JS_IsException(ret) ) {
+			JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
+			return ret;
+		}
+		const JSValueConst! ret_module = JS_Call(ctx, JS_DupValue(ctx, ret), JS_GetGlobalObject(ctx), 4, module_args.data());
+		if( JS_IsException(ret_module) ) {
+			JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
+			return ret_module;
+		}
+		JS_FreeValue(ctx, ret);
+		//after SetPropertyStr obj_module may have gotten freed
+		//}
+		//set it in the end so that one can re-require a module after an exception
+		//JS_FreeValue(ctx,obj_module2)
+	}
+	return JS_GetPropertyStr(ctx, obj_module, 'exports');
+}
+
+//private function NodeFinalizer(JSRuntime*+! rt, JSValueConst! val) {
+//	//release the rc
+//	const Node*+! nd = UnwrapNode(val);
+//	g_js_node_map.erase(nd);
+//	g_root_rc[nd] -= 1L;
+//}
+int! RunScriptOnFile(char[...]! script, char*! file_name, char[...]! file_data) {
+	char![+]! s_fixed_code = '(function(__filename,__dirname){let require=__require.bind(null,__filename);' + script + '\n})\n';
+	JSValueConst! ret = JS_Eval(
+		::jsctx, s_fixed_code.data(),
+		s_fixed_code.length, file_name, JS_EVAL_TYPE_GLOBAL
+	);
+	if( JS_IsException(ret) ) {
+		DumpError(::jsctx);
+		return 0;
+	}
+	//TODO: file_data - pass in a bound parser as a function: could configure the parser a bit before actually parsing
+	JSValueConst[2L]! module_args = new JSValueConst[2L]! {
+		JS_NewString(::jsctx, file_name), WrapString(path::dirname(file_name))
+	};
+	JSValueConst! ret_script = JS_Call(::jsctx, JS_DupValue(::jsctx, ret), JS_GetGlobalObject(::jsctx), 2, module_args.data());
+	if( JS_IsException(ret_script) ) {
+		DumpError(::jsctx);
+		return 0;
+	}
+	return 1;
+}
+
+private JSValueConst! g_qjs_JSON = JS_NULL;
+private uint32_t! g_stringify_atom = 0u;
+
+private JSValueConst! JSConsoleWrite(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic) {
+	for(intptr_t! i = 0L; i < intptr_t(argc); i += 1) {
+		if( magic == 1 ) {
+			if( i ) {
+				console::write(' ');
+			}
+		} else {
+			if( i ) {
+				console::writeError(' ');
+			}
+		}
+		//////
+		JSValueConst! arg_i = argv[i];
+		//jcc::Node*+! nd = jcc::UnwrapNode(arg_i);
+		//if( nd ) {
+		//	const char[+]! s_node = '/*node ' + JSON::stringify(jcc::UniqueID(intptr_t(nd))) + '*/' + nd.toSource();
+		//	if( magic == 1 ) {
+		//		console::write(s_node);
+		//	} else {
+		//		console::writeError(s_node);
+		//	}
+		//	continue;
+		//}
+		if( JS_IsFunction(ctx, arg_i) ) {
+			//do nothing, it will get toString-ed later
+		} else if( JS_IsObject(arg_i) ) {
+			//JSON.stringify objects, including arrays
+			arg_i = JS_Invoke(ctx, ::g_qjs_JSON, ::g_stringify_atom, 1, argv + i);
+			if( JS_IsException(arg_i) ) {
+				return arg_i;
+			}
+		}
+		JSValueConst! str = JS_ToString(ctx, arg_i);
+		if( JS_IsException(str) ) {
+			return str;
+		}
+		char*! s = JS_ToCString(ctx, str);
+		if( magic == 1 ) {
+			printf("%s", s);
+		} else {
+			fprintf(stderr, "%s", s);
+		}
+	}
+	if( magic == 1 ) {
+		printf("\n");
+	} else {
+		fprintf(stderr, "\n");
+	}
+	return JS_UNDEFINED;
+}
+
+void! InitScriptEnv() {
+	::g_runtime_handle = JS_NewRuntime();
+	::jsctx = JS_NewContext(::g_runtime_handle);
+	///////////
+	//JS_NewClassID(&g_node_classid);
+	//JSClassDef! class_def = new JSClassDef!();
+	//class_def.class_name = 'Node';
+	//class_def.finalizer = NodeFinalizer;
+	//JS_NewClass(::g_runtime_handle, g_node_classid, &class_def);
+	//JS_SetClassProto(::jsctx, g_node_classid, g_node_proto);
+	///////////
+	JSValueConst! global = JS_GetGlobalObject(::jsctx);
+	JS_SetPropertyStr(
+		::jsctx, global, '__require', JS_NewCFunction(
+			::jsctx, JSRequire,
+			'require', 2
+		)
+	);
+	::g_qjs_JSON = JS_GetPropertyStr(::jsctx, global, 'JSON');
+	::g_stringify_atom = JS_NewAtom(::jsctx, 'stringify');
+	::g_require_cache = JS_NewObjectProto(::jsctx, JS_NULL);
+	JS_SetPropertyStr(
+		::jsctx, global, 'g_require_cache', ::g_require_cache
+	);
+	///////////
+	JSValueConst! obj_console = JS_NewObject(::jsctx);
+	JS_SetPropertyStr(::jsctx, global, 'console', obj_console);
+	JS_SetPropertyStr(
+		::jsctx, obj_console, 'log', JS_NewCFunctionMagic(
+			::jsctx, JSConsoleWrite,
+			'log', 0, JS_CFUNC_generic_magic, 1
+		)
+	);
+	JS_SetPropertyStr(
+		::jsctx, obj_console, 'error', JS_NewCFunctionMagic(
+			::jsctx, JSConsoleWrite,
+			'error', 0, JS_CFUNC_generic_magic, 2
+		)
+	);
+}
