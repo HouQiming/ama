@@ -1,5 +1,6 @@
 // //// JC version: 3
 #include "./quickjs/src/quickjs.h"
+#include '../ast/node.jch'
 #pragma add("jc_files", "./jsenv.jc");
 #pragma add('h_files', './quickjs/src/quickjs.h');
 #pragma add('h_files', './quickjs/src/cutils.h');
@@ -29,4 +30,21 @@ namespace ama {
 	inline JSValueConst! WrapString(char[...]! s) {
 		return JS_NewStringLen(ama::jsctx, s.data(), s.length);
 	}
+	inline! JSValueConst! WrapStringNullable(any s) {
+		return s == NULL ? JS_NULL : WrapString(s);
+	}
+	inline int32_t! UnwrapInt32(JSValueConst! val, int32_t! dflt) {
+		mutable int32_t! ret = 0;
+		if( JS_IsUndefined(val) || JS_ToInt32(jsctx, &ret, val) < 0 ) {
+			ret = dflt;
+		}
+		return ret;
+	}
+	extern uint32_t! g_node_classid;
+	extern JSValue! g_node_proto;
+	extern std::unordered_map<ama::Node*, JSValue>! g_js_node_map;
+	inline ama::Node*+! UnwrapNode(JSValueConst! val) {
+		return (ama::Node*+)(JS_GetOpaque(val, g_node_classid));
+	}
+	JSValueConst! WrapNode(ama::Node*! nd);
 };

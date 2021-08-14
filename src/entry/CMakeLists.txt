@@ -90,7 +90,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc
   MAIN_DEPENDENCY ../script/jsapi.jc
-  DEPENDS ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/unicode/case.jch ../script/jsapi.jch ../script/jsenv.jch
+  DEPENDS ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/unicode/case.jch ../ast/node.jch ../parser/simppair.jch ../script/jsenv.jch ../script/jsapi.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -115,7 +115,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsenv.jch.hpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsenv.jch
   MAIN_DEPENDENCY ../script/jsenv.jch
-  DEPENDS ../script/quickjs/src/quickjs.h ../script/quickjs/src/cutils.h ../script/quickjs/src/list.h ../script/quickjs/src/quickjs.h ../script/quickjs/src/libregexp.h ../script/quickjs/src/libregexp-opcode.h ../script/quickjs/src/libunicode.h ../script/quickjs/src/libunicode-table.h ../script/quickjs/src/quickjs-opcode.h ../script/quickjs/src/quickjs-atom.h ../script/quickjs/src/quickjs.c ../script/quickjs/src/libregexp.c ../script/quickjs/src/libunicode.c ../script/quickjs/src/cutils.c
+  DEPENDS ../ast/node.jch ../script/quickjs/src/quickjs.h ../script/quickjs/src/cutils.h ../script/quickjs/src/list.h ../script/quickjs/src/quickjs.h ../script/quickjs/src/libregexp.h ../script/quickjs/src/libregexp-opcode.h ../script/quickjs/src/libunicode.h ../script/quickjs/src/libunicode-table.h ../script/quickjs/src/quickjs-opcode.h ../script/quickjs/src/quickjs-atom.h ../script/quickjs/src/quickjs.c ../script/quickjs/src/libregexp.c ../script/quickjs/src/libunicode.c ../script/quickjs/src/cutils.c
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -149,7 +149,7 @@ add_custom_command(
 if(DEFINED JC_LIB)
 include_directories("${JC_LIB}")
 endif()
-add_executable(ama ${JC_LIB}/dumpstack/linux_bt.cpp ${JC_LIB}/dumpstack/win_dbghelp.cpp ${JC_LIB}/dumpstack/enable_dump.cpp ${JC_LIB}/fix_win_console.cpp ${JC_LIB}/json.cpp ${JC_LIB}/jc_unique_string.cpp ../script/quickjs/src/quickjs.c ../script/quickjs/src/libregexp.c ../script/quickjs/src/libunicode.c ../script/quickjs/src/cutils.c ../script/jsenv.jc.cpp ${JC_LIB}/unicode.jc.cpp ${JC_LIB}/env.jc.cpp ${JC_LIB}/unicode/case.jc.cpp ../script/jsapi.jc.cpp ../parser/findama.jc.cpp ${JC_LIB}/fs.jc.cpp ${JC_LIB}/path_posix.jc.cpp ${JC_LIB}/path_win32.jc.cpp ama.jc.cpp ../script/jsenv.jch.hpp ${JC_LIB}/unicode.jch.hpp ${JC_LIB}/env.jch.hpp ${JC_LIB}/unicode/case.jch.hpp ../script/jsapi.jch.hpp ${JC_LIB}/fs.jch.hpp ${JC_LIB}/path.jch.hpp ${JC_LIB}/json.jch.hpp ../parser/findama.jch.hpp ${JC_LIB}/console.jch.hpp ${JC_LIB}/dumpstack.jch.hpp)
+add_executable(ama ${JC_LIB}/dumpstack/linux_bt.cpp ${JC_LIB}/dumpstack/win_dbghelp.cpp ${JC_LIB}/dumpstack/enable_dump.cpp ${JC_LIB}/fix_win_console.cpp ${JC_LIB}/json.cpp ${JC_LIB}/jc_unique_string.cpp ../script/quickjs/src/quickjs.c ../script/quickjs/src/libregexp.c ../script/quickjs/src/libunicode.c ../script/quickjs/src/cutils.c ../parser/charset.jc.cpp ../parser/literal.jc.cpp ../parser/simppair.jc.cpp ../ast/node.jc.cpp ../script/jsenv.jc.cpp ${JC_LIB}/unicode.jc.cpp ${JC_LIB}/env.jc.cpp ${JC_LIB}/unicode/case.jc.cpp ../script/jsapi.jc.cpp ../parser/findama.jc.cpp ${JC_LIB}/fs.jc.cpp ${JC_LIB}/path_posix.jc.cpp ${JC_LIB}/path_win32.jc.cpp ama.jc.cpp ../parser/charset.jch.hpp ../parser/literal.jch.hpp ../parser/simppair.jch.hpp ../script/jsenv.jch.hpp ../ast/node.jch.hpp ${JC_LIB}/unicode.jch.hpp ${JC_LIB}/env.jch.hpp ${JC_LIB}/unicode/case.jch.hpp ../script/jsapi.jch.hpp ${JC_LIB}/fs.jch.hpp ${JC_LIB}/path.jch.hpp ${JC_LIB}/json.jch.hpp ../parser/findama.jch.hpp ${JC_LIB}/console.jch.hpp ${JC_LIB}/dumpstack.jch.hpp)
 include(CheckCXXSourceCompiles)
 if(DEFINED JC_LIB)
 list(APPEND CMAKE_REQUIRED_INCLUDES "${JC_LIB}")
@@ -173,3 +173,56 @@ if(COND__JC_OS_JC_OS_WINDOWS__1DB9171C)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funwind-tables")
 endif()
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jch.hpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jch
+  MAIN_DEPENDENCY ../ast/node.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jch.hpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jch
+  MAIN_DEPENDENCY ../parser/simppair.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jc.cpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jc
+  MAIN_DEPENDENCY ../ast/node.jc
+  DEPENDS ../parser/literal.jch ../ast/node.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jc.cpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jc
+  MAIN_DEPENDENCY ../parser/simppair.jc
+  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/charset.jch ../parser/simppair.jch ${JC_LIB}/console.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/literal.jch.hpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/literal.jch
+  MAIN_DEPENDENCY ../parser/literal.jch
+  DEPENDS ../parser/charset.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/literal.jc.cpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/literal.jc
+  MAIN_DEPENDENCY ../parser/literal.jc
+  DEPENDS ${JC_LIB}/unicode.jch ../parser/charset.jch ../parser/literal.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/charset.jch.hpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/charset.jch
+  MAIN_DEPENDENCY ../parser/charset.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/charset.jc.cpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/charset.jc
+  MAIN_DEPENDENCY ../parser/charset.jc
+  DEPENDS ../parser/charset.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)

@@ -51,7 +51,7 @@ int! main(int! argc, char**! argv) {
 		if( fn_script ) {
 			script_i = "require(" + JSON.stringify(fn_script) + ");" + script_i;
 		}
-		if( !ama::RunScriptOnFile(script_i, argv[i], file_data) ) {
+		if( !ama::RunScriptOnFile(script_i, argv[i], file_data.c_str()) ) {
 			return 1;
 		}
 	}

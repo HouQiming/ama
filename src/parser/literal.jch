@@ -1,0 +1,8 @@
+// //// JC version: 3
+#include "./charset.jch"
+
+namespace ama {
+	#pragma add("jc_files", "./literal.jc");
+	char[+]! escapeJSString(char[...]! s);
+	char[+]! ParseJCString(char[...]! s);
+};

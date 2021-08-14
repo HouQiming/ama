@@ -1,0 +1,65 @@
+// //// JC version: 3
+namespace ama {
+	#pragma add("jc_files", "./charset.jc");
+	inline uint32_t! isInCharSet(uint32_t[...]! cset, uint32_t! ch) {
+		return cset[intptr_t(ch >> 5)] >> (ch & 31u) & 1u;
+	}
+	macro CharSet() = function():auto {
+		let CreateCharSet(let s) {
+			let ok = [0, 0, 0, 0, 0, 0, 0, 0];
+			auto set(let c) {
+				ok[c >> 5] |= 1 << (c & 31);
+			}
+			let is_not = 0;
+			if( s.startsWith('^') ) {
+				is_not = 1;
+				s = s.slice(1);
+			}
+			for(let i = 0; i < s.length; i++) {
+				if( s[i + 1] == '-' && (i + 2) < s.length ) {
+					let range0 = s.charCodeAt(i);
+					let range1 = s.charCodeAt(i + 2);
+					for(let j = range0; j <= range1; j++) {
+						set(j);
+					}
+					i += 2;
+				} else if( i == (s.length - 1) && s[i] == '-' ) {
+					//hack for high bytes
+					for(let j = 4; j < 8; j++) {
+						ok[j] = 0xffffffff;
+					}
+				} else {
+					set(s.charCodeAt(i));
+				}
+			}
+			if( is_not ) {
+				for(let j = 0; j < 8; j++) {
+					ok[j] = ~ok[j];
+				}
+			}
+			return ok;
+		}
+		return compiler.PortableMacro(arguments, function(auto compiler, auto params):auto {
+			if( !globals.CheckMacroParameters(compiler, params, [{
+				node_class: 'string'
+			}]) ) {
+				return undefined;
+			}
+			let s = params[0].data;
+			let ok = CreateCharSet(s);
+			return compiler.ParseExpr('new u32[!]{' + ok.map(inline(auto a):char![+]! {
+				return '0x' + (new Uint32Array([a]))[0].toString(16) + 'u';
+			}).join(',') + '}');
+		}, function(auto my_call, auto s):auto {
+			if( s.node_class != N_STRING ) {
+				s.error('string expected');
+				return undefined;
+			}
+			let ok = CreateCharSet(s.GetStringValue());
+			return nArrayNew(nArrayType(nRef('uint32_t')), nArray.apply(NULL, ok.map(inline(auto a):auto {
+				return nNumber('0x' + (new Uint32Array([a]))[0].toString(16) + 'u');
+			})));
+		});
+	}
+	intptr_t! SkipChars(uint8_t*! feed, uint32_t[...]! cset);
+};

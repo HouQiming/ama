@@ -2,6 +2,6 @@
 #pragma add("jc_files", "./jsapi.jc");
 
 namespace ama {
-	int! RunScriptOnFile(char[...]! script, char*! file_name, char[...]! file_data);
+	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data);
 	void! InitScriptEnv();
 };

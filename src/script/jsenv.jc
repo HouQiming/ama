@@ -5,7 +5,25 @@
 namespace ama {
 	JSContext*+! jsctx = NULL;
 	JSRuntime*+! g_runtime_handle = NULL;
+	uint32_t! g_node_classid = 0u;
+	JSValue! g_node_proto = JS_NULL;
 	char[+]! std_module_dir;
+	std::unordered_map<ama::Node*, JSValue>! g_js_node_map;
+	JSValueConst! WrapNode(ama::Node*! nd) {
+		if( !nd ) {
+			return JS_NULL;
+		}
+		JSValue! ret = g_js_node_map[nd];
+		if( !JS_IsObject(ret) ) {
+			ret = JS_NewObjectProtoClass(jsctx, g_node_proto, g_node_classid);
+			JS_SetOpaque(ret, (void*+)(nd));
+			JS_PreventExtensions(jsctx, ret);
+			g_js_node_map[nd] = ret;
+			return ret;
+		} else {
+			return JS_DupValue(jsctx, ret);
+		}
+	}
 	void! DumpError(JSContext*+! ctx) {
 		JSValueConst! ret = JS_GetException(ctx);
 		fprintf(stderr, "%s\n", JS_ToCString(ctx, ret));

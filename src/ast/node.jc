@@ -1,0 +1,410 @@
+// //// JC version: 3
+#include <unordered_map>
+#include '../parser/literal.jch'
+#include './node.jch'
+
+namespace ama {
+	///////////////////
+	//the node pool
+	private const intptr_t! BLOCK_SIZE = (1L << 21) - 64L;
+	private class TBlockHeader {
+		TBlockHeader*+! next;
+		intptr_t! size;
+	};
+	//a zeroed TMemoryPool is an empty pool
+	private class TMemoryPool {
+		TBlockHeader*+! block;
+		intptr_t! block_size;
+		char*+! front;
+		intptr_t! sz_free;
+	};
+	private void*! poolAlloc(TMemoryPool*+! ppool, intptr_t! sz) {
+		intptr_t! align = sz & -sz;
+		if( align > 16 ) { align = 16; } else if( align < 1 ) { align = 1; }
+		intptr_t! align_offset = -intptr_t(ppool->front) & (align - 1);
+		if( ppool->sz_free < (align_offset + sz) ) {
+			if( !ppool->block_size ) {
+				ppool->block_size = BLOCK_SIZE;
+			}
+			intptr_t! sz_alloc = (ppool->block_size > (sz + align) ? ppool->block_size : sz + align) + sizeof(TBlockHeader);
+			TBlockHeader*+! new_block = (TBlockHeader*+)(calloc(1, sz_alloc));
+			new_block->next = ppool->block;
+			new_block->size = sz_alloc - sizeof(TBlockHeader);
+			ppool->front = (char*+)(new_block) + sizeof(TBlockHeader);
+			ppool->sz_free = sz_alloc - sizeof(TBlockHeader);
+			ppool->block = new_block;
+			align_offset = -intptr_t(ppool->front) & (align - 1);
+		}
+		char*+! ret = ppool->front + align_offset;
+		ppool->front = ret + sz;
+		ppool->sz_free -= align_offset + sz;
+		return (void*)(ret);
+	}
+	private void! poolRelease(TMemoryPool*+! ppool) {
+		for(TBlockHeader*+! i = ppool->block; i;) {
+			TBlockHeader*+! next = i->next;
+			free(i);
+			i = next;
+		}
+		memset(ppool, 0, sizeof(TMemoryPool));
+	}
+	private TMemoryPool! g_node_pool = new TMemoryPool!();
+	private ama::Node*+! g_free_nodes = NULL;
+	ama::Node*+! AllocNode() {
+		ama::Node*+! ret = NULL;
+		if( g_free_nodes ) {
+			ret = g_free_nodes;
+			g_free_nodes = ret.s;
+			memset((void*+)(ret), 0, sizeof(ama::Node));
+		} else {
+			ret = (ama::Node*+)(poolAlloc(&g_node_pool, sizeof(ama::Node)));
+		}
+		ret.tmp_flags = ama::TMPF_IS_NODE;
+		return ret;
+	}
+	ama::Node*+! g_placeholder = AllocNode();
+	int! isValidNodePointer(ama::Node*! nd_tentative) {
+		int! in_block = 0;
+		for(TBlockHeader*! block = g_node_pool.block; block; block = block.next) {
+			uintptr_t! ofs = uintptr_t(nd_tentative) - (uintptr_t(block) + sizeof(TBlockHeader));
+			if( ofs < uintptr_t(block.size) && (ofs + uintptr_t(sizeof(ama::Node))) < uintptr_t(block.size) && (ofs % uintptr_t(sizeof(ama::Node))) == 0 ) {
+				in_block = 1;
+				break;
+			}
+		}
+		return in_block && (nd_tentative.tmp_flags & ama::TMPF_IS_NODE);
+	}
+	///////////////////
+	ama::Node*+! CreateNode(uint8_t! node_class, ama::Node*+! child) {
+		ama::Node*+! ret = ama::AllocNode();
+		ret.node_class = node_class;
+		ret.c = child;
+		for(ama::Node*+! ndi = child; ndi; ndi = ndi.s) {
+			assert(ndi != ret);
+			ndi.p = ret;
+		}
+		return ret;
+	}
+	ama::Node*+! FillParents(ama::Node*+! nd_parent, ama::Node*+! nd) {
+		nd.p = nd_parent;
+		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+			FillParents(nd, ndi);
+		}
+		return nd;
+	}
+};
+
+///////////////////
+//basic tree operations
+private ama::Node*+! dfsClone(std::unordered_map<ama::Node*, ama::Node*+>&+! mapping, ama::Node*! nd, int! is_root) {
+	ama::Node*+! ret = mapping[nd];
+	if( ret ) {
+		return ret;
+	}
+	ret = ama::AllocNode();
+	mapping[nd] = ret;
+	ret.node_class = nd.node_class;
+	ret.flags = nd.flags;
+	//ret.tmp_flags |= nd.tmp_flags & (SYSF_OPT_OUT_NEWLINE_BEFORE | SYSF_NONJC_UNTOUCHED | SYSF_MULTIVAR_DECL);
+	ret.data = nd.data;
+	//ret.opaque = nd.opaque;
+	ret.comments_before = nd.comments_before;
+	ret.comments_after = nd.comments_after;
+	//ret.file = nd.file;
+	//ret.ofs0 = nd.ofs0;
+	//ret.ofs1 = nd.ofs1;
+	//ret.type = nd.type;
+	//ret.def = nd.def;
+	if( nd.c ) {
+		ret.c = dfsClone(mapping, nd.c, 0);
+		for(ama::Node*+! ndi = ret.c; ndi; ndi = ndi.s) {
+			ndi.p = ret;
+		}
+	}
+	if( nd.s != NULL && !is_root ) {
+		ret.s = dfsClone(mapping, nd.s, 0);
+	}
+	return ret;
+}
+
+ama::TCloneResult! ama::Node::CloneEx(ama::Node*! this) {
+	std::unordered_map<ama::Node*, ama::Node*+>! mapping = new std::unordered_map<ama::Node*, ama::Node*+>!();
+	ama::Node*+! nd = dfsClone(mapping, this, 1);
+	return new ama::TCloneResult!{
+		mapping: <<mapping,
+		nd: nd
+	};
+}
+
+ama::Node*+! ama::Node::Clone(ama::Node*! this) {
+	if( !intptr_t(this) ) {
+		return NULL;
+	}
+	std::unordered_map<ama::Node*, ama::Node*+>! mapping = new std::unordered_map<ama::Node*, ama::Node*+>!();
+	return dfsClone(mapping, this, 1);
+}
+
+ama::Node*+! ama::Node::CloneList(ama::Node*! this) {
+	if( !intptr_t(this) ) {
+		return NULL;
+	}
+	std::unordered_map<ama::Node*, ama::Node*+>! mapping = new std::unordered_map<ama::Node*, ama::Node*+>!();
+	return dfsClone(mapping, this, 0);
+}
+
+//Node*+! Node::CloneCB(Node*! this,Node*+!(*)(Node*+,std::unordered_map<Node*, Node*+>&+!) callback){
+//	std::unordered_map<Node*, Node*+>! mapping = new (std::unordered_map<Node*, Node*+>!)();
+//	nd=NULL;
+//	if( intptr_t(this) ) {
+//		nd=dfsClone(mapping, this, 1);
+//	}
+//	return callback(nd,mapping)
+//}
+auto ama::Node::ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new) {
+	if( !this->p ) {
+		return;
+	}
+	ama::Node*! nd = this;
+	ama::Node*+! nd_prev = this->p.c;
+	if( nd_prev == nd ) {
+		this->p.c = nd_new;
+		return;
+	}
+	//if anything is broken, we end up accessing NULL
+	while( nd_prev.s != nd ) {
+		nd_prev = nd_prev.s;
+	}
+	nd_prev.s = nd_new;
+}
+
+ama::Node*+! ama::Node::ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new) {
+	if( !nd_new ) {
+		this->Delete();
+		return NULL;
+	} else {
+		this->Insert(ama::POS_REPLACE, nd_new);
+		return nd_new;
+	}
+}
+
+auto ama::Node::Delete(ama::Node*+! this) {
+	this->ReplaceLinkToThis(this->s);
+	//break links for safety
+	this->p = NULL;
+	this->s = NULL;
+}
+
+//namespace jcc {
+//	private auto FillErrorInfo(ama::Node*+! nd_tar, ama::Node*! nd_src) {
+//		if( nd_tar.file == NULL ) {
+//			nd_tar.file = nd_src.file;
+//			nd_tar.ofs0 = nd_src.ofs0;
+//			nd_tar.ofs1 = nd_src.ofs1;
+//		}
+//		for(ama::Node*+! ndi : nd_tar) {
+//			FillErrorInfo(ndi, nd_src);
+//		}
+//	}
+//};
+ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new) {
+	ama::Node*+! nd_new_parent = pos == ama::POS_FRONT || pos == ama::POS_BACK ? this : this->p;
+	ama::Node*+! nd_tail = nd_new;
+	for(;;) {
+		assert(nd_tail != nd_new_parent);
+		nd_tail.p = nd_new_parent;
+		//jcc::FillErrorInfo(nd_tail, this);
+		if( !nd_tail.s ) {
+			break;
+		}
+		nd_tail = nd_tail.s;
+	}
+	if( pos == ama::POS_REPLACE ) {
+		if( this.comments_before != NULL && nd_new.comments_before == NULL ) {
+			nd_new.comments_before = this.comments_before;
+		}
+		if( this.comments_after != NULL && nd_new.comments_after == NULL ) {
+			nd_new.comments_after = this.comments_after;
+		}
+	}
+	//if( nd_new_parent ) {
+	//	nd_new_parent.tmp_flags &= ~SYSF_NONJC_UNTOUCHED;
+	//}
+	switch( pos ) {
+		case ama::POS_BEFORE: {
+			nd_tail.s = this;
+			this->ReplaceLinkToThis(nd_new);
+			break;
+		}
+		case ama::POS_AFTER: {
+			nd_tail.s = this->s;
+			this->s = nd_new;
+			break;
+		}
+		case ama::POS_FRONT: {
+			nd_tail.s = this->c;
+			this->c = nd_new;
+			break;
+		}
+		case ama::POS_BACK: {
+			ama::Node*+! nd_my_tail = this->c;
+			if( nd_my_tail ) {
+				while( nd_my_tail.s ) {
+					nd_my_tail = nd_my_tail.s;
+				}
+			}
+			if( nd_my_tail ) {
+				nd_my_tail.s = nd_new;
+			} else {
+				this->c = nd_new;
+			}
+			break;
+		}
+		case ama::POS_REPLACE: {
+			nd_tail.s = this->s;
+			this->ReplaceLinkToThis(nd_new);
+			//break links for safety
+			this->p = NULL;
+			this->s = NULL;
+			break;
+		}
+	}
+	//if int(nd_new.node_class) == builder.N_DECLARATION && int(nd_new.p.node_class) == builder.N_VIRTUAL_FUNCTION_DECL: {
+	//	assert(0);
+	//}
+	return nd_new;
+}
+
+ama::Node*+! ama::Node::Root(ama::Node*! this) {
+	ama::Node*+! ndi = (ama::Node*+)(this);
+	while( ndi.p ) {
+		ndi = ndi.p;
+	}
+	return ndi;
+}
+
+ama::Node*+! ama::Node::RootStatement(ama::Node*! this) {
+	ama::Node*+! ndi = (ama::Node*+)(this);
+	while( ndi.p && ndi.p.p ) {
+		ndi = ndi.p;
+	}
+	return ndi;
+}
+
+int! ama::Node::isAncestorOf(ama::Node*! this, ama::Node*! nd) {
+	ama::Node*! nd_this = this;
+	for(ama::Node*! ndi = nd; ndi; ndi = ndi.p) {
+		if( ndi == nd_this ) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+ama::Node*+! ama::Node::Owning(ama::Node*! this, int! nc) {
+	for(ama::Node*+! ndi = (ama::Node*+)(this); ndi; ndi = ndi.p) {
+		if( int(ndi.node_class) == nc ) {
+			return ndi;
+		}
+	}
+	return NULL;
+}
+
+ama::Node*+! ama::Node::Owner(ama::Node*! this) {
+	for(ama::Node*+! ndi = this->p; ndi; ndi = ndi.p) {
+		if( int(ndi.node_class) == ama::N_FUNCTION || int(ndi.node_class) == ama::N_CLASS || int(ndi.node_class) == ama::N_RAW_DECLARATION || !ndi.p ) {
+			return ndi;
+		}
+	}
+	return NULL;
+}
+
+ama::Node*+! ama::Node::LastChild(ama::Node*! this) {
+	ama::Node*+! ndi = this->c;
+	if( ndi ) {
+		while( ndi.s ) {
+			ndi = ndi.s;
+		}
+		return ndi;
+	} else {
+		return NULL;
+	}
+}
+
+ama::Node*+! ama::Node::CommonAncestor(ama::Node*! this, ama::Node*! b) {
+	ama::Node*+! a = (ama::Node*+)(this);
+	const ama::Node*+[+]! ancestors_a = new ama::Node*+[+]!();
+	for(ama::Node*+! ndi = a; ndi; ndi = ndi.p) {
+		ancestors_a.push(ndi);
+	}
+	const ama::Node*+[+]! ancestors_b = new ama::Node*+[+]!();
+	for(ama::Node*+! ndi = (ama::Node*+)(b); ndi; ndi = ndi.p) {
+		ancestors_b.push(ndi);
+	}
+	ama::Node*+! ret = NULL;
+	while( ancestors_a.length && ancestors_b.length ) {
+		const ama::Node*+! nda = ancestors_a.pop();
+		const ama::Node*+! ndb = ancestors_b.pop();
+		if( nda != ndb ) {
+			break;
+		}
+		ret = nda;
+	}
+	return ret;
+}
+
+char[|]! ama::Node::GetStringValue(ama::Node*! this) {
+	ama::Node*+! nd_this = (ama::Node*+)(this);
+	assert(int(nd_this->node_class) == ama::N_STRING);
+	if( int(nd_this->node_class) != ama::N_STRING || nd_this->data == NULL || (nd_this->flags & ama::LITERAL_PARSED) ) {
+		return nd_this->data;
+	} else {
+		//process on demand
+		assert(int(nd_this->node_class) == ama::N_STRING);
+		if( nd_this->data.length && nd_this->data[0L] == '\'' ) {
+			nd_this->flags |= ama::STRING_SINGLE_QUOTED;
+		}
+		nd_this->data = new char[|]!(ama::ParseJCString(nd_this->data));
+		nd_this->flags |= ama::LITERAL_PARSED;
+		return nd_this->data;
+	}
+}
+
+ama::Node*+! ama::Node::dot(ama::Node*+! this, char[|]! name) {
+	ama::Node*+! nd_ret = ama::CreateNode(ama::N_DOT, this);
+	nd_ret.data = name;
+	return nd_ret;
+}
+
+private void! dfsFreeChildrenStorage(ama::Node*+! nd) {
+	ama::Node*+! ndi_last = NULL;
+	ama::Node*+! ndi0 = nd.c;
+	intptr_t! n_steps = 0L;
+	for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+		if( n_steps > 0 ) {
+			assert(ndi != ndi0);
+		}
+		ndi_last = ndi;
+		dfsFreeChildrenStorage(ndi);
+		ndi.tmp_flags &= ~ama::TMPF_IS_NODE;
+		ndi.p = NULL;
+		if( n_steps & 1 ) {
+			ndi0 = ndi0.s;
+		}
+		n_steps += 1;
+	}
+	if( ndi_last != NULL ) {
+		ama::Node*+! g_free_nodes;
+		ndi_last.s = g_free_nodes;
+		g_free_nodes = nd.c;
+		nd.c = NULL;
+	}
+}
+
+void! ama::Node::FreeASTStorage(ama::Node*+! this) {
+	ama::Node*+! g_free_nodes;
+	assert(!this.p);
+	dfsFreeChildrenStorage(this);
+	this.tmp_flags &= ~ama::TMPF_IS_NODE;
+	this.s = g_free_nodes;
+	g_free_nodes = this;
+}

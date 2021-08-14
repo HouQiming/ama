@@ -1,0 +1,78 @@
+// //// JC version: 3
+#pragma add("jc_files", "./node.jc");
+
+namespace ama {
+	const uint8_t! N_NONE = 0;
+	/////////////////
+	//raw nodes
+	const uint8_t! N_RAW = 1;
+	const uint8_t! N_SYMBOL = 2;
+	const uint8_t! N_REF = 3;
+	const uint8_t! N_NUMBER = 4;
+	const uint8_t! N_STRING = 5;
+	/////////////////
+	//structured nodes
+	const uint8_t! N_NODEOF = 6;
+	const uint8_t! N_SCOPE = 7;
+	const uint8_t! N_RAW_DECLARATION = 8;
+	const uint8_t! N_FUNCTION = 9;
+	const uint8_t! N_CLASS = 10;
+	const uint8_t! N_DOT = 11;
+	const uint8_t! N_ITEM = 12;
+	/////////////////
+	const uint16_t! TMPF_IS_NODE = 32768u;
+	/////////////////
+	const uint32_t! LITERAL_PARSED = 1u;
+	const uint32_t! STRING_SINGLE_QUOTED = 2u;
+	class TCloneResult {
+		Node*+! nd;
+		std::unordered_map<Node*, Node*+>! mapping;
+	};
+	const int! POS_BEFORE = 0;
+	const int! POS_AFTER = 1;
+	const int! POS_FRONT = 2;
+	const int! POS_BACK = 3;
+	const int! POS_REPLACE = 4;
+	//we don't track original code locations, just report errors into the generated code using #error and stuff
+	//try to fit into a 64 byte cacheline
+	class Node {
+		uint8_t! node_class;
+		//store delta w.r.t. parent N_RAW
+		int8_t! indent_level;
+		uint16_t! tmp_flags;
+		uint32_t! flags;
+		char[|]! data;
+		/////////////
+		char[|]! comments_before;
+		char[|]! comments_after;
+		/////////////
+		//child
+		Node*+! c;
+		//sibling
+		Node*+! s;
+		//parent
+		Node*+! p;
+		ama::TCloneResult! CloneEx(ama::Node*! this);
+		ama::Node*+! Clone(ama::Node*! this);
+		ama::Node*+! CloneList(ama::Node*! this);
+		auto ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new);
+		ama::Node*+! ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new);
+		auto Delete(ama::Node*+! this);
+		ama::Node*+! Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new);
+		ama::Node*+! Root(ama::Node*! this);
+		ama::Node*+! RootStatement(ama::Node*! this);
+		int! isAncestorOf(ama::Node*! this, ama::Node*! nd);
+		ama::Node*+! Owning(ama::Node*! this, int! nc);
+		ama::Node*+! Owner(ama::Node*! this);
+		ama::Node*+! LastChild(ama::Node*! this);
+		ama::Node*+! CommonAncestor(ama::Node*! this, ama::Node*! b);
+		char[|]! GetStringValue(ama::Node*! this);
+		ama::Node*+! dot(ama::Node*+! this, char[|]! name);
+		void! FreeASTStorage(ama::Node*+! this);
+	};
+	ama::Node*+! AllocNode();
+	extern ama::Node*+! g_placeholder;
+	int! isValidNodePointer(ama::Node*! nd_tentative);
+	ama::Node*+! CreateNode(uint8_t! node_class, ama::Node*+! child);
+	ama::Node*+! FillParents(ama::Node*+! nd_parent, ama::Node*+! nd);
+};

@@ -5,8 +5,267 @@
 #include <console.jch>
 #include <unicode/case.jch>
 #include "./quickjs/src/quickjs.h"
-#include "./jsapi.jch"
+#include "../ast/node.jch"
+#include "../parser/simppair.jch"
 #include "./jsenv.jch"
+#include "./jsapi.jch"
+
+private macro GenerateJSPrototype() = function(auto my_call, auto nd_node, auto nd_g_node_proto, auto nd_classid):auto {
+	if( !nd_node.def ) {
+		return undefined;
+	}
+	let class_name = nd_node.data;
+	let class_full_name = nd_node.toSource();
+	let classid = nd_classid.toSource();
+	let code_func = [];
+	let code = [];
+	let nd_class_scope = nd_node.def.ParentStatement().LastChild();
+	let proto = nd_g_node_proto.toSource();
+	char*! ClassifyType(let nd_type) {
+		let s_src = nd_type.toSource();
+		if( s_src.indexOf('Node') >= 0 ) {
+			if( s_src.indexOf('[') >= 0 ) {
+				return 'Node[]';
+			} else {
+				return 'Node';
+			}
+		} else if( s_src.indexOf('char[') >= 0 ) {
+			if( s_src.indexOf('^') >= 0 || s_src.indexOf('[|]') >= 0 ) {
+				return 'string^';
+			} else {
+				return 'string';
+			}
+		} else if( s_src.indexOf('char*') >= 0 ) {
+			return 'charptr';
+		} else if( s_src.indexOf('void*') >= 0 ) {
+			return 'void*';
+		} else if( s_src.indexOf('JSValue') >= 0 ) {
+			return 'JSValue';
+		} else if( s_src.indexOf('float') >= 0 || s_src.indexOf('double') >= 0 ) {
+			return 'float';
+		} else {
+			return 'int';
+		}
+	}
+	auto WrapValue(let nd_type, char*! jc_expr) {
+		let s_type = ClassifyType(nd_type);
+		if( s_type == 'Node' ) {
+			return ['ama::WrapNode(', jc_expr, ')'].join('');
+		} else if( s_type == 'void*' ) {
+			return ['ama::WrapPointer(', jc_expr, ')'].join('');
+		} else if( s_type == 'Node[]' ) {
+			return ['ama::WrapNodeArray(', jc_expr, ')'].join('');
+		} else if( s_type == 'string' ) {
+			return ['ama::WrapString(', jc_expr, ')'].join('');
+		} else if( s_type == 'string^' ) {
+			return ['ama::WrapStringNullable(', jc_expr, ')'].join('');
+		} else if( s_type == 'charptr' ) {
+			return ['JS_NewString(jsctx,', jc_expr, ')'].join('');
+		} else if( s_type == 'int' ) {
+			//we don't have i64 in Node
+			return ['JS_NewInt32(jsctx,', jc_expr, ')'].join('');
+		} else if( s_type == 'float' ) {
+			return ['JS_NewFloat64(jsctx,', jc_expr, ')'].join('');
+		} else if( s_type == 'JSValue' ) {
+			return jc_expr;
+		} else {
+			throw new Error('bad type ' + s_type);
+		}
+	}
+	let res_counter = 0;
+	let UnwrapValue(let nd_type, char*! js_value) {
+		let ret = {
+			validation: '',
+			jc_expr: ''
+		};
+		let s_type = ClassifyType(nd_type);
+		if( s_type == 'Node' ) {
+			//we don't validate here: if it's not a node, we DO want a NULL
+			ret.jc_expr = ['ama::UnwrapNode(', js_value, ')'].join('');
+		} else if( s_type == 'void*' ) {
+			ret.jc_expr = ['ama::UnwrapPointer(', js_value, ')'].join('');
+		} else if( s_type == 'Node[]' ) {
+			ret.validation = [
+				'if !JS_IsArray(', js_value, '):{return JS_ThrowTypeError(jsctx, "array expected for `', js_value, '`");}'
+			].join('');
+			ret.jc_expr = ['ama::UnwrapNodeArray(', js_value, ')'].join('');
+		} else if( s_type == 'string' || s_type == 'string^' ) {
+			ret.validation = [
+				'if !JS_IsString(', js_value, '):{return JS_ThrowTypeError(jsctx, "string expected for `', js_value, '`");}'
+			].join('');
+			ret.jc_expr = [nd_type.toSource().indexOf('[+]') >= 0 ? 'ama::UnwrapStringResizable(' : 'ama::UnwrapString(', js_value, ')'].join('');
+		} else if( s_type == 'charptr' ) {
+			ret.validation = [
+				'if !JS_IsString(', js_value, '):{return JS_ThrowTypeError(jsctx, "string expected for `', js_value, '`");}'
+			].join('');
+			ret.jc_expr = ['JS_ToCString(jsctx, ', js_value, ')'].join('');
+		} else if( s_type == 'JSValue' ) {
+			ret.validation = '';
+			ret.jc_expr = js_value;
+		} else if( s_type == 'int' ) {
+			//we don't have i64 in Node
+			ret.validation = [
+				'res', res_counter, '=0;',
+				'if JS_ToInt32(jsctx, &res', res_counter, ', ', js_value, ')<0:{return JS_ThrowTypeError(jsctx, "int expected for `', js_value, '`");}'
+			].join('');
+			ret.jc_expr = 'res' + res_counter.toString();
+			res_counter += 1;
+		} else if( s_type == 'float' ) {
+			//we don't have i64 in Node
+			ret.validation = [
+				'res', res_counter, '=0.0;',
+				'if JS_ToFloat64(jsctx, &res', res_counter, ', ', js_value, ')<0:{return JS_ThrowTypeError(jsctx, "float expected for `', js_value, '`");}'
+			].join('');
+			ret.jc_expr = 'res' + res_counter.toString();
+			res_counter += 1;
+		} else {
+			throw new Error('bad type ' + s_type);
+		}
+		return ret;
+	}
+	nd_class_scope.FindAllWithin(BOUNDARY_SCOPE | BOUNDARY_FUNCTION | BOUNDARY_PROTOTYPE, N_DECLARATION, NULL).forEach(inline(auto nd_i) {
+		let nd_def = nd_i.c;
+		let nd_value = nd_i.c.s;
+		if( !nd_value || nd_value.node_class == N_NULL || nd_value.node_class == N_NUMBER ) {
+			if( class_name == 'Node' && nd_def.data == 'type' ) {
+				return;
+			}
+			let nd_type = nd_def.c;
+			if( nd_type.toSource().startsWith('uv_') ) {
+				return;
+			}
+			if( nd_def.getTag('nojs') ) {
+				return;
+			}
+			let unwrap_code = UnwrapValue(nd_type, 'val');
+			//all fields are nullable
+			//nd_type.toSource().indexOf('?')>=0
+			if( unwrap_code.validation && ClassifyType(nd_type) != 'int' && ClassifyType(nd_type) != 'float' ) {
+				//it's nullable, hack the NULL case
+				unwrap_code.validation = [
+					'if JS_IsNull(val):{',
+					(
+						'nd.' + nd_def.data
+					),
+					'=NULL;',
+					'}else{',
+					unwrap_code.validation
+				].join('');
+				unwrap_code.jc_expr = unwrap_code.jc_expr + ';}';
+			}
+			code_func.push(
+				'function ', class_name, 'Get_', nd_def.data, '(JSContext*+ jsctx, JSValueConst this_val){',
+				'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));',
+				'return ', WrapValue(nd_type, 'nd.' + nd_def.data), ';',
+				'}',
+				'function ', class_name, 'Set_', nd_def.data, '(JSContext*+ jsctx, JSValueConst this_val, JSValueConst val){',
+				'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));',
+				unwrap_code.validation
+			);
+			if( nd_def.data == 'sys_flags' || nd_def.data == 'node_class' ) {
+				code_func.push(
+					'nd.' + nd_def.data, '=(', nd_def.c.toSource(), ')(', unwrap_code.jc_expr, ')', ';'
+				);
+			} else {
+				code_func.push(
+					'nd.' + nd_def.data, '=', unwrap_code.jc_expr, ';'
+				);
+			}
+			code_func.push(
+				'return JS_UNDEFINED;',
+				'}'
+			);
+			code.push(
+				'JS_DefinePropertyGetSet(jsctx,',
+				proto, ',',
+				//we don't plan to free these atoms
+				'JS_NewAtom(jsctx,', JSON.stringify(nd_def.data), '),',
+				'JS_NewCFunction2(jsctx,(JSCFunction*+)(', class_name, 'Get_', nd_def.data, '),"get_', nd_def.data, '",0,JS_CFUNC_getter,0),',
+				'JS_NewCFunction2(jsctx,(JSCFunction*+)(', class_name, 'Set_', nd_def.data, '),"set_', nd_def.data, '",1,JS_CFUNC_setter,0),',
+				'JS_PROP_C_W_E',
+				');'
+			);
+		}
+	});
+	nd_class_scope.FindAllWithin(BOUNDARY_SCOPE | BOUNDARY_FUNCTION, N_EXTERN, NULL).forEach(inline(auto nd_i) {
+		let nd_def = nd_i.c;
+		if( class_name == 'Node' ) {
+			if( nd_def.data == 'CloneEx' || nd_def.data == 'CloneCB' ) {
+				return;
+			}
+		}
+		if( nd_def.data == '__init__' || nd_def.data == '__done__' ) {
+			return;
+		}
+		if( nd_def.getTag('nojs') ) {
+			return;
+		}
+		let nd_ret_type = nd_i.c.s.c.s;
+		if( nd_ret_type ) {
+			if( nd_ret_type.getTag('nojs') ) {
+				return;
+			}
+		}
+		code_func.push(
+			'function ', class_name, 'Call_', nd_def.data, '(JSContext*+ jsctx, JSValueConst this_val, int argc, JSValueConst*+ argv){',
+			'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));'
+		);
+		if( class_name == 'Node' ) {
+			if( nd_def.data == 'Insert' ) {
+				code_func.push('if nd==NULL:{return JS_ThrowTypeError(jsctx, "cannot insert at a null node");}');
+				code_func.push('if JS_IsNull(argv[1])||JS_IsUndefined(argv[1]):{return JS_ThrowTypeError(jsctx, "cannot insert a null node");}');
+			}
+		}
+		let nd_paramlist = nd_i.c.s.c;
+		let code_call = ['nd.', nd_def.data, '('];
+		//translate argv, skip the JC this
+		let i = 0;
+		for(let ndi = nd_paramlist.c; ndi; ndi = ndi.s) {
+			let nd_def = ndi;
+			if( nd_def.node_class == N_DECLARATION ) {
+				nd_def = nd_def.c;
+			}
+			if( nd_def.data == 'this' ) {
+				continue;
+			}
+			let unwrap_code = UnwrapValue(nd_def.c, '(' + i.toString() + '<argc?argv[' + i.toString() + 'L]:JS_UNDEFINED)');
+			if( ClassifyType(nd_def.type) != 'int' && ClassifyType(nd_def.type) != 'float' && unwrap_code.validation ) {
+				//it's nullable, hack the NULL case
+				code_func.push(
+					'if argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L]):{',
+					unwrap_code.validation,
+					'}'
+				);
+				unwrap_code.jc_expr = ['argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L])?', unwrap_code.jc_expr, ':NULL'].join('');
+			} else {
+				code_func.push(unwrap_code.validation);
+			}
+			if( i ) {
+				code_call.push(',');
+			}
+			code_call.push(unwrap_code.jc_expr);
+			i += 1;
+		}
+		code_call.push(')');
+		let s_call = code_call.join('');
+		//wrap the return value 
+		if( nd_ret_type && !(new Set(['auto', 'void'])).has(nd_ret_type.StripTypeQualifiers().toSource()) ) {
+			code_func.push('return ', WrapValue(nd_ret_type, s_call), ';');
+		} else {
+			code_func.push(s_call, '; return JS_UNDEFINED;');
+		}
+		code_func.push(
+			'}'
+		);
+		code.push(
+			'JS_SetPropertyStr(jsctx,', proto, ',', JSON.stringify(nd_def.data), ',',
+			'JS_NewCFunction(jsctx,(', class_name, 'Call_', nd_def.data, '),', JSON.stringify(class_name + '.' + nd_def.data), ',', i.toString(), ')',
+			');'
+		);
+	});
+	my_call.RootStatement().InsertBefore(compiler.ParseCode(code_func.join('')).c || nEmpty());
+	return compiler.ParseCode(code.join('')).c || nEmpty();
+}
 
 namespace ama {
 	private JSValueConst! g_require_cache = JS_NULL;
@@ -159,14 +418,18 @@ namespace ama {
 		}
 		return JS_GetPropertyStr(ctx, obj_module, 'exports');
 	}
-	//private function NodeFinalizer(JSRuntime*+! rt, JSValueConst! val) {
-	//	//release the rc
-	//	const Node*+! nd = UnwrapNode(val);
-	//	g_js_node_map.erase(nd);
-	//	g_root_rc[nd] -= 1L;
-	//}
-	int! RunScriptOnFile(char[...]! script, char*! file_name, char[...]! file_data) {
-		char![+]! s_fixed_code = '(function(__filename,__dirname){let require=__require.bind(null,__filename);' + script + '\n})\n';
+	private JSValueConst! JSParseCurrentFile(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic, JSValue*+! func_data) {
+		JSValue! options;
+		if( argc < 1 ) {
+			options = JS_NewObjectProto(ama::jsctx, JS_NULL);
+		} else {
+			options = argv[1];
+		}
+		char*! file_data = (char*)(JSON.parse<uintptr_t>(ama::UnwrapString(func_data[0])));
+		return ama::WrapNode(ParseSimplePairing(file_data, options));
+	}
+	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data) {
+		char![+]! s_fixed_code = '(function(__filename,__dirname,ParseCurrentFile){let require=__require.bind(null,__filename);' + script + '\n})\n';
 		JSValueConst! ret = JS_Eval(
 			ama::jsctx, s_fixed_code.data(),
 			s_fixed_code.length, file_name, JS_EVAL_TYPE_GLOBAL
@@ -175,11 +438,18 @@ namespace ama {
 			ama::DumpError(ama::jsctx);
 			return 0;
 		}
-		//TODO: file_data - pass in a bound parser as a function: could configure the parser a bit before actually parsing
-		JSValueConst[2L]! module_args = new JSValueConst[2L]! {
-			JS_NewString(ama::jsctx, file_name), ama::WrapString(path::dirname(file_name))
+		////////////
+		//the most light weight method to pass a pointer...
+		JSValue file_data_val = JS_NewString(ama::jsctx, JSON.stringify(uintptr_t(file_data)).c_str());
+		JSValueConst[3L]! module_args = new JSValueConst[3L]! {
+			JS_NewString(ama::jsctx, file_name),
+			ama::WrapString(path::dirname(file_name)),
+			JS_NewCFunctionData(
+				ama::jsctx, JSParseCurrentFile,
+				1, 0, 1, &file_data_val
+			)
 		};
-		JSValueConst! ret_script = JS_Call(ama::jsctx, JS_DupValue(ama::jsctx, ret), JS_GetGlobalObject(ama::jsctx), 2, module_args.data());
+		JSValueConst! ret_script = JS_Call(ama::jsctx, JS_DupValue(ama::jsctx, ret), JS_GetGlobalObject(ama::jsctx), 3, module_args.data());
 		if( JS_IsException(ret_script) ) {
 			ama::DumpError(ama::jsctx);
 			return 0;
@@ -202,9 +472,9 @@ namespace ama {
 			}
 			//////
 			JSValueConst! arg_i = argv[i];
-			//jcc::Node*+! nd = jcc::UnwrapNode(arg_i);
+			//ama::Node*+! nd = ama::UnwrapNode(arg_i);
 			//if( nd ) {
-			//	const char[+]! s_node = '/*node ' + JSON::stringify(jcc::UniqueID(intptr_t(nd))) + '*/' + nd.toSource();
+			//	const char[+]! s_node = '/*node ' + JSON::stringify(ama::UniqueID(intptr_t(nd))) + '*/' + nd.toSource();
 			//	if( magic == 1 ) {
 			//		console::write(s_node);
 			//	} else {
@@ -239,16 +509,21 @@ namespace ama {
 		}
 		return JS_UNDEFINED;
 	}
+	private void! NodeFinalizer(JSRuntime*+! rt, JSValueConst! val) {
+		ama::Node*+! nd = ama::UnwrapNode(val);
+		ama::g_js_node_map.erase(nd);
+	}
 	void! InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
 		///////////
-		//JS_NewClassID(&g_node_classid);
-		//JSClassDef! class_def = new JSClassDef!();
-		//class_def.class_name = 'Node';
-		//class_def.finalizer = NodeFinalizer;
-		//JS_NewClass(::g_runtime_handle, g_node_classid, &class_def);
-		//JS_SetClassProto(ama::jsctx, g_node_classid, g_node_proto);
+		JS_NewClassID(&ama::g_node_classid);
+		mutable JSClassDef! class_def = new JSClassDef!();
+		class_def.class_name = 'Node';
+		class_def.finalizer = NodeFinalizer;
+		JS_NewClass(ama::g_runtime_handle, ama::g_node_classid, &class_def);
+		ama::g_node_proto = JS_NewObject(ama::jsctx);
+		ama::GenerateJSPrototype(ama::Node, ama::g_node_proto, ama::g_node_classid);
 		///////////
 		JSValueConst! global = JS_GetGlobalObject(ama::jsctx);
 		JS_SetPropertyStr(

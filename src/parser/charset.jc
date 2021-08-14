@@ -1,0 +1,12 @@
+// //// JC version: 3
+#include "./charset.jch"
+
+namespace ama {
+	intptr_t! SkipChars(uint8_t*! feed, uint32_t[...]! cset) {
+		mutable intptr_t! lg = 0L;
+		while( ama::isInCharSet(cset, uint32_t(feed[lg])) ) {
+			lg += 1L;
+		}
+		return lg;
+	}
+};
