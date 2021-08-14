@@ -15,17 +15,18 @@
 #pragma add('c_files', './quickjs/src/libregexp.c');
 #pragma add('c_files', './quickjs/src/libunicode.c');
 #pragma add('c_files', './quickjs/src/cutils.c');
-extern JSContext*+! jsctx;
-extern JSRuntime*+! g_runtime_handle;
 
-inline char[|]! UnwrapString(JSValueConst! val) {
-	size_t! len = 0uLL;
-	char*! ptr = JS_ToCStringLen(::jsctx, &len, val);
-	return new char[|]!(ptr, intptr_t(len));
-}
-
-inline JSValueConst! WrapString(char[...]! s) {
-	return JS_NewStringLen(::jsctx, s.data(), s.length);
-}
-void! DumpError(JSContext*+! ctx);
-extern char[+]! std_module_dir;
+namespace ama {
+	extern JSContext*+! jsctx;
+	extern JSRuntime*+! g_runtime_handle;
+	extern char[+]! std_module_dir;
+	void! DumpError(JSContext*+! ctx);
+	inline char[|]! UnwrapString(JSValueConst! val) {
+		size_t! len = 0uLL;
+		char*! ptr = JS_ToCStringLen(ama::jsctx, &len, val);
+		return new char[|]!(ptr, intptr_t(len));
+	}
+	inline JSValueConst! WrapString(char[...]! s) {
+		return JS_NewStringLen(ama::jsctx, s.data(), s.length);
+	}
+};

@@ -17,7 +17,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ama.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/ama.jc
   MAIN_DEPENDENCY ama.jc
-  DEPENDS ${JC_LIB}/dumpstack.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/json.jch ${JC_LIB}/unicode.jch ../parser/findama.jch ../script/jsapi.jch ../script/jsenv.jch ${JC_LIB}/printf.js
+  DEPENDS ${JC_LIB}/dumpstack.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/json.jch ${JC_LIB}/unicode.jch ../parser/findama.jch ../script/jsapi.jch ../script/jsenv.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -90,7 +90,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc
   MAIN_DEPENDENCY ../script/jsapi.jc
-  DEPENDS ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/unicode/case.jch ../script/jsenv.jch ${JC_LIB}/printf.js
+  DEPENDS ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/unicode/case.jch ../script/jsapi.jch ../script/jsenv.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(

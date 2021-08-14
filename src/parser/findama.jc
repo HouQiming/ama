@@ -1,7 +1,7 @@
 // //// JC version: 3
 #include "./findama.jch"
 
-char[+]! FindAma(char[...]! input) {
+namespace ama { char[+]! FindAma(char[...]! input) {
 	char[+]! ret = new char[+]!();
 	intptr_t! p_ama = input.indexOf('@ama');
 	if( p_ama < 0L ) { return <<ret; }
@@ -22,3 +22,4 @@ char[+]! FindAma(char[...]! input) {
 	}
 	return <<ret;
 }
+};

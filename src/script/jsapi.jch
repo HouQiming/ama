@@ -1,4 +1,7 @@
 // //// JC version: 3
 #pragma add("jc_files", "./jsapi.jc");
-int! RunScriptOnFile(char[...]! script, char*! file_name, char[...]! file_data);
-void! InitScriptEnv();
+
+namespace ama {
+	int! RunScriptOnFile(char[...]! script, char*! file_name, char[...]! file_data);
+	void! InitScriptEnv();
+};

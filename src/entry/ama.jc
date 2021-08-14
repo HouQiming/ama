@@ -15,12 +15,13 @@ int! main(int! argc, char**! argv) {
 		console.log('usage: ama [-s script] <files>');
 		return 1;
 	}
+	///////////
 	char*! home_dir = NULL;
 	#if defined(_WIN32)
-		intptr_t! lg = GetEnvironmentVariableW(L, "USERPROFILE", NULL, 0);
+		intptr_t! lg = GetEnvironmentVariableW(`L"USERPROFILE"`, NULL, 0);
 		if( lg != ERROR_ENVVAR_NOT_FOUND ) {
 			uint16_t[+]! buf = new uint16_t[+]!(lg);
-			lg = GetEnvironmentVariableW(L, "USERPROFILE", LPWSTR(buf.data()), lg);
+			lg = GetEnvironmentVariableW(`L"USERPROFILE"`, LPWSTR(buf.data()), lg);
 			buf.resize(lg);
 			//this leak should be OK
 			home_dir = strdup(unicode::UTF16ToUTF8(buf).c_str());
@@ -31,8 +32,9 @@ int! main(int! argc, char**! argv) {
 	if( !home_dir ) {
 		home_dir = "/";
 	}
-	::std_module_dir = <<path.join(home_dir, '.ama_modules');
-	InitScriptEnv();
+	ama::std_module_dir = <<path.join(home_dir, '.ama_modules');
+	///////////
+	ama::InitScriptEnv();
 	char*! fn_script = NULL;
 	for(int! i = 1; i < argc; i += 1) {
 		if( strcmp(argv[i], "-s") == 0 && (i + 1) < argc ) {
@@ -45,11 +47,11 @@ int! main(int! argc, char**! argv) {
 			console.error('unable to load', argv[i]);
 			return 1;
 		}
-		char![+]! script_i = FindAma(file_data);
+		char![+]! script_i = ama::FindAma(file_data);
 		if( fn_script ) {
 			script_i = "require(" + JSON.stringify(fn_script) + ");" + script_i;
 		}
-		if( !RunScriptOnFile(script_i, argv[i], file_data) ) {
+		if( !ama::RunScriptOnFile(script_i, argv[i], file_data) ) {
 			return 1;
 		}
 	}

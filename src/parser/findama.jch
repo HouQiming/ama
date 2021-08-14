@@ -1,3 +1,6 @@
 // //// JC version: 3
 #pragma add("jc_files", "./findama.jc");
-char[+]! FindAma(char[...]! input);
+
+namespace ama {
+	char[+]! FindAma(char[...]! input);
+};
