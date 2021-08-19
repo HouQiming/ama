@@ -82,14 +82,6 @@ private const uint32_t[+]! g_c_identifier = ama::CharSet('0-9A-Za-z_');
 private const uint32_t[+]! g_not_newline = ama::CharSet('^\n');
 private const uint32_t[+]! g_letter = ama::CharSet('A-Za-z');
 
-private char*! SkipChars(char*! feed, uint32_t[...]! cset) {
-	mutable intptr_t! lg = 0L;
-	while( ama::isInCharSet(cset, uint32_t(uint8_t(*feed))) ) {
-		feed += 1L;
-	}
-	return feed;
-}
-
 private class ParserState {
 	ama::Node*+! nd_parent;
 	ama::Node*+*+! p_nd_next;
@@ -97,7 +89,7 @@ private class ParserState {
 //reserve 1 bit
 private const intptr_t! MAX_INDENT = 63;
 
-int8_t! ClampIndentLevel(intptr_t! level) {
+private int8_t! ClampIndentLevel(intptr_t! level) {
 	if( level > MAX_INDENT ) {
 		level = MAX_INDENT;
 	} else if( level < -MAX_INDENT ) {
@@ -106,222 +98,276 @@ int8_t! ClampIndentLevel(intptr_t! level) {
 	return int8_t(level);
 }
 
-//we rely on zero termination, thus the char*
-//start with comments_before almost everywhere
-ama::Node*+! ParseSimplePairing(char*! feed, JSValueConst! options) {
-	//space-separated symbols
-	char[|]! s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, 'symbols'));
-	char[...][+]! symbol_array = new char[...][+]!();
-	for(char[...]&! s_symbol : s_symbols.split(' ')) {
-		if( s_symbol.length > 0 ) {
-			symbol_array.push_back(new char[+]!(s_symbol));
-		}
+private char[|]! FormatComment(intptr_t! comment_indent_level, int32_t! tab_width, char*! comment_begin, char*! comment_end) {
+	if( !comment_indent_level || !memchr(comment_begin, '\n', comment_end - comment_begin) ) {
+		return new char[|]!(comment_begin, comment_end - comment_begin);
 	}
-	symbol_array.sort();
-	if( symbol_array.length > 256 ) {
-		console.error('we only support up to 256 symbols');
-		symbol_array.resize(256);
-	}
-	uint8_t[256]! n_symbol = new uint8_t[256]!();
-	uint8_t[256]! p_symbol = new uint8_t[256]!();
-	for(char[...]&! s_symbol, size_t! I : symbol_array) {
-		if( 0 == n_symbol[uint8_t(s_symbol[0])]++ ) {
-			p_symbol[uint8_t(s_symbol[0])] = uint8_t(I);
-		}
-	}
-	//UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, ''),0)
-	ama::Node*+! nd_root = ama::CreateNode(ama::N_RAW, NULL);
-	ParserState[+]! state_stack = new ParserState[+] {
-		new ParserState!{
-			nd_parent: nd_root,
-			p_nd_next: &nd_root.c
-		}
-	};
-	char*! comment_begin = feed;
-	char*! comment_end = feed;
-	//interleave with parser lexer to fill indent_level, comments and all
-	intptr_t! current_indent_level = 0L;
-	for(;;) {
-		uint32_t! ch = uint32_t(uint8_t(feed[0L]));
-		ama::Node*+! nd;
-		// [ \t\r] \n "' / 0-9 A-Za-z_\u0080+
-		switch( g_char_lut[intptr_t(ch)] ) {
-			case CHAR_TYPE_SLASH: {
-				if( int(feed[1L]) == int('/') ) {
-					feed = SkipChars(feed, g_not_newline);
-					comment_end = feed;
+	char[+]! tmp = new char[+]!();
+	tmp.reserve(comment_end - comment_begin);
+	for(char*! s = comment_begin; s != comment_end; s++) {
+		char! ch = *s;
+		tmp.push_back(ch);
+		if( ch == '\n' ) {
+			int! current_indent_level = 0;
+			while( ama::isInCharSet(g_spaces, uint32_t(uint8_t(s[1L]))) ) {
+				if( s[1L] == ' ' ) {
+					current_indent_level += 1L;
+				} else if( s[1L] == '\t' ) {
+					current_indent_level /= tab_width;
+					current_indent_level += 1;
+					current_indent_level *= tab_width;
+				}
+				s += 1;
+				if( current_indent_level >= comment_indent_level ) {
 					break;
-				} else if( int(feed[1L]) == int('*') ) {
-					intptr_t! lg = 2L;
-					for(;;) {
-						if( !feed[lg] ) {
+				}
+			}
+			while( current_indent_level > comment_indent_level ) {
+				current_indent_level -= 1;
+				tmp.push_back(' ');
+			}
+		}
+	}
+	return new char[|]!(tmp);
+}
+
+namespace ama {
+	//we rely on zero termination, thus the char*
+	//start with comments_before almost everywhere
+	ama::Node*+! ParseSimplePairing(char*! feed, JSValueConst! options) {
+		//space-separated symbols
+		char[|]! s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, 'symbols'));
+		char[...][+]! symbol_array = new char[...][+]!();
+		for(char[...]&! s_symbol : s_symbols.split(' ')) {
+			if( s_symbol.length > 0 ) {
+				symbol_array.push_back(new char[+]!(s_symbol));
+			}
+		}
+		symbol_array.sort();
+		if( symbol_array.length > 256 ) {
+			console.error('we only support up to 256 symbols');
+			symbol_array.resize(256);
+		}
+		uint8_t[256]! n_symbol = new uint8_t[256]!();
+		uint8_t[256]! p_symbol = new uint8_t[256]!();
+		for(char[...]&! s_symbol, size_t! I : symbol_array) {
+			if( 0 == n_symbol[uint8_t(s_symbol[0])]++ ) {
+				p_symbol[uint8_t(s_symbol[0])] = uint8_t(I);
+			}
+		}
+		int32_t! tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
+		//UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, ''),0)
+		ama::Node*+! nd_root = ama::CreateNode(ama::N_RAW, NULL);
+		ParserState[+]! state_stack = new ParserState[+] {
+			new ParserState!{
+				nd_parent: nd_root,
+				p_nd_next: &nd_root.c
+			}
+		};
+		char*! comment_begin = feed;
+		char*! comment_end = feed;
+		//interleave with parser lexer to fill indent_level, comments and all
+		intptr_t! comment_indent_level = 0L;
+		intptr_t! current_indent_level = 0L;
+		for(;;) {
+			uint32_t! ch = uint32_t(uint8_t(feed[0L]));
+			ama::Node*+! nd;
+			// [ \t\r] \n "' / 0-9 A-Za-z_\u0080+
+			switch( g_char_lut[intptr_t(ch)] ) {
+				case CHAR_TYPE_SLASH: {
+					if( int(feed[1L]) == int('/') ) {
+						feed = ama::SkipChars(feed, g_not_newline);
+						comment_end = feed;
+						break;
+					} else if( int(feed[1L]) == int('*') ) {
+						intptr_t! lg = 2L;
+						for(;;) {
+							if( !feed[lg] ) {
+								break;
+							}
+							if( int(feed[lg]) == int('*') && int(feed[lg + 1L]) == int('/') ) {
+								lg += 2L;
+								break;
+							}
+							lg += 1L;
+						}
+						feed += lg;
+						comment_end = feed;
+						break;
+					} else {
+						`goto handle_symbol;`
+					}
+				}
+				case CHAR_TYPE_SYMBOL: {
+					`handle_symbol:`
+					intptr_t! lg = 1L;
+					for(intptr_t! i = intptr_t(n_symbol[ch]) - 1L; i >= 0L; i -= 1L) {
+						char[...]! sym_i = new char[+]!(symbol_array[p_symbol[ch] + i]);
+						if( memcmp(feed, sym_i.data(), sym_i.length) == 0 ) {
+							lg = sym_i.length;
 							break;
 						}
-						if( int(feed[lg]) == int('*') && int(feed[lg + 1L]) == int('/') ) {
-							lg += 2L;
+					}
+					nd = ama::CreateNode(ama::N_SYMBOL, NULL);
+					nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
+					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.data = new char[|]!(feed, lg);
+					*state_stack.back().p_nd_next = nd;
+					state_stack.back().p_nd_next = &nd.s;
+					feed += lg;
+					comment_indent_level = current_indent_level;
+					comment_begin = feed;
+					comment_end = feed;
+					break;
+				}
+				case CHAR_TYPE_OPENING: {
+					ama::Node*+! nd = ama::CreateNode(ama::N_RAW, NULL);
+					nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
+					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.flags = uint32_t(ch);
+					*state_stack.back().p_nd_next = nd;
+					state_stack.back().p_nd_next = &nd.s;
+					state_stack.push_back(
+						new ParserState!{
+							nd_parent: nd,
+							p_nd_next: &nd.c
+						}
+					);
+					feed += 1;
+					comment_indent_level = current_indent_level;
+					comment_begin = feed;
+					comment_end = feed;
+					break;
+				}
+				case CHAR_TYPE_CLOSING: {
+					if( state_stack.length > 1L ) {
+						ama::Node*+! nd = state_stack.back().nd_parent;
+						nd.comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+						nd.flags |= uint32_t(ch) << 8;
+						state_stack.pop_back();
+						feed += 1;
+						comment_indent_level = current_indent_level;
+						comment_begin = feed;
+						comment_end = feed;
+					} else {
+						`goto handle_symbol;`
+					}
+					break;
+				}
+				case CHAR_TYPE_BACKSLASH: {
+					if( feed[1L] == '\n' ) {
+						feed += 2;
+					} else if( feed[1L] == '\r' && feed[2L] == '\n' ) {
+						feed += 3;
+					} else {
+						feed += feed[1L] != '\0' ? 2L : 1L;
+					}
+					comment_end = feed;
+					break;
+				}
+				case CHAR_TYPE_SPACE: {
+					feed = ama::SkipChars(feed, g_spaces);
+					comment_end = feed;
+					break;
+				}
+				case CHAR_TYPE_IDENTIFIER: {
+					char*! feed0 = feed;
+					feed = ama::SkipChars(feed, g_identifier);
+					nd = ama::CreateNode(ama::N_REF, NULL);
+					nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
+					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.data = new char[|]!(feed0, feed - feed0);
+					*state_stack.back().p_nd_next = nd;
+					state_stack.back().p_nd_next = &nd.s;
+					comment_indent_level = current_indent_level;
+					comment_begin = feed;
+					comment_end = feed;
+					break;
+				}
+				case CHAR_TYPE_NUMBER: {
+					char*! feed0 = feed;
+					int! has_exponent = 0;
+					if( feed[0L] == '0' && feed[1L] == 'x' ) {
+						feed = ama::SkipChars(feed, g_hex_number);
+						has_exponent = ama::isInCharSet(g_p, uint32_t(feed[-1L]));
+					} else {
+						feed = ama::SkipChars(feed, g_number);
+						has_exponent = ama::isInCharSet(g_e, uint32_t(feed[-1L]));
+					}
+					if( (feed[0L] == '+' || feed[0L] == '-') && has_exponent ) {
+						//0.000e+00
+						feed += 1L;
+						feed = ama::SkipChars(feed, g_exponent);
+					}
+					nd = ama::CreateNode(ama::N_NUMBER, NULL);
+					nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
+					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.data = new char[|]!(feed0, feed - feed0);
+					*state_stack.back().p_nd_next = nd;
+					state_stack.back().p_nd_next = &nd.s;
+					comment_indent_level = current_indent_level;
+					comment_begin = feed;
+					comment_end = feed;
+					break;
+				}
+				case CHAR_TYPE_QUOTE: {
+					uint32_t! ch_closing = ch;
+					intptr_t! lg = 1L;
+					int! slash_counter = 0;
+					for(;;) {
+						uint8_t! ch_i = feed[lg];
+						if( ch_i == uint8_t(0) ) {
 							break;
 						}
 						lg += 1L;
+						if( int(ch_i) == int('\\') ) {
+							slash_counter ^= 1;
+						} else {
+							if( uint32_t(ch_i) == ch_closing && !(slash_counter & 1) ) {
+								break;
+							}
+							slash_counter = 0;
+						}
 					}
+					nd = ama::CreateNode(ama::N_STRING, NULL);
+					nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
+					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.data = new char[|]!(feed, lg);
+					*state_stack.back().p_nd_next = nd;
+					state_stack.back().p_nd_next = &nd.s;
 					feed += lg;
-					comment_end = feed;
-					break;
-				} else {
-					`goto handle_symbol;`
-				}
-			}
-			case CHAR_TYPE_SYMBOL: {
-				`handle_symbol:`
-				intptr_t! lg = 1L;
-				for(intptr_t! i = intptr_t(n_symbol[ch]) - 1L; i >= 0L; i -= 1L) {
-					char[...]! sym_i = new char[+]!(symbol_array[p_symbol[ch] + i]);
-					if( memcmp(feed, sym_i.data(), sym_i.length) == 0 ) {
-						lg = sym_i.length;
-						break;
-					}
-				}
-				nd = ama::CreateNode(ama::N_SYMBOL, NULL);
-				nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
-				nd.comments_before = new char[|]!(comment_begin, comment_end - comment_begin);
-				nd.data = new char[|]!(feed, lg);
-				*state_stack.back().p_nd_next = nd;
-				state_stack.back().p_nd_next = &nd.s;
-				feed += lg;
-				comment_begin = feed;
-				comment_end = feed;
-				break;
-			}
-			case CHAR_TYPE_OPENING: {
-				ama::Node*+! nd = ama::CreateNode(ama::N_RAW, NULL);
-				nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
-				nd.comments_before = new char[|]!(comment_begin, comment_end - comment_begin);
-				nd.flags = uint32_t(ch);
-				*state_stack.back().p_nd_next = nd;
-				state_stack.back().p_nd_next = &nd.s;
-				state_stack.push_back(
-					new ParserState!{
-						nd_parent: nd,
-						p_nd_next: &nd.c
-					}
-				);
-				feed += 1;
-				comment_begin = feed;
-				comment_end = feed;
-				break;
-			}
-			case CHAR_TYPE_CLOSING: {
-				if( state_stack.length > 1L ) {
-					ama::Node*+! nd = state_stack.back().nd_parent;
-					nd.comments_after = new char[|]!(comment_begin, comment_end - comment_begin);
-					nd.flags |= uint32_t(ch) << 8;
-					state_stack.pop_back();
-					feed += 1;
+					comment_indent_level = current_indent_level;
 					comment_begin = feed;
 					comment_end = feed;
-				} else {
-					`goto handle_symbol;`
+					break;
 				}
-				break;
-			}
-			case CHAR_TYPE_BACKSLASH: {
-				if( feed[1L] == '\n' ) {
-					feed += 2;
-				} else if( feed[1L] == '\r' && feed[2L] == '\n' ) {
-					feed += 3;
-				} else {
-					feed += feed[1L] != '\0' ? 2L : 1L;
-				}
-				comment_end = feed;
-				break;
-			}
-			case CHAR_TYPE_SPACE: {
-				feed = SkipChars(feed, g_spaces);
-				comment_end = feed;
-				break;
-			}
-			case CHAR_TYPE_IDENTIFIER: {
-				char*! feed0 = feed;
-				feed = SkipChars(feed, g_identifier);
-				nd = ama::CreateNode(ama::N_REF, NULL);
-				nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
-				nd.comments_before = new char[|]!(comment_begin, comment_end - comment_begin);
-				nd.data = new char[|]!(feed0, feed - feed0);
-				*state_stack.back().p_nd_next = nd;
-				state_stack.back().p_nd_next = &nd.s;
-				comment_begin = feed;
-				comment_end = feed;
-				break;
-			}
-			case CHAR_TYPE_NUMBER: {
-				char*! feed0 = feed;
-				int! has_exponent = 0;
-				if( feed[0L] == '0' && feed[1L] == 'x' ) {
-					feed = SkipChars(feed, g_hex_number);
-					has_exponent = ama::isInCharSet(g_p, uint32_t(feed[-1L]));
-				} else {
-					feed = SkipChars(feed, g_number);
-					has_exponent = ama::isInCharSet(g_e, uint32_t(feed[-1L]));
-				}
-				if( (feed[0L] == '+' || feed[0L] == '-') && has_exponent ) {
-					//0.000e+00
+				case CHAR_TYPE_NEWLINE: {
+					current_indent_level = 0L;
 					feed += 1L;
-					feed = SkipChars(feed, g_exponent);
-				}
-				nd = ama::CreateNode(ama::N_NUMBER, NULL);
-				nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
-				nd.comments_before = new char[|]!(comment_begin, comment_end - comment_begin);
-				nd.data = new char[|]!(feed0, feed - feed0);
-				*state_stack.back().p_nd_next = nd;
-				state_stack.back().p_nd_next = &nd.s;
-				comment_begin = feed;
-				comment_end = feed;
-				break;
-			}
-			case CHAR_TYPE_QUOTE: {
-				uint32_t! ch_closing = ch;
-				intptr_t! lg = 1L;
-				int! slash_counter = 0;
-				for(;;) {
-					uint8_t! ch_i = feed[lg];
-					if( ch_i == uint8_t(0) ) {
-						break;
-					}
-					lg += 1L;
-					if( int(ch_i) == int('\\') ) {
-						slash_counter ^= 1;
-					} else {
-						if( uint32_t(ch_i) == ch_closing && !(slash_counter & 1) ) {
-							break;
+					if( ama::isInCharSet(g_spaces, uint32_t(uint8_t(feed[0L]))) ) {
+						char*! feed0 = feed;
+						//feed = SkipChars(feed, g_spaces);
+						//a more mixing-friendly counting - tab_width
+						current_indent_level = 0;
+						while( ama::isInCharSet(g_spaces, uint32_t(uint8_t(feed[0L]))) ) {
+							if( feed[0L] == ' ' ) {
+								current_indent_level += 1L;
+							} else if( feed[0L] == '\t' ) {
+								current_indent_level /= tab_width;
+								current_indent_level += 1;
+								current_indent_level *= tab_width;
+							}
+							feed += 1;
 						}
-						slash_counter = 0;
 					}
+					comment_end = feed;
+					break;
 				}
-				nd = ama::CreateNode(ama::N_STRING, NULL);
-				nd.indent_level = ClampIndentLevel(current_indent_level - state_stack.back().nd_parent.indent_level);
-				nd.comments_before = new char[|]!(comment_begin, comment_end - comment_begin);
-				nd.data = new char[|]!(feed, lg);
-				*state_stack.back().p_nd_next = nd;
-				state_stack.back().p_nd_next = &nd.s;
-				feed += lg;
-				comment_begin = feed;
-				comment_end = feed;
-				break;
-			}
-			case CHAR_TYPE_NEWLINE: {
-				current_indent_level = 0L;
-				feed += 1L;
-				if( ama::isInCharSet(g_spaces, uint32_t(feed[0L])) ) {
-					char*! feed0 = feed;
-					feed = SkipChars(feed, g_spaces);
-					current_indent_level = feed - feed0;
+				case CHAR_TYPE_ZERO: {
+					ama::FillParents(NULL, nd_root);
+					return nd_root;
 				}
-				comment_end = feed;
-				break;
-			}
-			case CHAR_TYPE_ZERO: {
-				ama::FillParents(NULL, nd_root);
-				return nd_root;
 			}
 		}
 	}
-}
+};

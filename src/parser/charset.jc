@@ -2,11 +2,10 @@
 #include "./charset.jch"
 
 namespace ama {
-	intptr_t! SkipChars(uint8_t*! feed, uint32_t[...]! cset) {
-		mutable intptr_t! lg = 0L;
-		while( ama::isInCharSet(cset, uint32_t(feed[lg])) ) {
-			lg += 1L;
+	char*! SkipChars(char*! feed, uint32_t[...]! cset) {
+		while( ama::isInCharSet(cset, uint32_t(uint8_t(feed[0L]))) ) {
+			feed += 1;
 		}
-		return lg;
+		return feed;
 	}
 };

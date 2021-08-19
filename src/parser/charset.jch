@@ -61,5 +61,5 @@ namespace ama {
 			})));
 		});
 	}
-	intptr_t! SkipChars(uint8_t*! feed, uint32_t[...]! cset);
+	char*! SkipChars(char*! feed, uint32_t[...]! cset);
 };

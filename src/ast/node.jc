@@ -78,6 +78,9 @@ namespace ama {
 	ama::Node*+! CreateNode(uint8_t! node_class, ama::Node*+! child) {
 		ama::Node*+! ret = ama::AllocNode();
 		ret.node_class = node_class;
+		//non-NULL guarantee for comments
+		ret.comments_before = "";
+		ret.comments_after = "";
 		ret.c = child;
 		for(ama::Node*+! ndi = child; ndi; ndi = ndi.s) {
 			assert(ndi != ret);

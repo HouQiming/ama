@@ -1,0 +1,131 @@
+// //// JC version: 3
+#include <console.jch>
+#include <json.jch>
+#include '../ast/node.jch'
+#include '../script/jsenv.jch'
+#include '../parser/literal.jch'
+#include "../parser/charset.jch"
+#include './gen.jch'
+
+namespace ama {
+	private const uint32_t[+]! g_identifier = ama::CharSet('0-9A-Za-z_#-');
+	void! ama::CodeGenerator::GenerateDefault(ama::CodeGenerator*+! this, ama::Node*+! nd) {
+		switch( nd.node_class ) {
+			default: {
+				this.code.push(
+					'/* unsupported node class ', JSON.stringify(nd.node_class), ' */ ',
+					JSON.stringify(nd), ' /* with children */ ('
+				);
+				for(ama::Node*+! @nojson ndi = nd.c; ndi; ndi = ndi.s) {
+					this.Generate(ndi);
+					this.code.push(' ');
+				}
+				this.code.push(')');
+				break;
+			}
+			case ama::N_RAW: {
+				char! ch_opening = char(nd.flags & 0xff);
+				if( ch_opening ) {
+					this->code.push_back(ch_opening);
+				}
+				intptr_t! bk_indent = this.scope_indent_level;
+				this.scope_indent_level += nd.indent_level;
+				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+					if( ndi.node_class != ama::N_SYMBOL && !(ndi.node_class == ama::N_RAW && (ndi.flags & 0xffff) != 0) && 
+					this->code.length > 0 && ama::isInCharSet(g_identifier, uint8_t(this->code.back())) && !ndi.comments_before.length ) {
+						this->code.push(' ');
+					}
+					this->Generate(ndi);
+				}
+				this.in_new_line = 0;
+				this.GenerateComment(this.scope_indent_level, nd.comments_after);
+				this.scope_indent_level = bk_indent;
+				char! ch_closing = char(nd.flags >> 8 & 0xff);
+				if( ch_closing ) {
+					this->code.push_back(ch_closing);
+				}
+				break;
+			}
+			case ama::N_STRING: {
+				if( nd.flags & ama::LITERAL_PARSED ) {
+					if( nd.flags & ama::STRING_SINGLE_QUOTED ) {
+						this->code.push(ama::escapeJSString(nd.data));
+					} else {
+						this->code.push(JSON::stringify(nd.data));
+					}
+					break;
+				}
+			}
+			case ama::N_SYMBOL: case ama::N_REF: case ama::N_NUMBER: {
+				this->code.push(nd.data);
+				break;
+			}
+		}
+		//case N_NODEOF:
+		//case N_SCOPE:
+		//case N_RAW_DECLARATION:
+		//case N_FUNCTION:
+		//case N_CLASS:
+		//case N_DOT:
+		//case N_ITEM:
+	}
+	void! ama::CodeGenerator::GenerateComment(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {
+		if( comment.indexOf('\n') < 0 ) {
+			this.code.push(comment);
+			return;
+		}
+		for(char&! ch : comment) {
+			if( ch == '\n' ) {
+				this.in_new_line = int8_t(1);
+				this.current_indent_level = 0L;
+			} else if( this->in_new_line ) {
+				if( ch == ' ' ) {
+					this.current_indent_level += 1L;
+				} else if( ch == '\t' ) {
+					this.current_indent_level /= this.tab_width;
+					this.current_indent_level += 1;
+					this.current_indent_level *= this.tab_width;
+				} else {
+					this.in_new_line = int8_t(0);
+				}
+			}
+			this.code.push(ch);
+		}
+		if( this.in_new_line ) {
+			while( this.current_indent_level < expected_indent_level ) {
+				if( (this.current_indent_level % this.tab_width) == 0 && (this.current_indent_level + this.tab_width) <= expected_indent_level ) {
+					this.code.push_back('\t');
+					this.current_indent_level /= this.tab_width;
+					this.current_indent_level += 1;
+					this.current_indent_level *= this.tab_width;
+				} else {
+					this.code.push_back(' ');
+					this.current_indent_level += 1L;
+				}
+			}
+		}
+	}
+	void! ama::CodeGenerator::Generate(ama::CodeGenerator*+! this, ama::Node*+! nd) {
+		intptr_t! expected_indent_level = this.scope_indent_level + intptr_t(nd.indent_level);
+		//expected_indent_level should be normally redundant
+		this.GenerateComment(expected_indent_level, nd.comments_before);
+		this.GenerateDefault(nd);
+		//the "normal" content of a node should not contain newline
+		if( nd.node_class != ama::N_RAW ) {
+			this.in_new_line = 0;
+			this.GenerateComment(expected_indent_level, nd.comments_after);
+		}
+	}
+	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options) {
+		ama::CodeGenerator! ctx = new ama::CodeGenerator!();
+		ctx.tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
+		ctx.Generate(nd);
+		return <<ctx.code;
+	}
+	char[+]! ama::Node::toSource(ama::Node*+! this) {
+		JSValueConst! tmp_options = JS_NewObjectProto(ama::jsctx, JS_NULL);
+		char[+]! ret = GenerateCode(this, tmp_options);
+		JS_FreeValue(ama::jsctx, tmp_options);
+		return <<ret;
+	}
+};

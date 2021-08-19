@@ -1,4 +1,6 @@
 // //// JC version: 3
 #pragma add("jc_files", "./simppair.jc");
-int8_t! ClampIndentLevel(intptr_t! level);
-ama::Node*+! ParseSimplePairing(char*! feed, JSValueConst! options);
+
+namespace ama {
+	ama::Node*+! ParseSimplePairing(char*! feed, JSValueConst! options);
+};

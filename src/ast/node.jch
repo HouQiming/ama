@@ -47,11 +47,11 @@ namespace ama {
 		char[|]! comments_after;
 		/////////////
 		//child
-		Node*+! c;
+		Node*+! @nojson c;
 		//sibling
-		Node*+! s;
+		Node*+! @nojson s;
 		//parent
-		Node*+! p;
+		Node*+! @nojson p;
 		ama::TCloneResult! CloneEx(ama::Node*! this);
 		ama::Node*+! Clone(ama::Node*! this);
 		ama::Node*+! CloneList(ama::Node*! this);
@@ -69,6 +69,9 @@ namespace ama {
 		char[|]! GetStringValue(ama::Node*! this);
 		ama::Node*+! dot(ama::Node*+! this, char[|]! name);
 		void! FreeASTStorage(ama::Node*+! this);
+		/////////////
+		//src/codegen/gen.jc
+		char[+]! toSource(ama::Node*+! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
