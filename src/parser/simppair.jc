@@ -109,7 +109,7 @@ private char[|]! FormatComment(intptr_t! comment_indent_level, int32_t! tab_widt
 		tmp.push_back(ch);
 		if( ch == '\n' ) {
 			int! current_indent_level = 0;
-			while( ama::isInCharSet(g_spaces, uint32_t(uint8_t(s[1L]))) ) {
+			while( s != comment_end && ama::isInCharSet(g_spaces, uint32_t(uint8_t(s[1L]))) ) {
 				if( s[1L] == ' ' ) {
 					current_indent_level += 1L;
 				} else if( s[1L] == '\t' ) {
@@ -127,6 +127,14 @@ private char[|]! FormatComment(intptr_t! comment_indent_level, int32_t! tab_widt
 				tmp.push_back(' ');
 			}
 		}
+	}
+	size_t! n = tmp.length;
+	while( n > 0L && (tmp[n - 1] == ' ' || tmp[n - 1] == '\t') ) {
+		n -= 1;
+	}
+	if( n > 0L && tmp[n - 1] == '\n' ) {
+		//drop trailing indent
+		tmp.resize(n);
 	}
 	return new char[|]!(tmp);
 }

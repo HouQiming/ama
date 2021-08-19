@@ -46,6 +46,18 @@ namespace ama {
 				}
 				break;
 			}
+			case ama::N_SCOPE: {
+				this->code.push_back('{');
+				intptr_t! bk_indent = this.scope_indent_level;
+				this.scope_indent_level += nd.indent_level;
+				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+					this->Generate(ndi);
+				}
+				this.GenerateComment(this.scope_indent_level, nd.comments_after);
+				this.scope_indent_level = bk_indent;
+				this->code.push_back('}');
+				break;
+			}
 			case ama::N_STRING: {
 				if( nd.flags & ama::LITERAL_PARSED ) {
 					if( nd.flags & ama::STRING_SINGLE_QUOTED ) {
@@ -62,7 +74,6 @@ namespace ama {
 			}
 		}
 		//case N_NODEOF:
-		//case N_SCOPE:
 		//case N_RAW_DECLARATION:
 		//case N_FUNCTION:
 		//case N_CLASS:
@@ -111,7 +122,7 @@ namespace ama {
 		this.GenerateComment(expected_indent_level, nd.comments_before);
 		this.GenerateDefault(nd);
 		//the "normal" content of a node should not contain newline
-		if( nd.node_class != ama::N_RAW ) {
+		if( nd.node_class != ama::N_RAW && nd.node_class != ama::N_SCOPE ) {
 			this.in_new_line = 0;
 			this.GenerateComment(expected_indent_level, nd.comments_after);
 		}

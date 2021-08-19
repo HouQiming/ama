@@ -411,3 +411,129 @@ void! ama::Node::FreeASTStorage(ama::Node*+! this) {
 	this.s = g_free_nodes;
 	g_free_nodes = this;
 }
+
+/////////////////////////
+char[|]! ama::Node::GetName(ama::Node*! this) {
+	mutable ama::Node*! nd = this;
+	if( !nd ) {
+		return NULL;
+	}
+	//} else if( int(this.node_class) == ama::N_FUNCTION ) {
+	//	if( this.p != NULL && this == this.p.c.s && int(this.p.node_class) == ama::N_DECLARATION ) {
+	//		return this.p.c.data;
+	//	}
+	//	if( this.p != NULL && this == this.p.c.s && int(this.p.node_class) == ama::N_ASSIGNMENT && this.p.c.node_class == ama::N_DOT ) {
+	//		return this.p.c.data;
+	//	}
+	//} else if( int(this.node_class) == ama::N_CLASS || int(this.node_class) == ama::N_SET_FIELD || 
+	//int(this.node_class) == ama::N_PRAGMA || int(this.node_class) == ama::N_DECLARATION || 
+	//int(this.node_class) == ama::N_EXTERN || int(this.node_class) == ama::N_EXTERN_VAR ) {
+	//	return this.c.data;
+	//} else if( int(this.node_class) == ama::N_INCLUDE ) {
+	//	return this.c.GetStringValue();
+	if( int(this.node_class) == ama::N_CALL ) /*|| int(this.node_class) == ama::N_CALL_TEMPLATE || int(this.node_class) == ama::N_CUSTOM*/ {
+		return this.c.data;
+	} else if( int(this.node_class) == ama::N_ASSIGNMENT ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
+		return this.c.GetName();
+	} else if( int(this.node_class) == ama::N_STRING ) {
+		ama::Node*+! nd_hack = (ama::Node*+)(this);
+		return nd_hack.GetStringValue();
+	} else {
+		return this.data;
+	}
+}
+
+private const int32_t! ROOT_FLAG = 0x80000000;
+
+private ama::Node*+! dfsFind(ama::Node*+! nd, ama::Node*+! nd_before, int32_t! boundary, int! node_class, char[|]! data, ama::Node*+[+]&+! ret, int! first_only) {
+	if( nd == nd_before ) {
+		//returning non-NULL terminates the search
+		return nd_before;
+	}
+	int32_t! my_boundary = ama::BOUNDARY_ONE_LEVEL;
+	if( int(nd.node_class) == node_class || node_class == ama::N_NONE ) {
+		int! matched = 1;
+		if( data != NULL ) {
+			matched = nd.GetName() == data;
+		}
+		//matched
+		if( matched ) {
+			if( !first_only ) {
+				ret.push_back(nd);
+				my_boundary |= ama::BOUNDARY_MATCH;
+			} else {
+				return nd;
+			}
+		}
+	}
+	//don't test boundary on root
+	//allow the boundary itself to match
+	//tests for ROOT_FLAG
+	if( boundary > 0 ) {
+		//if( int(nd.node_class) == ama::N_FUNCTION ) {
+		//	my_boundary |= ama::BOUNDARY_FUNCTION;
+		//} else if( int(nd.node_class) == ama::N_CLASS ) {
+		//	my_boundary |= ama::BOUNDARY_CLASS;
+		//} else if( int(nd.node_class) == ama::N_C_FOR || int(nd.node_class) == ama::N_JC_FOR_IN || int(nd.node_class) == ama::N_DO || int(nd.node_class) == ama::N_WHILE || int(nd.node_class) == ama::N_JC_RANGE_FOR ) {
+		//	my_boundary |= ama::BOUNDARY_LOOP;
+		//} else if( int(nd.node_class) == ama::N_SWITCH ) {
+		//	my_boundary |= ama::BOUNDARY_SWITCH;
+		//} else if( int(nd.node_class) == ama::N_MACRO_DECL ) {
+		//	my_boundary |= ama::BOUNDARY_MACRO_DECL;
+		//} else 
+		// && !(nd.p && int(nd.p.node_class) == ama::N_STATIC_IF)
+		if( int(nd.node_class) == ama::N_NODEOF ) {
+			my_boundary |= ama::BOUNDARY_NODEOF;
+		} else if( int(nd.node_class) == ama::N_SCOPE ) {
+			my_boundary |= ama::BOUNDARY_SCOPE;
+		} else if( int(nd.node_class) == ama::N_CALL && nd.p && nd.p.node_class == ama::N_RAW_DECLARATION ) {
+			//TODO: dedicated prototype node class
+			my_boundary |= ama::BOUNDARY_PROTOTYPE;
+		}
+		if( boundary & my_boundary ) {
+			return NULL;
+		}
+	}
+	for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+		assert(ndi != nd);
+		//console.log(nd.node_class, ndi.node_class);
+		//if ndi.s == ndi: {
+		//	for (Node* ndii = ndi; ndii; ndii = ndii.p) {
+		//		console.log(ndii.node_class);
+		//	}
+		//	assert(0);
+		//}
+		const ama::Node*+! nd_found = dfsFind(ndi, nd_before, boundary & ~ROOT_FLAG, node_class, data, ret, first_only);
+		if( nd_found ) {
+			return nd_found;
+		}
+	}
+	return NULL;
+}
+
+ama::Node*+! ama::Node::Find(ama::Node*! this, int! node_class, char[|]! data) {
+	const ama::Node*+[+]! ret = new ama::Node*+[+]!();
+	return dfsFind((ama::Node*+)(this), NULL, 0, node_class, data, ret, 1);
+}
+
+ama::Node*+[+]! ama::Node::FindAll(ama::Node*! this, int! node_class, char[|]! data) {
+	const ama::Node*+[+]! ret = new ama::Node*+[+]!();
+	dfsFind((ama::Node*+)(this), NULL, ama::BOUNDARY_DEFAULT | ROOT_FLAG, node_class, data, ret, 0);
+	return <<ret;
+}
+
+ama::Node*+[+]! ama::Node::FindAllWithin(ama::Node*! this, int32_t! boundary, int! node_class, char[|]! data) {
+	const ama::Node*+[+]! ret = new ama::Node*+[+]!();
+	dfsFind((ama::Node*+)(this), NULL, boundary | ROOT_FLAG, node_class, data, ret, 0);
+	return <<ret;
+}
+
+ama::Node*+[+]! ama::Node::FindAllBefore(ama::Node*! this, ama::Node*! nd_before, int32_t! boundary, int! node_class, char[|]! data) {
+	const ama::Node*+[+]! ret = new ama::Node*+[+]!();
+	dfsFind((ama::Node*+)(this), (ama::Node*+)(nd_before), boundary | ROOT_FLAG, node_class, data, ret, 0);
+	return <<ret;
+}
+
+int! ama::Node::isRawNode(ama::Node*! this, char! ch_open, char! ch_close) {
+	return this.node_class == ama::N_RAW && (this.flags & 0xffff) == (int32_t(ch_open) | int32_t(ch_close) << 8);
+}

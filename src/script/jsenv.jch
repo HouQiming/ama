@@ -47,4 +47,20 @@ namespace ama {
 		return (ama::Node*+)(JS_GetOpaque(val, g_node_classid));
 	}
 	JSValueConst! WrapNode(ama::Node*! nd);
+	inline JSValueConst! WrapNodeArray(ama::Node*+[...]! nds) {
+		JSValueConst! ret = JS_NewArray(jsctx);
+		for(intptr_t! i = 0L; i < intptr_t(nds.length); i += 1) {
+			JS_SetPropertyUint32(jsctx, ret, uint32_t(uintptr_t(i)), ama::WrapNode(nds[i]));
+		}
+		return ret;
+	}
+	inline ama::Node*+[+]! UnwrapNodeArray(JSValueConst! val) {
+		mutable int64_t! lg = 0LL;
+		JS_ToInt64(jsctx, &lg, JS_GetPropertyStr(jsctx, val, 'length'));
+		ama::Node*+[+]! ret = new ama::Node*+[+]!(intptr_t(lg));
+		for(intptr_t! i = 0L; i < intptr_t(lg); i += 1) {
+			ret[i] = UnwrapNode(JS_GetPropertyUint32(jsctx, val, uint32_t(uintptr_t(i))));
+		}
+		return <<ret;
+	}
 };

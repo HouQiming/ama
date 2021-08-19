@@ -8,6 +8,7 @@
 #include "../ast/node.jch"
 #include "../codegen/gen.jch"
 #include "../parser/simppair.jch"
+#include "../parser/scoping.jch"
 #include "./jsenv.jch"
 #include "./jsapi.jch"
 
@@ -427,7 +428,9 @@ namespace ama {
 			options = argv[1];
 		}
 		char*! file_data = (char*)(JSON.parse<uintptr_t>(ama::UnwrapString(func_data[0])));
-		return ama::WrapNode(ama::ParseSimplePairing(file_data, options));
+		ama::Node*+! nd_root = ama::ParseSimplePairing(file_data, options);
+		nd_root = ama::DelimitCLikeStatements(nd_root);
+		return ama::WrapNode(nd_root);
 	}
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data) {
 		char![+]! s_fixed_code = '(function(__filename,__dirname,ParseCurrentFile){let require=__require.bind(null,__filename);' + script + '\n})\n';

@@ -1,0 +1,80 @@
+// //// JC version: 3
+#include '../ast/node.jch'
+#include './scoping.jch'
+
+namespace ama {
+	void! ConvertToScope(ama::Node*+! nd_raw) {
+		nd_raw.node_class = ama::N_SCOPE;
+		nd_raw.flags = 0;
+	}
+	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root) {
+		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			//if( RawNodeIs(nd_raw,'{','}')) { continue; }
+			ama::Node*+[+]! new_children = new ama::Node*+[+]!();
+			ama::Node*+! ndi = nd_raw.c;
+			new_children.push_back(ndi);
+			char! changed = 0;
+			int! after_cpp_macro = 0;
+			while( ndi ) {
+				ama::Node*+! ndi_next = ndi.s;
+				if( ndi.node_class == ama::N_SYMBOL && ndi.data == ";" ) {
+					//after_cpp_macro=0
+					changed = ';';
+					ndi.s = NULL;
+					if( ndi_next ) {
+						new_children.push_back(ndi_next);
+					}
+				} else if( ndi.isRawNode('{', '}') ) {
+					if( ndi.s && ndi.s.node_class == ama::N_REF && (ndi.s.data == 'else' || ndi.s.data == 'catch' || ndi.s.data == 'finally') ) {
+						ndi = ndi_next;
+						continue;
+					}
+					//after_cpp_macro=0
+					changed = ';';
+					ndi.s = NULL;
+					if( ndi_next ) {
+						new_children.push_back(ndi_next);
+					}
+				} else if( ndi.node_class == ama::N_REF && ndi.data.startsWith('#') ) {
+					after_cpp_macro = 1;
+				}
+				if( after_cpp_macro && ndi.s != NULL && ndi.s.comments_before.indexOf('\n') >= 0 ) {
+					after_cpp_macro = 0;
+					changed = ';';
+					ndi.s = NULL;
+					if( ndi_next ) {
+						new_children.push_back(ndi_next);
+					}
+				}
+				//COULDDO: case:, default:
+				ndi = ndi_next;
+			}
+			if( !changed ) {
+				ndi = nd_raw.c;
+				while( ndi ) {
+					ama::Node*+! ndi_next = ndi.s;
+					if( ndi.node_class == ama::N_SYMBOL && ndi.data == "," ) {
+						//after_cpp_macro=0
+						changed = ',';
+						ndi.s = NULL;
+						if( ndi_next ) {
+							new_children.push_back(ndi_next);
+						}
+					}
+					ndi = ndi_next;
+				}
+			}
+			if( changed || (!nd_raw.isRawNode('{', '}') && nd_raw.c && nd_raw.c.s) ) {
+				for(int! i = 0; i < new_children.length; i += 1) {
+					new_children[i] = ama::CreateNode(ama::N_RAW, new_children[i]);
+					new_children[i].p = nd_raw;
+				}
+				nd_raw.c = ama::InsertMany(new_children);
+			}
+			if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
+				ConvertToScope(nd_raw);
+			}
+		}
+		return nd_root;
+	}
+};

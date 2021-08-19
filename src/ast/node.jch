@@ -19,6 +19,8 @@ namespace ama {
 	const uint8_t! N_CLASS = 10;
 	const uint8_t! N_DOT = 11;
 	const uint8_t! N_ITEM = 12;
+	const uint8_t! N_CALL = 13;
+	const uint8_t! N_ASSIGNMENT = 14;
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;
 	/////////////////
@@ -33,6 +35,20 @@ namespace ama {
 	const int! POS_FRONT = 2;
 	const int! POS_BACK = 3;
 	const int! POS_REPLACE = 4;
+	/////////////////
+	const int32_t! BOUNDARY_FUNCTION = 1;
+	const int32_t! BOUNDARY_CLASS = 2;
+	const int32_t! BOUNDARY_LOOP = 4;
+	const int32_t! BOUNDARY_SWITCH = 8;
+	//we no longer have macro decls
+	//const int32_t! BOUNDARY_MACRO_DECL = 16;
+	const int32_t! BOUNDARY_NODEOF = 32;
+	const int32_t! BOUNDARY_SCOPE = 64;
+	const int32_t! BOUNDARY_MATCH = 128;
+	const int32_t! BOUNDARY_ONE_LEVEL = 256;
+	const int32_t! BOUNDARY_PROTOTYPE = 512;
+	const int32_t! BOUNDARY_ANY = 0x7fffffff;
+	const int32_t! BOUNDARY_DEFAULT = BOUNDARY_NODEOF;
 	//we don't track original code locations, just report errors into the generated code using #error and stuff
 	//try to fit into a 64 byte cacheline
 	class Node {
@@ -72,10 +88,28 @@ namespace ama {
 		/////////////
 		//src/codegen/gen.jc
 		char[+]! toSource(ama::Node*+! this);
+		ama::Node*+! Find(ama::Node*! this, int! node_class, char[|]! data);
+		ama::Node*+[+]! FindAll(ama::Node*! this, int! node_class, char[|]! data);
+		ama::Node*+[+]! FindAllWithin(ama::Node*! this, int32_t! boundary, int! node_class, char[|]! data);
+		ama::Node*+[+]! FindAllBefore(ama::Node*! this, ama::Node*! nd_before, int32_t! boundary, int! node_class, char[|]! data);
+		int! isRawNode(ama::Node*! this, char! ch_open, char! ch_close);
+		char[|]! GetName(ama::Node*! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
 	int! isValidNodePointer(ama::Node*! nd_tentative);
 	ama::Node*+! CreateNode(uint8_t! node_class, ama::Node*+! child);
 	ama::Node*+! FillParents(ama::Node*+! nd_parent, ama::Node*+! nd);
+	inline ama::Node*+! cons(ama::Node*+! a, ama::Node*+! b) {
+		assert(a != b);
+		a.s = b;
+		return a;
+	}
+	inline ama::Node*+! InsertMany(ama::Node*+[...]! children) {
+		ama::Node*+! nd = NULL;
+		for(intptr_t! I = children.length - 1L; I >= 0L; I -= 1L) {
+			nd = cons(children[I], nd);
+		}
+		return nd;
+	}
 };
