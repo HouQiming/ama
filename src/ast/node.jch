@@ -26,6 +26,9 @@ namespace ama {
 	/////////////////
 	const uint32_t! LITERAL_PARSED = 1u;
 	const uint32_t! STRING_SINGLE_QUOTED = 2u;
+	const uint32_t! DOT_PTR = 1u;
+	const uint32_t! DOT_CLASS = 2u;
+	/////////////////
 	class TCloneResult {
 		Node*+! nd;
 		std::unordered_map<Node*, Node*+>! mapping;
@@ -68,6 +71,21 @@ namespace ama {
 		Node*+! @nojson s;
 		//parent
 		Node*+! @nojson p;
+		/////////////
+		inline! auto forEach(Node*! this, any loop_body) {
+			for(ama::Node*+! ndi = this->c; ndi; ndi = ndi.s) {
+				loop_body(ndi);
+			}
+		}
+		inline ama::Node*+! setFlags(ama::Node*+! this, int! flags) {
+			this->flags = flags;
+			return this;
+		}
+		inline ama::Node*+! setCommentsBefore(ama::Node*+! this, char[|]! comments) {
+			this.comments_before = this->comments_before;
+			return this;
+		}
+		/////////////
 		ama::TCloneResult! CloneEx(ama::Node*! this);
 		ama::Node*+! Clone(ama::Node*! this);
 		ama::Node*+! CloneList(ama::Node*! this);
@@ -94,6 +112,7 @@ namespace ama {
 		ama::Node*+[+]! FindAllBefore(ama::Node*! this, ama::Node*! nd_before, int32_t! boundary, int! node_class, char[|]! data);
 		int! isRawNode(ama::Node*! this, char! ch_open, char! ch_close);
 		char[|]! GetName(ama::Node*! this);
+		int! hasBrackets(ama::Node*! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
@@ -111,5 +130,18 @@ namespace ama {
 			nd = cons(children[I], nd);
 		}
 		return nd;
+	}
+	///////////////
+	inline ama::Node*+! GetPlaceHolder() {
+		assert(!g_placeholder.p);
+		assert(!g_placeholder.s);
+		g_placeholder.comments_before = '';
+		g_placeholder.comments_after = '';
+		return g_placeholder;
+	}
+	ama::Node*+! CreateNodeFromChildren(uint8_t! node_class, ama::Node*+[...]! children);
+	///////////////
+	macro nRawDeclaration() = function(auto my_call, ...args):auto {
+		return require("./v3macros.js").ASTConstructor(my_call, args, "N_RAW_DECLARATION");
 	}
 };

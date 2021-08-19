@@ -50,6 +50,7 @@ namespace ama {
 	}
 	private TMemoryPool! g_node_pool = new TMemoryPool!();
 	private ama::Node*+! g_free_nodes = NULL;
+	private char[|]! g_empty_comment = "";
 	ama::Node*+! AllocNode() {
 		ama::Node*+! ret = NULL;
 		if( g_free_nodes ) {
@@ -60,6 +61,9 @@ namespace ama {
 			ret = (ama::Node*+)(poolAlloc(&g_node_pool, sizeof(ama::Node)));
 		}
 		ret.tmp_flags = ama::TMPF_IS_NODE;
+		//non-NULL guarantee for comments
+		ret.comments_before = g_empty_comment;
+		ret.comments_after = g_empty_comment;
 		return ret;
 	}
 	ama::Node*+! g_placeholder = AllocNode();
@@ -78,15 +82,21 @@ namespace ama {
 	ama::Node*+! CreateNode(uint8_t! node_class, ama::Node*+! child) {
 		ama::Node*+! ret = ama::AllocNode();
 		ret.node_class = node_class;
-		//non-NULL guarantee for comments
-		ret.comments_before = "";
-		ret.comments_after = "";
 		ret.c = child;
 		for(ama::Node*+! ndi = child; ndi; ndi = ndi.s) {
 			assert(ndi != ret);
 			ndi.p = ret;
 		}
 		return ret;
+	}
+	ama::Node*+! CreateNodeFromChildren(uint8_t! node_class, ama::Node*+[...]! children) {
+		ama::Node*+! nd = AllocNode();
+		nd.node_class = node_class;
+		for(intptr_t! I = children.length - 1L; I >= 0L; I -= 1L) {
+			nd.c = ama::cons(children[I], nd.c);
+			children[I].p = nd;
+		}
+		return nd;
 	}
 	ama::Node*+! FillParents(ama::Node*+! nd_parent, ama::Node*+! nd) {
 		nd.p = nd_parent;
@@ -222,10 +232,10 @@ ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new)
 		nd_tail = nd_tail.s;
 	}
 	if( pos == ama::POS_REPLACE ) {
-		if( this.comments_before != NULL && nd_new.comments_before == NULL ) {
+		if( this.comments_before != '' && nd_new.comments_before == '' ) {
 			nd_new.comments_before = this.comments_before;
 		}
-		if( this.comments_after != NULL && nd_new.comments_after == NULL ) {
+		if( this.comments_after != '' && nd_new.comments_after == '' ) {
 			nd_new.comments_after = this.comments_after;
 		}
 	}
@@ -536,4 +546,8 @@ ama::Node*+[+]! ama::Node::FindAllBefore(ama::Node*! this, ama::Node*! nd_before
 
 int! ama::Node::isRawNode(ama::Node*! this, char! ch_open, char! ch_close) {
 	return this.node_class == ama::N_RAW && (this.flags & 0xffff) == (int32_t(ch_open) | int32_t(ch_close) << 8);
+}
+
+int! ama::Node::hasBrackets(ama::Node*! this) {
+	return this.node_class == ama::N_RAW || this.node_class == ama::N_SCOPE || this.node_class == ama::N_CALL;
 }

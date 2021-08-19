@@ -9,7 +9,6 @@ namespace ama {
 	}
 	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root) {
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
-			//if( RawNodeIs(nd_raw,'{','}')) { continue; }
 			ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 			ama::Node*+! ndi = nd_raw.c;
 			new_children.push_back(ndi);

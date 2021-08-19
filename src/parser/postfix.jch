@@ -1,0 +1,6 @@
+// //// JC version: 3
+#pragma add("jc_files", "./postfix.jc");
+
+namespace ama {
+	ama::Node*+! ParsePostfix(ama::Node*+! nd_root);
+};
