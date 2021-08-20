@@ -34,7 +34,9 @@ namespace ama {
 					this->code.push_back(ch_opening);
 				}
 				intptr_t! bk_indent = this.scope_indent_level;
-				this.scope_indent_level += nd.indent_level;
+				if( nd.flags & 0xffff ) {
+					this.scope_indent_level += nd.indent_level;
+				}
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					//if( ndi.node_class != ama::N_SYMBOL && !(ndi.node_class == ama::N_RAW && (ndi.flags & 0xffff) != 0) && 
 					//this->code.length > 0 && ama::isInCharSet(g_identifier, uint8_t(this->code.back())) && !ndi.comments_before.length ) {

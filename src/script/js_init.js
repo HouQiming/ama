@@ -43,6 +43,7 @@ Node.toJSON=function(){
 		"[node_class]":__node_class_names[this.node_class],
 		data:this.data||undefined,
 		flags:this.flags||undefined,
+		indent_level:this.indent_level||undefined,
 		comments_before:this.comments_before||undefined,
 		comments_after:this.comments_after||undefined,
 		"[children]":children,

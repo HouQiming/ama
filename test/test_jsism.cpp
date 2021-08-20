@@ -2,7 +2,10 @@
 
 /*
 @ama
-ParseCurrentFile()
+let nd_root=ParseCurrentFile();
+//console.log(JSON.stringify(nd_root,null,2))
+//console.log(nd_root.toSource())
+nd_root
 	.then(require('jsism').EnableConsole)
 	.InsertCommentBefore('//ama output\n')
 	.Save('.audit.cpp')

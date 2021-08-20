@@ -3,4 +3,5 @@
 
 namespace ama {
 	ama::Node*+! CleanupDummyRaws(ama::Node*+! nd_root);
+	ama::Node*+! SanitizeCommentPlacement(ama::Node*+! nd_root);
 };

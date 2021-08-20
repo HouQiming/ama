@@ -1,4 +1,6 @@
 // //// JC version: 3
+#include <console.jch>
+#include <json.jch>
 #include '../ast/node.jch'
 #include './cleanup.jch'
 
@@ -12,6 +14,26 @@ namespace ama {
 				nd_raw.ReplaceWith(nd_raw.c);
 			}
 		}
+		return nd_root;
+	}
+	private void! dfsPullComment(ama::Node*+! nd) {
+		for(ama::Node*+! ndi : nd) {
+			dfsPullComment(ndi);
+		}
+		if( nd.c && 
+		(nd.node_class == ama::N_CALL || nd.node_class == ama::N_BINOP || 
+		nd.node_class == ama::N_DOT || nd.node_class == ama::N_ITEM || 
+		(nd.node_class == ama::N_RAW && (nd.flags & 0xffff) == 0)) ) {
+			if( nd.c.comments_before.length ) {
+				nd.comments_before = new char[|]!(nd.comments_before + nd.c.comments_before);
+				nd.c.comments_before = '';
+			}
+		}
+	}
+	ama::Node*+! SanitizeCommentPlacement(ama::Node*+! nd_root) {
+		//COULDDO: make \n a trailing comment for statements: what about the first line in a scope?
+		//pull comments_before out from nd.c for "headless" nodes
+		dfsPullComment(nd_root);
 		return nd_root;
 	}
 };

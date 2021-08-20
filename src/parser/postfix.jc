@@ -107,8 +107,11 @@ namespace ama {
 						}
 						new_children.push_back(ndj);
 					}
+					ama::Node*+! ndi_old = ndi;
 					ndi = ama::CreateNodeFromChildren(ama::N_CALL, new_children);
 					ndi.comments_after = ndi_next.comments_after;
+					ndi.indent_level = ndi_old.indent_level;
+					//ndi_old.indent_level=0;
 					ndi.p = nd_raw;
 					ndi.s = ndi_next_next;
 					*p_self = ndi;

@@ -65,7 +65,9 @@ namespace ama {
 			}
 			if( changed || (!nd_raw.isRawNode('{', '}') && nd_raw.c && nd_raw.c.s) ) {
 				for(int! i = 0; i < new_children.length; i += 1) {
-					new_children[i] = ama::CreateNode(ama::N_RAW, new_children[i]);
+					ama::Node*+! nd_inner = new_children[i];
+					new_children[i] = ama::CreateNode(ama::N_RAW, nd_inner);
+					new_children[i].indent_level = nd_inner.indent_level;
 					new_children[i].p = nd_raw;
 				}
 				nd_raw.c = ama::InsertMany(new_children);

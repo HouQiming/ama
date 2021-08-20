@@ -241,6 +241,7 @@ ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new)
 		if( this.comments_after != '' && nd_new.comments_after == '' ) {
 			nd_new.comments_after = this.comments_after;
 		}
+		nd_new.indent_level = this.indent_level;
 	}
 	//if( nd_new_parent ) {
 	//	nd_new_parent.tmp_flags &= ~SYSF_NONJC_UNTOUCHED;
@@ -388,6 +389,9 @@ char[|]! ama::Node::GetStringValue(ama::Node*! this) {
 ama::Node*+! ama::Node::dot(ama::Node*+! this, char[|]! name) {
 	ama::Node*+! nd_ret = ama::CreateNode(ama::N_DOT, this);
 	nd_ret.data = name;
+	nd_ret.indent_level = this.indent_level;
+	nd_ret.comments_before = this.comments_before;
+	this.comments_before = '';
 	return nd_ret;
 }
 
