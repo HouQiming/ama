@@ -42,6 +42,7 @@ jsism.EnableConsole=function(nd_root,options){
 	let console_uses=nd_root.FindAll(N_CALL,null).filter(nd_call=>{
 		return nd_call.c.node_class==N_DOT&&nd_call.c.c.node_class==N_REF&&nd_call.c.c.data=='console'&&console_method_to_options[nd_call.c.data];
 	});
+	//console.log(nd_root.FindAll(N_CALL,null))
 	if(!console_uses.length){
 		return;
 	}

@@ -2,7 +2,7 @@
 
 /*
 @ama
-ParseCurrentFile().then(require('jsism').EnableConsole).Save('.audit.cpp')
+ParseCurrentFile().then(require('jsism').EnableConsole).InsertCommentBefore('//ama output\n').Save('.audit.cpp')
 */
 
 int main(){

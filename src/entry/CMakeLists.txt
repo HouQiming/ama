@@ -189,7 +189,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jc
   MAIN_DEPENDENCY ../ast/node.jc
-  DEPENDS ../parser/literal.jch ../ast/node.jch
+  DEPENDS ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ../parser/literal.jch ../ast/node.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(

@@ -96,6 +96,12 @@ namespace ama {
 				this.scope_indent_level += nd.indent_level;
 				for(ama::Node*+! ndi = nd.c.s; ndi; ndi = ndi.s) {
 					this->Generate(ndi);
+					if( ndi.s ) {
+						this->code.push_back(',');
+						if( !ndi.s.comments_before.startsWith('\n') ) {
+							this->code.push_back(' ');
+						}
+					}
 				}
 				this.GenerateComment(this.scope_indent_level, nd.comments_after);
 				this.scope_indent_level = bk_indent;
@@ -185,9 +191,9 @@ namespace ama {
 		ctx.Generate(nd);
 		return <<ctx.code;
 	}
-	char[+]! ama::Node::toSource(ama::Node*+! this) {
+	char[+]! ama::Node::toSource(ama::Node*! this) {
 		JSValueConst! tmp_options = JS_NewObjectProto(ama::jsctx, JS_NULL);
-		char[+]! ret = GenerateCode(this, tmp_options);
+		char[+]! ret = GenerateCode((ama::Node*+)(this), tmp_options);
 		JS_FreeValue(ama::jsctx, tmp_options);
 		return <<ret;
 	}
