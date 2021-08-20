@@ -20,7 +20,9 @@ namespace ama {
 	const uint8_t! N_DOT = 11;
 	const uint8_t! N_ITEM = 12;
 	const uint8_t! N_CALL = 13;
-	const uint8_t! N_ASSIGNMENT = 14;
+	const uint8_t! N_DEPENDENCY = 14;
+	const uint8_t! N_ASSIGNMENT = 15;
+	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;
 	/////////////////
@@ -28,6 +30,10 @@ namespace ama {
 	const uint32_t! STRING_SINGLE_QUOTED = 2u;
 	const uint32_t! DOT_PTR = 1u;
 	const uint32_t! DOT_CLASS = 2u;
+	const uint32_t! DEP_C_INCLUDE = 0u;
+	const uint32_t! DEP_JS_REQUIRE = 1u;
+	const uint32_t! DEP_TYPE_MASK = 31u;
+	const uint32_t! DEPF_C_INCLUDE_NONSTR = 32u;
 	/////////////////
 	class TCloneResult {
 		Node*+! nd;
@@ -77,12 +83,20 @@ namespace ama {
 				loop_body(ndi);
 			}
 		}
+		inline ama::Node*+! setData(ama::Node*+! this, char[|]! data) {
+			this->data = data;
+			return this;
+		}
 		inline ama::Node*+! setFlags(ama::Node*+! this, int! flags) {
 			this->flags = flags;
 			return this;
 		}
 		inline ama::Node*+! setCommentsBefore(ama::Node*+! this, char[|]! comments) {
 			this.comments_before = this->comments_before;
+			return this;
+		}
+		inline ama::Node*+! setCommentsAfter(ama::Node*+! this, char[|]! comments) {
+			this.comments_after = this->comments_after;
 			return this;
 		}
 		/////////////
@@ -103,9 +117,6 @@ namespace ama {
 		char[|]! GetStringValue(ama::Node*! this);
 		ama::Node*+! dot(ama::Node*+! this, char[|]! name);
 		void! FreeASTStorage(ama::Node*+! this);
-		/////////////
-		//src/codegen/gen.jc
-		char[+]! toSource(ama::Node*+! this);
 		ama::Node*+! Find(ama::Node*! this, int! node_class, char[|]! data);
 		ama::Node*+[+]! FindAll(ama::Node*! this, int! node_class, char[|]! data);
 		ama::Node*+[+]! FindAllWithin(ama::Node*! this, int32_t! boundary, int! node_class, char[|]! data);
@@ -113,6 +124,11 @@ namespace ama {
 		int! isRawNode(ama::Node*! this, char! ch_open, char! ch_close);
 		char[|]! GetName(ama::Node*! this);
 		int! hasBrackets(ama::Node*! this);
+		/////////////
+		//src/codegen/gen.jc
+		char[+]! toSource(ama::Node*+! this);
+		int! isMethodCall(ama::Node*! this, char[|]! name);
+		ama::Node*+! InsertDependency(ama::Node*+! this, uint32_t! flags, char[|]! name);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
@@ -131,6 +147,15 @@ namespace ama {
 		}
 		return nd;
 	}
+	inline ama::Node*+! nString(char[|]! s) {
+		return ama::CreateNode(N_STRING, NULL).setFlags(ama::LITERAL_PARSED).setData(s);
+	}
+	inline ama::Node*+! nRef(char[|]! s) {
+		return ama::CreateNode(N_REF, NULL).setData(s);
+	}
+	inline ama::Node*+! nNumber(char[|]! s) {
+		return ama::CreateNode(N_NUMBER, NULL).setData(s);
+	}
 	///////////////
 	inline ama::Node*+! GetPlaceHolder() {
 		assert(!g_placeholder.p);
@@ -143,5 +168,8 @@ namespace ama {
 	///////////////
 	macro nRawDeclaration() = function(auto my_call, ...args):auto {
 		return require("./v3macros.js").ASTConstructor(my_call, args, "N_RAW_DECLARATION");
+	}
+	macro nDependency() = function(auto my_call, ...args):auto {
+		return require("./v3macros.js").ASTConstructor(my_call, args, "N_DEPENDENCY");
 	}
 };

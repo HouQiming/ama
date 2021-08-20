@@ -1,25 +1,33 @@
 // //// JC version: 3
 #include "./findama.jch"
 
-namespace ama { char[+]! FindAma(char[...]! input) {
-	char[+]! ret = new char[+]!();
-	intptr_t! p_ama = input.indexOf('@ama');
-	if( p_ama < 0L ) { return <<ret; }
-	auto p_prefix = input.subarray(0L, p_ama).lastIndexOf('\n') + 1L;
-	char[...]! prefix = input.subarray(p_prefix, p_ama - p_prefix);
-	char[...]! ama_str = input.subarray(p_ama);
-	intptr_t! p_line = ama_str.indexOf('\n');
-	if( p_line < 0L ) { return <<ret; }
-	ama_str = ama_str.subarray(p_line + 1L);
-	while( ama_str.length > prefix.length && ama_str.startsWith(prefix) && 
-	ama_str[prefix.length] != '*' && ama_str[prefix.length] != '"' && ama_str[prefix.length] != '\'' ) {
-		intptr_t! p_nextline = ama_str.indexOf('\n');
-		if( p_nextline < 0L ) {
-			p_nextline = ama_str.length - 1L;
+namespace ama {
+	char[+]! FindAma(char[...]! input) {
+		char[+]! ret = new char[+]!();
+		intptr_t! p_ama = input.indexOf('@ama');
+		if( p_ama < 0L ) { return <<ret; }
+		auto p_prefix = input.subarray(0L, p_ama).lastIndexOf('\n') + 1L;
+		char[...]! prefix = input.subarray(p_prefix, p_ama - p_prefix);
+		char[...]! ama_str = input.subarray(p_ama);
+		intptr_t! p_line = ama_str.indexOf('\n');
+		if( p_line < 0L ) { return <<ret; }
+		//align lines
+		for(int! i = 0; i < p_ama; i += 1) {
+			if( input[i] == '\n' ) {
+				ret.push('\n');
+			}
 		}
-		ret.push(ama_str.subarray(prefix.length, p_nextline + 1L - prefix.length));
-		ama_str = ama_str.subarray(p_nextline + 1L);
+		ret.push('\n');
+		ama_str = ama_str.subarray(p_line + 1L);
+		while( ama_str.length > prefix.length && ama_str.startsWith(prefix) && 
+		ama_str[prefix.length] != '*' && ama_str[prefix.length] != '"' && ama_str[prefix.length] != '\'' ) {
+			intptr_t! p_nextline = ama_str.indexOf('\n');
+			if( p_nextline < 0L ) {
+				p_nextline = ama_str.length - 1L;
+			}
+			ret.push(ama_str.subarray(prefix.length, p_nextline + 1L - prefix.length));
+			ama_str = ama_str.subarray(p_nextline + 1L);
+		}
+		return <<ret;
 	}
-	return <<ret;
-}
 };

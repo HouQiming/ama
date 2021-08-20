@@ -441,11 +441,11 @@ char[|]! ama::Node::GetName(ama::Node*! this) {
 	//	return this.c.data;
 	//} else if( int(this.node_class) == ama::N_INCLUDE ) {
 	//	return this.c.GetStringValue();
-	if( int(this.node_class) == ama::N_CALL ) /*|| int(this.node_class) == ama::N_CALL_TEMPLATE || int(this.node_class) == ama::N_CUSTOM*/ {
+	if( this.node_class == ama::N_CALL ) /*|| int(this.node_class) == ama::N_CALL_TEMPLATE || int(this.node_class) == ama::N_CUSTOM*/ {
 		return this.c.data;
-	} else if( int(this.node_class) == ama::N_ASSIGNMENT ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
+	} else if( this.node_class == ama::N_ASSIGNMENT || this.node_class == ama::N_DEPENDENCY ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
 		return this.c.GetName();
-	} else if( int(this.node_class) == ama::N_STRING ) {
+	} else if( this.node_class == ama::N_STRING ) {
 		ama::Node*+! nd_hack = (ama::Node*+)(this);
 		return nd_hack.GetStringValue();
 	} else {
@@ -550,4 +550,16 @@ int! ama::Node::isRawNode(ama::Node*! this, char! ch_open, char! ch_close) {
 
 int! ama::Node::hasBrackets(ama::Node*! this) {
 	return this.node_class == ama::N_RAW || this.node_class == ama::N_SCOPE || this.node_class == ama::N_CALL;
+}
+
+int! ama::Node::isMethodCall(ama::Node*! this, char[|]! name) {
+	return this.node_class == ama::N_CALL && this.c.node_class == ama::N_DOT && this.c.data == name;
+}
+
+///dependency is global: have to re-ParseDependency after you InsertDependency
+ama::Node*+! ama::Node::InsertDependency(ama::Node*+! this, uint32_t! flags, char[|]! name) {
+	for(ama::Node*+! ndi : this.FindAll(ama::N_DEPENDENCY, name)) {
+		if( ndi.flags == flags ) { return ndi; }
+	}
+	return this.Insert(ama::POS_FRONT, ama::nDependency(ama::nString(name)).setFlags(flags));
 }

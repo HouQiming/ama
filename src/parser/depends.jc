@@ -1,0 +1,141 @@
+// //// JC version: 3
+#include <path.jch>
+#include <fs.jch>
+#include '../ast/node.jch'
+#include "../script/jsenv.jch"
+#include './depends.jch'
+
+namespace ama {
+	//requires DelimitCLikeStatements, preferrably before ParsePostfix
+	void! ParseCInclude(ama::Node*+! nd_root) {
+		char[|][+]! c_include_paths;
+		JSValue! js_c_include_paths = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'c_include_paths');
+		if( !JS_IsUndefined(js_c_include_paths) ) {
+			int32_t! lg = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, js_c_include_paths, 'length'), 0);
+			for(int! i = 0; i < lg; i += 1) {
+				c_include_paths.push_back(ama::UnwrapString(
+					JS_GetPropertyUint32(ama::jsctx, js_c_include_paths, i)
+				));
+			}
+		}
+		char[+]! dir_base = new char[+]!(nd_root.data != NULL ? path.dirname(nd_root.data) : ".");
+		for(ama::Node*&+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			if( (nd_raw.flags & 0xffff) != 0 ) { continue; }
+			if( !(nd_raw.c && nd_raw.c.node_class == ama::N_REF && nd_raw.c.data == '#include') ) { continue; }
+			uint32_t! flags = ama::DEP_C_INCLUDE;
+			if( !nd_raw.c.s || nd_raw.c.s.s || nd_raw.c.s.node_class != ama::N_STRING ) {
+				//#include <foo/bar.baz>, join all children and make them string
+				flags |= ama::DEPF_C_INCLUDE_NONSTR;
+				char[+]! comments_before;
+				char[+]! include_expr;
+				char[+]! comments_after;
+				ama::Node*+![+]! toDrop = new ama::Node*+![+]!();
+				for(ama::Node*+! ndi = nd_raw.c.s; ndi; ndi = ndi.s) {
+					comments_before.push(ndi.comments_before);
+					ndi.comments_before = "";
+					comments_after.push(ndi.comments_after);
+					ndi.comments_after = "";
+					include_expr.push(ndi.toSource());
+					toDrop.push_back(ndi);
+				}
+				ama::Node*+! @nojson nd_real_include = ama::nString(new char[|]!(include_expr)).setCommentsBefore(
+					new char[|]!(comments_before)
+				).setCommentsAfter(
+					new char[|]!(comments_after)
+				);
+				for(ama::Node*+! ndi : toDrop) {
+					ndi.s = NULL;
+					ndi.p = NULL;
+					ndi.FreeASTStorage();
+				}
+				nd_real_include.p = nd_raw;
+				nd_raw.c.s = nd_real_include;
+			}
+			ama::Node*+! @nojson nd_included = nd_raw.c.s;
+			assert(nd_included.node_class == ama::N_STRING);
+			char[|]! fn_included = nd_included.GetStringValue();
+			nd_raw.ReplaceWith(ama::nDependency(nd_included).setFlags(flags));
+			nd_raw.c.s = NULL;
+			nd_raw.FreeASTStorage();
+		}
+		//re-check all nDependency and fill .data
+		for(ama::Node*&+! nd_dep : nd_root.FindAll(ama::N_DEPENDENCY, NULL)) {
+			if( (nd_dep.flags & ama::DEP_TYPE_MASK) == ama::DEP_C_INCLUDE && nd_dep.data == NULL ) {
+				char[|]! fn_included = nd_dep.GetName();
+				if( fn_included == NULL ) { continue; }
+				char[|]! fn_found = NULL;
+				if( fn_included.startsWith('<') && fn_included.endsWith('>') ) {
+					fn_included = new char[|]!(fn_included.subarray(1, fn_included.length - 2));
+				} else {
+					if( fs.existsSync(path.join(dir_base, fn_included)) ) {
+						fn_found = path.join(dir_base, fn_included);
+					}
+				}
+				if( fn_found == NULL ) {
+					for(char[|]&! dir : c_include_paths) {
+						char[...]! fn_test = path.join(dir, fn_included);
+						if( fs.existsSync(fn_test) ) {
+							fn_found = new char[|]!(fn_test);
+							break;
+						}
+					}
+				}
+				if( fn_found != NULL ) {
+					fn_found = path.resolve(fn_found);
+					nd_dep.data = fn_found;
+				}
+			}
+		}
+	}
+	void! ParseJSRequire(ama::Node*+! nd_root) {
+		char[|][+]! js_require_paths;
+		JSValue! js_js_require_paths = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'js_require_paths');
+		if( !JS_IsUndefined(js_js_require_paths) ) {
+			int32_t! lg = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, js_js_require_paths, 'length'), 0);
+			for(int! i = 0; i < lg; i += 1) {
+				js_require_paths.push_back(ama::UnwrapString(
+					JS_GetPropertyUint32(ama::jsctx, js_js_require_paths, i)
+				));
+			}
+		}
+		char[+]! dir_base = new char[+]!(nd_root.data != NULL ? path.dirname(nd_root.data) : ".");
+		for(ama::Node*&+! nd_require : nd_root.FindAll(ama::N_CALL, 'require')) {
+			if( !nd_require.c.s || nd_require.c.s.node_class != ama::N_STRING || nd_require.c.s.s ) { continue; }
+			char[|]! fn_required = nd_require.c.s.GetStringValue();
+			nd_require.ReplaceWith(ama::nDependency(nd_require.c.s).setFlags(ama::DEP_JS_REQUIRE));
+			nd_require.c.s = NULL;
+			nd_require.FreeASTStorage();
+		}
+		//re-check all nDependency and fill .data
+		for(ama::Node*&+! nd_dep : nd_root.FindAll(ama::N_DEPENDENCY, NULL)) {
+			if( (nd_dep.flags & ama::DEP_TYPE_MASK) == ama::DEP_JS_REQUIRE && nd_dep.data == NULL ) {
+				char[|]! fn_required = nd_dep.GetName();
+				if( fn_required == NULL ) { continue; }
+				char[|]! fn_commonjs = NULL;
+				for(char[|]&! dir : js_require_paths) {
+					fn_commonjs = ama::FindCommonJSModuleByPath(path.join(dir, fn_required));
+					if( fn_commonjs != NULL ) { break; }
+				}
+				if( fn_commonjs == NULL ) {
+					fn_commonjs = ama::FindCommonJSModule(fn_required, new char[|]!(dir_base));
+				}
+				if( fn_commonjs != NULL ) {
+					fn_commonjs = path.resolve(fn_commonjs);
+					nd_dep.data = fn_commonjs;
+				}
+			}
+		}
+	}
+	ama::Node*+! ParseDependency(ama::Node*+! nd_root, JSValueConst! options) {
+		int32_t! enable_c_include = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'enable_c_include'), 1);
+		if( enable_c_include ) {
+			ParseCInclude(nd_root);
+		}
+		/////////////////
+		int32_t! enable_js_require = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'enable_js_require'), 1);
+		if( enable_js_require ) {
+			ParseJSRequire(nd_root);
+		}
+		return nd_root;
+	}
+};

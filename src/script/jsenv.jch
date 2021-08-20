@@ -63,4 +63,6 @@ namespace ama {
 		}
 		return <<ret;
 	}
+	char[|]! FindCommonJSModuleByPath(char[|]! fn);
+	char[|]! FindCommonJSModule(char[|]! fn_required, char[|]! dir_base);
 };

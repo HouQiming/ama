@@ -1,5 +1,8 @@
 // //// JC version: 3
 #include <stdio.h>
+#include <fs.jch>
+#include <path.jch>
+#include <json.jch>
 #include "./jsenv.jch"
 
 namespace ama {
@@ -31,5 +34,69 @@ namespace ama {
 		fprintf(stderr, "%s", JS_ToCString(ctx, err_stack));
 		fflush(stderr);
 		JS_FreeValue(ctx, err_stack);
+	}
+	private class PackageJSON {
+		char[|]! main = NULL;
+	};
+	private char[|]! CommonJSLoadAsFile(char[|]! fn) {
+		if( fs::existsSync(fn) ) {
+			return fn;
+		}
+		if( fs::existsSync(fn + '.js') ) {
+			return new char[|]!(fn + '.js');
+		}
+		if( fs::existsSync(fn + '.json') ) {
+			return new char[|]!(fn + '.json');
+		}
+		return NULL;
+	}
+	char[|]! FindCommonJSModuleByPath(char[|]! fn) {
+		if( fs.DirExists(fn) ) {
+			if( fs::existsSync(fn + '.js') ) {
+				return new char[|]!(fn + '.js');
+			}
+			if( fs::existsSync(fn + '.json') ) {
+				return new char[|]!(fn + '.json');
+			}
+			char[|]! fn_index = fn;
+			char[+]^+! s_package_json = fs.readFileSync(path.join(fn, 'package.json'));
+			if( s_package_json != NULL ) {
+				PackageJSON! package_json = JSON.parse<PackageJSON>(s_package_json);
+				if( package_json.main != NULL ) {
+					char[|]! fn_main = path.join(fn, package_json.main);
+					char[|]! ret = CommonJSLoadAsFile(fn_main);
+					if( ret != NULL ) {
+						return ret;
+					}
+					fn_index = fn_main;
+				}
+			}
+			if( fs.existsSync(fn_index + '/index.js') ) {
+				return new char[|]!(fn_index + '/index.js');
+			}
+			if( fs.existsSync(fn_index + '/index.json') ) {
+				return new char[|]!(fn_index + '/index.json');
+			}
+			return NULL;
+		}
+		return CommonJSLoadAsFile(fn);
+	}
+	char[|]! FindCommonJSModule(char[|]! fn_required, char[|]! dir_base) {
+		char[|]! ret = NULL;
+		char[|]! dir = dir_base;
+		for(;;) {
+			if( path.basename(dir) != 'node_modules' ) {
+				ret = FindCommonJSModuleByPath(path.join(dir, 'node_modules', fn_required));
+				if( ret != NULL ) {
+					return ret;
+				}
+			}
+			char[+]! dir_upper = path.dirname(dir);
+			if( dir == dir_upper ) {
+				break;
+			}
+			dir = new char[|]!(dir_upper);
+		}
+		return NULL;
 	}
 };

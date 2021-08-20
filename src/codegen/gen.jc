@@ -108,6 +108,22 @@ namespace ama {
 				}
 				break;
 			}
+			case ama::N_DEPENDENCY: {
+				if( (nd.flags & ama::DEP_TYPE_MASK) == ama::DEP_C_INCLUDE ) {
+					this.code.push('#include ');
+					if( nd.flags & ama::DEPF_C_INCLUDE_NONSTR ) {
+						this.code.push(nd.c.GetStringValue());
+					} else {
+						this->Generate(nd.c);
+					}
+					this.code.push('\n');
+				} else if( (nd.flags & ama::DEP_TYPE_MASK) == ama::DEP_JS_REQUIRE ) {
+					this.code.push('require(');
+					this->Generate(nd.c);
+					this.code.push(')');
+				}
+				break;
+			}
 		}
 		//case N_NODEOF:
 		//case N_RAW_DECLARATION:
