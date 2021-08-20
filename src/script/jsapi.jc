@@ -12,6 +12,7 @@
 #include "../parser/depends.jch"
 #include "../parser/postfix.jch"
 #include "../parser/cleanup.jch"
+#include "./nodeof_to_ast.jch"
 #include "./jsenv.jch"
 #include "./jsapi.jch"
 
@@ -280,11 +281,15 @@ private macro GenerateNodeConstantCode() = function(auto my_call) {
 	).filter(inline(auto nd) { return nd.p.node_class == N_DECLARATION; });
 	let nds = [];
 	//JS global constants
+	let n_largest = 0;
 	for(let nd : node_constants) {
 		if( nd.data.startsWith('N_') ) {
 			function toCamelCase(auto s) {
 				if( s == 'N' ) { return 'n'; }
 				return s.substr(0, 1) + s.substr(1).toLowerCase();
+			}
+			if( nd.p.c.s.node_class == N_NUMBER ) {
+				n_largest = parseInt(nd.p.c.s.data);
 			}
 			let builder_name = nd.data.split('_').map(inline(auto s) { return toCamelCase(s); }).join('');
 			nds.push(
@@ -294,7 +299,8 @@ private macro GenerateNodeConstantCode() = function(auto my_call) {
 					.(nString(builder_name)), 0, JS_CFUNC_generic_magic, .(nRef(nd.data))
 				))),
 				.(JS_SetPropertyUint32(ama::jsctx, js_node_class_names_array, .(nRef(nd.data)), JS_NewStringLen(ama::jsctx, .(nString(nd.data)), .(nNumber(nd.data.length.toString()))))),
-				.(JS_SetPropertyUint32(ama::jsctx, js_node_builder_names_array, .(nRef(nd.data)), JS_NewStringLen(ama::jsctx, .(nString(builder_name)), .(nNumber(builder_name.length.toString())))))
+				.(JS_SetPropertyUint32(ama::jsctx, js_node_builder_names_array, .(nRef(nd.data)), JS_NewStringLen(ama::jsctx, .(nString(builder_name)), .(nNumber(builder_name.length.toString()))))),
+				.(ama::g_builder_names[.(nRef(nd.data))] = .(nString(builder_name)))
 			);
 		} else if( nd.p.c.s.node_class != N_FUNCTION ) {
 			nds.push(
@@ -302,6 +308,10 @@ private macro GenerateNodeConstantCode() = function(auto my_call) {
 			);
 		}
 	}
+	n_largest += 1;
+	nds.unshift(
+		.(ama::g_builder_names.resize(.(nNumber(n_largest.toString()))))
+	);
 	//JS node builders are created in JS
 	return nScope.apply(NULL, nds).c;
 }
@@ -401,6 +411,7 @@ namespace ama {
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
+		ama::ParseNodeof(nd_root);
 		ama::CleanupDummyRaws(nd_root);
 		return nd_root;
 	}
@@ -490,8 +501,6 @@ namespace ama {
 		}
 		return ama::WrapNode(ama::CreateNode(ama::UnwrapInt32(argv[0], ama::N_NONE), c));
 	}
-	//private JSValueConst! g_qjs_JSON = JS_NULL;
-	//private uint32_t! g_stringify_atom = 0u;
 	//COULDDO: move to JS, base on process.stdfoo.write instead
 	private JSValueConst! JSConsoleWrite(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic) {
 		for(intptr_t! i = 0L; i < intptr_t(argc); i += 1) {
@@ -532,6 +541,24 @@ namespace ama {
 		ama::Node*+! nd = ama::UnwrapNode(val);
 		ama::g_js_node_map.erase(nd);
 	}
+	`typedef ama::Node*(*NodeFilter)(ama::Node*);`
+	private class NodeFilterDesc {
+		char*! name;
+		NodeFilter! f;
+	};
+	private NodeFilterDesc![+]! g_filters = new NodeFilterDesc![+] {
+		new NodeFilterDesc!{
+			name: 'NodeofToASTExpression',
+			f: ama::NodeofToASTExpression
+		},
+		new NodeFilterDesc!{
+			name: 'CleanupDummyRaws',
+			f: ama::CleanupDummyRaws
+		}
+	};
+	private JSValueConst! JSApplyNodeFilter(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic) {
+		return ama::WrapNode(g_filters[magic].f(ama::UnwrapNode(this_val)));
+	}
 	void! InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
@@ -570,8 +597,14 @@ namespace ama {
 			)
 		);
 		JS_SetPropertyStr(ama::jsctx, global, 'Node', ama::g_node_proto);
-		//g_qjs_JSON = JS_GetPropertyStr(ama::jsctx, global, 'JSON');
-		//g_stringify_atom = JS_NewAtom(ama::jsctx, 'stringify');
+		for(int! i = 0; i < g_filters.length; i += 1) {
+			JS_SetPropertyStr(
+				ama::jsctx, ama::g_node_proto, g_filters[i].name, JS_NewCFunctionMagic(
+					ama::jsctx, JSApplyNodeFilter,
+					g_filters[i].name, 1, JS_CFUNC_generic_magic, i
+				)
+			);
+		}
 		g_require_cache = JS_NewObjectProto(ama::jsctx, JS_NULL);
 		JS_SetPropertyStr(
 			ama::jsctx, global, '__require_cache', g_require_cache

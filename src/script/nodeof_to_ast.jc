@@ -1,0 +1,65 @@
+// //// JC version: 3
+#include <json.jch>
+#include '../script/jsenv.jch'
+#include '../ast/node.jch'
+#include './jsenv.jch'
+#include "./nodeof_to_ast.jch"
+
+namespace ama {
+	ama::Node*+! ParseCode(char*! code, JSValue! options);
+	private void! dfsTranslateList(char[+]&+! ret, ama::Node*+! nd) {
+		if( nd.s ) {
+			ret.push('cons(');
+		}
+		dfsTranslate(ret, nd);
+		if( nd.s ) {
+			ret.push(', ');
+			dfsTranslateList(ret, nd.s);
+			ret.push(')');
+		}
+	}
+	private void! dfsTranslate(char[+]&+! ret, ama::Node*+! nd) {
+		if( nd.node_class == ama::N_NODEOF ) {
+			for(ama::Node*+! nd_nodeof : nd.c.FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF, NULL)) {
+				char[+]! ret2;
+				dfsTranslateList(ret2, nd_nodeof.c.c);
+				nd_nodeof.ReplaceWith(ParseCode(ret2.c_str(), JS_NULL));
+			}
+			for(ama::Node*+! ndi : nd.c) {
+				ret.push(ndi.toSource());
+			}
+			return;
+		}
+		ret.push(ama::g_builder_names[nd.node_class], '(');
+		if( nd.data != NULL ) {
+			ret.push(JSON.stringify(nd.data));
+			if( nd.c ) {
+				ret.push(', ');
+			}
+		}
+		for(ama::Node*+! @nojson ndi = nd.c; ndi; ndi = ndi.s) {
+			dfsTranslate(ret, ndi);
+			if( ndi.s ) {
+				ret.push(', ');
+			}
+		}
+		ret.push(')');
+		if( nd.flags ) {
+			ret.push('.setFlags(', JSON.stringify(nd.flags), ')');
+		} else if( nd.comments_before.length ) {
+			ret.push('.setCommentsBefore(', JSON.stringify(nd.comments_before), ')');
+		} else if( nd.comments_after.length ) {
+			ret.push('.setCommentsAfter(', JSON.stringify(nd.comments_after), ')');
+		} else if( nd.indent_level ) {
+			ret.push('.setIndent(', JSON.stringify(nd.indent_level), ')');
+		}
+	}
+	ama::Node*+! NodeofToASTExpression(ama::Node*+! nd_root) {
+		for(ama::Node*&+! nd_nodeof : nd_root.FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF, NULL)) {
+			char[+]! ret;
+			dfsTranslateList(ret, nd_nodeof.c.c);
+			nd_nodeof.ReplaceWith(ParseCode(ret.c_str(), JS_NULL));
+		}
+		return nd_root;
+	}
+};

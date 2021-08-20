@@ -100,6 +100,10 @@ namespace ama {
 			this.comments_after = this->comments_after;
 			return this;
 		}
+		inline ama::Node*+! setIndent(ama::Node*+! this, int! indent_level) {
+			this->indent_level = indent_level;
+			return this;
+		}
 		/////////////
 		ama::TCloneResult! CloneEx(ama::Node*! this);
 		ama::Node*+! Clone(ama::Node*! this);
@@ -158,6 +162,10 @@ namespace ama {
 	}
 	inline ama::Node*+! nNumber(char[|]! s) {
 		return ama::CreateNode(N_NUMBER, NULL).setData(s);
+	}
+	inline ama::Node*+! nNodeof(Node*+! nd) {
+		nd.s = NULL;
+		return ama::CreateNode(N_NODEOF, nd);
 	}
 	///////////////
 	inline ama::Node*+! GetPlaceHolder() {

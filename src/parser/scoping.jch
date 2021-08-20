@@ -4,4 +4,5 @@
 namespace ama {
 	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root);
 	void! ConvertToScope(ama::Node*+! nd_raw);
+	ama::Node*+! ParseNodeof(ama::Node*+! nd_root);
 };

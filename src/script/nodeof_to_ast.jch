@@ -1,0 +1,6 @@
+// //// JC version: 3
+#pragma add("jc_files", "./nodeof_to_ast.jc");
+
+namespace ama {
+	ama::Node*+! NodeofToASTExpression(ama::Node*+! nd_root);
+};
