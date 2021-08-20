@@ -170,9 +170,6 @@ namespace ama {
 				ndi = ndi_next;
 			}
 		}
-		//for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
-		//	if( !nd_raw.c && !(nd_raw.p.node_class == ama::N_CALL && nd_raw == nd_raw.p.c) && nd_raw.p.node_class != ama::N_ARRAY_TYPE ) { nd_raw.Delete(); }
-		//}
 		return nd_root;
 	}
 };

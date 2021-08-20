@@ -1,0 +1,17 @@
+// //// JC version: 3
+#include '../ast/node.jch'
+#include './cleanup.jch'
+
+namespace ama {
+	ama::Node*+! CleanupDummyRaws(ama::Node*+! nd_root) {
+		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			if( (nd_raw.flags & 0xffff) != 0 || !nd_raw.p ) { continue; }
+			if( !nd_raw.c && !(nd_raw.p.node_class == ama::N_CALL && nd_raw == nd_raw.p.c) ) {
+				nd_raw.Delete();
+			} else if( nd_raw.c && !nd_raw.c.s ) {
+				nd_raw.ReplaceWith(nd_raw.c);
+			}
+		}
+		return nd_root;
+	}
+};

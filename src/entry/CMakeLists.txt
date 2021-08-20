@@ -56,6 +56,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jch.hpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jch
   MAIN_DEPENDENCY ../script/jsapi.jch
+  DEPENDS ../ast/node.jch ../script/jsenv.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -90,7 +91,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc
   MAIN_DEPENDENCY ../script/jsapi.jc
-  DEPENDS ../script/js_init.js ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/unicode/case.jch ../ast/node.jch ../codegen/gen.jch ../parser/simppair.jch ../parser/scoping.jch ../parser/depends.jch ../parser/postfix.jch ../script/jsenv.jch ../script/jsapi.jch
+  DEPENDS ../script/js_init.js ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/unicode/case.jch ../ast/node.jch ../codegen/gen.jch ../parser/simppair.jch ../parser/scoping.jch ../parser/depends.jch ../parser/postfix.jch ../parser/cleanup.jch ../script/jsenv.jch ../script/jsapi.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -149,7 +150,7 @@ add_custom_command(
 if(DEFINED JC_LIB)
 include_directories("${JC_LIB}")
 endif()
-add_executable(ama ${JC_LIB}/dumpstack/linux_bt.cpp ${JC_LIB}/dumpstack/win_dbghelp.cpp ${JC_LIB}/dumpstack/enable_dump.cpp ${JC_LIB}/fix_win_console.cpp ${JC_LIB}/json.cpp ${JC_LIB}/jc_unique_string.cpp ../script/quickjs/src/quickjs.c ../script/quickjs/src/libregexp.c ../script/quickjs/src/libunicode.c ../script/quickjs/src/cutils.c ../script/js_init.js.c ../parser/charset.jc.cpp ../parser/literal.jc.cpp ../parser/postfix.jc.cpp ../parser/depends.jc.cpp ../parser/scoping.jc.cpp ../parser/simppair.jc.cpp ../codegen/gen.jc.cpp ../ast/node.jc.cpp ../script/jsenv.jc.cpp ${JC_LIB}/unicode.jc.cpp ${JC_LIB}/env.jc.cpp ${JC_LIB}/unicode/case.jc.cpp ../script/jsapi.jc.cpp ../parser/findama.jc.cpp ${JC_LIB}/fs.jc.cpp ${JC_LIB}/path_posix.jc.cpp ${JC_LIB}/path_win32.jc.cpp ama.jc.cpp ../parser/charset.jch.hpp ../parser/literal.jch.hpp ../parser/postfix.jch.hpp ../parser/simppair.jch.hpp ../script/jsenv.jch.hpp ../ast/node.jch.hpp ${JC_LIB}/unicode.jch.hpp ../codegen/gen.jch.hpp ${JC_LIB}/env.jch.hpp ${JC_LIB}/unicode/case.jch.hpp ../script/jsapi.jch.hpp ../parser/scoping.jch.hpp ${JC_LIB}/fs.jch.hpp ${JC_LIB}/path.jch.hpp ${JC_LIB}/json.jch.hpp ../parser/depends.jch.hpp ../parser/findama.jch.hpp ${JC_LIB}/console.jch.hpp ${JC_LIB}/dumpstack.jch.hpp)
+add_executable(ama ${JC_LIB}/dumpstack/linux_bt.cpp ${JC_LIB}/dumpstack/win_dbghelp.cpp ${JC_LIB}/dumpstack/enable_dump.cpp ${JC_LIB}/fix_win_console.cpp ${JC_LIB}/json.cpp ${JC_LIB}/jc_unique_string.cpp ../script/quickjs/src/quickjs.c ../script/quickjs/src/libregexp.c ../script/quickjs/src/libunicode.c ../script/quickjs/src/cutils.c ../script/js_init.js.c ../parser/charset.jc.cpp ../parser/literal.jc.cpp ../parser/cleanup.jc.cpp ../parser/postfix.jc.cpp ../parser/depends.jc.cpp ../parser/scoping.jc.cpp ../parser/simppair.jc.cpp ../codegen/gen.jc.cpp ../ast/node.jc.cpp ../script/jsenv.jc.cpp ${JC_LIB}/unicode.jc.cpp ${JC_LIB}/env.jc.cpp ${JC_LIB}/unicode/case.jc.cpp ../script/jsapi.jc.cpp ../parser/findama.jc.cpp ${JC_LIB}/fs.jc.cpp ${JC_LIB}/path_posix.jc.cpp ${JC_LIB}/path_win32.jc.cpp ama.jc.cpp ../parser/charset.jch.hpp ../parser/literal.jch.hpp ../parser/cleanup.jch.hpp ../parser/postfix.jch.hpp ../parser/simppair.jch.hpp ../script/jsenv.jch.hpp ../ast/node.jch.hpp ${JC_LIB}/unicode.jch.hpp ../codegen/gen.jch.hpp ${JC_LIB}/env.jch.hpp ${JC_LIB}/unicode/case.jch.hpp ../script/jsapi.jch.hpp ../parser/scoping.jch.hpp ${JC_LIB}/fs.jch.hpp ${JC_LIB}/path.jch.hpp ${JC_LIB}/json.jch.hpp ../parser/depends.jch.hpp ../parser/findama.jch.hpp ${JC_LIB}/console.jch.hpp ${JC_LIB}/dumpstack.jch.hpp)
 include(CheckCXXSourceCompiles)
 if(DEFINED JC_LIB)
 list(APPEND CMAKE_REQUIRED_INCLUDES "${JC_LIB}")
@@ -282,5 +283,18 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/js_init.js.h ${CMAKE_CURRENT_SOURCE_DIR}/../script/js_init.js.c
   COMMAND ${JCC} --asset ${CMAKE_CURRENT_SOURCE_DIR}/../script/js_init.js
   MAIN_DEPENDENCY ../script/js_init.js
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/cleanup.jch.hpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/cleanup.jch
+  MAIN_DEPENDENCY ../parser/cleanup.jch
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/cleanup.jc.cpp
+  COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/cleanup.jc
+  MAIN_DEPENDENCY ../parser/cleanup.jc
+  DEPENDS ../ast/node.jch ../parser/cleanup.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

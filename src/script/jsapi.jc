@@ -11,6 +11,7 @@
 #include "../parser/scoping.jch"
 #include "../parser/depends.jch"
 #include "../parser/postfix.jch"
+#include "../parser/cleanup.jch"
 #include "./jsenv.jch"
 #include "./jsapi.jch"
 
@@ -187,7 +188,7 @@ private macro GenerateJSPrototype() = function(auto my_call, auto nd_node, auto 
 				'JS_NewCFunction2(jsctx,(JSCFunction*+)(', class_name, 'Get_', nd_def.data, '),"get_', nd_def.data, '",0,JS_CFUNC_getter,0),',
 				'JS_NewCFunction2(jsctx,(JSCFunction*+)(', class_name, 'Set_', nd_def.data, '),"set_', nd_def.data, '",1,JS_CFUNC_setter,0),',
 				'JS_PROP_C_W_E',
-				');'
+				');\n'
 			);
 		}
 	});
@@ -391,20 +392,40 @@ namespace ama {
 		}
 		return JS_GetPropertyStr(ctx, obj_module, 'exports');
 	}
-	private JSValueConst! JSParseCurrentFile(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic, JSValue*+! func_data) {
-		JSValue! options;
-		if( argc < 1 ) {
-			options = JS_NewObjectProto(ama::jsctx, JS_NULL);
-		} else {
-			options = argv[1];
+	ama::Node*+! ParseCode(char*! code, JSValue! options) {
+		if( JS_IsNull(options) || JS_IsUndefined(options) ) {
+			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
 		}
-		char*! file_data = (char*)(JSON.parse<uintptr_t>(ama::UnwrapString(func_data[0])));
-		ama::Node*+! nd_root = ama::ParseSimplePairing(file_data, options);
-		nd_root.data = ama::UnwrapString(func_data[1]);
+		ama::Node*+! nd_root = ama::ParseSimplePairing(code, options);
 		ama::DelimitCLikeStatements(nd_root);
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root);
+		ama::CleanupDummyRaws(nd_root);
+		return nd_root;
+	}
+	private JSValueConst! JSParseCurrentFile(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic, JSValue*+! func_data) {
+		JSValue! options;
+		if( argc < 1 ) {
+			options = JS_NULL;
+		} else {
+			options = argv[0];
+		}
+		char*! file_data = (char*)(JSON.parse<uintptr_t>(ama::UnwrapString(func_data[0])));
+		ama::Node*+! nd_root = ParseCode(file_data, options);
+		nd_root.data = ama::UnwrapString(func_data[1]);
 		return ama::WrapNode(nd_root);
+	}
+	private JSValueConst! JSParseCode(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		JSValue! options;
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a code string");
+		}
+		if( argc < 2 ) {
+			options = JS_NULL;
+		} else {
+			options = argv[1];
+		}
+		return ama::WrapNode(ParseCode(JS_ToCString(ama::jsctx, argv[0]), options));
 	}
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data) {
 		char![+]! s_fixed_code = '(function(__filename,__dirname,ParseCurrentFile){let require=__require.bind(null,__filename);' + script + '\n})\n';
@@ -441,7 +462,7 @@ namespace ama {
 		mutable ama::Node*+! c = (ama::Node*+)(NULL);
 		char[|]! data = NULL;
 		for(mutable int! i = argc - 1; i >= 0; --i) {
-			if( i == 0 && JS_IsString(argv[i]) ) {
+			if( data == NULL && JS_IsString(argv[i]) ) {
 				data = ama::UnwrapString(argv[i]);
 				continue;
 			}
@@ -451,7 +472,11 @@ namespace ama {
 			}
 			c = ama::cons(ndi, c);
 		}
-		return ama::WrapNode(ama::CreateNode(magic, c).setData(data));
+		ama::Node*+! nd = ama::CreateNode(magic, c).setData(data);
+		if( magic == ama::N_STRING ) {
+			nd.flags = ama::LITERAL_PARSED;
+		}
+		return ama::WrapNode(nd);
 	}
 	private JSValueConst! JSCreateNodeRaw(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		mutable ama::Node*+! c = (ama::Node*+)(NULL);
@@ -464,8 +489,8 @@ namespace ama {
 		}
 		return ama::WrapNode(ama::CreateNode(ama::UnwrapInt32(argv[0], ama::N_NONE), c));
 	}
-	private JSValueConst! g_qjs_JSON = JS_NULL;
-	private uint32_t! g_stringify_atom = 0u;
+	//private JSValueConst! g_qjs_JSON = JS_NULL;
+	//private uint32_t! g_stringify_atom = 0u;
 	//COULDDO: move to JS, base on process.stdfoo.write instead
 	private JSValueConst! JSConsoleWrite(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic) {
 		for(intptr_t! i = 0L; i < intptr_t(argc); i += 1) {
@@ -480,26 +505,11 @@ namespace ama {
 			}
 			//////
 			JSValueConst! arg_i = argv[i];
-			//ama::Node*+! nd = ama::UnwrapNode(arg_i);
-			//if( nd ) {
-			//	const char[+]! s_node = '/*node ' + JSON::stringify(ama::UniqueID(intptr_t(nd))) + '*/' + nd.toSource();
-			//	if( magic == 1 ) {
-			//		console::write(s_node);
-			//	} else {
-			//		console::writeError(s_node);
-			//	}
-			//	continue;
-			//}
-			if( JS_IsFunction(ctx, arg_i) ) {
-				//do nothing, it will get toString-ed later
-			} else if( JS_IsObject(arg_i) ) {
-				//JSON.stringify objects, including arrays
-				arg_i = JS_Invoke(ctx, g_qjs_JSON, g_stringify_atom, 1, argv + i);
-				if( JS_IsException(arg_i) ) {
-					return arg_i;
-				}
-			}
-			JSValueConst! str = JS_ToString(ctx, arg_i);
+			JSValueConst! str = JS_JSONStringify(
+				ctx, arg_i,
+				JS_NULL,
+				JS_NewInt32(ctx, 0)
+			);
 			if( JS_IsException(str) ) {
 				return str;
 			}
@@ -547,14 +557,20 @@ namespace ama {
 			)
 		);
 		JS_SetPropertyStr(
+			ama::jsctx, global, 'ParseCode', JS_NewCFunction(
+				ama::jsctx, JSParseCode,
+				'ParseCode', 1
+			)
+		);
+		JS_SetPropertyStr(
 			ama::jsctx, global, '__require', JS_NewCFunction(
 				ama::jsctx, JSRequire,
 				'require', 2
 			)
 		);
 		JS_SetPropertyStr(ama::jsctx, global, 'Node', ama::g_node_proto);
-		g_qjs_JSON = JS_GetPropertyStr(ama::jsctx, global, 'JSON');
-		g_stringify_atom = JS_NewAtom(ama::jsctx, 'stringify');
+		//g_qjs_JSON = JS_GetPropertyStr(ama::jsctx, global, 'JSON');
+		//g_stringify_atom = JS_NewAtom(ama::jsctx, 'stringify');
 		g_require_cache = JS_NewObjectProto(ama::jsctx, JS_NULL);
 		JS_SetPropertyStr(
 			ama::jsctx, global, '__require_cache', g_require_cache

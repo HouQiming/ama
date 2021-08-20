@@ -1,0 +1,6 @@
+// //// JC version: 3
+#pragma add("jc_files", "./cleanup.jc");
+
+namespace ama {
+	ama::Node*+! CleanupDummyRaws(ama::Node*+! nd_root);
+};

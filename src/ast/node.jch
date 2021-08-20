@@ -21,7 +21,8 @@ namespace ama {
 	const uint8_t! N_ITEM = 12;
 	const uint8_t! N_CALL = 13;
 	const uint8_t! N_DEPENDENCY = 14;
-	const uint8_t! N_ASSIGNMENT = 15;
+	const uint8_t! N_BINOP = 15;
+	const uint8_t! N_ASSIGNMENT = 16;
 	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;

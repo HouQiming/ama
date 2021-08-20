@@ -1,7 +1,10 @@
 // //// JC version: 3
+#include "../ast/node.jch"
+#include "./jsenv.jch"
 #pragma add("jc_files", "./jsapi.jc");
 
 namespace ama {
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data);
 	void! InitScriptEnv();
+	ama::Node*+! ParseCode(char*! code, JSValue! options);
 };

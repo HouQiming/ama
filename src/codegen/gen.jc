@@ -9,6 +9,11 @@
 
 namespace ama {
 	private const uint32_t[+]! g_identifier = ama::CharSet('0-9A-Za-z_#-');
+	void! ama::CodeGenerator::GenerateSpaceBefore(ama::CodeGenerator*+! this, ama::Node*+! nd_next) {
+		if( !nd_next.comments_before.startsWith('\n') ) {
+			this->code.push_back(' ');
+		}
+	}
 	void! ama::CodeGenerator::GenerateDefault(ama::CodeGenerator*+! this, ama::Node*+! nd) {
 		switch( nd.node_class ) {
 			default: {
@@ -98,9 +103,7 @@ namespace ama {
 					this->Generate(ndi);
 					if( ndi.s ) {
 						this->code.push_back(',');
-						if( !ndi.s.comments_before.startsWith('\n') ) {
-							this->code.push_back(' ');
-						}
+						this.GenerateSpaceBefore(ndi.s);
 					}
 				}
 				this.GenerateComment(this.scope_indent_level, nd.comments_after);
@@ -128,6 +131,13 @@ namespace ama {
 					this->Generate(nd.c);
 					this.code.push(')');
 				}
+				break;
+			}
+			case ama::N_BINOP: {
+				this->Generate(nd.c);
+				this.code.push(' ', nd.data);
+				this.GenerateSpaceBefore(nd.c.s);
+				this->Generate(nd.c.s);
 				break;
 			}
 		}

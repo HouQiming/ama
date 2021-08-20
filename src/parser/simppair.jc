@@ -148,10 +148,10 @@ namespace ama {
 		char[...][+]! symbol_array = new char[...][+]!();
 		for(char[...]&! s_symbol : s_symbols.split(' ')) {
 			if( s_symbol.length > 0 ) {
-				symbol_array.push_back(new char[+]!(s_symbol));
+				symbol_array.push_back(s_symbol);
 			}
 		}
-		symbol_array.sort();
+		symbol_array.sortby(inline(auto item):uint32_t! { return (uint32_t(item[0]) << 8) + uint32_t(255u - item.size()); });
 		if( symbol_array.length > 256 ) {
 			console.error('we only support up to 256 symbols');
 			symbol_array.resize(256);

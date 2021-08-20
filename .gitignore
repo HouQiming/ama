@@ -7,3 +7,4 @@ build/
 /default.qpad_notebook
 *.js.c
 *.js.h
+a.out
