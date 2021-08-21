@@ -10,23 +10,27 @@ namespace ama {
 		char[...]! prefix = input.subarray(p_prefix, p_ama - p_prefix);
 		char[...]! ama_str = input.subarray(p_ama);
 		intptr_t! p_line = ama_str.indexOf('\n');
-		if( p_line < 0L ) { return <<ret; }
 		//align lines
 		for(int! i = 0; i < p_ama; i += 1) {
 			if( input[i] == '\n' ) {
 				ret.push('\n');
 			}
 		}
-		ret.push('\n');
-		ama_str = ama_str.subarray(p_line + 1L);
-		while( ama_str.length > prefix.length && ama_str.startsWith(prefix) && 
-		ama_str[prefix.length] != '*' && ama_str[prefix.length] != '"' && ama_str[prefix.length] != '\'' ) {
-			intptr_t! p_nextline = ama_str.indexOf('\n');
-			if( p_nextline < 0L ) {
-				p_nextline = ama_str.length - 1L;
+		if( p_line >= 0L ) {
+			assert((p_line + 1L - 4L) >= 0L);
+			ret.push(ama_str.subarray(4, p_line + 1L - 4L));
+			ama_str = ama_str.subarray(p_line + 1L);
+			while( ama_str.length > prefix.length && ama_str.startsWith(prefix) && 
+			ama_str[prefix.length] != '*' && ama_str[prefix.length] != '"' && ama_str[prefix.length] != '\'' ) {
+				intptr_t! p_nextline = ama_str.indexOf('\n');
+				if( p_nextline < 0L ) {
+					p_nextline = ama_str.length - 1L;
+				}
+				ret.push(ama_str.subarray(prefix.length, p_nextline + 1L - prefix.length));
+				ama_str = ama_str.subarray(p_nextline + 1L);
 			}
-			ret.push(ama_str.subarray(prefix.length, p_nextline + 1L - prefix.length));
-			ama_str = ama_str.subarray(p_nextline + 1L);
+		} else {
+			ret.push(ama_str.subarray(4L));
 		}
 		return <<ret;
 	}
