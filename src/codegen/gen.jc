@@ -151,6 +151,9 @@ namespace ama {
 		//case N_ITEM:
 	}
 	void! ama::CodeGenerator::GenerateComment(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {
+		if( this.hook_comment != NULL ) {
+			if( this.hook_comment(this, comment.data(), comment.length, expected_indent_level) != 0 ) { return; }
+		}
 		if( comment.indexOf('\n') < 0 ) {
 			this.code.push(comment);
 			return;
@@ -190,7 +193,11 @@ namespace ama {
 		intptr_t! expected_indent_level = this.scope_indent_level + intptr_t(nd.indent_level);
 		//expected_indent_level should be normally redundant
 		this.GenerateComment(expected_indent_level, nd.comments_before);
-		this.GenerateDefault(nd);
+		if( this.hook != NULL && this.hook(this, nd) != 0 ) {
+			//the hook generated it
+		} else {
+			this.GenerateDefault(nd);
+		}
 		//the "normal" content of a node should not contain newline
 		if( !nd.hasBrackets() ) {
 			this.in_new_line = 0;

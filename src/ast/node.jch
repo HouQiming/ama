@@ -22,7 +22,8 @@ namespace ama {
 	const uint8_t! N_CALL = 13;
 	const uint8_t! N_DEPENDENCY = 14;
 	const uint8_t! N_BINOP = 15;
-	const uint8_t! N_ASSIGNMENT = 16;
+	const uint8_t! N_UNARY = 16;
+	const uint8_t! N_ASSIGNMENT = 17;
 	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;
@@ -31,6 +32,7 @@ namespace ama {
 	const uint32_t! STRING_SINGLE_QUOTED = 2u;
 	const uint32_t! DOT_PTR = 1u;
 	const uint32_t! DOT_CLASS = 2u;
+	const uint32_t! UNARY_POSTFIX = 1u;
 	const uint32_t! DEP_C_INCLUDE = 0u;
 	const uint32_t! DEP_JS_REQUIRE = 1u;
 	const uint32_t! DEP_TYPE_MASK = 31u;
@@ -93,11 +95,11 @@ namespace ama {
 			return this;
 		}
 		inline ama::Node*+! setCommentsBefore(ama::Node*+! this, char[|]! comments) {
-			this.comments_before = this->comments_before;
+			this.comments_before = comments;
 			return this;
 		}
 		inline ama::Node*+! setCommentsAfter(ama::Node*+! this, char[|]! comments) {
-			this.comments_after = this->comments_after;
+			this.comments_after = comments;
 			return this;
 		}
 		inline ama::Node*+! setIndent(ama::Node*+! this, int! indent_level) {
@@ -166,6 +168,13 @@ namespace ama {
 	inline ama::Node*+! nNodeof(Node*+! nd) {
 		nd.s = NULL;
 		return ama::CreateNode(N_NODEOF, nd);
+	}
+	inline ama::Node*+! nUnary(Node*+! nd) {
+		nd.s = NULL;
+		return ama::CreateNode(N_UNARY, nd);
+	}
+	inline ama::Node*+! nAssignment(Node*+! nd_def, Node*+! nd_value) {
+		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, NULL)));
 	}
 	///////////////
 	inline ama::Node*+! GetPlaceHolder() {
