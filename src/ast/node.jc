@@ -606,6 +606,21 @@ ama::Node*! ama::Node::Save(ama::Node*! this, char[|]! change_ext) {
 	return nd_root;
 }
 
+int! ama::Node::isExpr(ama::Node*! this) {
+	switch( this.node_class ) {
+		//case N_RAW:
+		//case N_SYMBOL:
+		case ama::N_REF: case ama::N_NUMBER: case ama::N_STRING: case ama::N_NODEOF: case ama::N_SCOPE: //case N_RAW_DECLARATION:
+		//case N_FUNCTION:
+		//case N_CLASS:
+		case ama::N_DOT: case ama::N_ITEM: case ama::N_CALL: //case N_DEPENDENCY:
+		case ama::N_BINOP: case ama::N_UNARY: case ama::N_ASSIGNMENT: {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 ///////////////////////////////////////
 ama::Node*+! ama::Node::MergeCommentsAfter(ama::Node*+! this, ama::Node*+! nd_after) {
 	this.comments_after = new char[|]!(this.comments_after + nd_after.comments_before);

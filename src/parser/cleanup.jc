@@ -38,7 +38,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node*+! StripBinaryOperatorSpaces(ama::Node*+! nd_root) {
-		for(ama::Node*&! nd : nd_root.FindAll(ama::N_BINOP, NULL)) {
+		for(ama::Node*! nd : nd_root.FindAll(ama::N_BINOP, NULL)) {
 			ama::Node*+! @nojson nd_a = nd.c;
 			if( nd_a.comments_after.endsWith(' ') ) {
 				nd_a.comments_after = new char[|]!(nd_a.comments_after.subarray(0, nd_a.comments_after.length - 1));
@@ -46,6 +46,15 @@ namespace ama {
 			ama::Node*+! @nojson nd_b = nd.c.s;
 			if( nd_b.comments_before.startsWith(' ') ) {
 				nd_b.comments_before = new char[|]!(nd_b.comments_before.subarray(1));
+			}
+		}
+		return nd_root;
+	}
+	ama::Node*+! RemoveRedundantSemicolon(ama::Node*+! nd_root) {
+		for(ama::Node*+! nd : nd_root.FindAll(ama::N_SYMBOL, ";")) {
+			if( nd.p.node_class == ama::N_SCOPE ) {
+				nd.Delete();
+				nd.FreeASTStorage();
 			}
 		}
 		return nd_root;

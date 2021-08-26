@@ -141,6 +141,7 @@ namespace ama {
 		ama::Node*+! MergeCommentsAfter(ama::Node*+! this, ama::Node*+! nd_after);
 		ama::Node*+! MergeCommentsBefore(ama::Node*+! this, ama::Node*+! nd_before);
 		char[|]! DestroyForSymbol(ama::Node*+! this);
+		int! isExpr(ama::Node*! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;

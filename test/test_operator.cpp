@@ -1,6 +1,6 @@
 /*
 @ama
-let nd_root=ParseCurrentFile().ParseOperators().StripBinaryOperatorSpaces();
+let nd_root=ParseCurrentFile();
 console.log(JSON.stringify(nd_root,null,2))
 console.log(nd_root.toSource())
 */

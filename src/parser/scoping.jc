@@ -16,8 +16,10 @@ namespace ama {
 			int! after_cpp_macro = 0;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
-				if( ndi.node_class == ama::N_SYMBOL && ndi.data == ";" ) {
+				if( (ndi.node_class == ama::N_SYMBOL && ndi.data == ";") || 
+				(ndi_next && ndi_next.node_class == ama::N_SYMBOL && ndi_next.data == ";") ) {
 					//after_cpp_macro=0
+					//separate ; into its own statement
 					changed = ';';
 					ndi.s = NULL;
 					if( ndi_next ) {

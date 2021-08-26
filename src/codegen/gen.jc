@@ -59,6 +59,9 @@ namespace ama {
 				this.scope_indent_level += nd.indent_level;
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					this->Generate(ndi);
+					if( ndi.isExpr() && !(ndi.s && ndi.s.node_class == ama::N_SYMBOL && ndi.s.data == ";") ) {
+						this->code.push_back(';');
+					}
 				}
 				this.GenerateComment(this.scope_indent_level, nd.comments_after);
 				this.scope_indent_level = bk_indent;

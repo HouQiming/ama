@@ -415,6 +415,11 @@ namespace ama {
 		ama::ParseNodeof(nd_root);
 		ama::CleanupDummyRaws(nd_root);
 		ama::ParseAssignment(nd_root, options);
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
+			ama::ParseOperators(nd_root, options);
+			ama::StripBinaryOperatorSpaces(nd_root);
+		}
+		ama::RemoveRedundantSemicolon(nd_root);
 		return nd_root;
 	}
 	private JSValueConst! JSParseCurrentFile(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic, JSValue*+! func_data) {
