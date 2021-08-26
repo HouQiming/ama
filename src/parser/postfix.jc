@@ -104,7 +104,7 @@ namespace ama {
 						ama::Node*+! ndj_last = ndj.LastChild();
 						if( ndj_last != NULL && ndj_last.node_class == ama::N_SYMBOL && ndj_last.data == "," ) {
 							ndj_last.Delete();
-							ndj_last.FreeASTStorage()
+							ndj_last.FreeASTStorage();
 						}
 						new_children.push_back(ndj);
 					}
@@ -132,7 +132,7 @@ namespace ama {
 						ama::Node*+! ndj_last = ndj.LastChild();
 						if( ndj_last != NULL && ndj_last.node_class == ama::N_SYMBOL && ndj_last.data == "," ) {
 							ndj_last.Delete();
-							ndj_last.FreeASTStorage()
+							ndj_last.FreeASTStorage();
 						} else {
 							new_children.push_back(ndj);
 						}

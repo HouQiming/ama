@@ -59,7 +59,7 @@ namespace ama {
 		if( g_free_nodes ) {
 			ret = g_free_nodes;
 			//we could have leftover data from a freed node, set to NULL to release RC
-			ret.data=NULL
+			ret.data = NULL;
 			ret.comments_before = NULL;
 			ret.comments_after = NULL;
 			g_free_nodes = ret.s;
@@ -417,6 +417,7 @@ private void! dfsFreeChildrenStorage(ama::Node*+! nd) {
 		n_steps += 1;
 	}
 	if( ndi_last != NULL ) {
+		ama::Node*+! @nojson g_free_nodes;
 		ndi_last.s = g_free_nodes;
 		g_free_nodes = nd.c;
 		nd.c = NULL;
@@ -424,6 +425,7 @@ private void! dfsFreeChildrenStorage(ama::Node*+! nd) {
 }
 
 void! ama::Node::FreeASTStorage(ama::Node*+! this) {
+	ama::Node*+! @nojson g_free_nodes;
 	//do not wipe .data and stuff, we could use them again in a C++ expr
 	assert(!this.p);
 	dfsFreeChildrenStorage(this);
@@ -603,20 +605,21 @@ ama::Node*! ama::Node::Save(ama::Node*! this, char[|]! change_ext) {
 }
 
 ///////////////////////////////////////
-ama::Node*! ama::Node::MergeCommentsAfter(ama::Node*+! this, Node*+! nd_after) {
-	this.comments_after=new char[|](this.comments_after+nd_after.comments_before)
-	nd_after.comments_before=""
-	return this
+ama::Node*+! ama::Node::MergeCommentsAfter(ama::Node*+! this, ama::Node*+! nd_after) {
+	this.comments_after = new char[|]!(this.comments_after + nd_after.comments_before);
+	nd_after.comments_before = "";
+	return this;
 }
 
-ama::Node*! ama::Node::MergeCommentsBefore(ama::Node*+! this, Node*+! nd_before) {
-	this.comments_before=new char[|](nd_before.comments_after+this.comments_before+)
-	nd_before.comments_after=""
-	return this
+ama::Node*+! ama::Node::MergeCommentsBefore(ama::Node*+! this, ama::Node*+! nd_before) {
+	this.comments_before = new char[|]!(nd_before.comments_after + this.comments_before);
+	nd_before.comments_after = "";
+	return this;
 }
 
-char[|] ama::Node::DestroyForSymbol(ama::Node*+! this) {
-	char[|] ret=this.data
-	this.FreeASTStorage()
-	return ret
+char[|]! ama::Node::DestroyForSymbol(ama::Node*+! this) {
+	char[|]! ret = this.data;
+	this.p = NULL;
+	this.FreeASTStorage();
+	return ret;
 }

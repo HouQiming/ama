@@ -56,6 +56,6 @@ __global.default_options={
 	binary_operators:'as\n **\n * / %\n + -\n << >> >>>\n <=>\n < <= > >= in instanceof\n == != === !==\n &\n ^\n |\n &&\n ||\n',
 	prefix_operators:'++ -- ! ~ + - * & typeof void delete sizeof co_await new',
 	postfix_operators:'++ --',
-	//a sane set: void is too common in C/C++ to be treated as an operator by default
+	//void is too common in C/C++ to be treated as an operator by default
 	named_operators:'typeof delete sizeof co_await new in instanceof as',
 };
