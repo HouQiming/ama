@@ -130,75 +130,6 @@ namespace ama {
 					} else {
 						pr = binop_priority[ndi.data];
 						if( pr ) {
-							//if( has_pointed_bracket && ndi.data.startsWith('>') ) {
-							//	//template call detection
-							//	//we also want to cover the CUDA <<< >>>
-							//	intptr_t! p_left = stack.length - 1;
-							//	const int! STATE_OPERAND = 0;
-							//	const int! STATE_COMMA = 1;
-							//	const int! STATE_START = 2;
-							//	int! state = STATE_START;
-							//	intptr_t! p_left_template = -1L;
-							//	ama::Node*+[+]! template_args = new ama::Node*+[+]!();
-							//	uint8_t! template_node_class = ama::N_CALL_TEMPLATE;
-							//	for(; p_left >= 0; p_left -= 1) {
-							//		if( p_left >= 1 && stack[p_left].node_class == ama::N_SYMBOL && stack[p_left].data.endsWith('<') && 
-							//		stack[p_left - 1].node_class != ama::N_SYMBOL ) {
-							//			//dangling < with operand
-							//			p_left_template = p_left - 1;
-							//			template_args.push(stack[p_left - 1]);
-							//			stack[p_left - 1].MergeCommentsAfter(stack[p_left]);
-							//			break;
-							//		} else if( p_left >= 2 && ndi.data == '>>>' && 
-							//		stack[p_left].node_class == ama::N_SYMBOL && stack[p_left].data.endsWith('<') && 
-							//		stack[p_left - 1].node_class == ama::N_SYMBOL && stack[p_left - 1].data == '<<' && 
-							//		stack[p_left - 2].node_class != ama::N_SYMBOL ) {
-							//			//CUDA << < ... >>>
-							//			p_left_template = p_left - 2;
-							//			template_args.push(stack[p_left - 2]);
-							//			template_node_class = ama::N_CALL_CUDA_KERNEL;
-							//			break;
-							//		} else if( stack[p_left].node_class == ama::N_BINOP && stack[p_left].data == "<" ) {
-							//			//BINOP <
-							//			if( state == STATE_COMMA ) { break; }
-							//			template_args.push(stack[p_left].c, stack[p_left].c.s);
-							//			p_left_template = p_left;
-							//			break;
-							//		}
-							//		if( stack[p_left].node_class == ama::N_SYMBOL ) {
-							//			if( stack[p_left].data != "," ) {
-							//				//not a valid template
-							//				break;
-							//			}
-							//			if( state != STATE_COMMA ) { break; }
-							//			state = STATE_OPERAND;
-							//		} else {
-							//			if( state == STATE_COMMA ) { break; }
-							//			state = STATE_COMMA;
-							//		}
-							//	}
-							//	if( p_left_template >= 0L ) {
-							//		for(intptr_t! i = p_left_template + 1L; i < stack.length; i += 1) {
-							//			if( stack[i].node_class != ama::N_SYMBOL ) {
-							//				template_args.push(stack[i]);
-							//			}
-							//		}
-							//		//rely on GC for node recycling here
-							//		ama::Node*+! nd_call_template = ama::CreateNodeFromChildren(template_node_class, template_args);
-							//		stack.resize(p_left_template);
-							//		stack.push_back(nd_call_template);
-							//		changed = 1;
-							//		if( ndi.data.length > 1 ) {
-							//			ndi.data = new char[|]!(ndi.data.subarray(1));
-							//			continue;
-							//		} else {
-							//			ndi.p = NULL;
-							//			ndi.FreeASTStorage();
-							//			ndi = ndi_next;
-							//			continue;
-							//		}
-							//	}
-							//}
 							//flush >=pr
 							changed |= FoldBinop(binop_priority, stack, pr);
 						} else {
@@ -257,6 +188,40 @@ namespace ama {
 		for(ama::Node*&+! nd_ref : nd_root.FindAll(ama::N_SYMBOL, NULL)) {
 			if( named_ops[nd_ref.data] ) {
 				nd_ref.node_class = ama::N_REF;
+			}
+		}
+		return nd_root;
+	}
+	ama::Node*+! ParsePointedBrackets(ama::Node*+! nd_root) {
+		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			//actually split it
+			ama::Node*+*+[+]! stack = new ama::Node*+*+[+]!();
+			ama::Node*+*+! p_self = &nd_raw.c;
+			int! was_ref = 0;
+			for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
+				if( ndi.node_class == ama::N_SYMBOL ) {
+					if( was_ref && ndi.data == "<" ) {
+						stack.push_back(p_self);
+					} else if( (ndi.data == ">" || ndi.data == ">>" || ndi.data == ">>>") && stack.length >= ndi.data.length ) {
+						for(int! j = 0; j < ndi.data.length; j += 1) {
+							ama::Node*+*+! p_ndi0 = stack.pop();
+							ama::Node*+! ndi0 = *p_ndi0;
+							*p_self = NULL;
+							ama::Node*+! nd_child = ama::CreateNode(ama::N_RAW, ndi0.s);
+							nd_child.flags = uint32_t('<') | uint32_t('>') << 8;
+							nd_child.s = ndi.s;
+							nd_child.p = nd_raw;
+							*p_ndi0 = nd_child;
+							p_self = &nd_child.s;
+						}
+						was_ref = 0;
+						continue;
+					} else if( ndi.data == '||' || ndi.data == '&&' ) {
+						stack.clear();
+					}
+				}
+				was_ref = ndi.node_class == ama::N_REF;
+				p_self = &ndi.s;
 			}
 		}
 		return nd_root;

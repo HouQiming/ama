@@ -89,8 +89,9 @@ namespace ama {
 					ndi.p = nd_raw;
 					ndi.s = ndi_next.s.s;
 					continue;
-				} else if( ndi.s && ndi.s.isRawNode('(', ')') ) {
+				} else if( ndi.s && (ndi.s.isRawNode('(', ')') || ndi.s.isRawNode('<', '>')) ) {
 					//call
+					uint8_t! call_class = ndi.s.isRawNode('<', '>') ? ama::N_CALL_TEMPLATE : ama::N_CALL;
 					*p_self = NULL;
 					ndi.p = NULL;
 					ndi.s = NULL;
@@ -109,7 +110,7 @@ namespace ama {
 						new_children.push_back(ndj);
 					}
 					ama::Node*+! ndi_old = ndi;
-					ndi = ama::CreateNodeFromChildren(ama::N_CALL, new_children);
+					ndi = ama::CreateNodeFromChildren(call_class, new_children);
 					ndi.comments_after = ndi_next.comments_after;
 					ndi.indent_level = ndi_old.indent_level;
 					//ndi_old.indent_level=0;
