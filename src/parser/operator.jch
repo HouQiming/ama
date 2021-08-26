@@ -2,7 +2,6 @@
 #pragma add("jc_files", "./operator.jc");
 
 namespace ama {
-	Map<char[|], int>! GetOperatorSet(JSValueConst! options, char*! name);
 	ama::Node*+! ParseAssignment(ama::Node*+! nd_root, JSValueConst! options);
 	ama::Node*+! ParseOperators(ama::Node*+! nd_root, JSValueConst! options);
 };

@@ -10,64 +10,64 @@ namespace ama {
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+!*+! p_self = &nd_raw.c;
-			ama::Node*+! ndi_last_prototype = NULL;
+			//ama::Node*+! ndi_last_prototype = NULL;
 			const int! LAST_PROTOTYPE_NONE = 0;
 			const int! LAST_PROTOTYPE_CPP_LAMBDA = 1;
 			const int! LAST_PROTOTYPE_MAYBE_SUFFIX = 2;
 			int! last_prototype_kind = 0;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
-				if( ndi_last_prototype ) {
-					if( last_prototype_kind == LAST_PROTOTYPE_MAYBE_SUFFIX && ndi.node_class == ama::N_SYMBOL && ndi.data != '->' && ndi.data != '=>' ) {
-						ndi_last_prototype = NULL;
-						last_prototype_kind = LAST_PROTOTYPE_NONE;
-					}
-				}
-				if( (ndi_last_prototype || ndi.node_class != ama::N_SYMBOL) && 
-				ndi.s && ndi.s.node_class == ama::N_SYMBOL && ndi.s.data == '=>' && 
-				ndi.s.s && (ndi.s.s.node_class == ama::N_SCOPE || ndi.s.s.isRawNode('{', '}')) ) {
-					//=>{}: remove =>, once
-					ama::Node*+! ndi_next_next = ndi_next.s;
-					ama::Node*+! nd_alleged_prototype = ndi_last_prototype ? ndi_last_prototype : ndi;
-					if( nd_alleged_prototype.node_class == ama::N_CALL ) {
-						//COULDDO: break out the "function name", could flag the scope then do it later
-						//ndi_next_next
-					}
-					ndi.s = ndi_next_next;
-					ndi_next_next.comments_before = new char[|]!(ndi_next.comments_before + ndi_next_next.comments_before);
-					ndi_next = ndi.s;
-				}
-				if( ndi_last_prototype && ndi.s && (ndi.s.node_class == ama::N_SCOPE || ndi.s.isRawNode('{', '}')) ) {
-					//return-typed lambda
-					//if( ndi.s.node_class != ama::N_SCOPE && (!ndi.s.c || !ndi.s.c.s) ) {
-					//	//zero or one "statement": assume scope
-					//	ConvertToScope(ndi.s);
-					//}
-					//ndi_last_prototype.s is the symbol
-					//console.log(ndi_last_prototype.toAST())
-					ama::Node*+! ndi_next_next = ndi_next.s;
-					if( last_prototype_kind == LAST_PROTOTYPE_CPP_LAMBDA ) {
-						ama::Node*+! nd_symbol = ndi_last_prototype.s;
-						ama::Node*+! nd_type_first = ndi_last_prototype.s.s;
-						ndi_last_prototype.s = ndi_next_next;
-						ndi.s = NULL;
-						ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-						ndi_last_prototype.ReplaceWith(nd_tmp);
-						ndi = ama::nRawDeclaration(ndi_last_prototype, nd_symbol, ama::CreateNode(ama::N_RAW, nd_type_first), ndi_next);
-						nd_tmp.ReplaceWith(ndi);
-					} else {
-						ama::Node*+! nd_following = ndi_last_prototype.s;
-						ndi_last_prototype.s = ndi_next_next;
-						ndi_next.s = NULL;
-						ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-						ndi_last_prototype.ReplaceWith(nd_tmp);
-						ndi = ama::CreateNode(ama::N_RAW_DECLARATION, ama::cons(ndi_last_prototype, nd_following));
-						nd_tmp.ReplaceWith(ndi);
-					}
-					ndi_last_prototype = NULL;
-					last_prototype_kind = LAST_PROTOTYPE_NONE;
-					continue;
-				}
+				//if( ndi_last_prototype ) {
+				//	if( last_prototype_kind == LAST_PROTOTYPE_MAYBE_SUFFIX && ndi.node_class == ama::N_SYMBOL && ndi.data != '->' && ndi.data != '=>' ) {
+				//		ndi_last_prototype = NULL;
+				//		last_prototype_kind = LAST_PROTOTYPE_NONE;
+				//	}
+				//}
+				//if( (ndi_last_prototype || ndi.node_class != ama::N_SYMBOL) && 
+				//ndi.s && ndi.s.node_class == ama::N_SYMBOL && ndi.s.data == '=>' && 
+				//ndi.s.s && (ndi.s.s.node_class == ama::N_SCOPE || ndi.s.s.isRawNode('{', '}')) ) {
+				//	//=>{}: remove =>, once
+				//	ama::Node*+! ndi_next_next = ndi_next.s;
+				//	ama::Node*+! nd_alleged_prototype = ndi_last_prototype ? ndi_last_prototype : ndi;
+				//	if( nd_alleged_prototype.node_class == ama::N_CALL ) {
+				//		//COULDDO: break out the "function name", could flag the scope then do it later
+				//		//ndi_next_next
+				//	}
+				//	ndi.s = ndi_next_next;
+				//	ndi_next_next.comments_before = new char[|]!(ndi_next.comments_before + ndi_next_next.comments_before);
+				//	ndi_next = ndi.s;
+				//}
+				//if( ndi_last_prototype && ndi.s && (ndi.s.node_class == ama::N_SCOPE || ndi.s.isRawNode('{', '}')) ) {
+				//	//return-typed lambda
+				//	//if( ndi.s.node_class != ama::N_SCOPE && (!ndi.s.c || !ndi.s.c.s) ) {
+				//	//	//zero or one "statement": assume scope
+				//	//	ConvertToScope(ndi.s);
+				//	//}
+				//	//ndi_last_prototype.s is the symbol
+				//	//console.log(ndi_last_prototype.toAST())
+				//	ama::Node*+! ndi_next_next = ndi_next.s;
+				//	if( last_prototype_kind == LAST_PROTOTYPE_CPP_LAMBDA ) {
+				//		ama::Node*+! nd_symbol = ndi_last_prototype.s;
+				//		ama::Node*+! nd_type_first = ndi_last_prototype.s.s;
+				//		ndi_last_prototype.s = ndi_next_next;
+				//		ndi.s = NULL;
+				//		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+				//		ndi_last_prototype.ReplaceWith(nd_tmp);
+				//		ndi = ama::nRawDeclaration(ndi_last_prototype, nd_symbol, ama::CreateNode(ama::N_RAW, nd_type_first), ndi_next);
+				//		nd_tmp.ReplaceWith(ndi);
+				//	} else {
+				//		ama::Node*+! nd_following = ndi_last_prototype.s;
+				//		ndi_last_prototype.s = ndi_next_next;
+				//		ndi_next.s = NULL;
+				//		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+				//		ndi_last_prototype.ReplaceWith(nd_tmp);
+				//		ndi = ama::CreateNode(ama::N_RAW_DECLARATION, ama::cons(ndi_last_prototype, nd_following));
+				//		nd_tmp.ReplaceWith(ndi);
+				//	}
+				//	ndi_last_prototype = NULL;
+				//	last_prototype_kind = LAST_PROTOTYPE_NONE;
+				//	continue;
+				//}
 				if( ndi.node_class == ama::N_SYMBOL ) {
 					//do nothing
 				} else if( ndi.s && ndi.s.node_class == ama::N_SYMBOL && 
@@ -143,34 +143,35 @@ namespace ama {
 					ndi.s = ndi_next_next;
 					*p_self = ndi;
 					continue;
-				} else if( ndi.s && (ndi.s.node_class == ama::N_SCOPE || ndi.s.isRawNode('{', '}')) ) {
-					//object-initializer-like or statement-like
-					//note: we tolerate false positives for now, exclude `new foo(){}, bar{}` later
-					//if( ndi.s.node_class != ama::N_SCOPE && (!ndi.s.c || !ndi.s.c.s) ) {
-					//	//zero or one "statement": assume scope
-					//	ConvertToScope(ndi.s);
-					//}
-					ama::Node*+! ndi_next_next = ndi_next.s;
-					*p_self = NULL;
-					ndi.p = NULL;
-					ndi.s = NULL;
-					ndi_next.p = NULL;
-					ndi_next.s = NULL;
-					ndi = ama::nRawDeclaration(ndi, ndi_next);
-					ndi.p = nd_raw;
-					ndi.s = ndi_next_next;
-					*p_self = ndi;
-					//no continue: there cannot be more postfix after {}
-				} else if( ndi.s && ndi.s.node_class == ama::N_SYMBOL && 
-				((isCPPLambda(ndi) && ndi.s.data == '->') || 
-				(ndi.node_class == ama::N_CALL && ndi.c.node_class == ama::N_REF && (ndi.c.data == 'function' || ndi.c.data == 'inline') && ndi.s.data == ":")) ) {
-					//trailing return type, save ndi_last_prototype
-					ndi_last_prototype = ndi;
-					last_prototype_kind = LAST_PROTOTYPE_CPP_LAMBDA;
-				} else if( ndi.node_class == ama::N_CALL || ndi.isRawNode('(', ')') ) {
-					ndi_last_prototype = ndi;
-					last_prototype_kind = LAST_PROTOTYPE_MAYBE_SUFFIX;
 				}
+				//else if( ndi.s && (ndi.s.node_class == ama::N_SCOPE || ndi.s.isRawNode('{', '}')) ) {
+				//	//object-initializer-like or statement-like
+				//	//note: we tolerate false positives for now, exclude `new foo(){}, bar{}` later
+				//	//if( ndi.s.node_class != ama::N_SCOPE && (!ndi.s.c || !ndi.s.c.s) ) {
+				//	//	//zero or one "statement": assume scope
+				//	//	ConvertToScope(ndi.s);
+				//	//}
+				//	ama::Node*+! ndi_next_next = ndi_next.s;
+				//	*p_self = NULL;
+				//	ndi.p = NULL;
+				//	ndi.s = NULL;
+				//	ndi_next.p = NULL;
+				//	ndi_next.s = NULL;
+				//	ndi = ama::nRawDeclaration(ndi, ndi_next);
+				//	ndi.p = nd_raw;
+				//	ndi.s = ndi_next_next;
+				//	*p_self = ndi;
+				//	//no continue: there cannot be more postfix after {}
+				//} else if( ndi.s && ndi.s.node_class == ama::N_SYMBOL && 
+				//((isCPPLambda(ndi) && ndi.s.data == '->') || 
+				//(ndi.node_class == ama::N_CALL && ndi.c.node_class == ama::N_REF && (ndi.c.data == 'function' || ndi.c.data == 'inline') && ndi.s.data == ":")) ) {
+				//	//trailing return type, save ndi_last_prototype
+				//	ndi_last_prototype = ndi;
+				//	last_prototype_kind = LAST_PROTOTYPE_CPP_LAMBDA;
+				//} else if( ndi.node_class == ama::N_CALL || ndi.isRawNode('(', ')') ) {
+				//	ndi_last_prototype = ndi;
+				//	last_prototype_kind = LAST_PROTOTYPE_MAYBE_SUFFIX;
+				//}
 				p_self = &ndi.s;
 				ndi = ndi_next;
 			}

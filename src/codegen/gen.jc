@@ -95,13 +95,19 @@ namespace ama {
 				this->code.push(nd.data);
 				break;
 			}
-			case ama::N_CALL: {
+			case ama::N_CALL: case ama::N_CALL_TEMPLATE: case ama::N_CALL_CUDA_KERNEL: {
 				if( nd.c ) {
 					this->Generate(nd.c);
 				} else {
 					this->code.push('/* missing callee */');
 				}
-				this->code.push_back('(');
+				if( nd.node_class == ama::N_CALL_CUDA_KERNEL ) {
+					this->code.push('<<<');
+				} else if( nd.node_class == ama::N_CALL_TEMPLATE ) {
+					this->code.push_back('<');
+				} else {
+					this->code.push_back('(');
+				}
 				intptr_t! bk_indent = this.scope_indent_level;
 				this.scope_indent_level += nd.indent_level;
 				for(ama::Node*+! ndi = nd.c.s; ndi; ndi = ndi.s) {
@@ -113,7 +119,13 @@ namespace ama {
 				}
 				this.GenerateComment(this.scope_indent_level, nd.comments_after);
 				this.scope_indent_level = bk_indent;
-				this->code.push_back(')');
+				if( nd.node_class == ama::N_CALL_CUDA_KERNEL ) {
+					this->code.push('>>>');
+				} else if( nd.node_class == ama::N_CALL_TEMPLATE ) {
+					this->code.push_back('>');
+				} else {
+					this->code.push_back(')');
+				}
 				break;
 			}
 			case ama::N_RAW_DECLARATION: {

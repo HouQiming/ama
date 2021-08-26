@@ -17,17 +17,23 @@ namespace ama {
 	const uint8_t! N_RAW_DECLARATION = 8;
 	const uint8_t! N_FUNCTION = 9;
 	const uint8_t! N_CLASS = 10;
-	const uint8_t! N_DOT = 11;
-	const uint8_t! N_ITEM = 12;
-	const uint8_t! N_CALL = 13;
-	const uint8_t! N_DEPENDENCY = 14;
-	const uint8_t! N_BINOP = 15;
-	const uint8_t! N_UNARY = 16;
-	const uint8_t! N_ASSIGNMENT = 17;
+	const uint8_t! N_TYPED_VAR = 11;
+	const uint8_t! N_DOT = 12;
+	const uint8_t! N_ITEM = 13;
+	const uint8_t! N_CALL = 14;
+	const uint8_t! N_CALL_TEMPLATE = 15;
+	const uint8_t! N_CALL_CUDA_KERNEL = 16;
+	const uint8_t! N_DEPENDENCY = 17;
+	const uint8_t! N_BINOP = 18;
+	const uint8_t! N_UNARY = 19;
+	const uint8_t! N_ASSIGNMENT = 20;
 	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;
 	/////////////////
+	const uint32_t! REF_WRITTEN = 1u;
+	//REF_RW is only set for REF_WRITTEN nodes: non-written nodes are trivially read 
+	const uint32_t! REF_RW = 2u;
 	const uint32_t! LITERAL_PARSED = 1u;
 	const uint32_t! STRING_SINGLE_QUOTED = 2u;
 	const uint32_t! DOT_PTR = 1u;

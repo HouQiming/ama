@@ -1,12 +1,10 @@
 // //// JC version: 3
-#include <console.jch>
 #include '../ast/node.jch'
 #include "../script/jsenv.jch"
-#include './depends.jch'
 #include "./operator.jch"
 
 namespace ama {
-	Map<char[|], int>! GetOperatorSet(JSValueConst! options, char*! name) {
+	private Map<char[|], int>! GetOperatorSet(JSValueConst! options, char*! name) {
 		char[|]! s_binops = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, name));
 		Map<char[|], int>! ret = new Map<char[|], int>!();
 		int! priority = 1;
@@ -132,6 +130,75 @@ namespace ama {
 					} else {
 						pr = binop_priority[ndi.data];
 						if( pr ) {
+							//if( has_pointed_bracket && ndi.data.startsWith('>') ) {
+							//	//template call detection
+							//	//we also want to cover the CUDA <<< >>>
+							//	intptr_t! p_left = stack.length - 1;
+							//	const int! STATE_OPERAND = 0;
+							//	const int! STATE_COMMA = 1;
+							//	const int! STATE_START = 2;
+							//	int! state = STATE_START;
+							//	intptr_t! p_left_template = -1L;
+							//	ama::Node*+[+]! template_args = new ama::Node*+[+]!();
+							//	uint8_t! template_node_class = ama::N_CALL_TEMPLATE;
+							//	for(; p_left >= 0; p_left -= 1) {
+							//		if( p_left >= 1 && stack[p_left].node_class == ama::N_SYMBOL && stack[p_left].data.endsWith('<') && 
+							//		stack[p_left - 1].node_class != ama::N_SYMBOL ) {
+							//			//dangling < with operand
+							//			p_left_template = p_left - 1;
+							//			template_args.push(stack[p_left - 1]);
+							//			stack[p_left - 1].MergeCommentsAfter(stack[p_left]);
+							//			break;
+							//		} else if( p_left >= 2 && ndi.data == '>>>' && 
+							//		stack[p_left].node_class == ama::N_SYMBOL && stack[p_left].data.endsWith('<') && 
+							//		stack[p_left - 1].node_class == ama::N_SYMBOL && stack[p_left - 1].data == '<<' && 
+							//		stack[p_left - 2].node_class != ama::N_SYMBOL ) {
+							//			//CUDA << < ... >>>
+							//			p_left_template = p_left - 2;
+							//			template_args.push(stack[p_left - 2]);
+							//			template_node_class = ama::N_CALL_CUDA_KERNEL;
+							//			break;
+							//		} else if( stack[p_left].node_class == ama::N_BINOP && stack[p_left].data == "<" ) {
+							//			//BINOP <
+							//			if( state == STATE_COMMA ) { break; }
+							//			template_args.push(stack[p_left].c, stack[p_left].c.s);
+							//			p_left_template = p_left;
+							//			break;
+							//		}
+							//		if( stack[p_left].node_class == ama::N_SYMBOL ) {
+							//			if( stack[p_left].data != "," ) {
+							//				//not a valid template
+							//				break;
+							//			}
+							//			if( state != STATE_COMMA ) { break; }
+							//			state = STATE_OPERAND;
+							//		} else {
+							//			if( state == STATE_COMMA ) { break; }
+							//			state = STATE_COMMA;
+							//		}
+							//	}
+							//	if( p_left_template >= 0L ) {
+							//		for(intptr_t! i = p_left_template + 1L; i < stack.length; i += 1) {
+							//			if( stack[i].node_class != ama::N_SYMBOL ) {
+							//				template_args.push(stack[i]);
+							//			}
+							//		}
+							//		//rely on GC for node recycling here
+							//		ama::Node*+! nd_call_template = ama::CreateNodeFromChildren(template_node_class, template_args);
+							//		stack.resize(p_left_template);
+							//		stack.push_back(nd_call_template);
+							//		changed = 1;
+							//		if( ndi.data.length > 1 ) {
+							//			ndi.data = new char[|]!(ndi.data.subarray(1));
+							//			continue;
+							//		} else {
+							//			ndi.p = NULL;
+							//			ndi.FreeASTStorage();
+							//			ndi = ndi_next;
+							//			continue;
+							//		}
+							//	}
+							//}
 							//flush >=pr
 							changed |= FoldBinop(binop_priority, stack, pr);
 						} else {

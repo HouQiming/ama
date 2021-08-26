@@ -408,6 +408,8 @@ namespace ama {
 			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
 		}
 		ama::Node*+! nd_root = ama::ParseSimplePairing(code, options);
+		if ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_pointed_brackets'), 1):
+			ama::ParsePointedBrackets(nd_root);
 		ama::DelimitCLikeStatements(nd_root);
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root);
