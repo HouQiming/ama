@@ -53,7 +53,7 @@ Node.toJSON=function(){
 __global.c_include_paths=['/usr/include','/usr/local/include']
 __global.default_options={
 	symbols:'!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->*',
-	binary_operators:'as\n **\n * / %\n + -\n << >> >>>\n <=>\n < <= > >= in instanceof\n == != === !==\n &\n ^\n |\n &&\n ||\n',
+	binary_operators:'||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n',
 	prefix_operators:'++ -- ! ~ + - * & typeof void delete sizeof co_await new',
 	postfix_operators:'++ --',
 	//void is too common in C/C++ to be treated as an operator by default

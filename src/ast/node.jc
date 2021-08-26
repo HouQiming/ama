@@ -241,9 +241,11 @@ ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new)
 	if( pos == ama::POS_REPLACE ) {
 		if( this.comments_before != '' && nd_new.comments_before == '' ) {
 			nd_new.comments_before = this.comments_before;
+			this.comments_before = '';
 		}
 		if( this.comments_after != '' && nd_new.comments_after == '' ) {
 			nd_new.comments_after = this.comments_after;
+			this.comments_after = '';
 		}
 		nd_new.indent_level = this.indent_level;
 	}

@@ -1,4 +1,5 @@
 // //// JC version: 3
+#include <console.jch>
 #include '../ast/node.jch'
 #include "../script/jsenv.jch"
 #include './depends.jch'
@@ -28,24 +29,30 @@ namespace ama {
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
 				if( ndi_next && ndi_next.s && 
-				ndi_next.node_class == ama::N_SYMBOL && ndi_next.data == "=" && 
-				!(ndi.node_class == ama::N_SYMBOL && binop_priority[ndi.data]) ) {
-					//handle updating operators in ParseOperators instead
+				ndi_next.node_class == ama::N_SYMBOL && ndi_next.data == "=" ) {
 					ama::Node*+! @nojson ndi_next_next = ndi_next.s;
 					//move the comments
-					ndi.comments_after = new char[|]!(ndi.comments_after + ndi_next.comments_before);
+					ndi.MergeCommentsAfter(ndi_next);
 					ndi_next.Delete();
 					ama::Node*+! nd_value = ndi_next_next.s ? ama::CreateNode(ama::N_RAW, ndi_next_next) : ndi_next_next;
-					nd_value.comments_before = new char[|]!(ndi_next.comments_after + ndi_next_next.comments_before);
-					nd_value.indent_level = ndi_next_next.indent_level;
+					nd_value.comments_before = ndi_next_next.comments_before;
 					ndi_next_next.comments_before = '';
+					nd_value.MergeCommentsBefore(ndi_next);
+					nd_value.indent_level = ndi_next_next.indent_level;
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
 					nd_raw.ReplaceWith(nd_tmp);
-					nd_tmp.ReplaceWith(ama::nAssignment(nd_raw, nd_value));
+					ndi.s = NULL;
+					ama::Node*+! nd_asgn = nd_tmp.ReplaceWith(ama::nAssignment(nd_raw, nd_value));
+					if( ndi.node_class == ama::N_SYMBOL && binop_priority[ndi.data] && ndi != nd_raw.c ) {
+						//updating assignment
+						ndi.Delete();
+						nd_asgn.data = ndi.DestroyForSymbol();
+					}
 					if( ndi_next_next.s ) {
 						//detect nested assignment
 						Q.push_back(nd_value);
 					}
+					ndi_next.FreeASTStorage();
 					break;
 				}
 				ndi = ndi_next;
@@ -54,8 +61,28 @@ namespace ama {
 		return nd_root;
 	}
 	//COULDDO: lazy parsing with OwningUnparsedExpr  
+	private int! FoldBinop(Map<char[|], int>&! binop_priority, ama::Node*+[+]&+! stack, int! pr) {
+		int! changed = 0;
+		while( stack.length >= 3 && stack.back().node_class != ama::N_SYMBOL && 
+		stack[stack.length - 2].node_class == ama::N_SYMBOL && stack[stack.length - 3].node_class != ama::N_SYMBOL && 
+		binop_priority[stack[stack.length - 2].data] >= pr ) {
+			//fold high priority binop
+			ama::Node*+! nd_last_operator = stack[stack.length - 2];
+			ama::Node*+! nd_folded = ama::nBinop(
+				stack[stack.length - 3].MergeCommentsAfter(nd_last_operator),
+				nd_last_operator.data,
+				stack[stack.length - 1].MergeCommentsBefore(nd_last_operator)
+			);
+			nd_last_operator.p = NULL;
+			nd_last_operator.FreeASTStorage();
+			stack.pop();
+			stack.pop();
+			stack[stack.length - 1] = nd_folded;
+			changed = 1;
+		}
+		return changed;
+	}
 	ama::Node*+! ParseOperators(ama::Node*+! nd_root, JSValueConst! options) {
-		ama::Node*+[+]! stack;
 		Map<char[|], int>! binop_priority = GetOperatorSet(options, 'binary_operators');
 		Map<char[|], int>! prefix_ops = GetOperatorSet(options, 'prefix_operators');
 		Map<char[|], int>! postfix_ops = GetOperatorSet(options, 'postfix_operators');
@@ -71,7 +98,7 @@ namespace ama {
 		//we need to leave uninterpreted structures alone
 		for(intptr_t! i = 0; i < Q.length; i++) {
 			//binary and unary in one pass
-			stack = new ama::Node*+[+]!();
+			ama::Node*+[+]! stack = new ama::Node*+[+]!();
 			ama::Node*+! nd_raw = Q[i];
 			ama::Node*+! ndi = nd_raw.c;
 			int! changed = 0;
@@ -106,23 +133,10 @@ namespace ama {
 						pr = binop_priority[ndi.data];
 						if( pr ) {
 							//flush >=pr
-							while( stack.length >= 3 && stack.back().node_class != ama::N_SYMBOL && 
-							stack[stack.length - 2].node_class == ama::N_SYMBOL && stack[stack.length - 3].node_class != ama::N_SYMBOL && 
-							binop_priority[stack[stack.length - 2].data] >= pr ) {
-								//fold high priority binop
-								ama::Node*+! nd_last_operator = stack[stack.length - 2];
-								ama::Node*+! nd_folded = ama::nBinop(
-									stack[stack.length - 3].MergeCommentsAfter(nd_last_operator),
-									nd_last_operator.data,
-									stack[stack.length - 1].MergeCommentsBefore(nd_last_operator)
-								);
-								nd_last_operator.p = NULL;
-								nd_last_operator.FreeASTStorage();
-								stack.pop();
-								stack.pop();
-								stack.back() = nd_folded;
-								changed = 1;
-							}
+							changed |= FoldBinop(binop_priority, stack, pr);
+						} else {
+							//separator: ; or , or ...
+							changed |= FoldBinop(binop_priority, stack, 1);
 						}
 					}
 				} else {
@@ -142,9 +156,12 @@ namespace ama {
 				stack.push_back(ndi);
 				ndi = ndi_next;
 			}
+			//fold remaining binops
+			changed |= FoldBinop(binop_priority, stack, 1);
 			if( changed ) {
 				if( stack.length == 1 && !(nd_raw.flags & 0xffff) ) {
 					nd_raw.ReplaceWith(stack[0]);
+					nd_raw.c = NULL;
 					nd_raw.FreeASTStorage();
 				} else {
 					//we still have uninterpreted things, replace children
@@ -157,7 +174,18 @@ namespace ama {
 				}
 			}
 		}
-		stack.clear();
+		//convert named unary ops to call
+		for(ama::Node*&+! nd_unary : nd_root.FindAll(ama::N_UNARY, NULL)) {
+			if( named_ops[nd_unary.data] && !(nd_unary.flags & ama::UNARY_POSTFIX) ) {
+				if( nd_unary.c && nd_unary.c.comments_before == " " ) {
+					nd_unary.c.comments_before = '';
+				}
+				nd_unary.ReplaceWith(ama::CreateNode(ama::N_CALL, ama::cons(ama::nRef(nd_unary.data), nd_unary.c)));
+				nd_unary.c = NULL;
+				nd_unary.FreeASTStorage();
+			}
+		}
+		//TODO: sizeof bug
 		//convert failed-to-fold named ops back
 		for(ama::Node*&+! nd_ref : nd_root.FindAll(ama::N_SYMBOL, NULL)) {
 			if( named_ops[nd_ref.data] ) {
