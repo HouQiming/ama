@@ -169,12 +169,19 @@ namespace ama {
 		nd.s = NULL;
 		return ama::CreateNode(N_NODEOF, nd);
 	}
-	inline ama::Node*+! nUnary(Node*+! nd) {
+	inline ama::Node*+! nUnary(char[|]! s,Node*+! nd) {
 		nd.s = NULL;
-		return ama::CreateNode(N_UNARY, nd);
+		return ama::CreateNode(N_UNARY, nd).setData(s);
+	}
+	inline ama::Node*+! nUnaryPostfix(Node*+! nd,char[|]! s) {
+		nd.s = NULL;
+		return ama::CreateNode(N_UNARY, nd).setData(s).setFlags(UNARY_POSTFIX);
 	}
 	inline ama::Node*+! nAssignment(Node*+! nd_def, Node*+! nd_value) {
 		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, NULL)));
+	}
+	inline ama::Node*+! nBinop(Node*+! nd_a, char[|] op, Node*+! nd_b) {
+		return ama::CreateNode(N_BINOP, cons(nd_a, cons(nd_b, NULL))).setData(op);
 	}
 	///////////////
 	inline ama::Node*+! GetPlaceHolder() {

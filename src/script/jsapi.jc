@@ -11,6 +11,7 @@
 #include "../parser/scoping.jch"
 #include "../parser/depends.jch"
 #include "../parser/postfix.jch"
+#include "../parser/operator.jch"
 #include "../parser/cleanup.jch"
 #include "./nodeof_to_ast.jch"
 #include "./jsenv.jch"
@@ -413,6 +414,7 @@ namespace ama {
 		ama::SanitizeCommentPlacement(nd_root);
 		ama::ParseNodeof(nd_root);
 		ama::CleanupDummyRaws(nd_root);
+		ama::ParseAssignment(nd_root,options)
 		return nd_root;
 	}
 	private JSValueConst! JSParseCurrentFile(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic, JSValue*+! func_data) {
@@ -542,9 +544,11 @@ namespace ama {
 		ama::g_js_node_map.erase(nd);
 	}
 	`typedef ama::Node*(*NodeFilter)(ama::Node*);`
+	`typedef ama::Node*(*NodeFilterWithOption)(ama::Node*,JSValueConst);`
 	private class NodeFilterDesc {
-		char*! name;
-		NodeFilter! f;
+		char*! name=NULL;
+		NodeFilter! f=NULL;
+		NodeFilterWithOption! fo=NULL;
 	};
 	private NodeFilterDesc![+]! g_filters = new NodeFilterDesc![+] {
 		new NodeFilterDesc!{
@@ -554,10 +558,17 @@ namespace ama {
 		new NodeFilterDesc!{
 			name: 'CleanupDummyRaws',
 			f: ama::CleanupDummyRaws
-		}
+		},
+		new NodeFilterDesc!{
+			name: 'ParseOperators',
+			fo: ama::ParseOperators
+		},
 	};
 	private JSValueConst! JSApplyNodeFilter(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic) {
-		return ama::WrapNode(g_filters[magic].f(ama::UnwrapNode(this_val)));
+		if g_filters[magic].fo:
+			return ama::WrapNode(g_filters[magic].fo(ama::UnwrapNode(this_val),argc>=1?argv[0]:JS_UNDEFINED));
+		else
+			return ama::WrapNode(g_filters[magic].f(ama::UnwrapNode(this_val)));
 	}
 	void! InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
@@ -601,7 +612,7 @@ namespace ama {
 			JS_SetPropertyStr(
 				ama::jsctx, ama::g_node_proto, g_filters[i].name, JS_NewCFunctionMagic(
 					ama::jsctx, JSApplyNodeFilter,
-					g_filters[i].name, 1, JS_CFUNC_generic_magic, i
+					g_filters[i].name, g_filters[i].fo?2:1, JS_CFUNC_generic_magic, i
 				)
 			);
 		}
