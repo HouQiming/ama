@@ -198,7 +198,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jc
   MAIN_DEPENDENCY ../parser/simppair.jc
-  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/charset.jch ../parser/simppair.jch ${JC_LIB}/console.jch
+  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/charset.jch ../parser/simppair.jch ${JC_LIB}/console.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -296,7 +296,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/cleanup.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/cleanup.jc
   MAIN_DEPENDENCY ../parser/cleanup.jc
-  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/cleanup.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/cleanup.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -335,6 +335,6 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/decl.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/decl.jc
   MAIN_DEPENDENCY ../parser/decl.jc
-  DEPENDS ${JC_LIB}/console.jch ../ast/node.jch ../script/jsenv.jch ../parser/postfix.jch ../parser/decl.jch
+  DEPENDS ${JC_LIB}/console.jch ../ast/node.jch ../script/jsenv.jch ../parser/postfix.jch ../parser/decl.jch ../parser/operator.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

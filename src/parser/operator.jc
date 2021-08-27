@@ -212,9 +212,18 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	//TODO: weird stuff - C ?:, need to handle alongside labels
-	//type-binop ambiguity: foo*[3]*b=bar*[3]*b
-	//a sane method to resolve such ambiguity: LHS of assignment, in a function prototype... and it's C-specific
-	//makes sense to put in a separate pass! and maybe unify the situations to "LHS of assignment" first
-	//TODO: type-binop ambiguity resolution
+	//TODO: label and C ?: parsing
+	ama::Node*+! UnparseBinop(ama::Node*+! nd_binop) {
+		ama::Node*+! nd_parent = nd_binop.p;
+		if( !nd_parent || nd_parent.node_class != ama::N_RAW ) {
+			nd_parent = nd_binop.ReplaceWith(ama::CreateNode(ama::N_RAW, NULL));
+			nd_parent.c = nd_binop;
+			nd_binop.p = nd_parent;
+		}
+		ama::Node*+! nd_a = nd_binop.c;
+		ama::Node*+! nd_b = nd_binop.c.s;
+		ama::Node*+! ret = nd_binop.ReplaceWith(ama::cons(nd_a, ama::cons(ama::nSymbol(nd_binop.data).setCommentsBefore(" ").setCommentsAfter(" "), nd_b)));
+		nd_binop.FreeASTStorage();
+		return ret;
+	}
 };

@@ -574,7 +574,11 @@ int! ama::Node::isSymbol(ama::Node*! this, char[...]! name) {
 }
 
 int! ama::Node::hasBrackets(ama::Node*! this) {
-	return this.node_class == ama::N_RAW || this.node_class == ama::N_SCOPE || this.node_class == ama::N_CALL;
+	return (
+		this.node_class == ama::N_RAW || this.node_class == ama::N_SCOPE || 
+		this.node_class == ama::N_CALL || this.node_class == ama::N_CALL_TEMPLATE || 
+		this.node_class == ama::N_CALL_CUDA_KERNEL || this.node_class == ama::N_PARAMETER_LIST
+	);
 }
 
 int! ama::Node::isMethodCall(ama::Node*! this, char[|]! name) {
@@ -650,6 +654,10 @@ char[|]! ama::Node::DestroyForSymbol(ama::Node*+! this) {
 	this.p = NULL;
 	this.FreeASTStorage();
 	return ret;
+}
+
+int! ama::Node::isAir(ama::Node*! this) {
+	return this.isRawNode(0, 0) && !this.c;
 }
 
 ///////////////////////////////////////

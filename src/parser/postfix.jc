@@ -187,7 +187,7 @@ namespace ama {
 		for(ama::Node*+! @nojson ndi = nd.c.s; ndi; ndi = ndi.s) {
 			args.push_back(ndi);
 			if( ndi.s ) {
-				args.push_back(ama::nRef(",").setCommentsAfter(" "));
+				args.push_back(ama::nSymbol(",").setCommentsAfter(" "));
 			}
 		}
 		ama::Node*+! ret = nd.ReplaceWith(ama::cons(nd.c, ama::CreateNodeFromChildren(ama::N_RAW, args).setFlags(uint32_t('(') | uint32_t(')') << 8)));

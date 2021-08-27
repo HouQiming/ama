@@ -3,4 +3,6 @@
 
 namespace ama {
 	ama::Node*+! ParseScopedStatements(ama::Node*+! nd_root, JSValue! options);
+	ama::Node*+! ParseVariableDeclaration(ama::Node*+! nd_root, JSValue! options);
+	ama::Node*+! ParseVariableDeclarations(ama::Node*+! nd_root, JSValue! options);
 };

@@ -426,6 +426,9 @@ namespace ama {
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_scoped_statements'), 1) ) {
 			ama::ParseScopedStatements(nd_root, options);
 		}
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_variable_declarations'), 1) ) {
+			ama::ParseVariableDeclarations(nd_root, options);
+		}
 		ama::RemoveRedundantSemicolon(nd_root);
 		return nd_root;
 	}

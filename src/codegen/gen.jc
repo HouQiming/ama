@@ -82,6 +82,14 @@ namespace ama {
 				this->code.push(nd.data);
 				break;
 			}
+			case ama::N_TYPED_VAR: {
+				this->Generate(nd.c);
+				if( !this.code.endsWith(' ') && !nd.c.s.comments_before.startsWith(' ') ) {
+					this.code.push_back(' ');
+				}
+				this->Generate(nd.c.s);
+				break;
+			}
 			case ama::N_DOT: {
 				//this->RebuildOperand(nd, nd.c, ama::OPERAND_POSTFIX);
 				this->Generate(nd.c);
@@ -128,6 +136,22 @@ namespace ama {
 				}
 				break;
 			}
+			case ama::N_PARAMETER_LIST: {
+				this->code.push_back('(');
+				intptr_t! bk_indent = this.scope_indent_level;
+				this.scope_indent_level += nd.indent_level;
+				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+					this->Generate(ndi);
+					if( ndi.s ) {
+						this->code.push_back(',');
+						this.GenerateSpaceBefore(ndi.s);
+					}
+				}
+				this.GenerateComment(this.scope_indent_level, nd.comments_after);
+				this.scope_indent_level = bk_indent;
+				this->code.push_back(')');
+				break;
+			}
 			//case ama::N_RAW_DECLARATION: {
 			//	for(ama::Node*+! ndi : nd) {
 			//		this->Generate(ndi);
@@ -169,13 +193,17 @@ namespace ama {
 			}
 			case ama::N_ASSIGNMENT: {
 				this->Generate(nd.c);
-				this.code.push(' ');
-				if( nd.data != NULL ) {
-					this.code.push(nd.data);
+				if( nd.c.s.isAir() ) {
+					//do nothing
+				} else {
+					this.code.push(' ');
+					if( nd.data != NULL ) {
+						this.code.push(nd.data);
+					}
+					this.code.push('=');
+					this.GenerateSpaceBefore(nd.c.s);
+					this->Generate(nd.c.s);
 				}
-				this.code.push('=');
-				this.GenerateSpaceBefore(nd.c.s);
-				this->Generate(nd.c.s);
 				break;
 			}
 			case ama::N_CLASS: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: {

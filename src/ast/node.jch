@@ -28,6 +28,7 @@ namespace ama {
 	const uint8_t! N_ASSIGNMENT = 19;
 	const uint8_t! N_SCOPED_STATEMENT = 20;
 	const uint8_t! N_EXTENSION_CLAUSE = 21;
+	const uint8_t! N_PARAMETER_LIST = 22;
 	//const uint8_t! N_RAW_DECLARATION = 8;
 	//don't start any other constant with N_
 	/////////////////
@@ -151,6 +152,7 @@ namespace ama {
 		char[|]! DestroyForSymbol(ama::Node*+! this);
 		int! isExpr(ama::Node*! this);
 		int! isSymbol(ama::Node*! this, char[...]! name);
+		int! isAir(ama::Node*! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
@@ -175,6 +177,9 @@ namespace ama {
 	inline ama::Node*+! nRef(char[|]! s) {
 		return ama::CreateNode(N_REF, NULL).setData(s);
 	}
+	inline ama::Node*+! nSymbol(char[|]! s) {
+		return ama::CreateNode(N_SYMBOL, NULL).setData(s);
+	}
 	inline ama::Node*+! nNumber(char[|]! s) {
 		return ama::CreateNode(N_NUMBER, NULL).setData(s);
 	}
@@ -198,6 +203,13 @@ namespace ama {
 	}
 	inline ama::Node*+! nExtensionClause(char[|]! keyword, Node*+! nd_arg, Node*+! nd_scope) {
 		return ama::CreateNode(N_EXTENSION_CLAUSE, cons(nd_arg, nd_scope)).setData(keyword);
+	}
+	inline ama::Node*+! nTypedVar(Node*+! nd_type, Node*+! nd_def) {
+		return ama::CreateNode(N_TYPED_VAR, cons(nd_type, cons(nd_def, NULL)));
+	}
+	//the namespace in `::foo`, the initial value in `int bar;`
+	inline ama::Node*+! nAir() {
+		return ama::CreateNode(N_RAW, NULL);
 	}
 	///////////////
 	inline ama::Node*+! GetPlaceHolder() {

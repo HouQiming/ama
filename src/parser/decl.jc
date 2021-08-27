@@ -4,8 +4,18 @@
 #include "../script/jsenv.jch"
 #include './postfix.jch'
 #include './decl.jch'
+#include './operator.jch'
 
 namespace ama {
+	private ama::Node*+! ConvertToParameterList(ama::Node*+! nd_raw) {
+		assert(nd_raw.isRawNode('(', ')'));
+		ama::Node*+[+]! params = new ama::Node*+[+]!();
+		for(auto ndi : nd_raw) {
+			if( ndi.isSymbol(",") ) { continue; }
+			params.push(ndi);
+		}
+		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params);
+	}
 	private char[|]! GetFunctionName(int! is_keyworded, ama::Node*+! nd_func) {
 		char[|]! name = '';
 		ama::Node*+! @nojson nd_before = nd_func.c;
@@ -58,8 +68,6 @@ namespace ama {
 		Map<char[|], int>! keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
 		Map<char[|], int>! keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
 		int32_t! parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp11_lambda'), 1);
-		//TODO: C unscoped statements detection
-		//TODO: C forward declaration - separate function
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+! nd_prototype_start = ndi;
@@ -69,7 +77,7 @@ namespace ama {
 			ama::Node*+! nd_keyword = NULL;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
-				if( !kw_mode && (ndi.node_class == ama::N_REF || ndi.node_class == ama::N_CALL) ) {
+				if( !nd_keyword && (ndi.node_class == ama::N_REF || ndi.node_class == ama::N_CALL) ) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
 					char[|]! name = ndi.GetName();
 					if( name != NULL ) {
@@ -175,6 +183,8 @@ namespace ama {
 							nd_last_scoped_stmt = nd_stmt;
 							pndi = &ndi.s;
 							ndi = ndi.s;
+							kw_mode = KW_NONE;
+							nd_keyword = NULL;
 							continue;
 						}
 						case KW_EXT: {
@@ -201,6 +211,8 @@ namespace ama {
 							pndi = &ndi.s;
 							ndi = ndi.s;
 							nd_prototype_start = ndi.s;
+							kw_mode = KW_NONE;
+							nd_keyword = NULL;
 							continue;
 						}
 						case KW_FUNC: default: {
@@ -258,6 +270,7 @@ namespace ama {
 							}
 							//nd_paramlist.Delete();
 							//ndi.Delete();
+							nd_paramlist = ConvertToParameterList(nd_paramlist);
 							if( nd_before.s ) { nd_before = ama::CreateNode(ama::N_RAW, nd_before); }
 							if( nd_after.s ) { nd_after = ama::CreateNode(ama::N_RAW, nd_after); }
 							nd_func.c = ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, ndi)));
@@ -271,21 +284,73 @@ namespace ama {
 							break;
 						}
 					}
+					kw_mode = KW_NONE;
+					nd_keyword = NULL;
 					`not_declaration:;`
 				}
 				nd_last_scoped_stmt = NULL;
 				pndi = &ndi.s;
 				ndi = ndi_next;
 			}
+			if( nd_keyword ) {
+				//TODO: C unscoped statements / C forward declaration
+				//TODO: unscoped extension
+			} else {
+				//COULDDO: C forward declaration
+				//have to rely on context?
+			}
 		}
 		//COULDDO: set REF_WRITTEN for function / class names
 		//TODO: assignment-ify parameters
 		return nd_root;
 	}
-	////detects N_TYPED_VAR
-	////also sets REF_WRITTEN and REF_RW
-	////after ParseAssignment
-	//ama::Node*+! ParseVariableDeclaration(ama::Node*+! nd_root,JSValue! options)
-	//	//TODO: search for function prototypes / template declarations, and turn params into N_ASSIGNMENT
-	//	//TODO: N_TYPED_VAR
+	//detects N_TYPED_VAR
+	//also sets REF_WRITTEN and REF_RW
+	//after ParseAssignment
+	ama::Node*+! ParseVariableDeclarations(ama::Node*+! nd_root, JSValue! options) {
+		Map<char[|], int>! ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		//if templates weren't parsed, we won't get N_CALL_TEMPLATE anyway
+		//turn params into N_ASSIGNMENT
+		for(ama::Node*&! nd_paramlist : nd_root.FindAll(ama::N_PARAMETER_LIST, NULL).concat(nd_root.FindAll(ama::N_CALL_TEMPLATE, 'template'))) {
+			for(ama::Node*+! nd_param = nd_paramlist.node_class == ama::N_CALL_TEMPLATE ? nd_paramlist.c.s : nd_paramlist.c; nd_param; nd_param = nd_param.s) {
+				if( nd_param.node_class == ama::N_ASSIGNMENT ) { continue; }
+				if( nd_param.node_class == ama::N_SYMBOL || (nd_param.node_class == ama::N_RAW && nd_param.c && nd_param.c.node_class == ama::N_SYMBOL) ) {
+					//rest args
+					continue;
+				}
+				ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+				nd_param.ReplaceWith(nd_tmp);
+				nd_param = nd_tmp.ReplaceWith(ama::nAssignment(nd_param, ama::nAir()));
+			}
+		}
+		for(ama::Node*&! nd_asgn : nd_root.FindAll(ama::N_ASSIGNMENT, NULL)) {
+			ama::Node*+! nd_def = nd_asgn.c;
+			if( nd_def.node_class == ama::N_RAW ) {
+				nd_def = nd_def.LastChild();
+			}
+			if( nd_def.node_class == ama::N_BINOP && ambiguous_type_suffix[nd_def.data] ) {
+				//type-binop ambiguity: foo*[3]*b=bar*[3]*b
+				//a sane method to resolve such ambiguity: LHS of assignment, in a function prototype... and it's C-specific
+				//makes sense to put in a separate pass! and maybe unify the situations to "LHS of assignment" first
+				nd_def = ama::UnparseBinop(nd_def);
+				while( nd_def.s ) {
+					nd_def = nd_def.s;
+				}
+			}
+			if( nd_def.node_class == ama::N_REF ) {
+				nd_def.flags |= ama::REF_WRITTEN;
+				if( nd_asgn.data != NULL ) {
+					nd_def.flags |= ama::REF_RW;
+				}
+				if( nd_def.p && nd_def.p.node_class == ama::N_RAW ) {
+					ama::Node*+! nd_raw = nd_def.p;
+					nd_def.Delete();
+					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+					nd_raw.ReplaceWith(nd_tmp);
+					nd_tmp.ReplaceWith(ama::nTypedVar(nd_raw, nd_def));
+				}
+			}
+		}
+		return nd_root;
+	}
 };
