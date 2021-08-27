@@ -188,12 +188,12 @@ namespace ama {
 				}
 				break;
 			}
+			case ama::N_NODEOF: {
+				this.code.push('.');
+				this->Generate(nd.c);
+				break;
+			}
 		}
-		//case N_NODEOF:
-		//case N_RAW_DECLARATION:
-		//case N_FUNCTION:
-		//case N_CLASS:
-		//case N_DOT:
 		//case N_ITEM:
 	}
 	void! ama::CodeGenerator::GenerateComment(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {

@@ -65,45 +65,40 @@ namespace ama {
 			ama::Node*+! nd_prototype_start = ndi;
 			ama::Node*+*+! pndi = &nd_raw.c;
 			ama::Node*+! nd_last_scoped_stmt = NULL;
+			int! kw_mode = KW_NONE;
+			ama::Node*+! nd_keyword = NULL;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
-				if( ndi.node_class == ama::N_SYMBOL && (ndi.data == "," || ndi.data == ";") ) {
+				if( !kw_mode && (ndi.node_class == ama::N_REF || ndi.node_class == ama::N_CALL) ) {
+					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
+					char[|]! name = ndi.GetName();
+					if( name != NULL ) {
+						if( keywords_class[name] ) {
+							nd_keyword = ndi;
+							kw_mode = KW_CLASS;
+						} else if( keywords_statement[name] ) {
+							nd_keyword = ndi;
+							kw_mode = KW_STMT;
+						} else if( nd_last_scoped_stmt && keywords_extension_clause[name] ) {
+							nd_keyword = ndi;
+							kw_mode = KW_EXT;
+						} else if( keywords_function[name] ) {
+							nd_keyword = ndi;
+							kw_mode = KW_FUNC;
+						}
+					}
+				} else if( ndi.node_class == ama::N_SYMBOL && (ndi.data == "," || ndi.data == ";") ) {
 					nd_prototype_start = ndi_next;
+					kw_mode = KW_NONE;
+					nd_keyword = NULL;
 				} else if( ndi.isRawNode('[', ']') && ndi_next && ndi_next.isRawNode('(', ')') ) {
 					//C++11 lambda
 					nd_prototype_start = ndi;
+					kw_mode = KW_NONE;
+					nd_keyword = NULL;
 				} else if( (ndi.node_class == ama::N_SCOPE || ndi.isRawNode('{', '}')) && nd_prototype_start && nd_prototype_start != ndi ) {
-					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
-					ama::Node*+! nd_keyword = NULL;
-					int! keyword_type = KW_NONE;
-					for(ama::Node*+! ndj = nd_prototype_start; ndj != ndi; ndj = ndj.s) {
-						//the statement starter could have been misidentified as a call
-						if( ndj.node_class == ama::N_REF || ndj.node_class == ama::N_CALL ) {
-							char[|]! name = ndj.GetName();
-							if( name == NULL ) { continue; }
-							if( keywords_class[name] ) {
-								nd_keyword = ndj;
-								keyword_type = KW_CLASS;
-								break;
-							} else if( keywords_statement[name] ) {
-								nd_keyword = ndj;
-								keyword_type = KW_STMT;
-								break;
-							} else if( nd_last_scoped_stmt && keywords_extension_clause[name] ) {
-								nd_keyword = ndj;
-								keyword_type = KW_EXT;
-								break;
-							} else if( keywords_function[name] ) {
-								nd_keyword = ndj;
-								keyword_type = KW_FUNC;
-								break;
-							}
-						}
-					}
-					//console.log('lol', keyword_type);
-					ama::Node*+! @nojson nd_after;
-					ama::Node*+! @nojson nd_arg;
-					ama::Node*+! @nojson nd_before; switch( keyword_type ) {
+					//console.log('lol', kw_mode);
+					switch( kw_mode ) {
 						case KW_CLASS: {
 							//search for the class name
 							ama::Node*+! nd_class_name = NULL;
@@ -134,8 +129,8 @@ namespace ama {
 							);
 							//class children: whatever before, name, whatever after, body
 							*pnd_class_name = NULL;
-							nd_before = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
-							nd_after = nd_class_name.s;
+							ama::Node*+! @nojson nd_before = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! @nojson nd_after = nd_class_name.s;
 							nd_class_name.s = NULL;
 							*pndi = NULL;
 							ndi.s = NULL;
@@ -164,7 +159,7 @@ namespace ama {
 								nd_keyword, ndi,
 								ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
-							nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! @nojson nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							*pndi = NULL;
 							ndi.s = NULL;
@@ -192,7 +187,7 @@ namespace ama {
 								NULL
 							);
 							assert(nd_last_scoped_stmt);
-							nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! @nojson nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							*pndi = NULL;
 							ndi.s = NULL;
@@ -243,11 +238,11 @@ namespace ama {
 								nd_keyword, ndi,
 								ama::CreateNode(ama::N_FUNCTION, NULL)
 							);
-							nd_before = nd_keyword;
+							ama::Node*+! nd_before = nd_keyword;
 							if( nd_before == nd_paramlist ) {
 								nd_before = ama::CreateNode(ama::N_RAW, NULL);
 							}
-							nd_after = nd_paramlist.s;
+							ama::Node*+! @nojson nd_after = nd_paramlist.s;
 							if( nd_after == ndi ) {
 								nd_after = ama::CreateNode(ama::N_RAW, NULL);
 							}
@@ -269,7 +264,7 @@ namespace ama {
 							for(ama::Node*+! @nojson ndj = nd_func.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_func;
 							}
-							nd_func.data = GetFunctionName(keyword_type == KW_FUNC, nd_func);
+							nd_func.data = GetFunctionName(kw_mode == KW_FUNC, nd_func);
 							ndi = nd_func;
 							nd_prototype_start = ndi.s;
 							ndi_next = ndi.s;
