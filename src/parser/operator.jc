@@ -4,22 +4,8 @@
 #include "./operator.jch"
 
 namespace ama {
-	private Map<char[|], int>! GetOperatorSet(JSValueConst! options, char*! name) {
-		char[|]! s_binops = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, name));
-		Map<char[|], int>! ret = new Map<char[|], int>!();
-		int! priority = 1;
-		for(char[...]&! s_binop : s_binops.split(' ')) {
-			if( s_binop.endsWith('\n') ) {
-				ret[new char[|]!(s_binop.subarray(0, s_binop.length - 1))] = priority;
-				priority += 1;
-			} else {
-				ret[new char[|]!(s_binop)] = priority;
-			}
-		}
-		return <<ret;
-	}
 	ama::Node*+! ParseAssignment(ama::Node*+! nd_root, JSValueConst! options) {
-		Map<char[|], int>! binop_priority = GetOperatorSet(options, 'binary_operators');
+		Map<char[|], int>! binop_priority = ama::GetPrioritizedList(options, 'binary_operators');
 		ama::Node*+[+]! Q = nd_root.FindAll(ama::N_RAW, NULL);
 		for(intptr_t! i = 0; i < Q.length; i++) {
 			ama::Node*+! nd_raw = Q[i];
@@ -27,7 +13,7 @@ namespace ama {
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
 				if( ndi_next && ndi_next.s && 
-				ndi_next.node_class == ama::N_SYMBOL && ndi_next.data == "=" ) {
+				ndi_next.isSymbol("=") ) {
 					ama::Node*+! @nojson ndi_next_next = ndi_next.s;
 					//move the comments
 					ndi.MergeCommentsAfter(ndi_next);
@@ -81,10 +67,10 @@ namespace ama {
 		return changed;
 	}
 	ama::Node*+! ParseOperators(ama::Node*+! nd_root, JSValueConst! options) {
-		Map<char[|], int>! binop_priority = GetOperatorSet(options, 'binary_operators');
-		Map<char[|], int>! prefix_ops = GetOperatorSet(options, 'prefix_operators');
-		Map<char[|], int>! postfix_ops = GetOperatorSet(options, 'postfix_operators');
-		Map<char[|], int>! named_ops = GetOperatorSet(options, 'named_operators');
+		Map<char[|], int>! binop_priority = ama::GetPrioritizedList(options, 'binary_operators');
+		Map<char[|], int>! prefix_ops = ama::GetPrioritizedList(options, 'prefix_operators');
+		Map<char[|], int>! postfix_ops = ama::GetPrioritizedList(options, 'postfix_operators');
+		Map<char[|], int>! named_ops = ama::GetPrioritizedList(options, 'named_operators');
 		//named operators: convert refs to symbols
 		for(ama::Node*&+! nd_ref : nd_root.FindAll(ama::N_REF, NULL)) {
 			if( named_ops[nd_ref.data] ) {
@@ -226,7 +212,7 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	//TODO: weird stuff - C ?:
+	//TODO: weird stuff - C ?:, need to handle alongside labels
 	//type-binop ambiguity: foo*[3]*b=bar*[3]*b
 	//a sane method to resolve such ambiguity: LHS of assignment, in a function prototype... and it's C-specific
 	//makes sense to put in a separate pass! and maybe unify the situations to "LHS of assignment" first

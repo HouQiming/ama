@@ -1,0 +1,6 @@
+// //// JC version: 3
+#pragma add("jc_files", "./decl.jc");
+
+namespace ama {
+	ama::Node*+! ParseScopedStatements(ama::Node*+! nd_root, JSValue! options);
+};

@@ -1,0 +1,23 @@
+/*
+@ama
+let nd_root=ParseCurrentFile();
+console.log(JSON.stringify(nd_root,null,2))
+console.log(nd_root.toSource())
+*/
+
+template<>
+class TestClass<int>:Base{
+	union TestUnion extends Base{
+		enum foo{
+			bar=3;
+		}
+	}
+};
+
+int main(int argc,char** argv){
+	auto a=function(int p=3,...){
+		return p+p;
+	}
+	c+=a*b;
+	return 0;
+}

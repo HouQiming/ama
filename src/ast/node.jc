@@ -333,8 +333,9 @@ ama::Node*+! ama::Node::Owning(ama::Node*! this, int! nc) {
 }
 
 ama::Node*+! ama::Node::Owner(ama::Node*! this) {
+	//|| int(ndi.node_class) == ama::N_RAW_DECLARATION
 	for(ama::Node*+! ndi = this->p; ndi; ndi = ndi.p) {
-		if( int(ndi.node_class) == ama::N_FUNCTION || int(ndi.node_class) == ama::N_CLASS || int(ndi.node_class) == ama::N_RAW_DECLARATION || !ndi.p ) {
+		if( int(ndi.node_class) == ama::N_FUNCTION || int(ndi.node_class) == ama::N_CLASS || !ndi.p ) {
 			return ndi;
 		}
 	}
@@ -455,10 +456,16 @@ char[|]! ama::Node::GetName(ama::Node*! this) {
 	//	return this.c.data;
 	//} else if( int(this.node_class) == ama::N_INCLUDE ) {
 	//	return this.c.GetStringValue();
-	if( this.node_class == ama::N_CALL ) /*|| int(this.node_class) == ama::N_CALL_TEMPLATE || int(this.node_class) == ama::N_CUSTOM*/ {
-		return this.c.data;
+	if( this.node_class == ama::N_CALL || this.node_class == ama::N_CALL_TEMPLATE || this.node_class == ama::N_CALL_CUDA_KERNEL ) {
+		if( this.c && this.c.node_class != this.node_class && this.c.node_class != ama::N_CALL ) {
+			return this.c.GetName();
+		} else {
+			return NULL;
+		}
 	} else if( this.node_class == ama::N_ASSIGNMENT || this.node_class == ama::N_DEPENDENCY ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
 		return this.c.GetName();
+	} else if( this.node_class == ama::N_CLASS ) {
+		return this.c.s.GetName();
 	} else if( this.node_class == ama::N_STRING ) {
 		ama::Node*+! nd_hack = (ama::Node*+)(this);
 		return nd_hack.GetStringValue();
@@ -510,10 +517,10 @@ private ama::Node*+! dfsFind(ama::Node*+! nd, ama::Node*+! nd_before, int32_t! b
 			my_boundary |= ama::BOUNDARY_NODEOF;
 		} else if( int(nd.node_class) == ama::N_SCOPE ) {
 			my_boundary |= ama::BOUNDARY_SCOPE;
-		} else if( int(nd.node_class) == ama::N_CALL && nd.p && nd.p.node_class == ama::N_RAW_DECLARATION ) {
-			//TODO: dedicated prototype node class
-			my_boundary |= ama::BOUNDARY_PROTOTYPE;
 		}
+		//} else if( int(nd.node_class) == ama::N_CALL && nd.p && nd.p.node_class == ama::N_RAW_DECLARATION ) {
+		//	my_boundary |= ama::BOUNDARY_PROTOTYPE;
+		//TODO: dedicated prototype node class
 		if( boundary & my_boundary ) {
 			return NULL;
 		}
@@ -560,6 +567,10 @@ ama::Node*+[+]! ama::Node::FindAllBefore(ama::Node*! this, ama::Node*! nd_before
 
 int! ama::Node::isRawNode(ama::Node*! this, char! ch_open, char! ch_close) {
 	return this.node_class == ama::N_RAW && (this.flags & 0xffff) == (int32_t(ch_open) | int32_t(ch_close) << 8);
+}
+
+int! ama::Node::isSymbol(ama::Node*! this, char[...]! name) {
+	return this.node_class == ama::N_SYMBOL && this.data == name;
 }
 
 int! ama::Node::hasBrackets(ama::Node*! this) {
@@ -639,4 +650,39 @@ char[|]! ama::Node::DestroyForSymbol(ama::Node*+! this) {
 	this.p = NULL;
 	this.FreeASTStorage();
 	return ret;
+}
+
+///////////////////////////////////////
+private int! ValidateChildRange(ama::Node*+! p0, ama::Node*+! p1) {
+	if( p0 == p1 ) { return 1; }
+	for(ama::Node*+! @nojson ndi = p0.s; ndi; ndi = ndi.s) {
+		if( ndi == p1 ) { return 1; }
+		if( ndi == p0 ) { return 0; }
+	}
+	return 0;
+}
+
+//p1 is inclusive
+ama::Node*+! ReplaceChildRange(ama::Node*+*+! pp0, ama::Node*+! p0, ama::Node*+! p1, ama::Node*+! nd_new) {
+	assert(ValidateChildRange(p0, p1));
+	if( pp0 ) { assert(*pp0 == p0); }
+	if( !pp0 ) {
+		pp0 = &p0.p.c;
+		for(ama::Node*+! @nojson ndi = p0.p.c; ndi != p0; ndi = ndi.s) {
+			pp0 = &ndi.s;
+		}
+		assert(*pp0 == p0);
+	}
+	ama::Node*+! @nojson nd_parent = p0.p;
+	if( nd_new ) {
+		*pp0 = nd_new;
+		nd_new.p = nd_parent;
+		nd_new.s = p1.s;
+	} else {
+		*pp0 = p1.s;
+	}
+	for(ama::Node*+! @nojson ndi = p0; ndi != p1; ndi = ndi.s) {
+		ndi.p = NULL;
+	}
+	return nd_new;
 }

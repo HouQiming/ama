@@ -66,4 +66,5 @@ namespace ama {
 	char[|]! FindCommonJSModuleByPath(char[|]! fn);
 	char[|]! FindCommonJSModule(char[|]! fn_required, char[|]! dir_base);
 	extern char*[+]! g_builder_names;
+	Map<char[|], int>! GetPrioritizedList(JSValueConst! options, char*! name);
 };

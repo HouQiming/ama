@@ -1,5 +1,6 @@
 // //// JC version: 3
 #include '../ast/node.jch'
+#include "../script/jsenv.jch"
 #include './scoping.jch'
 
 namespace ama {
@@ -7,7 +8,8 @@ namespace ama {
 		nd_raw.node_class = ama::N_SCOPE;
 		nd_raw.flags = 0;
 	}
-	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root) {
+	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root, JSValue! options) {
+		Map<char[|], int>! keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 			ama::Node*+! ndi = nd_raw.c;
@@ -26,7 +28,7 @@ namespace ama {
 						new_children.push_back(ndi_next);
 					}
 				} else if( ndi.isRawNode('{', '}') ) {
-					if( ndi.s && ndi.s.node_class == ama::N_REF && (ndi.s.data == 'else' || ndi.s.data == 'catch' || ndi.s.data == 'finally') ) {
+					if( ndi.s && ndi.s.node_class == ama::N_REF && keywords_extension_clause[ndi.s.data] ) {
 						ndi = ndi_next;
 						continue;
 					}

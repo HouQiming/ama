@@ -128,12 +128,12 @@ namespace ama {
 				}
 				break;
 			}
-			case ama::N_RAW_DECLARATION: {
-				for(ama::Node*+! ndi : nd) {
-					this->Generate(ndi);
-				}
-				break;
-			}
+			//case ama::N_RAW_DECLARATION: {
+			//	for(ama::Node*+! ndi : nd) {
+			//		this->Generate(ndi);
+			//	}
+			//	break;
+			//}
 			case ama::N_DEPENDENCY: {
 				if( (nd.flags & ama::DEP_TYPE_MASK) == ama::DEP_C_INCLUDE ) {
 					this.code.push('#include ');
@@ -176,6 +176,16 @@ namespace ama {
 				this.code.push('=');
 				this.GenerateSpaceBefore(nd.c.s);
 				this->Generate(nd.c.s);
+				break;
+			}
+			case ama::N_CLASS: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: {
+				this.code.push(nd.data);
+				//*** PASS THROUGH ***
+			}
+			case ama::N_FUNCTION: {
+				for(ama::Node*+! @nojson ndi = nd.c; ndi; ndi = ndi.s) {
+					this->Generate(ndi);
+				}
 				break;
 			}
 		}

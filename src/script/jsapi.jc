@@ -12,6 +12,7 @@
 #include "../parser/depends.jch"
 #include "../parser/postfix.jch"
 #include "../parser/operator.jch"
+#include "../parser/decl.jch"
 #include "../parser/cleanup.jch"
 #include "./nodeof_to_ast.jch"
 #include "./jsenv.jch"
@@ -411,7 +412,7 @@ namespace ama {
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_pointed_brackets'), 1) ) {
 			ama::ParsePointedBrackets(nd_root);
 		}
-		ama::DelimitCLikeStatements(nd_root);
+		ama::DelimitCLikeStatements(nd_root, options);
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
@@ -421,6 +422,9 @@ namespace ama {
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
 			ama::ParseOperators(nd_root, options);
 			ama::StripBinaryOperatorSpaces(nd_root);
+		}
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_scoped_statements'), 1) ) {
+			ama::ParseScopedStatements(nd_root, options);
 		}
 		ama::RemoveRedundantSemicolon(nd_root);
 		return nd_root;

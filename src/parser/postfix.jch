@@ -3,4 +3,5 @@
 
 namespace ama {
 	ama::Node*+! ParsePostfix(ama::Node*+! nd_root);
+	ama::Node*+! UnparseCall(ama::Node*+! nd);
 };

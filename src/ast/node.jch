@@ -14,19 +14,21 @@ namespace ama {
 	//structured nodes
 	const uint8_t! N_NODEOF = 6;
 	const uint8_t! N_SCOPE = 7;
-	const uint8_t! N_RAW_DECLARATION = 8;
-	const uint8_t! N_FUNCTION = 9;
-	const uint8_t! N_CLASS = 10;
-	const uint8_t! N_TYPED_VAR = 11;
-	const uint8_t! N_DOT = 12;
-	const uint8_t! N_ITEM = 13;
-	const uint8_t! N_CALL = 14;
-	const uint8_t! N_CALL_TEMPLATE = 15;
-	const uint8_t! N_CALL_CUDA_KERNEL = 16;
-	const uint8_t! N_DEPENDENCY = 17;
-	const uint8_t! N_BINOP = 18;
-	const uint8_t! N_UNARY = 19;
-	const uint8_t! N_ASSIGNMENT = 20;
+	const uint8_t! N_FUNCTION = 8;
+	const uint8_t! N_CLASS = 9;
+	const uint8_t! N_TYPED_VAR = 10;
+	const uint8_t! N_DOT = 11;
+	const uint8_t! N_ITEM = 12;
+	const uint8_t! N_CALL = 13;
+	const uint8_t! N_CALL_TEMPLATE = 14;
+	const uint8_t! N_CALL_CUDA_KERNEL = 15;
+	const uint8_t! N_DEPENDENCY = 16;
+	const uint8_t! N_BINOP = 17;
+	const uint8_t! N_UNARY = 18;
+	const uint8_t! N_ASSIGNMENT = 19;
+	const uint8_t! N_SCOPED_STATEMENT = 20;
+	const uint8_t! N_EXTENSION_CLAUSE = 21;
+	//const uint8_t! N_RAW_DECLARATION = 8;
 	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;
@@ -148,6 +150,7 @@ namespace ama {
 		ama::Node*+! MergeCommentsBefore(ama::Node*+! this, ama::Node*+! nd_before);
 		char[|]! DestroyForSymbol(ama::Node*+! this);
 		int! isExpr(ama::Node*! this);
+		int! isSymbol(ama::Node*! this, char[...]! name);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
@@ -193,6 +196,9 @@ namespace ama {
 	inline ama::Node*+! nBinop(Node*+! nd_a, char[|]! op, Node*+! nd_b) {
 		return ama::CreateNode(N_BINOP, cons(nd_a, cons(nd_b, NULL))).setData(op);
 	}
+	inline ama::Node*+! nExtensionClause(char[|]! keyword, Node*+! nd_arg, Node*+! nd_scope) {
+		return ama::CreateNode(N_EXTENSION_CLAUSE, cons(nd_arg, nd_scope)).setData(keyword);
+	}
 	///////////////
 	inline ama::Node*+! GetPlaceHolder() {
 		assert(!g_placeholder.p);
@@ -203,10 +209,11 @@ namespace ama {
 	}
 	ama::Node*+! CreateNodeFromChildren(uint8_t! node_class, ama::Node*+[...]! children);
 	///////////////
-	macro nRawDeclaration() = function(auto my_call, ...args):auto {
-		return require("./v3macros.js").ASTConstructor(my_call, args, "N_RAW_DECLARATION");
-	}
+	//macro nRawDeclaration() = function(auto my_call, ...args):auto {
+	//	return require("./v3macros.js").ASTConstructor(my_call, args, "N_RAW_DECLARATION");
+	//}
 	macro nDependency() = function(auto my_call, ...args):auto {
 		return require("./v3macros.js").ASTConstructor(my_call, args, "N_DEPENDENCY");
 	}
 };
+ama::Node*+! ReplaceChildRange(ama::Node*+*+! pp0, ama::Node*+! p0, ama::Node*+! p1, ama::Node*+! nd_new);

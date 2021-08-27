@@ -100,4 +100,18 @@ namespace ama {
 		}
 		return NULL;
 	}
+	Map<char[|], int>! GetPrioritizedList(JSValueConst! options, char*! name) {
+		char[|]! s_binops = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, name));
+		Map<char[|], int>! ret = new Map<char[|], int>!();
+		int! priority = 1;
+		for(char[...]&! s_binop : s_binops.split(' ')) {
+			if( s_binop.endsWith('\n') ) {
+				ret[new char[|]!(s_binop.subarray(0, s_binop.length - 1))] = priority;
+				priority += 1;
+			} else {
+				ret[new char[|]!(s_binop)] = priority;
+			}
+		}
+		return <<ret;
+	}
 };

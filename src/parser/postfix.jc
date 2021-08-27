@@ -88,6 +88,8 @@ namespace ama {
 					*p_self = ndi;
 					ndi.p = nd_raw;
 					ndi.s = ndi_next.s.s;
+					ndi_next.s.FreeASTStorage();
+					ndi_next.FreeASTStorage();
 					continue;
 				} else if( ndi.s && (ndi.s.isRawNode('(', ')') || ndi.s.isRawNode('<', '>')) ) {
 					//call
@@ -103,7 +105,7 @@ namespace ama {
 					for(ama::Node*+! ndj : ndi_next) {
 						//strip trailing ','s
 						ama::Node*+! ndj_last = ndj.LastChild();
-						if( ndj_last != NULL && ndj_last.node_class == ama::N_SYMBOL && ndj_last.data == "," ) {
+						if( ndj_last != NULL && ndj_last.isSymbol(",") ) {
 							ndj_last.Delete();
 							ndj_last.FreeASTStorage();
 						}
@@ -178,5 +180,19 @@ namespace ama {
 			}
 		}
 		return nd_root;
+	}
+	ama::Node*+! UnparseCall(ama::Node*+! nd) {
+		assert(nd.node_class == ama::N_CALL);
+		ama::Node*+[+]! args = new ama::Node*+[+]!();
+		for(ama::Node*+! @nojson ndi = nd.c.s; ndi; ndi = ndi.s) {
+			args.push_back(ndi);
+			if( ndi.s ) {
+				args.push_back(ama::nRef(",").setCommentsAfter(" "));
+			}
+		}
+		ama::Node*+! ret = nd.ReplaceWith(ama::cons(nd.c, ama::CreateNodeFromChildren(ama::N_RAW, args).setFlags(uint32_t('(') | uint32_t(')') << 8)));
+		nd.c = NULL;
+		nd.FreeASTStorage();
+		return ret;
 	}
 };
