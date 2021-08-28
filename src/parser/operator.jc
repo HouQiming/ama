@@ -4,6 +4,27 @@
 #include "./operator.jch"
 
 namespace ama {
+	//TODO: label and C ?: parsing
+	private struct ColonStackItem
+		Node*+ nd_question_mark
+		Node*+ nd_colon
+	ama::Node*+! ParseColons(ama::Node*+! nd_root) {
+		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			conditionals=new ama::Node*+[+]
+			for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
+				if ndi.isSymbol("?"):
+					conditionals.push_back(ndi)
+				else if ndi.isSymbol(":"):
+					if conditionals.length:
+						//TODO: fold up to the last conditional - N_CONDITIONAL
+						//we don't know the range yet
+						//stated stack
+					else
+						//TODO: label
+			}
+		}
+		return nd_root
+	}
 	ama::Node*+! ParseAssignment(ama::Node*+! nd_root, JSValueConst! options) {
 		Map<char[|], int>! binop_priority = ama::GetPrioritizedList(options, 'binary_operators');
 		ama::Node*+[+]! Q = nd_root.FindAll(ama::N_RAW, NULL);
@@ -14,7 +35,7 @@ namespace ama {
 				ama::Node*+! ndi_next = ndi.s;
 				if( ndi_next && ndi_next.s && 
 				ndi_next.isSymbol("=") ) {
-					ama::Node*+! @nojson ndi_next_next = ndi_next.s;
+					ama::Node*+! ndi_next_next = ndi_next.s;
 					//move the comments
 					ndi.MergeCommentsAfter(ndi_next);
 					ndi_next.Delete();
@@ -87,7 +108,7 @@ namespace ama {
 			ama::Node*+! ndi = nd_raw.c;
 			int! changed = 0;
 			while( ndi ) {
-				ama::Node*+! @nojson ndi_next = ndi.s;
+				ama::Node*+! ndi_next = ndi.s;
 				if( ndi.node_class == ama::N_SYMBOL ) {
 					int! pr = 0x7fffffff;
 					if( postfix_ops[ndi.data] && stack.length > 0 && stack.back().node_class != ama::N_SYMBOL ) {
@@ -212,7 +233,6 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	//TODO: label and C ?: parsing
 	ama::Node*+! UnparseBinop(ama::Node*+! nd_binop) {
 		ama::Node*+! nd_parent = nd_binop.p;
 		if( !nd_parent || nd_parent.node_class != ama::N_RAW ) {

@@ -184,7 +184,7 @@ namespace ama {
 	ama::Node*+! UnparseCall(ama::Node*+! nd) {
 		assert(nd.node_class == ama::N_CALL);
 		ama::Node*+[+]! args = new ama::Node*+[+]!();
-		for(ama::Node*+! @nojson ndi = nd.c.s; ndi; ndi = ndi.s) {
+		for(ama::Node*+! ndi = nd.c.s; ndi; ndi = ndi.s) {
 			args.push_back(ndi);
 			if( ndi.s ) {
 				args.push_back(ama::nSymbol(",").setCommentsAfter(" "));

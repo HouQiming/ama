@@ -29,6 +29,7 @@ namespace ama {
 	const uint8_t! N_SCOPED_STATEMENT = 20;
 	const uint8_t! N_EXTENSION_CLAUSE = 21;
 	const uint8_t! N_PARAMETER_LIST = 22;
+	const uint8_t! N_CONDITIONAL = 23;
 	//const uint8_t! N_RAW_DECLARATION = 8;
 	//don't start any other constant with N_
 	/////////////////

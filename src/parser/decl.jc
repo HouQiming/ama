@@ -18,13 +18,13 @@ namespace ama {
 	}
 	private char[|]! GetFunctionName(int! is_keyworded, ama::Node*+! nd_func) {
 		char[|]! name = '';
-		ama::Node*+! @nojson nd_before = nd_func.c;
+		ama::Node*+! nd_before = nd_func.c;
 		if( is_keyworded ) {
 			//just take the last identifier
 			//if nd_before is a single node, it must be the keyword
 			if( nd_before.node_class == ama::N_RAW ) {
 				//the first child is the keyword
-				for(ama::Node*+! @nojson ndi = nd_before.c.s; ndi; ndi = ndi.s) {
+				for(ama::Node*+! ndi = nd_before.c.s; ndi; ndi = ndi.s) {
 					if( ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT ) {
 						name = ndi.data;
 					}
@@ -33,7 +33,7 @@ namespace ama {
 		} else {
 			//try to find a name
 			int! found = 0;
-			for(ama::Node*+! @nojson ndi = nd_before.c; ndi; ndi = ndi.s) {
+			for(ama::Node*+! ndi = nd_before.c; ndi; ndi = ndi.s) {
 				if( ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT ) {
 					name = ndi.data;
 					found = 1;
@@ -41,7 +41,7 @@ namespace ama {
 			}
 			if( !found ) {
 				//test for old C macro FOO_DECL(int,foo)(int bar){}
-				ama::Node*+! @nojson nd_maybe_c_macro = nd_before.node_class == ama::N_RAW ? nd_before : nd_before.LastChild();
+				ama::Node*+! nd_maybe_c_macro = nd_before.node_class == ama::N_RAW ? nd_before : nd_before.LastChild();
 				if( nd_maybe_c_macro.node_class == ama::N_CALL || nd_maybe_c_macro.isRawNode('(', ')') ) {
 					ama::Node*+! nd_maybe_name = nd_maybe_c_macro.LastChild();
 					if( nd_maybe_name.node_class == ama::N_REF ) {
@@ -112,7 +112,7 @@ namespace ama {
 							ama::Node*+! nd_class_name = NULL;
 							ama::Node*+*+! pnd_class_name = NULL;
 							ama::Node*+*+! pndj = &nd_keyword.s;
-							for(ama::Node*+! @nojson ndj = nd_keyword.s; ndj != ndi; ndj = ndj.s) {
+							for(ama::Node*+! ndj = nd_keyword.s; ndj != ndi; ndj = ndj.s) {
 								if( (ndj.node_class == ama::N_SYMBOL || ndj.node_class == ama::N_REF) && keywords_after_class_name[ndj.data] && nd_class_name ) {
 									break;
 								}
@@ -137,8 +137,8 @@ namespace ama {
 							);
 							//class children: whatever before, name, whatever after, body
 							*pnd_class_name = NULL;
-							ama::Node*+! @nojson nd_before = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
-							ama::Node*+! @nojson nd_after = nd_class_name.s;
+							ama::Node*+! nd_before = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! nd_after = nd_class_name.s;
 							nd_class_name.s = NULL;
 							*pndi = NULL;
 							ndi.s = NULL;
@@ -146,7 +146,7 @@ namespace ama {
 								nd_after = ama::CreateNode(ama::N_RAW, nd_after);
 							}
 							nd_class.c = ama::cons(nd_before, ama::cons(nd_class_name, ama::cons(nd_after, ndi)));
-							for(ama::Node*+! @nojson ndj = nd_class.c; ndj; ndj = ndj.s) {
+							for(ama::Node*+! ndj = nd_class.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_class;
 							}
 							ndi = nd_class;
@@ -167,12 +167,12 @@ namespace ama {
 								nd_keyword, ndi,
 								ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
-							ama::Node*+! @nojson nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							*pndi = NULL;
 							ndi.s = NULL;
 							nd_stmt.c = ama::cons(nd_arg, ndi);
-							for(ama::Node*+! @nojson ndj = nd_stmt.c; ndj; ndj = ndj.s) {
+							for(ama::Node*+! ndj = nd_stmt.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_stmt;
 							}
 							ndi = nd_stmt;
@@ -197,7 +197,7 @@ namespace ama {
 								NULL
 							);
 							assert(nd_last_scoped_stmt);
-							ama::Node*+! @nojson nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							*pndi = NULL;
 							ndi.s = NULL;
@@ -227,7 +227,7 @@ namespace ama {
 								nd_keyword = ama::UnparseCall(nd_keyword);
 							}
 							ama::Node*+! nd_paramlist = NULL;
-							for(ama::Node*+! @nojson ndj = nd_keyword.s; ndj != ndi; ndj = ndj.s) {
+							for(ama::Node*+! ndj = nd_keyword.s; ndj != ndi; ndj = ndj.s) {
 								if( ndj.isRawNode('(', ')') || ndj.node_class == ama::N_CALL ) {
 									nd_paramlist = ndj;
 								} else if( ndj.node_class == ama::N_SYMBOL && keywords_after_prototype[ndj.data] ) {
@@ -254,7 +254,7 @@ namespace ama {
 							if( nd_before == nd_paramlist ) {
 								nd_before = ama::CreateNode(ama::N_RAW, NULL);
 							}
-							ama::Node*+! @nojson nd_after = nd_paramlist.s;
+							ama::Node*+! nd_after = nd_paramlist.s;
 							if( nd_after == ndi ) {
 								nd_after = ama::CreateNode(ama::N_RAW, NULL);
 							}
@@ -274,7 +274,7 @@ namespace ama {
 							if( nd_before.s ) { nd_before = ama::CreateNode(ama::N_RAW, nd_before); }
 							if( nd_after.s ) { nd_after = ama::CreateNode(ama::N_RAW, nd_after); }
 							nd_func.c = ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, ndi)));
-							for(ama::Node*+! @nojson ndj = nd_func.c; ndj; ndj = ndj.s) {
+							for(ama::Node*+! ndj = nd_func.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_func;
 							}
 							nd_func.data = GetFunctionName(kw_mode == KW_FUNC, nd_func);

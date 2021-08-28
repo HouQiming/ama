@@ -420,7 +420,7 @@ private void! dfsFreeChildrenStorage(ama::Node*+! nd) {
 		n_steps += 1;
 	}
 	if( ndi_last != NULL ) {
-		ama::Node*+! @nojson g_free_nodes;
+		ama::Node*+! g_free_nodes;
 		ndi_last.s = g_free_nodes;
 		g_free_nodes = nd.c;
 		nd.c = NULL;
@@ -428,7 +428,7 @@ private void! dfsFreeChildrenStorage(ama::Node*+! nd) {
 }
 
 void! ama::Node::FreeASTStorage(ama::Node*+! this) {
-	ama::Node*+! @nojson g_free_nodes;
+	ama::Node*+! g_free_nodes;
 	//do not wipe .data and stuff, we could use them again in a C++ expr
 	assert(!this.p);
 	dfsFreeChildrenStorage(this);
@@ -663,7 +663,7 @@ int! ama::Node::isAir(ama::Node*! this) {
 ///////////////////////////////////////
 private int! ValidateChildRange(ama::Node*+! p0, ama::Node*+! p1) {
 	if( p0 == p1 ) { return 1; }
-	for(ama::Node*+! @nojson ndi = p0.s; ndi; ndi = ndi.s) {
+	for(ama::Node*+! ndi = p0.s; ndi; ndi = ndi.s) {
 		if( ndi == p1 ) { return 1; }
 		if( ndi == p0 ) { return 0; }
 	}
@@ -676,12 +676,12 @@ ama::Node*+! ReplaceChildRange(ama::Node*+*+! pp0, ama::Node*+! p0, ama::Node*+!
 	if( pp0 ) { assert(*pp0 == p0); }
 	if( !pp0 ) {
 		pp0 = &p0.p.c;
-		for(ama::Node*+! @nojson ndi = p0.p.c; ndi != p0; ndi = ndi.s) {
+		for(ama::Node*+! ndi = p0.p.c; ndi != p0; ndi = ndi.s) {
 			pp0 = &ndi.s;
 		}
 		assert(*pp0 == p0);
 	}
-	ama::Node*+! @nojson nd_parent = p0.p;
+	ama::Node*+! nd_parent = p0.p;
 	if( nd_new ) {
 		*pp0 = nd_new;
 		nd_new.p = nd_parent;
@@ -689,7 +689,7 @@ ama::Node*+! ReplaceChildRange(ama::Node*+*+! pp0, ama::Node*+! p0, ama::Node*+!
 	} else {
 		*pp0 = p1.s;
 	}
-	for(ama::Node*+! @nojson ndi = p0; ndi != p1; ndi = ndi.s) {
+	for(ama::Node*+! ndi = p0; ndi != p1; ndi = ndi.s) {
 		ndi.p = NULL;
 	}
 	return nd_new;

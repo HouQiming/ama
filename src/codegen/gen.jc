@@ -21,7 +21,7 @@ namespace ama {
 					'/* unsupported node class ', JSON.stringify(nd.node_class), ' */ ',
 					JSON.stringify(nd), ' /* with children */ ('
 				);
-				for(ama::Node*+! @nojson ndi = nd.c; ndi; ndi = ndi.s) {
+				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					this.Generate(ndi);
 					this.code.push(' ');
 				}
@@ -211,7 +211,7 @@ namespace ama {
 				//*** PASS THROUGH ***
 			}
 			case ama::N_FUNCTION: {
-				for(ama::Node*+! @nojson ndi = nd.c; ndi; ndi = ndi.s) {
+				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					this->Generate(ndi);
 				}
 				break;
