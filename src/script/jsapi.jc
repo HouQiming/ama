@@ -414,7 +414,7 @@ namespace ama {
 		}
 		ama::DelimitCLikeStatements(nd_root, options);
 		ama::ParseDependency(nd_root, options);
-		ama::ParsePostfix(nd_root);
+		ama::ParsePostfix(nd_root, ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_air_object'), 1));
 		ama::SanitizeCommentPlacement(nd_root);
 		ama::ParseNodeof(nd_root);
 		ama::CleanupDummyRaws(nd_root);

@@ -6,7 +6,7 @@ namespace ama {
 	private inline int! isCPPLambda(ama::Node*+! ndi) {
 		return ndi.node_class == ama::N_CALL && ndi.c.isRawNode('[', ']');
 	}
-	ama::Node*+! ParsePostfix(ama::Node*+! nd_root) {
+	ama::Node*+! ParsePostfix(ama::Node*+! nd_root, int! parse_air_object) {
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+!*+! p_self = &nd_raw.c;
@@ -16,7 +16,29 @@ namespace ama {
 			int! last_prototype_kind = 0;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
-				if( ndi.node_class == ama::N_SYMBOL ) {
+				if( parse_air_object && 
+				ndi.node_class == ama::N_SYMBOL && (ndi.data == "." || (!isCPPLambda(ndi) && ndi.data == "->") || ndi.data == "::") && 
+				ndi.s && ndi.s.node_class == ama::N_REF ) {
+					//dot
+					int! dot_flags = 0;
+					if( ndi.data == "->" ) {
+						dot_flags = ama::DOT_PTR;
+					} else if( ndi.data == "::" ) {
+						dot_flags = ama::DOT_CLASS;
+					}
+					char[|]! name = ndi.s.data;
+					ama::Node*+! nd_dot = ama::nAir().dot(name).setFlags(dot_flags);
+					ndi.p = NULL;
+					ndi.s = NULL;
+					*p_self = nd_dot;
+					nd_dot.p = nd_raw;
+					nd_dot.s = ndi_next.s;
+					ndi_next.p = NULL;
+					ndi_next.FreeASTStorage();
+					ndi.FreeASTStorage();
+					ndi = nd_dot;
+					continue;
+				} else if( ndi.node_class == ama::N_SYMBOL ) {
 					//do nothing
 				} else if( ndi.s && ndi.s.node_class == ama::N_SYMBOL && 
 				(ndi.s.data == "." || (!isCPPLambda(ndi) && ndi.s.data == "->") || ndi.s.data == "::") && 

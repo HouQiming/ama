@@ -31,6 +31,7 @@ namespace ama {
 	const uint8_t! N_PARAMETER_LIST = 22;
 	const uint8_t! N_CONDITIONAL = 23;
 	const uint8_t! N_LABELED = 24;
+	const uint8_t! N_AIR = 25;
 	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;
@@ -210,7 +211,7 @@ namespace ama {
 	}
 	//the namespace in `::foo`, the initial value in `int bar;`
 	inline ama::Node*+! nAir() {
-		return ama::CreateNode(N_RAW, NULL);
+		return ama::CreateNode(N_AIR, NULL);
 	}
 	inline ama::Node*+! nConditional(Node*+! nd_cond, Node*+! nd_true, Node*+! nd_false) {
 		return ama::CreateNode(N_CONDITIONAL, cons(nd_cond, cons(nd_true, cons(nd_false, NULL))));

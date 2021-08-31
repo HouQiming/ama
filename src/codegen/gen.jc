@@ -238,6 +238,10 @@ namespace ama {
 				this->Generate(nd.c.s);
 				break;
 			}
+			case ama::N_AIR: {
+				//nothing
+				break;
+			}
 		}
 		//case N_ITEM:
 	}
