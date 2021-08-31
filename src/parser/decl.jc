@@ -137,14 +137,12 @@ namespace ama {
 							);
 							//class children: whatever before, name, whatever after, body
 							*pnd_class_name = NULL;
-							ama::Node*+! nd_before = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! nd_before = ama::toSingleNode(nd_keyword.s);
 							ama::Node*+! nd_after = nd_class_name.s;
 							nd_class_name.s = NULL;
 							*pndi = NULL;
 							ndi.s = NULL;
-							if( !nd_after || nd_after.s ) {
-								nd_after = ama::CreateNode(ama::N_RAW, nd_after);
-							}
+							nd_after = ama::toSingleNode(nd_after);
 							nd_class.c = ama::cons(nd_before, ama::cons(nd_class_name, ama::cons(nd_after, ndi)));
 							for(ama::Node*+! ndj = nd_class.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_class;
@@ -167,7 +165,7 @@ namespace ama {
 								nd_keyword, ndi,
 								ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
-							ama::Node*+! nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! nd_arg = ama::toSingleNode(nd_keyword.s);
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							*pndi = NULL;
 							ndi.s = NULL;
@@ -197,7 +195,7 @@ namespace ama {
 								NULL
 							);
 							assert(nd_last_scoped_stmt);
-							ama::Node*+! nd_arg = nd_keyword.s && !nd_keyword.s.s ? nd_keyword.s : ama::CreateNode(ama::N_RAW, nd_keyword.s);
+							ama::Node*+! nd_arg = ama::toSingleNode(nd_keyword.s);
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							*pndi = NULL;
 							ndi.s = NULL;
@@ -271,8 +269,8 @@ namespace ama {
 							//nd_paramlist.Delete();
 							//ndi.Delete();
 							nd_paramlist = ConvertToParameterList(nd_paramlist);
-							if( nd_before.s ) { nd_before = ama::CreateNode(ama::N_RAW, nd_before); }
-							if( nd_after.s ) { nd_after = ama::CreateNode(ama::N_RAW, nd_after); }
+							nd_before = ama::toSingleNode(nd_before);
+							nd_after = ama::toSingleNode(nd_after);
 							nd_func.c = ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, ndi)));
 							for(ama::Node*+! ndj = nd_func.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_func;

@@ -1,0 +1,15 @@
+/*
+@ama
+let nd_root=ParseCurrentFile();
+console.log(JSON.stringify(nd_root,null,2))
+console.log(nd_root.toSource())
+*/
+
+int main(){
+	"label":a?b?c:d:e?f:g;
+	var obj={
+		a:[p,q,r],
+		[b]:c
+	}
+	return 0;
+}

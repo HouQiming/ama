@@ -419,6 +419,11 @@ namespace ama {
 		ama::ParseNodeof(nd_root);
 		ama::CleanupDummyRaws(nd_root);
 		ama::ParseAssignment(nd_root, options);
+		int! has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_conditional'), 1);
+		int! has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_labels'), 1);
+		if( has_c_conditional || has_labels ) {
+			ama::ParseColons(nd_root, has_c_conditional);
+		}
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
 			ama::ParseOperators(nd_root, options);
 			ama::StripBinaryOperatorSpaces(nd_root);

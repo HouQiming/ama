@@ -1,29 +1,111 @@
 // //// JC version: 3
+//#include <console.jch>
 #include '../ast/node.jch'
 #include "../script/jsenv.jch"
 #include "./operator.jch"
 
 namespace ama {
 	//TODO: label and C ?: parsing
-	private struct ColonStackItem
-		Node*+ nd_question_mark
-		Node*+ nd_colon
-	ama::Node*+! ParseColons(ama::Node*+! nd_root) {
+	private class ColonStackItem {
+		ama::Node*+*+! phead = NULL;
+		ama::Node*+*+! pqmark = NULL;
+		ama::Node*+*+! pcolon = NULL;
+	};
+	private ama::Node*+*+! FoldColonStack(ColonStackItem![+]&+! cstk, ama::Node*+*+! pnext) {
+		assert(cstk.back().pcolon);
+		ama::Node*+*+! phead = cstk.back().phead;
+		//console.log(cstk.length, phead);
+		ama::Node*+! nd_parent = (*phead).p;
+		ama::Node*+! nd_next = ama::BreakLink(pnext);
+		ama::Node*+! nd_colon = ama::BreakLink(cstk.back().pcolon);
+		ama::Node*+! nd_ret = NULL;
+		if( cstk.back().pqmark ) {
+			//N_CONDITIONAL
+			ama::Node*+! nd_qmark = ama::BreakLink(cstk.back().pqmark);
+			ama::Node*+! nd_head = ama::BreakLink(phead);
+			ama::Node*+! nd_cond = ama::toSingleNode(nd_head);
+			ama::Node*+! nd_true = ama::toSingleNode(nd_qmark.s);
+			ama::Node*+! nd_false = ama::toSingleNode(nd_colon.s);
+			nd_cond.MergeCommentsAfter(nd_qmark);
+			nd_true.MergeCommentsBefore(nd_qmark);
+			nd_true.MergeCommentsAfter(nd_colon);
+			nd_false.MergeCommentsBefore(nd_colon);
+			nd_ret = ama::nConditional(nd_cond, nd_true, nd_false);
+			nd_qmark.p = NULL; nd_qmark.FreeASTStorage();
+			nd_colon.p = NULL; nd_colon.FreeASTStorage();
+		} else {
+			//N_LABELED
+			ama::Node*+! nd_head = ama::BreakLink(phead);
+			ama::Node*+! nd_label = ama::toSingleNode(nd_head);
+			ama::Node*+! nd_value = ama::toSingleNode(nd_colon.s);
+			nd_label.MergeCommentsAfter(nd_colon);
+			nd_value.MergeCommentsBefore(nd_colon);
+			nd_ret = ama::nLabeled(nd_label, nd_value);
+			nd_colon.p = NULL; nd_colon.FreeASTStorage();
+		}
+		*phead = nd_ret;
+		nd_ret.p = nd_parent;
+		nd_ret.s = nd_next;
+		cstk.pop();
+		if( !cstk.length ) {
+			cstk.push(new ColonStackItem!{
+				phead: phead
+			});
+		}
+		return &nd_ret.s;
+	}
+	ama::Node*+! ParseColons(ama::Node*+! nd_root, int! has_c_conditional) {
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
-			conditionals=new ama::Node*+[+]
-			for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
-				if ndi.isSymbol("?"):
-					conditionals.push_back(ndi)
-				else if ndi.isSymbol(":"):
-					if conditionals.length:
-						//TODO: fold up to the last conditional - N_CONDITIONAL
-						//we don't know the range yet
-						//stated stack
-					else
-						//TODO: label
+			ColonStackItem![+]! cstk;
+			cstk.push(new ColonStackItem!{
+				phead: &nd_raw.c
+			});
+			ama::Node*+*+! pndi = &nd_raw.c;
+			for(ama::Node*+! ndi = nd_raw.c; ndi; (pndi = &ndi.s, ndi = ndi.s)) {
+				if( has_c_conditional && ndi.isSymbol("?") ) {
+					assert(cstk.length > 0);
+					if( cstk.back().pcolon ) {
+						// foo?bar:baz? /*we are here*/
+						// bar:baz? /*we are here*/
+						// 1?1:0?2:3 == 1?1:(0?2:3) - here we need to create a new conditional
+						ama::Node*+! nd_colon = cstk.back().pcolon[0];
+						assert(nd_colon);
+						cstk.push(new ColonStackItem!{
+							phead: &nd_colon->s,
+							pqmark: pndi
+						});
+					} else if( cstk.back().pqmark ) {
+						//again, create a new conditional
+						ama::Node*+! nd_qmark = cstk.back().pqmark[0];
+						assert(nd_qmark);
+						cstk.push(new ColonStackItem!{
+							phead: &nd_qmark->s,
+							pqmark: pndi
+						});
+					} else {
+						cstk.back().pqmark = pndi;
+					}
+				} else if( ndi.isSymbol(":") ) {
+					assert(cstk.length > 0);
+					while( cstk.back().pcolon ) {
+						assert(cstk.length > 0);
+						pndi = FoldColonStack(cstk, pndi);
+					}
+					//conditional -- foo?bar:
+					//label -- bar:
+					//both only involves setting pcolon
+					cstk.back().pcolon = pndi;
+				}
+			}
+			while( cstk.length ) {
+				if( cstk.back().pcolon ) {
+					FoldColonStack(cstk, pndi);
+				} else {
+					cstk.pop();
+				}
 			}
 		}
-		return nd_root
+		return nd_root;
 	}
 	ama::Node*+! ParseAssignment(ama::Node*+! nd_root, JSValueConst! options) {
 		Map<char[|], int>! binop_priority = ama::GetPrioritizedList(options, 'binary_operators');

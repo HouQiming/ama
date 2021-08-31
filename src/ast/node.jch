@@ -30,7 +30,7 @@ namespace ama {
 	const uint8_t! N_EXTENSION_CLAUSE = 21;
 	const uint8_t! N_PARAMETER_LIST = 22;
 	const uint8_t! N_CONDITIONAL = 23;
-	//const uint8_t! N_RAW_DECLARATION = 8;
+	const uint8_t! N_LABELED = 24;
 	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;
@@ -212,6 +212,12 @@ namespace ama {
 	inline ama::Node*+! nAir() {
 		return ama::CreateNode(N_RAW, NULL);
 	}
+	inline ama::Node*+! nConditional(Node*+! nd_cond, Node*+! nd_true, Node*+! nd_false) {
+		return ama::CreateNode(N_CONDITIONAL, cons(nd_cond, cons(nd_true, cons(nd_false, NULL))));
+	}
+	inline ama::Node*+! nLabeled(Node*+! nd_label, Node*+! nd_value) {
+		return ama::CreateNode(N_LABELED, cons(nd_label, cons(nd_value, NULL)));
+	}
 	///////////////
 	inline ama::Node*+! GetPlaceHolder() {
 		assert(!g_placeholder.p);
@@ -219,6 +225,22 @@ namespace ama {
 		g_placeholder.comments_before = '';
 		g_placeholder.comments_after = '';
 		return g_placeholder;
+	}
+	inline ama::Node*+! BreakLink(Node*+*+! pndi) {
+		ama::Node*+! ret = *pndi;
+		*pndi = NULL;
+		return ret;
+	}
+	inline ama::Node*+! toSingleNode(Node*+! nd_child) {
+		if( !nd_child || nd_child.s ) {
+			ama::Node*+! ret = CreateNode(N_RAW, nd_child);
+			if( nd_child ) {
+				ret.indent_level = nd_child.indent_level;
+			}
+			return ret;
+		} else {
+			return nd_child;
+		}
 	}
 	ama::Node*+! CreateNodeFromChildren(uint8_t! node_class, ama::Node*+[...]! children);
 	///////////////
