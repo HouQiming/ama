@@ -412,6 +412,9 @@ namespace ama {
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_pointed_brackets'), 1) ) {
 			ama::ParsePointedBrackets(nd_root);
 		}
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_indent_as_scope'), 1) ) {
+			ama::ConvertIndentToScope(nd_root);
+		}
 		ama::DelimitCLikeStatements(nd_root, options);
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root, ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_air_object'), 1));

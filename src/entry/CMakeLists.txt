@@ -191,14 +191,14 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jc
   MAIN_DEPENDENCY ../ast/node.jc
-  DEPENDS ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ../parser/literal.jch ../ast/node.jch ${JC_LIB}/printf.js
+  DEPENDS ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ../parser/literal.jch ../ast/node.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jc
   MAIN_DEPENDENCY ../parser/simppair.jc
-  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/charset.jch ../parser/simppair.jch ${JC_LIB}/console.jch ${JC_LIB}/printf.js
+  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/charset.jch ../parser/simppair.jch ${JC_LIB}/console.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -251,7 +251,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/scoping.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/scoping.jc
   MAIN_DEPENDENCY ../parser/scoping.jc
-  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/scoping.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../parser/scoping.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -264,7 +264,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/postfix.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/postfix.jc
   MAIN_DEPENDENCY ../parser/postfix.jc
-  DEPENDS ../ast/node.jch ../parser/postfix.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/postfix.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(

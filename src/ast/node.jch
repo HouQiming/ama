@@ -48,6 +48,8 @@ namespace ama {
 	const uint32_t! DEP_JS_REQUIRE = 1u;
 	const uint32_t! DEP_TYPE_MASK = 31u;
 	const uint32_t! DEPF_C_INCLUDE_NONSTR = 32u;
+	//reserve 1 bit
+	const intptr_t! MAX_INDENT = 63;
 	/////////////////
 	class TCloneResult {
 		Node*+! nd;
@@ -232,17 +234,6 @@ namespace ama {
 		*pndi = NULL;
 		return ret;
 	}
-	inline ama::Node*+! toSingleNode(Node*+! nd_child) {
-		if( !nd_child || nd_child.s ) {
-			ama::Node*+! ret = CreateNode(N_RAW, nd_child);
-			if( nd_child ) {
-				ret.indent_level = nd_child.indent_level;
-			}
-			return ret;
-		} else {
-			return nd_child;
-		}
-	}
 	ama::Node*+! CreateNodeFromChildren(uint8_t! node_class, ama::Node*+[...]! children);
 	///////////////
 	//macro nRawDeclaration() = function(auto my_call, ...args):auto {
@@ -251,5 +242,8 @@ namespace ama {
 	macro nDependency() = function(auto my_call, ...args):auto {
 		return require("./v3macros.js").ASTConstructor(my_call, args, "N_DEPENDENCY");
 	}
+	int8_t! ClampIndentLevel(intptr_t! level);
+	ama::Node*+! toSingleNode(ama::Node*+! nd_child);
+	void! AdjustIndentLevel(ama::Node*+! nd_stmt, intptr_t! delta);
 };
 ama::Node*+! ReplaceChildRange(ama::Node*+*+! pp0, ama::Node*+! p0, ama::Node*+! p1, ama::Node*+! nd_new);

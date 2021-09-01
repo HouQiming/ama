@@ -1,4 +1,6 @@
 // //// JC version: 3
+#include <console.jch>
+#include <json.jch>
 #include '../ast/node.jch'
 #include "../script/jsenv.jch"
 #include './scoping.jch'
@@ -7,6 +9,26 @@ namespace ama {
 	void! ConvertToScope(ama::Node*+! nd_raw) {
 		nd_raw.node_class = ama::N_SCOPE;
 		nd_raw.flags = 0;
+	}
+	private void! FoldIndentGroup(ama::Node*+[+]&+! lines_out, int32_t! level, intptr_t! lineno, ama::Node*+! nd_nextline) {
+		for(intptr_t! i = lineno; i < lines_out.length; i += 1) {
+			ama::AdjustIndentLevel(lines_out[i], -level);
+		}
+		ama::Node*+! nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(lines_out.subarray(lineno)));
+		nd_new_scope.indent_level = level;
+		if( nd_nextline ) {
+			intptr_t! p_newline = nd_nextline.comments_before.indexOf('\n');
+			if( p_newline >= 0 ) {
+				nd_new_scope.comments_after = new char[|]!(nd_new_scope.comments_after + nd_nextline.comments_before.subarray(0, p_newline + 1));
+				nd_nextline.comments_before = new char[|]!(nd_nextline.comments_before.subarray(p_newline + 1));
+			}
+			//MergeCommentsAfter(nd_nextline);
+			//console.log(JSON.stringify(nd_new_scope.comments_after))
+		} else {
+			nd_new_scope.comments_after = "\n";
+		}
+		lines_out.resize(lineno);
+		lines_out.push_back(nd_new_scope);
 	}
 	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
@@ -69,8 +91,8 @@ namespace ama {
 			}
 			if( changed || (!nd_raw.isRawNode('{', '}') && nd_raw.c && nd_raw.c.s) ) {
 				for(int! i = 0; i < new_children.length; i += 1) {
-					ama::Node*+! nd_inner = new_children[i];
-					new_children[i] = ama::CreateNode(ama::N_RAW, nd_inner);
+					ama::Node*+! nd_inner = ama::toSingleNode(new_children[i]);
+					new_children[i] = nd_inner;
 					new_children[i].indent_level = nd_inner.indent_level;
 					new_children[i].p = nd_raw;
 				}
@@ -84,18 +106,96 @@ namespace ama {
 	}
 	ama::Node*+! ParseNodeof(ama::Node*+! nd_root) {
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
-			ama::Node*+! @nojson ndi = nd_raw.c;
+			ama::Node*+! ndi = nd_raw.c;
 			while( ndi ) {
-				ama::Node*+! @nojson ndi_next = ndi.s;
+				ama::Node*+! ndi_next = ndi.s;
 				if( ndi.node_class == ama::N_SYMBOL && ndi.data == "." && ndi_next && (ndi_next.isRawNode('(', ')') || ndi_next.isRawNode('{', '}') || ndi_next.node_class == ama::N_SCOPE) ) {
 					//nodeof
-					ama::Node*+! @nojson ndi_next_next = ndi_next.s;
+					ama::Node*+! ndi_next_next = ndi_next.s;
 					ndi_next.Delete();
 					ndi.ReplaceWith(ama::nNodeof(ndi_next));
 					ndi_next = ndi_next_next;
 				}
 				ndi = ndi_next;
 			}
+		}
+		return nd_root;
+	}
+	//do this before DelimitCLikeStatements
+	private class IndentStackItem {
+		int32_t! level;
+		int32_t! lineno;
+	};
+	ama::Node*+! ConvertIndentToScope(ama::Node*+! nd_root) {
+		ama::Node*+[+]! scopes = nd_root.FindAll(ama::N_SCOPE, NULL);
+		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			if( !nd_raw.p || nd_raw.isRawNode('{', '}') ) {
+				scopes.push(nd_raw);
+			}
+		}
+		for(ama::Node*+! nd_scope : scopes) {
+			ama::Node*+[+]! lines = new ama::Node*+[+]!();
+			int! passed_newline = 1;
+			ama::Node*+*+! pndi = &nd_scope.c;
+			lines.push_back(nd_scope.c);
+			//delimit first
+			for(ama::Node*+! ndi = nd_scope.c; ndi; (pndi = &ndi.s, ndi = ndi.s)) {
+				if( ndi.comments_before.indexOf('\n') >= 0 ) {
+					passed_newline = 1;
+				}
+				if( passed_newline ) {
+					if( ndi != lines.back() ) {
+						lines.push_back(ama::BreakLink(pndi));
+					}
+					passed_newline = 0;
+				}
+				if( !ndi.hasBrackets() && ndi.comments_after.indexOf('\n') >= 0 ) {
+					passed_newline = 1;
+				}
+			}
+			if( lines.length <= 1 ) { continue; }
+			for(int! i = 0; i < lines.length; i += 1) {
+				lines[i] = ama::toSingleNode(lines[i]);
+				//console.log(i, lines[i].toSource());
+			}
+			//check indent levels after
+			IndentStackItem![+]! istk = new IndentStackItem![+]!();
+			istk.push(new IndentStackItem!{
+				level: lines[0].indent_level,
+				lineno: 0
+			});
+			ama::Node*+[+]! lines_out = new ama::Node*+[+]!();
+			for(int! i = 0; i < lines.length; i += 1) {
+				while( lines[i].indent_level < istk.back().level ) {
+					if( istk.length <= 1 || lines[i].indent_level > istk[istk.length - 2].level ) {
+						//bad indent
+						istk.back().level = lines[i].indent_level;
+					} else {
+						FoldIndentGroup(lines_out, istk[istk.length - 2].level, istk.back().lineno, lines[i]);
+						istk.pop();
+					}
+				}
+				if( lines[i].indent_level > istk.back().level ) {
+					istk.push(new IndentStackItem!{
+						level: lines[i].indent_level,
+						lineno: int32_t(lines_out.length)
+					});
+				}
+				assert(!lines[i].s);
+				lines_out.push_back(lines[i]);
+			}
+			while( istk.length > 1 ) {
+				FoldIndentGroup(lines_out, istk[istk.length - 2].level, istk.back().lineno, NULL);
+				istk.pop();
+			}
+			for(ama::Node*+! ndi : lines_out) {
+				ndi.p = nd_scope;
+				//if( ndi.s ) {
+				//	console.log('has s', ndi.toSource());
+				//}
+				assert(!ndi.s);
+			}
+			nd_scope.c = ama::InsertMany(lines_out);
 		}
 		return nd_root;
 	}

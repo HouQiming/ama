@@ -1,4 +1,6 @@
 // //// JC version: 3
+#include <console.jch>
+#include <json.jch>
 #include '../ast/node.jch'
 #include './postfix.jch'
 
@@ -40,39 +42,41 @@ namespace ama {
 					continue;
 				} else if( ndi.node_class == ama::N_SYMBOL ) {
 					//do nothing
-				} else if( ndi.s && ndi.s.node_class == ama::N_SYMBOL && 
-				(ndi.s.data == "." || (!isCPPLambda(ndi) && ndi.s.data == "->") || ndi.s.data == "::") && 
-				ndi.s.s && ndi.s.s.node_class == ama::N_REF ) {
+				} else if( ndi_next && ndi_next.node_class == ama::N_SYMBOL && 
+				(ndi_next.data == "." || (!isCPPLambda(ndi) && ndi_next.data == "->") || ndi_next.data == "::") && 
+				ndi_next.s && ndi_next.s.node_class == ama::N_REF ) {
 					//dot
 					int! dot_flags = 0;
-					if( ndi.s.data == "->" ) {
+					if( ndi_next.data == "->" ) {
 						dot_flags = ama::DOT_PTR;
-					} else if( ndi.s.data == "::" ) {
+					} else if( ndi_next.data == "::" ) {
 						dot_flags = ama::DOT_CLASS;
 					}
-					char[|]! name = ndi.s.s.data;
+					ama::Node*+! @nojson nd_name = ndi_next.s;
+					char[|]! name = nd_name.data;
 					*p_self = NULL;
 					ndi.p = NULL;
 					ndi.s = NULL;
 					ndi = ndi.dot(name).setFlags(dot_flags);
 					*p_self = ndi;
 					ndi.p = nd_raw;
-					ndi.s = ndi_next.s.s;
-					ndi_next.s.FreeASTStorage();
-					ndi_next.FreeASTStorage();
+					ndi.s = nd_name.s;
+					nd_name.p = NULL; nd_name.FreeASTStorage();
+					ndi_next.p = NULL; ndi_next.FreeASTStorage();
 					continue;
 				} else if( ndi.s && (ndi.s.isRawNode('(', ')') || ndi.s.isRawNode('<', '>')) ) {
 					//call
-					uint8_t! call_class = ndi.s.isRawNode('<', '>') ? ama::N_CALL_TEMPLATE : ama::N_CALL;
+					ama::Node*+! nd_arglist = ndi.s;
+					uint8_t! call_class = nd_arglist.isRawNode('<', '>') ? ama::N_CALL_TEMPLATE : ama::N_CALL;
 					*p_self = NULL;
 					ndi.p = NULL;
 					ndi.s = NULL;
-					ama::Node*+! ndi_next_next = ndi_next.s;
-					ndi_next.p = NULL;
-					ndi_next.s = NULL;
+					ama::Node*+! ndi_next_next = nd_arglist.s;
+					nd_arglist.p = NULL;
+					nd_arglist.s = NULL;
 					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 					new_children.push_back(ndi);
-					for(ama::Node*+! ndj : ndi_next) {
+					for(ama::Node*+! ndj : nd_arglist) {
 						//strip trailing ','s
 						ama::Node*+! ndj_last = ndj.LastChild();
 						if( ndj_last != NULL && ndj_last.isSymbol(",") ) {
@@ -83,7 +87,10 @@ namespace ama {
 					}
 					ama::Node*+! ndi_old = ndi;
 					ndi = ama::CreateNodeFromChildren(call_class, new_children);
-					ndi.comments_after = ndi_next.comments_after;
+					//merge comments
+					ndi.comments_after = nd_arglist.comments_after;
+					ndi_old.MergeCommentsAfter(nd_arglist);
+					//console.log(JSON.stringify(ndi.toSource()), JSON.stringify(ndi.comments_after));
 					ndi.indent_level = ndi_old.indent_level;
 					//ndi_old.indent_level=0;
 					ndi.p = nd_raw;

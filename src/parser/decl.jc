@@ -340,7 +340,7 @@ namespace ama {
 				if( nd_asgn.data != NULL ) {
 					nd_def.flags |= ama::REF_RW;
 				}
-				if( nd_def.p && nd_def.p.node_class == ama::N_RAW ) {
+				if( nd_def.p && nd_def.p.node_class == ama::N_RAW && nd_def != nd_def.p.c ) {
 					ama::Node*+! nd_raw = nd_def.p;
 					nd_def.Delete();
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();

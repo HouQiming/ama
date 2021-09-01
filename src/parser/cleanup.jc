@@ -40,11 +40,11 @@ namespace ama {
 	}
 	ama::Node*+! StripBinaryOperatorSpaces(ama::Node*+! nd_root) {
 		for(ama::Node*! nd : nd_root.FindAll(ama::N_BINOP, NULL)) {
-			ama::Node*+! @nojson nd_a = nd.c;
+			ama::Node*+! nd_a = nd.c;
 			if( nd_a.comments_after.endsWith(' ') ) {
 				nd_a.comments_after = new char[|]!(nd_a.comments_after.subarray(0, nd_a.comments_after.length - 1));
 			}
-			ama::Node*+! @nojson nd_b = nd.c.s;
+			ama::Node*+! nd_b = nd.c.s;
 			if( nd_b.comments_before.startsWith(' ') ) {
 				nd_b.comments_before = new char[|]!(nd_b.comments_before.subarray(1));
 			}
