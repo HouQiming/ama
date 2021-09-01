@@ -98,7 +98,8 @@ namespace ama {
 				}
 				nd_raw.c = ama::InsertMany(new_children);
 			}
-			if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
+			//if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
+			if( nd_raw.isRawNode('{', '}') && changed != ',' ) {
 				ConvertToScope(nd_raw);
 			}
 		}

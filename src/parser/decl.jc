@@ -67,6 +67,37 @@ namespace ama {
 		Map<char[|], int>! keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		Map<char[|], int>! keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
 		Map<char[|], int>! keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_colon_functions'), 1) ) { }
+		{
+			for(ama::Node*+! nd_labeled : nd_root.FindAll(ama::N_LABELED, NULL)) {
+				if( (nd_labeled.c.s.node_class == ama::N_SCOPE && nd_labeled.c.node_class == ama::N_RAW) || nd_labeled.c.node_class == ama::N_CALL ) {
+					if( nd_labeled.c.node_class == ama::N_CALL ) {
+						ama::Node*+! nd_call = nd_labeled.c;
+						ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+						nd_call.ReplaceWith(nd_tmp);
+						nd_tmp.ReplaceWith(ama::CreateNode(ama::N_RAW, nd_call));
+					}
+					ama::Node*+! nd_maybe_call = nd_labeled.c.LastChild();
+					if( nd_maybe_call.node_class == ama::N_CALL ) {
+						//foo():{bar}, treat as function
+						ama::Node*+! nd_body = nd_labeled.c.s;
+						ama::Node*+! nd_paramlist = ama::UnparseCall(nd_maybe_call).s;
+						ama::Node*+! nd_before = nd_labeled.c.c;
+						ama::Node*+! nd_after = nd_paramlist.s;
+						nd_paramlist.Delete();
+						//before, paramlist, after, body
+						ama::Node*+! nd_func = ama::CreateNode(ama::N_FUNCTION, ama::cons(
+							ama::toSingleNode(nd_before), ama::cons(
+								ConvertToParameterList(nd_paramlist), 
+								ama::cons(ama::toSingleNode(nd_after), nd_body)
+							)
+						));
+						nd_func.data = GetFunctionName(1, nd_func);
+						nd_labeled.ReplaceWith(nd_func);
+					}
+				}
+			}
+		}
 		int32_t! parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp11_lambda'), 1);
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			if( !nd_raw.p ) { continue; }
