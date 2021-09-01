@@ -450,6 +450,16 @@ namespace ama {
 		} else {
 			options = argv[0];
 		}
+		//extension-aware option preparation, default inheritance if necessary
+		JSValueConst[2L]! prepare_option_args = new JSValueConst[2L]! {
+			JS_DupValue(ama::jsctx, func_data[1]),
+			JS_DupValue(ama::jsctx, options)
+		};
+		options = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__PrepareOptions"), 2, prepare_option_args.data());
+		//JS_DupValue(ama::jsctx, func_data[1])
+		if( JS_IsNull(options) || JS_IsUndefined(options) ) {
+			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
+		}
 		char*! file_data = (char*)(JSON.parse<uintptr_t>(ama::UnwrapString(func_data[0])));
 		ama::Node*+! nd_root = ParseCode(file_data, options);
 		nd_root.data = ama::UnwrapString(func_data[1]);

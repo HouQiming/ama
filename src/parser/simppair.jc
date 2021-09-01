@@ -157,6 +157,11 @@ namespace ama {
 			}
 		}
 		int32_t! tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
+		uint8_t[256]! char_lut;
+		memcpy(char_lut.data(), g_char_lut.data(), g_char_lut.size());
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'enable_hash_comment'), 0) ) {
+			char_lut['#'] = CHAR_TYPE_SLASH;
+		}
 		//UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, ''),0)
 		ama::Node*+! nd_root = ama::CreateNode(ama::N_RAW, NULL);
 		ParserState[+]! state_stack = new ParserState[+] {
@@ -175,19 +180,19 @@ namespace ama {
 			uint32_t! ch = uint32_t(uint8_t(feed[0L]));
 			ama::Node*+! nd;
 			// [ \t\r] \n "' / 0-9 A-Za-z_\u0080+
-			switch( g_char_lut[intptr_t(ch)] ) {
+			switch( char_lut[intptr_t(ch)] ) {
 				case CHAR_TYPE_SLASH: {
-					if( int(feed[1L]) == int('/') ) {
+					if( feed[0] == '#' || feed[1L] == '/' ) {
 						feed = ama::SkipChars(feed, g_not_newline);
 						comment_end = feed;
 						break;
-					} else if( int(feed[1L]) == int('*') ) {
+					} else if( feed[1L] == '*' ) {
 						intptr_t! lg = 2L;
 						for(;;) {
 							if( !feed[lg] ) {
 								break;
 							}
-							if( int(feed[lg]) == int('*') && int(feed[lg + 1L]) == int('/') ) {
+							if( feed[lg] == '*' && feed[lg + 1L] == '/' ) {
 								lg += 2L;
 								break;
 							}
