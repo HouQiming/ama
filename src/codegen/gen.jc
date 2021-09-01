@@ -28,7 +28,7 @@ namespace ama {
 				this.code.push(')');
 				break;
 			}
-			case ama::N_RAW: {
+			case ama::N_FILE: case ama::N_RAW: {
 				char! ch_opening = char(nd.flags & 0xff);
 				if( ch_opening ) {
 					this->code.push_back(ch_opening);

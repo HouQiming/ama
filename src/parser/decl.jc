@@ -69,6 +69,7 @@ namespace ama {
 		Map<char[|], int>! keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
 		int32_t! parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp11_lambda'), 1);
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			if( !nd_raw.p ) { continue; }
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+! nd_prototype_start = ndi;
 			ama::Node*+*+! pndi = &nd_raw.c;

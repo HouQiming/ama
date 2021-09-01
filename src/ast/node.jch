@@ -31,7 +31,9 @@ namespace ama {
 	const uint8_t! N_PARAMETER_LIST = 22;
 	const uint8_t! N_CONDITIONAL = 23;
 	const uint8_t! N_LABELED = 24;
+	//we don't want to process N_AIR / N_FILE when finding N_RAW
 	const uint8_t! N_AIR = 25;
+	const uint8_t! N_FILE = 26;
 	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;

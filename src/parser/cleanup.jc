@@ -15,6 +15,9 @@ namespace ama {
 				nd_raw.ReplaceWith(nd_raw.c);
 			}
 		}
+		while( nd_root.c && !nd_root.c.s && nd_root.c.node_class == ama::N_RAW && !(nd_root.c.flags & 0xffff) ) {
+			nd_root = nd_root.c;
+		}
 		return nd_root;
 	}
 	private void! dfsPullComment(ama::Node*+! nd) {

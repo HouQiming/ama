@@ -416,11 +416,14 @@ namespace ama {
 			ama::ConvertIndentToScope(nd_root);
 		}
 		ama::DelimitCLikeStatements(nd_root, options);
+		//from here on, N_RAW no longer includes the root scope
+		nd_root = ama::CleanupDummyRaws(nd_root);
+		nd_root.node_class = ama::N_FILE;
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root, ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_air_object'), 1));
 		ama::SanitizeCommentPlacement(nd_root);
 		ama::ParseNodeof(nd_root);
-		ama::CleanupDummyRaws(nd_root);
+		nd_root = ama::CleanupDummyRaws(nd_root);
 		ama::ParseAssignment(nd_root, options);
 		int! has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_conditional'), 1);
 		int! has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_labels'), 1);
