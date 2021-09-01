@@ -49,7 +49,7 @@ namespace ama {
 					if( ndi_next ) {
 						new_children.push_back(ndi_next);
 					}
-				} else if( ndi.isRawNode('{', '}') ) {
+				} else if( ndi.isRawNode('{', '}') || ndi.node_class == ama::N_SCOPE ) {
 					if( ndi.s && ndi.s.node_class == ama::N_REF && keywords_extension_clause[ndi.s.data] ) {
 						ndi = ndi_next;
 						continue;
@@ -188,14 +188,47 @@ namespace ama {
 				FoldIndentGroup(lines_out, istk[istk.length - 2].level, istk.back().lineno, NULL);
 				istk.pop();
 			}
-			for(ama::Node*+! ndi : lines_out) {
+			//merge scopes into surrounding raws
+			ama::Node*+[+]! line_group = new ama::Node*+[+]!();
+			ama::Node*+[+]! line_out_final = new ama::Node*+[+]!();
+			for(int! i0 = 0; i0 < lines_out.length;) {
+				int! i1 = i0 + 1;
+				while( i1 < lines_out.length && (lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1 - 1].node_class == ama::N_SCOPE) ) {
+					i1 += 1;
+				}
+				if( (i1 - i0) <= 1 ) {
+					line_out_final.push_back(lines_out[i0]);
+				} else {
+					line_group.clear();
+					for(int! j = i0; j < i1; j += 1) {
+						ama::Node*+! ndj = lines_out[j];
+						if( ndj.isRawNode(0, 0) ) {
+							if( ndj.c ) {
+								ndj.c.comments_before = new char[|]!(ndj.comments_before + ndj.c.comments_before);
+								ama::Node*+! ndj_last = ndj.LastChild();
+								ndj_last.comments_after = new char[|]!(ndj_last.comments_after + ndj.comments_after);
+							}
+							for(ama::Node*+! ndk : ndj) {
+								line_group.push_back(ndk);
+							}
+						} else {
+							line_group.push_back(ndj);
+						}
+					}
+					assert(line_group.length > 1);
+					line_out_final.push_back(ama::CreateNodeFromChildren(ama::N_RAW, line_group));
+				}
+				i0 = i1;
+			}
+			//replace old children
+			for(ama::Node*+! ndi : line_out_final) {
 				ndi.p = nd_scope;
 				//if( ndi.s ) {
 				//	console.log('has s', ndi.toSource());
 				//}
 				assert(!ndi.s);
 			}
-			nd_scope.c = ama::InsertMany(lines_out);
+			nd_scope.c = ama::InsertMany(line_out_final);
 		}
 		return nd_root;
 	}
