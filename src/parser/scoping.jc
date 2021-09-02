@@ -10,11 +10,47 @@ namespace ama {
 		nd_raw.node_class = ama::N_SCOPE;
 		nd_raw.flags = 0;
 	}
+	private ama::Node*+![+]! MergeScopesIntoStatements(ama::Node*+[...]! lines_out) {
+		ama::Node*+[+]! line_group = new ama::Node*+[+]!();
+		ama::Node*+[+]! line_out_final = new ama::Node*+[+]!();
+		for(int! i0 = 0; i0 < lines_out.length;) {
+			int! i1 = i0 + 1;
+			while( i1 < lines_out.length && (lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1 - 1].node_class == ama::N_SCOPE) ) {
+				i1 += 1;
+			}
+			if( (i1 - i0) <= 1 ) {
+				line_out_final.push_back(lines_out[i0]);
+			} else {
+				line_group.clear();
+				for(int! j = i0; j < i1; j += 1) {
+					ama::Node*+! ndj = lines_out[j];
+					if( ndj.isRawNode(0, 0) ) {
+						if( ndj.c ) {
+							ndj.c.comments_before = new char[|]!(ndj.comments_before + ndj.c.comments_before);
+							ama::Node*+! ndj_last = ndj.LastChild();
+							ndj_last.comments_after = new char[|]!(ndj_last.comments_after + ndj.comments_after);
+						}
+						for(ama::Node*+! ndk : ndj) {
+							line_group.push_back(ndk);
+						}
+					} else {
+						line_group.push_back(ndj);
+					}
+				}
+				assert(line_group.length > 1);
+				ama::Node*+! nd_raw = ama::CreateNodeFromChildren(ama::N_RAW, line_group);
+				nd_raw.indent_level = line_group[0].indent_level;
+				line_out_final.push_back(nd_raw);
+			}
+			i0 = i1;
+		}
+		return <<line_out_final;
+	}
 	private void! FoldIndentGroup(ama::Node*+[+]&+! lines_out, int32_t! level, intptr_t! lineno, ama::Node*+! nd_nextline) {
 		for(intptr_t! i = lineno; i < lines_out.length; i += 1) {
 			ama::AdjustIndentLevel(lines_out[i], -level);
 		}
-		ama::Node*+! nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(lines_out.subarray(lineno)));
+		ama::Node*+! nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(lines_out.subarray(lineno))));
 		nd_new_scope.indent_level = level;
 		if( nd_nextline ) {
 			intptr_t! p_newline = nd_nextline.comments_before.indexOf('\n');
@@ -190,37 +226,7 @@ namespace ama {
 				istk.pop();
 			}
 			//merge scopes into surrounding raws
-			ama::Node*+[+]! line_group = new ama::Node*+[+]!();
-			ama::Node*+[+]! line_out_final = new ama::Node*+[+]!();
-			for(int! i0 = 0; i0 < lines_out.length;) {
-				int! i1 = i0 + 1;
-				while( i1 < lines_out.length && (lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1 - 1].node_class == ama::N_SCOPE) ) {
-					i1 += 1;
-				}
-				if( (i1 - i0) <= 1 ) {
-					line_out_final.push_back(lines_out[i0]);
-				} else {
-					line_group.clear();
-					for(int! j = i0; j < i1; j += 1) {
-						ama::Node*+! ndj = lines_out[j];
-						if( ndj.isRawNode(0, 0) ) {
-							if( ndj.c ) {
-								ndj.c.comments_before = new char[|]!(ndj.comments_before + ndj.c.comments_before);
-								ama::Node*+! ndj_last = ndj.LastChild();
-								ndj_last.comments_after = new char[|]!(ndj_last.comments_after + ndj.comments_after);
-							}
-							for(ama::Node*+! ndk : ndj) {
-								line_group.push_back(ndk);
-							}
-						} else {
-							line_group.push_back(ndj);
-						}
-					}
-					assert(line_group.length > 1);
-					line_out_final.push_back(ama::CreateNodeFromChildren(ama::N_RAW, line_group));
-				}
-				i0 = i1;
-			}
+			ama::Node*+[+]! line_out_final = new ama::Node*+![+]!(MergeScopesIntoStatements(lines_out));
 			//replace old children
 			for(ama::Node*+! ndi : line_out_final) {
 				ndi.p = nd_scope;

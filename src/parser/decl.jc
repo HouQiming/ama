@@ -67,10 +67,20 @@ namespace ama {
 		Map<char[|], int>! keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		Map<char[|], int>! keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
 		Map<char[|], int>! keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
-		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_colon_functions'), 1) ) { }
-		{
-			for(ama::Node*+! nd_labeled : nd_root.FindAll(ama::N_LABELED, NULL)) {
-				if( (nd_labeled.c.s.node_class == ama::N_SCOPE && nd_labeled.c.node_class == ama::N_RAW) || nd_labeled.c.node_class == ama::N_CALL ) {
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_colon_statements'), 1) ) {
+			//use reverse() to facilitate recursive unparsing of if foo:{}else:{}
+			for(ama::Node*+! nd_labeled : nd_root.FindAll(ama::N_LABELED, NULL).reverse()) {
+				if( nd_labeled.c.node_class == ama::N_RAW && nd_labeled.c.c && (nd_labeled.c.c.node_class == ama::N_REF || nd_labeled.c.c.node_class == ama::N_CALL) ) {
+					char[|]! name = nd_labeled.c.c.GetName();
+					if( keywords_statement[name] || keywords_extension_clause[name] ) {
+						ama::UnparseLabel(nd_labeled);
+					}
+				} else if( nd_labeled.c.node_class == ama::N_REF || nd_labeled.c.node_class == ama::N_CALL ) {
+					char[|]! name = nd_labeled.c.GetName();
+					if( keywords_statement[name] || keywords_extension_clause[name] ) {
+						ama::UnparseLabel(nd_labeled);
+					}
+				} else if( (nd_labeled.c.s.node_class == ama::N_SCOPE && nd_labeled.c.node_class == ama::N_RAW) || nd_labeled.c.node_class == ama::N_CALL ) {
 					if( nd_labeled.c.node_class == ama::N_CALL ) {
 						ama::Node*+! nd_call = nd_labeled.c;
 						ama::Node*+! nd_tmp = ama::GetPlaceHolder();
@@ -88,7 +98,7 @@ namespace ama {
 						//before, paramlist, after, body
 						ama::Node*+! nd_func = ama::CreateNode(ama::N_FUNCTION, ama::cons(
 							ama::toSingleNode(nd_before), ama::cons(
-								ConvertToParameterList(nd_paramlist), 
+								ConvertToParameterList(nd_paramlist),
 								ama::cons(ama::toSingleNode(nd_after), nd_body)
 							)
 						));
@@ -106,6 +116,7 @@ namespace ama {
 			ama::Node*+*+! pndi = &nd_raw.c;
 			ama::Node*+! nd_last_scoped_stmt = NULL;
 			int! kw_mode = KW_NONE;
+			ama::Node*+*+! link_keyword = NULL;
 			ama::Node*+! nd_keyword = NULL;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
@@ -114,15 +125,19 @@ namespace ama {
 					char[|]! name = ndi.GetName();
 					if( name != NULL ) {
 						if( keywords_class[name] ) {
+							link_keyword = pndi;
 							nd_keyword = ndi;
 							kw_mode = KW_CLASS;
 						} else if( keywords_statement[name] ) {
+							link_keyword = pndi;
 							nd_keyword = ndi;
 							kw_mode = KW_STMT;
 						} else if( nd_last_scoped_stmt && keywords_extension_clause[name] ) {
+							link_keyword = pndi;
 							nd_keyword = ndi;
 							kw_mode = KW_EXT;
 						} else if( keywords_function[name] ) {
+							link_keyword = pndi;
 							nd_keyword = ndi;
 							kw_mode = KW_FUNC;
 						}
@@ -130,11 +145,13 @@ namespace ama {
 				} else if( ndi.node_class == ama::N_SYMBOL && (ndi.data == "," || ndi.data == ";") ) {
 					nd_prototype_start = ndi_next;
 					kw_mode = KW_NONE;
+					link_keyword = NULL;
 					nd_keyword = NULL;
 				} else if( ndi.isRawNode('[', ']') && ndi_next && ndi_next.isRawNode('(', ')') ) {
 					//C++11 lambda
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
+					link_keyword = NULL;
 					nd_keyword = NULL;
 				} else if( (ndi.node_class == ama::N_SCOPE || ndi.isRawNode('{', '}')) && nd_prototype_start && nd_prototype_start != ndi ) {
 					//console.log('lol', kw_mode);
@@ -162,8 +179,8 @@ namespace ama {
 							if( nd_keyword.node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
 							}
-							ama::Node*+! nd_class = ReplaceChildRange(
-								NULL,
+							ama::Node*+! nd_class = ama::ReplaceChildRange(
+								link_keyword,
 								nd_keyword, ndi,
 								ama::CreateNode(ama::N_CLASS, NULL).setData(nd_keyword.data)
 							);
@@ -185,6 +202,8 @@ namespace ama {
 							nd_keyword.s = NULL;
 							nd_keyword.p = NULL;
 							nd_keyword.FreeASTStorage();
+							link_keyword = NULL;
+							nd_keyword = NULL;
 							break;
 						}
 						case KW_STMT: {
@@ -192,8 +211,8 @@ namespace ama {
 							if( nd_keyword.node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
 							}
-							ama::Node*+! nd_stmt = ReplaceChildRange(
-								NULL,
+							ama::Node*+! nd_stmt = ama::ReplaceChildRange(
+								link_keyword,
 								nd_keyword, ndi,
 								ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
@@ -214,6 +233,7 @@ namespace ama {
 							pndi = &ndi.s;
 							ndi = ndi.s;
 							kw_mode = KW_NONE;
+							link_keyword = NULL;
 							nd_keyword = NULL;
 							continue;
 						}
@@ -221,8 +241,8 @@ namespace ama {
 							if( nd_keyword.node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
 							}
-							ReplaceChildRange(
-								NULL,
+							ama::ReplaceChildRange(
+								link_keyword,
 								nd_keyword, ndi,
 								NULL
 							);
@@ -240,8 +260,9 @@ namespace ama {
 							ndi = nd_last_scoped_stmt;
 							pndi = &ndi.s;
 							ndi = ndi.s;
-							nd_prototype_start = ndi.s;
+							nd_prototype_start = ndi;
 							kw_mode = KW_NONE;
+							link_keyword = NULL;
 							nd_keyword = NULL;
 							continue;
 						}
@@ -275,8 +296,8 @@ namespace ama {
 							}
 							//keyworded function shouldn't have any junk before... but C++ function has both junk before and junk after
 							//before (C++ return type plus junk plus name, or just a name), paramlist, after, body, figure out return type separately
-							ama::Node*+! nd_func = ReplaceChildRange(
-								NULL,
+							ama::Node*+! nd_func = ama::ReplaceChildRange(
+								link_keyword,
 								nd_keyword, ndi,
 								ama::CreateNode(ama::N_FUNCTION, NULL)
 							);
@@ -315,10 +336,13 @@ namespace ama {
 						}
 					}
 					kw_mode = KW_NONE;
+					link_keyword = NULL;
 					nd_keyword = NULL;
 					`not_declaration:;`
 				}
-				nd_last_scoped_stmt = NULL;
+				if( !(kw_mode == KW_EXT && nd_keyword) ) {
+					nd_last_scoped_stmt = NULL;
+				}
 				pndi = &ndi.s;
 				ndi = ndi_next;
 			}
@@ -330,8 +354,7 @@ namespace ama {
 				//have to rely on context?
 			}
 		}
-		//COULDDO: set REF_WRITTEN for function / class names
-		//TODO: assignment-ify parameters
+		//don't set REF_WRITTEN for function / class names: it's not profitable to treat them as "written" in our current AST formulation
 		return nd_root;
 	}
 	//detects N_TYPED_VAR

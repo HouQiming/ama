@@ -212,6 +212,9 @@ namespace ama {
 			}
 			case ama::N_FUNCTION: {
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+					if( ndi.node_class == ama::N_EXTENSION_CLAUSE ) {
+						this.GenerateSpaceBefore(ndi);
+					}
 					this->Generate(ndi);
 				}
 				break;
