@@ -69,7 +69,15 @@ namespace ama {
 	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
-			if( !(nd_raw.flags & 0xffff) ) { continue; }
+			if( !(nd_raw.flags & 0xffff) ) {
+				//move out trailing ;
+				ama::Node*+! nd_last = nd_raw.LastChild();
+				if( nd_last.isSymbol(";") && nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_RAW) ) {
+					nd_last.Delete();
+					nd_raw.Insert(ama::POS_AFTER, nd_last);
+				}
+				continue;
+			}
 			ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 			ama::Node*+! ndi = nd_raw.c;
 			new_children.push_back(ndi);
@@ -77,10 +85,10 @@ namespace ama {
 			int! after_cpp_macro = 0;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
-				if( (ndi.node_class == ama::N_SYMBOL && ndi.data == ";" && ndi_next && !
-				(ndi_next.node_class == ama::N_REF && keywords_extension_clause[ndi_next.data])) || 
-				(ndi_next && ndi_next.node_class == ama::N_SYMBOL && ndi_next.data == ";" && ndi_next.s && !
-				(ndi_next.s.node_class == ama::N_REF && keywords_extension_clause[ndi_next.s.data])) ) {
+				if( (ndi.isSymbol(";") && !
+				(ndi_next && ndi_next.node_class == ama::N_REF && keywords_extension_clause[ndi_next.data])) || 
+				(ndi_next && ndi_next.isSymbol(";") && !
+				(ndi_next.s && ndi_next.s.node_class == ama::N_REF && keywords_extension_clause[ndi_next.s.data])) ) {
 					//after_cpp_macro=0
 					//separate ; into its own statement
 					changed = ';';

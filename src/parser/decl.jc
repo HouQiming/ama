@@ -66,7 +66,13 @@ namespace ama {
 			nd_keyword = ama::UnparseCall(nd_keyword);
 		}
 		ama::Node*+! nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level);
-		nd_stmt.c = ama::cons(ama::toSingleNode(ama::BreakLink(&nd_keyword.s)).MergeCommentsBefore(nd_keyword), ama::toSingleNode(nd_body));
+		nd_body = ama::toSingleNode(nd_body);
+		ama::Node*+! nd_scoped_body = ama::CreateNode(ama::N_SCOPE, nd_body);
+		std::swap(nd_scoped_body.comments_before, nd_body.comments_before);
+		std::swap(nd_scoped_body.comments_after, nd_body.comments_after);
+		nd_scoped_body.indent_level = nd_body.indent_level;
+		ama::AdjustIndentLevel(nd_body, -nd_scoped_body.indent_level);
+		nd_stmt.c = ama::cons(ama::toSingleNode(ama::BreakLink(&nd_keyword.s)).MergeCommentsBefore(nd_keyword), nd_scoped_body);
 		for(ama::Node*+! ndj = nd_stmt.c; ndj; ndj = ndj.s) {
 			ndj.p = nd_stmt;
 		}
@@ -199,9 +205,11 @@ namespace ama {
 						}
 					}
 				} else if( ndi.node_class == ama::N_SYMBOL && (ndi.data == "," || ndi.data == ";") ) {
-					if( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
+					if( ndi.data == ";" && nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 						//unscoped statement
 						ndi_next = ama::BreakLink(&ndi.s);
+						//drop the ;
+						ama::BreakLink(pndi);
 						ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
 						if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 							nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
@@ -503,6 +511,9 @@ namespace ama {
 				//a sane method to resolve such ambiguity: LHS of assignment, in a function prototype... and it's C-specific
 				//makes sense to put in a separate pass! and maybe unify the situations to "LHS of assignment" first
 				nd_def = ama::UnparseBinop(nd_def);
+				assert(nd_def.s.node_class == ama::N_SYMBOL);
+				//avoid space before type suffix
+				nd_def.s.comments_before = "";
 				while( nd_def.s ) {
 					nd_def = nd_def.s;
 				}
