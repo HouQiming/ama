@@ -220,6 +220,9 @@ namespace ama {
 	inline ama::Node*+! nConditional(Node*+! nd_cond, Node*+! nd_true, Node*+! nd_false) {
 		return ama::CreateNode(N_CONDITIONAL, cons(nd_cond, cons(nd_true, cons(nd_false, NULL))));
 	}
+	inline ama::Node*+! nFunction(Node*+! nd_before, Node*+! nd_proto, Node*+! nd_after, Node*+! nd_body) {
+		return ama::CreateNode(N_FUNCTION, cons(nd_before, cons(nd_proto, cons(nd_after, cons(nd_body, NULL)))));
+	}
 	inline ama::Node*+! nLabeled(Node*+! nd_label, Node*+! nd_value) {
 		return ama::CreateNode(N_LABELED, cons(nd_label, cons(nd_value, NULL)));
 	}

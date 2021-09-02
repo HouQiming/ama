@@ -12,12 +12,16 @@ class TestClass<int>:Base{
 			bar=3;
 		}
 	}
+	int fwdMethod(void)const;
 };
+
+WEIRD_DECL_MACRO(int,weirdForward)(int p,int q);
 
 int main(int argc,char** argv){
 	auto a=function(int p=3,...){
 		return p+p;
 	}
+	if(a)c+=a;else c+=b;
 	c+=a*b;
 	return 0;
 }

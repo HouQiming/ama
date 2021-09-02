@@ -60,6 +60,42 @@ namespace ama {
 	private const int! KW_STMT = 2;
 	private const int! KW_EXT = 3;
 	private const int! KW_FUNC = 4;
+	private ama::Node*+! TranslateCUnscopedStatement(ama::Node*+! nd_keyword) {
+		ama::Node*+! nd_body = ama::BreakLink(&nd_keyword.s);
+		if( nd_keyword.node_class == ama::N_CALL ) {
+			nd_keyword = ama::UnparseCall(nd_keyword);
+		}
+		ama::Node*+! nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level);
+		nd_stmt.c = ama::cons(ama::toSingleNode(ama::BreakLink(&nd_keyword.s)).MergeCommentsBefore(nd_keyword), ama::toSingleNode(nd_body));
+		for(ama::Node*+! ndj = nd_stmt.c; ndj; ndj = ndj.s) {
+			ndj.p = nd_stmt;
+		}
+		nd_keyword.ReplaceWith(nd_stmt);
+		nd_keyword.FreeASTStorage();
+		return nd_stmt;
+	}
+	private ama::Node*+! TranslateCForwardDeclaration(ama::Node*+! nd_raw) {
+		//N_FUNCTION with air body
+		//before, paramlist, after, body
+		ama::Node*+! nd_proto = NULL;
+		ama::Node*+*+! pndi = &nd_raw.c;
+		for(ama::Node*+! @nojson ndi = nd_raw.c; ndi; (pndi = &ndi.s, ndi = ndi.s)) {
+			if( ndi.node_class == ama::N_CALL ) {
+				nd_proto = ndi;
+			}
+		}
+		if( !nd_proto ) { return NULL; }
+		ama::Node*+! nd_fname = ama::UnparseCall(nd_proto);
+		nd_proto = ama::BreakLink(&nd_fname.s);
+		ama::Node*+! nd_before = ama::toSingleNode(nd_raw.c);
+		ama::Node*+! nd_after = ama::toSingleNode(ama::BreakLink(&nd_proto.s));
+		ama::Node*+! nd_func = ama::nFunction(nd_before, ConvertToParameterList(nd_proto), nd_after, ama::nAir());
+		nd_func.data = GetFunctionName(0, nd_func);
+		nd_raw.ReplaceWith(nd_func);
+		nd_raw.c = NULL;
+		nd_raw.FreeASTStorage();
+		return nd_func;
+	}
 	ama::Node*+! ParseScopedStatements(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		Map<char[|], int>! keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
@@ -67,6 +103,7 @@ namespace ama {
 		Map<char[|], int>! keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		Map<char[|], int>! keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
 		Map<char[|], int>! keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
+		int32_t! parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_forward_declarations'), 1);
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_colon_statements'), 1) ) {
 			//use reverse() to facilitate recursive unparsing of if foo:{}else:{}
 			for(ama::Node*+! nd_labeled : nd_root.FindAll(ama::N_LABELED, NULL).reverse()) {
@@ -128,21 +165,67 @@ namespace ama {
 							link_keyword = pndi;
 							nd_keyword = ndi;
 							kw_mode = KW_CLASS;
-						} else if( keywords_statement[name] ) {
+							continue;
+						} else if( keywords_extension_clause[name] ) {
+							if( nd_last_scoped_stmt ) {
+								link_keyword = pndi;
+								nd_keyword = ndi;
+								kw_mode = KW_EXT;
+								continue;
+							} else if( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
+								//extension of unscoped statement
+								ama::Node*+! nd_ext_keyword = ama::BreakLink(pndi);
+								ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
+								nd_stmt.s = nd_ext_keyword;
+								pndi = &nd_stmt.s;
+								link_keyword = &nd_stmt.s;
+								nd_keyword = ndi;
+								kw_mode = KW_EXT;
+								continue;
+							} else {
+								//fallback: could be `while`
+							}
+						}
+						if( keywords_statement[name] ) {
 							link_keyword = pndi;
 							nd_keyword = ndi;
 							kw_mode = KW_STMT;
-						} else if( nd_last_scoped_stmt && keywords_extension_clause[name] ) {
-							link_keyword = pndi;
-							nd_keyword = ndi;
-							kw_mode = KW_EXT;
+							continue;
 						} else if( keywords_function[name] ) {
 							link_keyword = pndi;
 							nd_keyword = ndi;
 							kw_mode = KW_FUNC;
+							continue;
 						}
 					}
 				} else if( ndi.node_class == ama::N_SYMBOL && (ndi.data == "," || ndi.data == ";") ) {
+					if( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
+						//unscoped statement
+						ndi_next = ama::BreakLink(&ndi.s);
+						ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
+						if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
+							nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
+							nd_stmt.Delete();
+							nd_last_scoped_stmt.Insert(ama::POS_BACK, nd_stmt);
+							ndi = nd_last_scoped_stmt;
+							pndi = &ndi.s;
+							ndi = ndi.s;
+							nd_prototype_start = ndi;
+							kw_mode = KW_NONE;
+							link_keyword = NULL;
+							nd_keyword = NULL;
+						} else {
+							nd_stmt.s = ndi_next;
+							nd_last_scoped_stmt = nd_stmt;
+							nd_prototype_start = ndi_next;
+							pndi = &nd_stmt.s;
+							ndi = ndi_next;
+							kw_mode = KW_NONE;
+							link_keyword = NULL;
+							nd_keyword = NULL;
+						}
+						continue;
+					}
 					nd_prototype_start = ndi_next;
 					kw_mode = KW_NONE;
 					link_keyword = NULL;
@@ -346,14 +429,48 @@ namespace ama {
 				pndi = &ndi.s;
 				ndi = ndi_next;
 			}
-			if( nd_keyword ) {
-				//TODO: C unscoped statements / C forward declaration
-				//TODO: unscoped extension
-			} else {
-				//COULDDO: C forward declaration
-				//have to rely on context?
+			if( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
+				//C unscoped statement
+				ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
+				if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
+					nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
+					nd_stmt.Delete();
+					nd_last_scoped_stmt.Insert(ama::POS_BACK, nd_stmt);
+				}
+			} else if( kw_mode == KW_FUNC && nd_keyword && parse_c_forward_declarations ) {
+				//C forward declaration with extern
+				TranslateCForwardDeclaration(nd_raw);
+				//note that extern is not necessarily function... we may have extern "C"{}
 			}
 		}
+		//C forward declaration
+		if( parse_c_forward_declarations ) {
+			for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+				//have to rely on context? we can do Owner tests here 
+				ama::Node*+! nd_owner = nd_raw.Owner();
+				if( !(nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_FILE)) || nd_owner.node_class == ama::N_FUNCTION ) { continue; }
+				ama::Node*+! nd_proto = NULL;
+				//console.log('>>>', nd_raw.toSource());
+				for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
+					//console.log(ndi.node_class)
+					if( ndi.node_class == ama::N_CALL ) {
+						nd_proto = ndi;
+					}
+					if( ndi.node_class == ama::N_SCOPE ) {
+						nd_proto = NULL;
+						break;
+					}
+				}
+				if( !nd_proto ) { continue; }
+				if( !nd_raw.c.s && nd_proto.c.node_class != ama::N_CALL ) {
+					//ignore just-a-call, but allow::
+					//FOO_DECL(int,foo)(int bar);
+					continue;
+				}
+				TranslateCForwardDeclaration(nd_raw);
+			}
+		}
+		/////////
 		//don't set REF_WRITTEN for function / class names: it's not profitable to treat them as "written" in our current AST formulation
 		return nd_root;
 	}

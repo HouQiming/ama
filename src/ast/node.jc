@@ -121,7 +121,9 @@ namespace ama {
 		return int8_t(level);
 	}
 	ama::Node*+! toSingleNode(ama::Node*+! nd_child) {
-		if( !nd_child || nd_child.s ) {
+		if( !nd_child ) {
+			return ama::nAir();
+		} else if( nd_child.s ) {
 			ama::Node*+! ret = CreateNode(ama::N_RAW, nd_child);
 			if( nd_child ) {
 				ret.indent_level = nd_child.indent_level;

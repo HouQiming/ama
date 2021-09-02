@@ -424,6 +424,9 @@ namespace ama {
 		ama::SanitizeCommentPlacement(nd_root);
 		ama::ParseNodeof(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_scoped_statements'), 1) ) {
+			ama::ParseScopedStatements(nd_root, options);
+		}
 		ama::ParseAssignment(nd_root, options);
 		int! has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_conditional'), 1);
 		int! has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_labels'), 1);
@@ -433,9 +436,6 @@ namespace ama {
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
 			ama::ParseOperators(nd_root, options);
 			ama::StripBinaryOperatorSpaces(nd_root);
-		}
-		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_scoped_statements'), 1) ) {
-			ama::ParseScopedStatements(nd_root, options);
 		}
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_variable_declarations'), 1) ) {
 			ama::ParseVariableDeclarations(nd_root, options);
