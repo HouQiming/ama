@@ -7,4 +7,6 @@ namespace ama {
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data);
 	void! InitScriptEnv();
 	ama::Node*+! ParseCode(char*! code, JSValue! options);
+	void! LazyInitScriptEnv();
+	void! DumpASTAsJSON(ama::Node*+! nd);
 };

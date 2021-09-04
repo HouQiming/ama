@@ -404,7 +404,13 @@ namespace ama {
 		}
 		return JS_GetPropertyStr(ctx, obj_module, 'exports');
 	}
+	void! DumpASTAsJSON(ama::Node*+! nd) {
+		LazyInitScriptEnv();
+		console.log((char*)(JS_ToCString(ama::jsctx, JS_JSONStringify(ama::jsctx, ama::WrapNode(nd), JS_NULL, JS_NewInt32(ama::jsctx, 2)))));
+	}
 	ama::Node*+! ParseCode(char*! code, JSValue! options) {
+		//for external code that calls ParseCode as an API
+		LazyInitScriptEnv();
 		if( JS_IsNull(options) || JS_IsUndefined(options) ) {
 			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
 		}
@@ -440,6 +446,8 @@ namespace ama {
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_variable_declarations'), 1) ) {
 			ama::ParseVariableDeclarations(nd_root, options);
 		}
+		nd_root.Validate();//TODO
+		//DumpASTAsJSON(nd_root);
 		ama::RemoveRedundantSemicolon(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
 		return nd_root;
@@ -479,6 +487,7 @@ namespace ama {
 		return ama::WrapNode(ParseCode(JS_ToCString(ama::jsctx, argv[0]), options));
 	}
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data) {
+		LazyInitScriptEnv();
 		char![+]! s_fixed_code = '(function(__filename,__dirname,ParseCurrentFile){let require=__require.bind(null,__filename);' + script + '\n})\n';
 		JSValueConst! ret = JS_Eval(
 			ama::jsctx, s_fixed_code.data(),
@@ -690,5 +699,9 @@ namespace ama {
 		if( JS_IsException(ret) ) {
 			ama::DumpError(ama::jsctx);
 		}
+	}
+	void! LazyInitScriptEnv() {
+		if( ama::g_runtime_handle ) { return; }
+		InitScriptEnv();
 	}
 };

@@ -196,7 +196,7 @@ namespace ama {
 			}
 			case ama::N_ASSIGNMENT: {
 				this->Generate(nd.c);
-				if( nd.c.s.isAir() ) {
+				if( nd.c.s.node_class == ama::N_AIR ) {
 					//do nothing
 				} else {
 					this.code.push(' ');
@@ -214,6 +214,9 @@ namespace ama {
 				//*** PASS THROUGH ***
 			}
 			case ama::N_FUNCTION: {
+				//N_CLASS: before, name, after, body
+				//N_FUNCTION: before, paramlist, after, body
+				//N_SCOPED_STATEMENT, N_EXTENSION_CLAUSE: arg, body
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					if( ndi.node_class == ama::N_EXTENSION_CLAUSE ) {
 						this.GenerateSpaceBefore(ndi);
@@ -264,10 +267,7 @@ namespace ama {
 			}
 		}
 	}
-	void! ama::CodeGenerator::GenerateComment(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {
-		if( this.hook_comment != NULL ) {
-			if( this.hook_comment(this, comment.data(), comment.length, expected_indent_level) != 0 ) { return; }
-		}
+	void! ama::CodeGenerator::GenerateCommentDefault(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {
 		if( comment.indexOf('\n') < 0 ) {
 			this.code.push(comment);
 			return;
@@ -293,6 +293,12 @@ namespace ama {
 		if( this.in_new_line ) {
 			this.GenerateIndent(expected_indent_level);
 		}
+	}
+	void! ama::CodeGenerator::GenerateComment(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {
+		if( this.hook_comment != NULL ) {
+			if( this.hook_comment(this, comment.data(), comment.length, expected_indent_level) != 0 ) { return; }
+		}
+		this.GenerateCommentDefault(expected_indent_level, comment);
 	}
 	void! ama::CodeGenerator::Generate(ama::CodeGenerator*+! this, ama::Node*+! nd) {
 		if( !nd ) {

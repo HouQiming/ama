@@ -158,7 +158,8 @@ namespace ama {
 		char[|]! DestroyForSymbol(ama::Node*+! this);
 		int! isExpr(ama::Node*! this);
 		int! isSymbol(ama::Node*! this, char[...]! name);
-		int! isAir(ama::Node*! this);
+		int! dfsValidate(ama::Node*+! this);
+		void! Validate(ama::Node*+! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;

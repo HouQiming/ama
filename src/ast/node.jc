@@ -3,6 +3,7 @@
 #include <console.jch>
 #include <stdlib.h>
 #include <unordered_map>
+#include <json.jch>
 #include '../parser/literal.jch'
 #include './node.jch'
 
@@ -493,21 +494,19 @@ private void! dfsFreeChildrenStorage(ama::Node*+! nd) {
 		n_steps += 1;
 	}
 	if( ndi_last != NULL ) {
-		ama::Node*+! g_free_nodes;
-		ndi_last.s = g_free_nodes;
-		g_free_nodes = nd.c;
+		ndi_last.s = ama::g_free_nodes;
+		ama::g_free_nodes = nd.c;
 		nd.c = NULL;
 	}
 }
 
 void! ama::Node::FreeASTStorage(ama::Node*+! this) {
-	ama::Node*+! g_free_nodes;
 	//do not wipe .data and stuff, we could use them again in a C++ expr
 	assert(!this.p);
 	dfsFreeChildrenStorage(this);
 	this.tmp_flags &= ~ama::TMPF_IS_NODE;
-	this.s = g_free_nodes;
-	g_free_nodes = this;
+	this.s = ama::g_free_nodes;
+	ama::g_free_nodes = this;
 }
 
 /////////////////////////
@@ -729,6 +728,31 @@ char[|]! ama::Node::DestroyForSymbol(ama::Node*+! this) {
 	return ret;
 }
 
-int! ama::Node::isAir(ama::Node*! this) {
-	return this.node_class == ama::N_AIR;
+private Map<ama::Node*+, int>! g_validate_dedup = new Map<ama::Node*+, int>!();
+
+int! ama::Node::dfsValidate(ama::Node*+! this) {
+	if( g_validate_dedup[this] ) {
+		console.log('found cycle to', intptr_t(this), this.data == NULL ? "NULL" : JSON.stringify(this.data).c_str());
+		this.comments_before = new char[|]!('/*cycle ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
+		return 0;
+	}
+	int! ret = 1;
+	for(ama::Node*+! ndi = this.c; ndi; ndi = ndi.s) {
+		if( ndi.p != this ) {
+			console.log('bad parent', intptr_t(ndi), ndi.node_class, ndi.data == NULL ? "NULL" : JSON.stringify(ndi.data).c_str());
+			ndi.comments_before = new char[|]!('/*bad parent ' + JSON.stringify(intptr_t(ndi)) + '*/' + ndi.comments_before);
+			ret = 0;
+		}
+		ret &= ndi.dfsValidate();
+	}
+	return ret;
+}
+
+void! ama::Node::Validate(ama::Node*+! this) {
+	g_validate_dedup.clear();
+	if( !this.dfsValidate() ) {
+		console.log('=== source code');
+		console.log(this.toSource());
+		assert(0);
+	}
 }
