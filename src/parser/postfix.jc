@@ -64,7 +64,7 @@ namespace ama {
 					nd_name.p = NULL; nd_name.FreeASTStorage();
 					ndi_next.p = NULL; ndi_next.FreeASTStorage();
 					continue;
-				} else if( ndi.s && (ndi.s.isRawNode('(', ')') || ndi.s.isRawNode('<', '>')) ) {
+				} else if( ndi.s && (ndi.s.isRawNode('(', ')') || ndi.s.isRawNode('<', '>')) && !ndi_next.FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").length ) {
 					//call
 					ama::Node*+! nd_arglist = ndi.s;
 					uint8_t! call_class = nd_arglist.isRawNode('<', '>') ? ama::N_CALL_TEMPLATE : ama::N_CALL;

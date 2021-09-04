@@ -102,6 +102,34 @@ namespace ama {
 		nd_raw.FreeASTStorage();
 		return nd_func;
 	}
+	//pp1 is inclusive, also breaks the pp1 link
+	private ama::Node*+*+! UpdateLink(ama::Node*+! nd0, ama::Node*+! nd1) {
+		for(ama::Node*+! ndi = nd0; ndi != nd1; ndi = ndi.s) {
+			if( ndi.s == nd1 ) { return &ndi.s; }
+		}
+		assert(0);
+		return NULL;
+	}
+	private ama::Node*+! ReplaceChildRange(ama::Node*+*+! pnd0, ama::Node*+*+! pnd1, ama::Node*+! nd_new) {
+		ama::Node*+! nd0 = *pnd0;
+		ama::Node*+! nd1 = *pnd1;
+		assert(nd1 != NULL);
+		ama::Node*+! nd_parent = nd0.p;
+		*pnd1 = NULL;
+		if( nd_new ) {
+			*pnd0 = nd_new;
+			nd_new.p = nd_parent;
+			nd_new.s = nd1.s;
+		} else {
+			*pnd0 = nd1.s;
+		}
+		nd1.s = NULL;
+		nd1.p = NULL;
+		for(ama::Node*+! ndi = nd0; ndi; ndi = ndi.s) {
+			ndi.p = NULL;
+		}
+		return nd_new;
+	}
 	ama::Node*+! ParseScopedStatements(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		Map<char[|], int>! keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
@@ -154,9 +182,10 @@ namespace ama {
 		int32_t! parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp11_lambda'), 1);
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			if( !nd_raw.p ) { continue; }
-			ama::Node*+! ndi = nd_raw.c;
-			ama::Node*+! nd_prototype_start = ndi;
 			ama::Node*+*+! pndi = &nd_raw.c;
+			ama::Node*+! ndi = nd_raw.c;
+			ama::Node*+*+! link_prototype_start = pndi;
+			ama::Node*+! nd_prototype_start = ndi;
 			ama::Node*+! nd_last_scoped_stmt = NULL;
 			int! kw_mode = KW_NONE;
 			ama::Node*+*+! link_keyword = NULL;
@@ -218,6 +247,7 @@ namespace ama {
 							ndi = nd_last_scoped_stmt;
 							pndi = &ndi.s;
 							ndi = ndi.s;
+							link_prototype_start = pndi;
 							nd_prototype_start = ndi;
 							kw_mode = KW_NONE;
 							link_keyword = NULL;
@@ -225,6 +255,7 @@ namespace ama {
 						} else {
 							nd_stmt.s = ndi_next;
 							nd_last_scoped_stmt = nd_stmt;
+							link_prototype_start = &nd_stmt.s;
 							nd_prototype_start = ndi_next;
 							pndi = &nd_stmt.s;
 							ndi = ndi_next;
@@ -234,12 +265,14 @@ namespace ama {
 						}
 						continue;
 					}
+					link_prototype_start = &ndi.s;
 					nd_prototype_start = ndi_next;
 					kw_mode = KW_NONE;
 					link_keyword = NULL;
 					nd_keyword = NULL;
 				} else if( ndi.isRawNode('[', ']') && ndi_next && ndi_next.isRawNode('(', ')') ) {
 					//C++11 lambda
+					link_prototype_start = pndi;
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
 					link_keyword = NULL;
@@ -269,10 +302,10 @@ namespace ama {
 							}
 							if( nd_keyword.node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
+								pndi = UpdateLink(nd_keyword, ndi);
 							}
 							ama::Node*+! nd_class = ama::ReplaceChildRange(
-								link_keyword,
-								nd_keyword, ndi,
+								link_keyword, pndi,
 								ama::CreateNode(ama::N_CLASS, NULL).setData(nd_keyword.data)
 							);
 							//class children: whatever before, name, whatever after, body
@@ -288,6 +321,7 @@ namespace ama {
 								ndj.p = nd_class;
 							}
 							ndi = nd_class;
+							link_prototype_start = &ndi.s;
 							nd_prototype_start = ndi.s;
 							ndi_next = ndi.s;
 							nd_keyword.s = NULL;
@@ -301,10 +335,10 @@ namespace ama {
 							//pull keyword out of raw, separate "condition" (even if it's empty) and scope
 							if( nd_keyword.node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
+								pndi = UpdateLink(nd_keyword, ndi);
 							}
 							ama::Node*+! nd_stmt = ama::ReplaceChildRange(
-								link_keyword,
-								nd_keyword, ndi,
+								link_keyword, pndi,
 								ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
 							ama::Node*+! nd_arg = ama::toSingleNode(nd_keyword.s);
@@ -316,6 +350,7 @@ namespace ama {
 								ndj.p = nd_stmt;
 							}
 							ndi = nd_stmt;
+							link_prototype_start = &ndi.s;
 							nd_prototype_start = ndi.s;
 							nd_keyword.s = NULL;
 							nd_keyword.FreeASTStorage();
@@ -331,10 +366,10 @@ namespace ama {
 						case KW_EXT: {
 							if( nd_keyword.node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
+								pndi = UpdateLink(nd_keyword, ndi);
 							}
 							ama::ReplaceChildRange(
-								link_keyword,
-								nd_keyword, ndi,
+								link_keyword, pndi,
 								NULL
 							);
 							assert(nd_last_scoped_stmt);
@@ -351,6 +386,7 @@ namespace ama {
 							ndi = nd_last_scoped_stmt;
 							pndi = &ndi.s;
 							ndi = ndi.s;
+							link_prototype_start = pndi;
 							nd_prototype_start = ndi;
 							kw_mode = KW_NONE;
 							link_keyword = NULL;
@@ -363,10 +399,12 @@ namespace ama {
 							//use (){} as indicator: we could drag back those misidentified functions later
 							//if we had a keyword, we won't have a C-like return type
 							if( !nd_keyword ) {
+								link_keyword = link_prototype_start;
 								nd_keyword = nd_prototype_start;
 							} else if( nd_keyword.node_class == ama::N_CALL ) {
 								//the unparsing always creates a paramlist
 								nd_keyword = ama::UnparseCall(nd_keyword);
+								pndi = UpdateLink(nd_keyword, ndi);
 							}
 							ama::Node*+! nd_paramlist = NULL;
 							for(ama::Node*+! ndj = nd_keyword.s; ndj != ndi; ndj = ndj.s) {
@@ -384,12 +422,12 @@ namespace ama {
 							}
 							if( nd_paramlist.node_class == ama::N_CALL ) {
 								nd_paramlist = ama::UnparseCall(nd_paramlist).s;
+								pndi = UpdateLink(nd_keyword, ndi);
 							}
 							//keyworded function shouldn't have any junk before... but C++ function has both junk before and junk after
 							//before (C++ return type plus junk plus name, or just a name), paramlist, after, body, figure out return type separately
 							ama::Node*+! nd_func = ama::ReplaceChildRange(
-								link_keyword,
-								nd_keyword, ndi,
+								link_keyword, pndi,
 								ama::CreateNode(ama::N_FUNCTION, NULL)
 							);
 							ama::Node*+! nd_before = nd_keyword;
@@ -403,8 +441,6 @@ namespace ama {
 							ama::Node*+*+! pndj = NULL;
 							for(ama::Node*+! ndj = nd_keyword;; ndj = ndj.s) {
 								if( ndj == nd_paramlist ) {
-									*pndj = NULL;
-								} else if( ndj == ndi ) {
 									*pndj = NULL;
 									break;
 								}
@@ -421,6 +457,7 @@ namespace ama {
 							}
 							nd_func.data = GetFunctionName(kw_mode == KW_FUNC, nd_func);
 							ndi = nd_func;
+							link_prototype_start = &ndi.s;
 							nd_prototype_start = ndi.s;
 							ndi_next = ndi.s;
 							break;

@@ -106,7 +106,7 @@ namespace ama {
 				this->code.push(nd.data);
 				break;
 			}
-			case ama::N_CALL: case ama::N_CALL_TEMPLATE: case ama::N_CALL_CUDA_KERNEL: {
+			case ama::N_CALL: case ama::N_CALL_TEMPLATE: case ama::N_CALL_CUDA_KERNEL: case ama::N_ITEM: {
 				if( nd.c ) {
 					this->Generate(nd.c);
 				} else {
@@ -116,6 +116,8 @@ namespace ama {
 					this->code.push('<<<');
 				} else if( nd.node_class == ama::N_CALL_TEMPLATE ) {
 					this->code.push_back('<');
+				} else if( nd.node_class == ama::N_ITEM ) {
+					this->code.push_back('[');
 				} else {
 					this->code.push_back('(');
 				}
@@ -134,6 +136,8 @@ namespace ama {
 					this->code.push('>>>');
 				} else if( nd.node_class == ama::N_CALL_TEMPLATE ) {
 					this->code.push_back('>');
+				} else if( nd.node_class == ama::N_ITEM ) {
+					this->code.push_back(']');
 				} else {
 					this->code.push_back(')');
 				}

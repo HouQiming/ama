@@ -252,5 +252,4 @@ namespace ama {
 	ama::Node*+! toSingleNode(ama::Node*+! nd_child);
 	void! AdjustIndentLevel(ama::Node*+! nd_stmt, intptr_t! delta);
 	ama::Node*+! UnparseRaw(ama::Node*+! nd_raw);
-	ama::Node*+! ReplaceChildRange(ama::Node*+*+! pp0, ama::Node*+! p0, ama::Node*+! p1, ama::Node*+! nd_new);
 };
