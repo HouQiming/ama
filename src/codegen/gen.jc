@@ -259,13 +259,50 @@ namespace ama {
 		//case N_ITEM:
 	}
 	void! ama::CodeGenerator::GenerateIndent(ama::CodeGenerator*+! this, intptr_t! expected_indent_level) {
+		int! p_last_line;
+		if( this.current_indent_level >= expected_indent_level ) { return; }
+		auto p_this_line = this.code.lastIndexOf('\n');
+		if( p_this_line < 0 ) {
+			p_last_line = 0;
+		} else {
+			p_last_line = this.code.subarray(0, p_this_line).lastIndexOf('\n') + 1;
+		}
+		int! end_last_indent = p_last_line;
+		while( end_last_indent < this.code.length && (this.code[end_last_indent] == ' ' || this.code[end_last_indent] == '\t') ) {
+			end_last_indent += 1;
+		}
+		int! last_indent_level = 0;
+		while( p_last_line < end_last_indent && last_indent_level < this.current_indent_level ) {
+			char! ch = this.code[p_last_line];
+			int! bk_last_indent_level = last_indent_level;
+			if( ch == ' ' ) {
+				last_indent_level += 1;
+			} else if( ch == '\t' ) {
+				last_indent_level /= this.tab_width;
+				last_indent_level += 1;
+				last_indent_level *= this.tab_width;
+			}
+			if( last_indent_level > this.current_indent_level ) {
+				last_indent_level = bk_last_indent_level;
+				break;
+			}
+			last_indent_level += 1;
+		}
 		while( this.current_indent_level < expected_indent_level ) {
-			if( (this.current_indent_level % this.tab_width) == 0 && (this.current_indent_level + this.tab_width) <= expected_indent_level ) {
+			if( (this.current_indent_level % this.tab_width) == 0 && (this.current_indent_level + this.tab_width) <= expected_indent_level && 
+			!(p_last_line < end_last_indent && this.code[p_last_line] == ' ') ) {
+				if( p_last_line < end_last_indent ) {
+					assert(this.code[p_last_line] == '\t');
+					p_last_line += 1;
+				}
 				this.code.push_back('\t');
 				this.current_indent_level /= this.tab_width;
 				this.current_indent_level += 1;
 				this.current_indent_level *= this.tab_width;
 			} else {
+				if( p_last_line < end_last_indent ) {
+					p_last_line += 1;
+				}
 				this.code.push_back(' ');
 				this.current_indent_level += 1L;
 			}

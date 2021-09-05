@@ -85,6 +85,11 @@ namespace ama {
 						}
 						new_children.push_back(ndj);
 					}
+					for(int! i = 2; i < new_children.length; i += 1) {
+						if( new_children[i].comments_before.startsWith(' ') ) {
+							new_children[i].comments_before = new char[|]!(new_children[i].comments_before.subarray(1));
+						}
+					}
 					ama::Node*+! ndi_old = ndi;
 					ndi = ama::CreateNodeFromChildren(call_class, new_children);
 					//merge comments
