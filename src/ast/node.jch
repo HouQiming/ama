@@ -221,6 +221,10 @@ namespace ama {
 	inline ama::Node*+! nConditional(Node*+! nd_cond, Node*+! nd_true, Node*+! nd_false) {
 		return ama::CreateNode(N_CONDITIONAL, cons(nd_cond, cons(nd_true, cons(nd_false, NULL))));
 	}
+	inline ama::Node*+! nClass(char[|] keyword,Node*+! nd_before, Node*+ nd_name, Node*+! nd_after, Node*+! nd_body) {
+		assert(nd_name.node_class==N_REF)
+		return ama::CreateNode(N_CLASS, cons(nd_before, cons(nd_name, cons(nd_after, cons(nd_body, NULL))))).setData(keyword);
+	}
 	inline ama::Node*+! nFunction(Node*+! nd_before, Node*+! nd_proto, Node*+! nd_after, Node*+! nd_body) {
 		return ama::CreateNode(N_FUNCTION, cons(nd_before, cons(nd_proto, cons(nd_after, cons(nd_body, NULL)))));
 	}

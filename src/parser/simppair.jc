@@ -69,18 +69,18 @@ private macro MakeLUT() = function():auto {
 }
 
 private const uint8_t[256]! g_char_lut = MakeLUT();
-private const uint32_t[+]! g_spaces = ama::CharSet(' \t\r');
+private const uint32_t[8]! g_spaces = ama::CharSet(' \t\r');
 //p and P are for C++ hex float, u and L are for C/C++ integers, n is for JS BigInt
 //b and o are for 0b and 0o
-private const uint32_t[+]! g_number = ama::CharSet('0-9bouUlLfFn.eE');
-private const uint32_t[+]! g_hex_number = ama::CharSet('0-9A-Fa-fx.pPuUlLn');
-private const uint32_t[+]! g_e = ama::CharSet('eE');
-private const uint32_t[+]! g_p = ama::CharSet('pP');
-private const uint32_t[+]! g_exponent = ama::CharSet('0-9f');
-private const uint32_t[+]! g_identifier = ama::CharSet('0-9A-Za-z_#-');
-private const uint32_t[+]! g_c_identifier = ama::CharSet('0-9A-Za-z_');
-private const uint32_t[+]! g_not_newline = ama::CharSet('^\n');
-private const uint32_t[+]! g_letter = ama::CharSet('A-Za-z');
+private const uint32_t[8]! g_number = ama::CharSet('0-9bouUlLfFn.eE');
+private const uint32_t[8]! g_hex_number = ama::CharSet('0-9A-Fa-fx.pPuUlLn');
+private const uint32_t[8]! g_e = ama::CharSet('eE');
+private const uint32_t[8]! g_p = ama::CharSet('pP');
+private const uint32_t[8]! g_exponent = ama::CharSet('0-9f');
+private const uint32_t[8]! g_identifier = ama::CharSet('0-9A-Za-z_#-');
+private const uint32_t[8]! g_c_identifier = ama::CharSet('0-9A-Za-z_');
+private const uint32_t[8]! g_not_newline = ama::CharSet('^\n');
+private const uint32_t[8]! g_letter = ama::CharSet('A-Za-z');
 
 private class ParserState {
 	ama::Node*+! nd_parent;
