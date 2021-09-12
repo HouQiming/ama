@@ -419,7 +419,7 @@ namespace ama {
 			ama::ParsePointedBrackets(nd_root);
 		}
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_indent_as_scope'), 1) ) {
-			ama::ConvertIndentToScope(nd_root);
+			ama::ConvertIndentToScope(nd_root, options);
 		}
 		ama::DelimitCLikeStatements(nd_root, options);
 		//from here on, N_RAW no longer includes the root scope

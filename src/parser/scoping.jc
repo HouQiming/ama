@@ -10,14 +10,15 @@ namespace ama {
 		nd_raw.node_class = ama::N_SCOPE;
 		nd_raw.flags = 0;
 	}
-	private ama::Node*+![+]! MergeScopesIntoStatements(ama::Node*+[...]! lines_out) {
+	private ama::Node*+![+]! MergeScopesIntoStatements(Map<char[|], int>&! keywords_extension_clause, ama::Node*+[...]! lines_out) {
 		ama::Node*+[+]! line_group = new ama::Node*+[+]!();
 		ama::Node*+[+]! line_out_final = new ama::Node*+[+]!();
 		for(int! i0 = 0; i0 < lines_out.length;) {
 			int! i1 = i0 + 1;
 			while( i1 < lines_out.length && 
-			(lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1 - 1].node_class == ama::N_SCOPE || 
-			lines_out[i1].isRawNode('{', '}') || lines_out[i1 - 1].isRawNode('{', '}')) ) {
+			(lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1].isRawNode('{', '}') || 
+			((lines_out[i1 - 1].node_class == ama::N_SCOPE || lines_out[i1 - 1].isRawNode('{', '}')) && 
+			lines_out[i1].node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].data])) ) {
 				i1 += 1;
 			}
 			if( (i1 - i0) <= 1 ) {
@@ -48,11 +49,14 @@ namespace ama {
 		}
 		return <<line_out_final;
 	}
-	private void! FoldIndentGroup(ama::Node*+[+]&+! lines_out, int32_t! level, intptr_t! lineno, ama::Node*+! nd_nextline) {
+	private void! FoldIndentGroup(
+		Map<char[|], int>&! keywords_extension_clause,
+		ama::Node*+[+]&+! lines_out, int32_t! level, intptr_t! lineno, ama::Node*+! nd_nextline
+	) {
 		for(intptr_t! i = lineno; i < lines_out.length; i += 1) {
 			ama::AdjustIndentLevel(lines_out[i], -level);
 		}
-		ama::Node*+! nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(lines_out.subarray(lineno))));
+		ama::Node*+! nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(keywords_extension_clause, lines_out.subarray(lineno))));
 		nd_new_scope.indent_level = level;
 		if( nd_nextline ) {
 			intptr_t! p_newline = nd_nextline.comments_before.indexOf('\n');
@@ -81,6 +85,7 @@ namespace ama {
 				continue;
 			}
 			ama::Node*+[+]! new_children = new ama::Node*+[+]!();
+			ama::Node*+*+! pndi = &nd_raw.c;
 			ama::Node*+! ndi = nd_raw.c;
 			new_children.push_back(ndi);
 			char! changed = 0;
@@ -110,6 +115,11 @@ namespace ama {
 						new_children.push_back(ndi_next);
 					}
 				} else if( ndi.node_class == ama::N_REF && ndi.data.startsWith('#') ) {
+					changed = ';';
+					if( !new_children.length && new_children.back() == ndi ) {
+						*pndi = NULL;
+						new_children.push_back(ndi);
+					}
 					after_cpp_macro = 1;
 				}
 				if( after_cpp_macro && ndi.s != NULL && ndi.s.comments_before.indexOf('\n') >= 0 ) {
@@ -121,6 +131,7 @@ namespace ama {
 					}
 				}
 				//COULDDO: case:, default:
+				pndi = &ndi.s;
 				ndi = ndi_next;
 			}
 			if( !changed ) {
@@ -176,7 +187,8 @@ namespace ama {
 		int32_t! level;
 		int32_t! lineno;
 	};
-	ama::Node*+! ConvertIndentToScope(ama::Node*+! nd_root) {
+	ama::Node*+! ConvertIndentToScope(ama::Node*+! nd_root, JSValue! options) {
+		Map<char[|], int>! keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		ama::Node*+[+]! scopes = nd_root.FindAll(ama::N_SCOPE, NULL);
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			if( !nd_raw.p || nd_raw.isRawNode('{', '}') ) {
@@ -221,7 +233,7 @@ namespace ama {
 						//bad indent
 						istk.back().level = lines[i].indent_level;
 					} else {
-						FoldIndentGroup(lines_out, istk[istk.length - 2].level, istk.back().lineno, lines[i]);
+						FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.length - 2].level, istk.back().lineno, lines[i]);
 						istk.pop();
 					}
 				}
@@ -235,11 +247,11 @@ namespace ama {
 				lines_out.push_back(lines[i]);
 			}
 			while( istk.length > 1 ) {
-				FoldIndentGroup(lines_out, istk[istk.length - 2].level, istk.back().lineno, NULL);
+				FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.length - 2].level, istk.back().lineno, NULL);
 				istk.pop();
 			}
 			//merge scopes into surrounding raws
-			ama::Node*+[+]! line_out_final = new ama::Node*+![+]!(MergeScopesIntoStatements(lines_out));
+			ama::Node*+[+]! line_out_final = new ama::Node*+![+]!(MergeScopesIntoStatements(keywords_extension_clause, lines_out));
 			//replace old children
 			for(ama::Node*+! ndi : line_out_final) {
 				ndi.p = nd_scope;

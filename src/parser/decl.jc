@@ -294,8 +294,10 @@ namespace ama {
 										//C struct-derived-type-returning function: struct foo bar(){}
 										char[|]! keyword = nd_keyword.GetName();
 										if( keyword == 'struct' || keyword == 'union' ) {
-											nd_class_name = NULL;
-											break;
+											kw_mode = KW_NONE;
+											link_keyword = NULL;
+											nd_keyword = NULL;
+											`goto its_actually_a_function;`
 										}
 									}
 									nd_class_name = ndj;
@@ -409,6 +411,7 @@ namespace ama {
 							continue;
 						}
 						case KW_FUNC: default: {
+							`its_actually_a_function:`
 							//it's not necessarily a declaration, detect C / C++11 / Java / etc. keywordless functions
 							//what else could it be? C/C++ initializer list, new (which could have (){} for JC)
 							//use (){} as indicator: we could drag back those misidentified functions later
