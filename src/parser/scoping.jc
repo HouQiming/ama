@@ -15,7 +15,9 @@ namespace ama {
 		ama::Node*+[+]! line_out_final = new ama::Node*+[+]!();
 		for(int! i0 = 0; i0 < lines_out.length;) {
 			int! i1 = i0 + 1;
-			while( i1 < lines_out.length && (lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1 - 1].node_class == ama::N_SCOPE) ) {
+			while( i1 < lines_out.length && 
+			(lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1 - 1].node_class == ama::N_SCOPE || 
+			lines_out[i1].isRawNode('{', '}') || lines_out[i1 - 1].isRawNode('{', '}')) ) {
 				i1 += 1;
 			}
 			if( (i1 - i0) <= 1 ) {
@@ -56,7 +58,7 @@ namespace ama {
 			intptr_t! p_newline = nd_nextline.comments_before.indexOf('\n');
 			if( p_newline >= 0 ) {
 				nd_new_scope.comments_after = new char[|]!(nd_new_scope.comments_after + nd_nextline.comments_before.subarray(0, p_newline + 1));
-				nd_nextline.comments_before = new char[|]!(nd_nextline.comments_before.subarray(p_newline + 1));
+				nd_nextline.comments_before = new char[|]!(nd_nextline.comments_before.subarray(p_newline));
 			}
 			//MergeCommentsAfter(nd_nextline);
 			//console.log(JSON.stringify(nd_new_scope.comments_after))

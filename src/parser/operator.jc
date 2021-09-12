@@ -5,7 +5,6 @@
 #include "./operator.jch"
 
 namespace ama {
-	//TODO: label and C ?: parsing
 	private class ColonStackItem {
 		ama::Node*+*+! phead = NULL;
 		ama::Node*+*+! pqmark = NULL;

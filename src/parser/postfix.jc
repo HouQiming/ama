@@ -52,7 +52,7 @@ namespace ama {
 					} else if( ndi_next.data == "::" ) {
 						dot_flags = ama::DOT_CLASS;
 					}
-					ama::Node*+! @nojson nd_name = ndi_next.s;
+					ama::Node*+! nd_name = ndi_next.s;
 					char[|]! name = nd_name.data;
 					*p_self = NULL;
 					ndi.p = NULL;

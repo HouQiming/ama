@@ -375,7 +375,7 @@ int! ama::Node::isAncestorOf(ama::Node*! this, ama::Node*! nd) {
 
 ama::Node*+! ama::Node::Owning(ama::Node*! this, int! nc) {
 	for(ama::Node*+! ndi = (ama::Node*+)(this); ndi; ndi = ndi.p) {
-		if( int(ndi.node_class) == nc ) {
+		if( ndi.node_class == nc ) {
 			return ndi;
 		}
 	}
@@ -385,7 +385,7 @@ ama::Node*+! ama::Node::Owning(ama::Node*! this, int! nc) {
 ama::Node*+! ama::Node::Owner(ama::Node*! this) {
 	//|| int(ndi.node_class) == ama::N_RAW_DECLARATION
 	for(ama::Node*+! ndi = this->p; ndi; ndi = ndi.p) {
-		if( int(ndi.node_class) == ama::N_FUNCTION || int(ndi.node_class) == ama::N_CLASS || !ndi.p ) {
+		if( ndi.node_class == ama::N_FUNCTION || ndi.node_class == ama::N_CLASS || !ndi.p ) {
 			return ndi;
 		}
 	}

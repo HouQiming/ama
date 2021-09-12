@@ -205,6 +205,9 @@ namespace ama {
 	inline ama::Node*+! nAssignment(Node*+! nd_def, Node*+! nd_value) {
 		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, NULL)));
 	}
+	inline ama::Node*+! nUpdate(Node*+! nd_def, char[|]! op, Node*+! nd_value) {
+		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, NULL))).setData(op);
+	}
 	inline ama::Node*+! nBinop(Node*+! nd_a, char[|]! op, Node*+! nd_b) {
 		return ama::CreateNode(N_BINOP, cons(nd_a, cons(nd_b, NULL))).setData(op);
 	}
@@ -221,8 +224,8 @@ namespace ama {
 	inline ama::Node*+! nConditional(Node*+! nd_cond, Node*+! nd_true, Node*+! nd_false) {
 		return ama::CreateNode(N_CONDITIONAL, cons(nd_cond, cons(nd_true, cons(nd_false, NULL))));
 	}
-	inline ama::Node*+! nClass(char[|] keyword,Node*+! nd_before, Node*+ nd_name, Node*+! nd_after, Node*+! nd_body) {
-		assert(nd_name.node_class==N_REF)
+	inline ama::Node*+! nClass(char[|]! keyword, Node*+! nd_before, Node*+! nd_name, Node*+! nd_after, Node*+! nd_body) {
+		assert(nd_name.node_class == N_REF);
 		return ama::CreateNode(N_CLASS, cons(nd_before, cons(nd_name, cons(nd_after, cons(nd_body, NULL))))).setData(keyword);
 	}
 	inline ama::Node*+! nFunction(Node*+! nd_before, Node*+! nd_proto, Node*+! nd_after, Node*+! nd_body) {
@@ -251,6 +254,9 @@ namespace ama {
 	//}
 	macro nDependency() = function(auto my_call, ...args):auto {
 		return require("./v3macros.js").ASTConstructor(my_call, args, "N_DEPENDENCY");
+	}
+	macro nScope() = function(auto my_call, ...args):auto {
+		return require("./v3macros.js").ASTConstructor(my_call, args, "N_SCOPE");
 	}
 	int8_t! ClampIndentLevel(intptr_t! level);
 	ama::Node*+! toSingleNode(ama::Node*+! nd_child);

@@ -37,10 +37,10 @@ int! main(int! argc, char**! argv) {
 	ama::std_module_dir = <<path.join(home_dir, '.ama_modules');
 	///////////
 	ama::InitScriptEnv();
-	char*! fn_script = NULL;
+	char*! extra_script = NULL;
 	for(int! i = 1; i < argc; i += 1) {
 		if( strcmp(argv[i], "-s") == 0 && (i + 1) < argc ) {
-			fn_script = argv[i + 1];
+			extra_script = argv[i + 1];
 			i += 1;
 			continue;
 		}
@@ -50,8 +50,8 @@ int! main(int! argc, char**! argv) {
 			return 1;
 		}
 		char![+]! script_i = ama::FindAma(file_data);
-		if( fn_script ) {
-			script_i = "require(" + JSON.stringify(fn_script) + ");" + script_i;
+		if( extra_script ) {
+			script_i = <<JC::string_concat(extra_script, ";\n", script_i);
 		}
 		if( !ama::RunScriptOnFile(script_i, argv[i], file_data.c_str()) ) {
 			return 1;

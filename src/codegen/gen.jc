@@ -57,6 +57,7 @@ namespace ama {
 				this->code.push_back('{');
 				intptr_t! bk_indent = this.scope_indent_level;
 				this.scope_indent_level += nd.indent_level;
+				this.in_new_line = 0;
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					this->Generate(ndi);
 					if( !this.code.endsWith('}') && !this.code.endsWith(';') ) {
@@ -259,14 +260,11 @@ namespace ama {
 		//case N_ITEM:
 	}
 	void! ama::CodeGenerator::GenerateIndent(ama::CodeGenerator*+! this, intptr_t! expected_indent_level) {
-		int! p_last_line;
-		if( this.current_indent_level >= expected_indent_level ) { return; }
-		auto p_this_line = this.code.lastIndexOf('\n');
-		if( p_this_line < 0 ) {
-			p_last_line = 0;
-		} else {
-			p_last_line = this.code.subarray(0, p_this_line).lastIndexOf('\n') + 1;
+		if( this.current_indent_level >= expected_indent_level ) {
+			this.p_last_indent = this.code.lastIndexOf('\n') + 1L;
+			return;
 		}
+		intptr_t! p_last_line = this.p_last_indent;
 		int! end_last_indent = p_last_line;
 		while( end_last_indent < this.code.length && (this.code[end_last_indent] == ' ' || this.code[end_last_indent] == '\t') ) {
 			end_last_indent += 1;
@@ -287,6 +285,7 @@ namespace ama {
 				break;
 			}
 			last_indent_level += 1;
+			p_last_line += 1L;
 		}
 		while( this.current_indent_level < expected_indent_level ) {
 			if( (this.current_indent_level % this.tab_width) == 0 && (this.current_indent_level + this.tab_width) <= expected_indent_level && 
@@ -307,6 +306,7 @@ namespace ama {
 				this.current_indent_level += 1L;
 			}
 		}
+		this.p_last_indent = this.code.lastIndexOf('\n') + 1L;
 	}
 	void! ama::CodeGenerator::GenerateCommentDefault(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {
 		if( comment.indexOf('\n') < 0 ) {
@@ -346,6 +346,8 @@ namespace ama {
 			this.code.push('/*NULL*/');
 			return;
 		}
+		ama::Node*+! bk = this.nd_current;
+		this.nd_current = nd;
 		intptr_t! expected_indent_level = this.scope_indent_level + intptr_t(nd.indent_level);
 		//expected_indent_level should be normally redundant
 		this.GenerateComment(expected_indent_level, nd.comments_before);
@@ -359,6 +361,7 @@ namespace ama {
 			this.in_new_line = 0;
 			this.GenerateComment(expected_indent_level, nd.comments_after);
 		}
+		this.nd_current = bk;
 	}
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options) {
 		ama::CodeGenerator! ctx = new ama::CodeGenerator!();

@@ -7,13 +7,15 @@ namespace ama {
 	`typedef int(*FGeneratorHookComment)(ama::CodeGenerator*,const char*,intptr_t,intptr_t);`
 	class CodeGenerator {
 		//ignore offsets for now
-		//provide a separate service to convert some (unicode) tag into cite-like comments later
+		//COULDDO: provide a separate service to convert some (unicode) tag into cite-like comments
 		char[+]! code;
+		Node*+! nd_current = NULL;
 		void*! opaque = NULL;
 		FGeneratorHook! hook = NULL;
 		FGeneratorHookComment! hook_comment = NULL;
 		intptr_t! scope_indent_level = 0L;
 		intptr_t! current_indent_level = 0L;
+		intptr_t! p_last_indent = 0L;
 		int32_t! tab_width = 4;
 		int8_t! in_new_line = 1;
 		void! GenerateDefault(ama::CodeGenerator*+! this, ama::Node*+! nd);

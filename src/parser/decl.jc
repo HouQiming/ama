@@ -42,7 +42,7 @@ namespace ama {
 			if( !found ) {
 				//test for old C macro FOO_DECL(int,foo)(int bar){}
 				ama::Node*+! nd_maybe_c_macro = nd_before.node_class == ama::N_RAW ? nd_before : nd_before.LastChild();
-				if( nd_maybe_c_macro.node_class == ama::N_CALL || nd_maybe_c_macro.isRawNode('(', ')') ) {
+				if( nd_maybe_c_macro && (nd_maybe_c_macro.node_class == ama::N_CALL || nd_maybe_c_macro.isRawNode('(', ')')) ) {
 					ama::Node*+! nd_maybe_name = nd_maybe_c_macro.LastChild();
 					if( nd_maybe_name.node_class == ama::N_REF ) {
 						name = nd_maybe_name.data;
@@ -495,7 +495,7 @@ namespace ama {
 				ama::Node*+! nd_owner = nd_raw.Owner();
 				if( !(nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_FILE)) || nd_owner.node_class == ama::N_FUNCTION ) { continue; }
 				ama::Node*+! nd_proto = NULL;
-				//console.log('>>>', nd_raw.toSource());
+				//console.log('>>>', nd_owner.node_class, nd_raw.toSource());
 				for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
 					//console.log(ndi.node_class)
 					if( ndi.node_class == ama::N_CALL ) {
