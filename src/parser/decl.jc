@@ -60,6 +60,7 @@ namespace ama {
 	private const int! KW_STMT = 2;
 	private const int! KW_EXT = 3;
 	private const int! KW_FUNC = 4;
+	private const int! KW_NOT_FUNC = 5;
 	private ama::Node*+! TranslateCUnscopedStatement(ama::Node*+! nd_keyword) {
 		ama::Node*+! nd_body = ama::BreakLink(&nd_keyword.s);
 		if( nd_keyword.node_class == ama::N_CALL ) {
@@ -137,6 +138,7 @@ namespace ama {
 		Map<char[|], int>! keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		Map<char[|], int>! keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
 		Map<char[|], int>! keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
+		Map<char[|], int>! keywords_not_a_function = ama::GetPrioritizedList(options, "keywords_not_a_function");
 		int32_t! parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_forward_declarations'), 1);
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_colon_statements'), 1) ) {
 			//use reverse() to facilitate recursive unparsing of if foo:{}else:{}
@@ -231,6 +233,11 @@ namespace ama {
 							link_keyword = pndi;
 							nd_keyword = ndi;
 							kw_mode = KW_FUNC;
+							continue;
+						} else if( keywords_not_a_function[name] ) {
+							link_keyword = pndi;
+							nd_keyword = ndi;
+							kw_mode = KW_NOT_FUNC;
 							continue;
 						}
 					}
@@ -410,6 +417,10 @@ namespace ama {
 							nd_keyword = NULL;
 							continue;
 						}
+						case KW_NOT_FUNC: {
+							//it's not a function
+							break;
+						}
 						case KW_FUNC: default: {
 							`its_actually_a_function:`
 							//it's not necessarily a declaration, detect C / C++11 / Java / etc. keywordless functions
@@ -516,6 +527,10 @@ namespace ama {
 				//console.log('>>>', nd_owner.node_class, nd_raw.toSource());
 				for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
 					//console.log(ndi.node_class)
+					if( ndi.node_class == ama::N_REF && keywords_not_a_function[ndi.data] ) {
+						nd_proto = NULL;
+						break;
+					}
 					if( ndi.node_class == ama::N_CALL ) {
 						nd_proto = ndi;
 					}
@@ -561,6 +576,7 @@ namespace ama {
 			if( nd_def.node_class == ama::N_RAW ) {
 				nd_def = nd_def.LastChild();
 			}
+			if( !nd_def ) { continue; }
 			if( nd_def.node_class == ama::N_BINOP && ambiguous_type_suffix[nd_def.data] ) {
 				//type-binop ambiguity: foo*[3]*b=bar*[3]*b
 				//a sane method to resolve such ambiguity: LHS of assignment, in a function prototype... and it's C-specific
