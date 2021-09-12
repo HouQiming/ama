@@ -715,7 +715,7 @@ int! ama::Node::dfsValidate(ama::Node*+! this) {
 	int! ret = 1;
 	for(ama::Node*+! ndi = this.c; ndi; ndi = ndi.s) {
 		if( ndi.p != this ) {
-			console.log('bad parent', intptr_t(ndi), ndi.node_class, ndi.data == NULL ? "NULL" : JSON.stringify(ndi.data).c_str());
+			console.log('bad parent', intptr_t(ndi), ndi.node_class, ndi.data == NULL ? "NULL" : JSON.stringify(ndi.data).c_str(), 'under', this.node_class);
 			ndi.comments_before = new char[|]!('/*bad parent ' + JSON.stringify(intptr_t(ndi)) + '*/' + ndi.comments_before);
 			ret = 0;
 		}

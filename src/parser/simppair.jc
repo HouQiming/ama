@@ -373,6 +373,7 @@ namespace ama {
 				}
 				case CHAR_TYPE_ZERO: {
 					ama::FillParents(NULL, nd_root);
+					nd_root.comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 					return nd_root;
 				}
 			}

@@ -74,7 +74,7 @@ namespace ama {
 			if( !(nd_raw.flags & 0xffff) ) {
 				//move out trailing ;
 				ama::Node*+! nd_last = nd_raw.LastChild();
-				if( nd_last.isSymbol(";") && nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_RAW) ) {
+				if( nd_last && nd_last.isSymbol(";") && nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_RAW) ) {
 					nd_last.Delete();
 					nd_raw.Insert(ama::POS_AFTER, nd_last);
 				}

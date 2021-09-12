@@ -64,7 +64,7 @@ namespace ama {
 					nd_name.p = NULL; nd_name.FreeASTStorage();
 					ndi_next.p = NULL; ndi_next.FreeASTStorage();
 					continue;
-				} else if( ndi.s && (ndi.s.isRawNode('(', ')') || ndi.s.isRawNode('<', '>')) && !ndi_next.FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").length ) {
+				} else if( ndi_next && (ndi_next.isRawNode('(', ')') || ndi_next.isRawNode('<', '>')) && !ndi_next.FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").length ) {
 					//call
 					ama::Node*+! nd_arglist = ndi.s;
 					uint8_t! call_class = nd_arglist.isRawNode('<', '>') ? ama::N_CALL_TEMPLATE : ama::N_CALL;
@@ -101,6 +101,8 @@ namespace ama {
 					ndi.p = nd_raw;
 					ndi.s = ndi_next_next;
 					*p_self = ndi;
+					//nd_arglist is also N_RAW: but we shouldn't process it any more
+					nd_arglist.c = NULL;
 					continue;
 				} else if( ndi.s && ndi.s.isRawNode('[', ']') ) {
 					//item
