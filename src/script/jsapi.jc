@@ -447,6 +447,7 @@ namespace ama {
 			ama::ParseVariableDeclarations(nd_root, options);
 		}
 		//DumpASTAsJSON(nd_root);
+		//nd_root.Validate();
 		ama::RemoveRedundantSemicolon(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
 		return nd_root;

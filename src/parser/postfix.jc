@@ -138,7 +138,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node*+! UnparseCall(ama::Node*+! nd) {
-		assert(nd.node_class == ama::N_CALL);
+		assert(nd.node_class == ama::N_CALL || nd.node_class == ama::N_CALL_TEMPLATE);
 		ama::Node*+[+]! args = new ama::Node*+[+]!();
 		for(ama::Node*+! ndi = nd.c.s; ndi; ndi = ndi.s) {
 			args.push_back(ndi);
@@ -146,7 +146,11 @@ namespace ama {
 				args.push_back(ama::nSymbol(",").setCommentsAfter(" "));
 			}
 		}
-		ama::Node*+! ret = nd.ReplaceWith(ama::cons(nd.c, ama::CreateNodeFromChildren(ama::N_RAW, args).setFlags(uint32_t('(') | uint32_t(')') << 8)));
+		uint32_t! flags = uint32_t('(') | uint32_t(')') << 8;
+		if( nd.node_class == ama::N_CALL_TEMPLATE ) {
+			flags = uint32_t('<') | uint32_t('>') << 8;
+		}
+		ama::Node*+! ret = nd.ReplaceWith(ama::cons(nd.c, ama::CreateNodeFromChildren(ama::N_RAW, args).setFlags(flags)));
 		nd.c = NULL;
 		nd.FreeASTStorage();
 		return ret;
