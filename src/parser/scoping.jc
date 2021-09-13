@@ -16,7 +16,8 @@ namespace ama {
 		for(int! i0 = 0; i0 < lines_out.length;) {
 			int! i1 = i0 + 1;
 			while( i1 < lines_out.length && 
-			(lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1].isRawNode('{', '}') || 
+			(lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1].isRawNode('{', '}') || (
+			lines_out[i1].isRawNode(0, 0) && lines_out[i1].c && (lines_out[i1].c.node_class == ama::N_SCOPE || lines_out[i1].c.isRawNode('{', '}'))) ||
 			((lines_out[i1 - 1].node_class == ama::N_SCOPE || lines_out[i1 - 1].isRawNode('{', '}')) && 
 			lines_out[i1].node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].data])) ) {
 				i1 += 1;

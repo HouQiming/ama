@@ -691,10 +691,11 @@ namespace ama {
 			)
 		);
 		/////////////
+		//the QuickJS parser requires zero termination but doesn't tolerate the zero byte in the array
 		char[...]! bootstrap_code = @asset('./js_init.js');
 		mutable JSValueConst! ret = JS_Eval(
 			ama::jsctx, bootstrap_code.data(),
-			bootstrap_code.length, '<js_init.js>', JS_EVAL_TYPE_GLOBAL
+			bootstrap_code.length - 1, '<js_init.js>', JS_EVAL_TYPE_GLOBAL
 		);
 		if( JS_IsException(ret) ) {
 			ama::DumpError(ama::jsctx);

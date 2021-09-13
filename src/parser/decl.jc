@@ -286,7 +286,6 @@ namespace ama {
 					link_keyword = NULL;
 					nd_keyword = NULL;
 				} else if( (ndi.node_class == ama::N_SCOPE || ndi.isRawNode('{', '}')) && nd_prototype_start && nd_prototype_start != ndi ) {
-					//console.log('lol', kw_mode);
 					switch( kw_mode ) {
 						case KW_CLASS: {
 							//search for the class name

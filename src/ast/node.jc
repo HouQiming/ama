@@ -453,6 +453,7 @@ ama::Node*+! ama::Node::dot(ama::Node*+! this, char[|]! name) {
 }
 
 private void! dfsFreeChildrenStorage(ama::Node*+! nd) {
+	assert(nd.tmp_flags & ama::TMPF_IS_NODE);
 	ama::Node*+! ndi_last = NULL;
 	ama::Node*+! ndi0 = nd.c;
 	intptr_t! n_steps = 0L;

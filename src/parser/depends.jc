@@ -38,7 +38,7 @@ namespace ama {
 					include_expr.push(ndi.toSource());
 					toDrop.push_back(ndi);
 				}
-				ama::Node*+! @nojson nd_real_include = ama::nString(new char[|]!(include_expr)).setCommentsBefore(
+				ama::Node*+! nd_real_include = ama::nString(new char[|]!(include_expr)).setCommentsBefore(
 					new char[|]!(comments_before)
 				).setCommentsAfter(
 					new char[|]!(comments_after)
@@ -51,7 +51,7 @@ namespace ama {
 				nd_real_include.p = nd_raw;
 				nd_raw.c.s = nd_real_include;
 			}
-			ama::Node*+! @nojson nd_included = nd_raw.c.s;
+			ama::Node*+! nd_included = nd_raw.c.s;
 			assert(nd_included.node_class == ama::N_STRING);
 			char[|]! fn_included = nd_included.GetStringValue();
 			nd_raw.ReplaceWith(ama::nDependency(nd_included).setFlags(flags));
