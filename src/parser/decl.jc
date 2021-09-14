@@ -5,6 +5,7 @@
 #include './postfix.jch'
 #include './decl.jch'
 #include './operator.jch'
+#include './scoping.jch'
 
 namespace ama {
 	private ama::Node*+! ConvertToParameterList(ama::Node*+! nd_raw) {
@@ -339,6 +340,7 @@ namespace ama {
 							*pndi = NULL;
 							ndi.s = NULL;
 							nd_after = ama::toSingleNode(nd_after);
+							ama::ConvertToScope(ndi);
 							nd_class.c = ama::cons(nd_before, ama::cons(nd_class_name, ama::cons(nd_after, ndi)));
 							for(ama::Node*+! ndj = nd_class.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_class;
@@ -368,6 +370,7 @@ namespace ama {
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							*pndi = NULL;
 							ndi.s = NULL;
+							ama::ConvertToScope(ndi);
 							nd_stmt.c = ama::cons(nd_arg, ndi);
 							for(ama::Node*+! ndj = nd_stmt.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_stmt;
@@ -401,6 +404,7 @@ namespace ama {
 							*pndi = NULL;
 							ndi.s = NULL;
 							//insert into the last statement
+							ama::ConvertToScope(ndi);
 							nd_last_scoped_stmt.Insert(ama::POS_BACK, ama::nExtensionClause(
 								nd_keyword.data, nd_arg, ndi
 							).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level));
@@ -479,6 +483,7 @@ namespace ama {
 							nd_paramlist = ConvertToParameterList(nd_paramlist);
 							nd_before = ama::toSingleNode(nd_before);
 							nd_after = ama::toSingleNode(nd_after);
+							ama::ConvertToScope(ndi);
 							nd_func.c = ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, ndi)));
 							for(ama::Node*+! ndj = nd_func.c; ndj; ndj = ndj.s) {
 								ndj.p = nd_func;

@@ -9,7 +9,8 @@ namespace ama {
 		return ndi.node_class == ama::N_CALL && ndi.c.isRawNode('[', ']');
 	}
 	ama::Node*+! ParsePostfix(ama::Node*+! nd_root, int! parse_air_object) {
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
+		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL).reverse()) {
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+!*+! p_self = &nd_raw.c;
 			const int! LAST_PROTOTYPE_NONE = 0;

@@ -625,6 +625,16 @@ namespace ama {
 			return ama::WrapNode(g_filters[magic].f(ama::UnwrapNode(this_val)));
 		}
 	}
+	private JSValueConst! JSReadFileSync(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a file name");
+		}
+		char[+]^+! data = fs.readFileSync(ama::UnwrapString(argv[0]));
+		if( !data ) {
+			return JS_NULL;
+		}
+		return JS_NewArrayBufferCopy(ctx, (uint8_t*+)(data.data()), data.size());
+	}
 	void! InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
@@ -660,6 +670,12 @@ namespace ama {
 			ama::jsctx, global, '__require', JS_NewCFunction(
 				ama::jsctx, JSRequire,
 				'require', 2
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__readFileSync', JS_NewCFunction(
+				ama::jsctx, JSReadFileSync,
+				'readFileSync', 1
 			)
 		);
 		JS_SetPropertyStr(ama::jsctx, global, 'Node', ama::g_node_proto);

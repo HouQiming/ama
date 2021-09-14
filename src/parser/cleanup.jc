@@ -17,6 +17,9 @@ namespace ama {
 		}
 		while( nd_root.c && !nd_root.c.s && nd_root.c.node_class == ama::N_RAW && !(nd_root.c.flags & 0xffff) ) {
 			nd_root = nd_root.c;
+			nd_root.p.c = NULL;
+			nd_root.p.FreeASTStorage();
+			nd_root.p = NULL;
 		}
 		return nd_root;
 	}

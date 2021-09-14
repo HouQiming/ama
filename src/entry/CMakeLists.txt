@@ -10,6 +10,9 @@ if(NOT JC_LIB)
     set(JC_LIB "/home/hqm/tp/jc3/lib")
   endif()
 endif()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-delete-null-pointer-checks")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-delete-null-pointer-checks")
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LIBCPP_DEBUG=0 -D_GLIBCXX_DEBUG")
 endif()
@@ -173,6 +176,7 @@ check_cxx_source_compiles("#include \"jc_platform.h\"\n\n#if !(!(JC_OS == JC_OS_
 if(COND__JC_OS_JC_OS_WINDOWS__1DB9171C)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funwind-tables")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
 endif()
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jch.hpp
@@ -335,6 +339,6 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/decl.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/decl.jc
   MAIN_DEPENDENCY ../parser/decl.jc
-  DEPENDS ${JC_LIB}/console.jch ../ast/node.jch ../script/jsenv.jch ../parser/postfix.jch ../parser/decl.jch ../parser/operator.jch
+  DEPENDS ${JC_LIB}/console.jch ../ast/node.jch ../script/jsenv.jch ../parser/postfix.jch ../parser/decl.jch ../parser/operator.jch ../parser/scoping.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )

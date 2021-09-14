@@ -626,7 +626,8 @@ int! ama::Node::hasBrackets(ama::Node*! this) {
 	return (
 		this.node_class == ama::N_RAW || this.node_class == ama::N_SCOPE || 
 		this.node_class == ama::N_CALL || this.node_class == ama::N_CALL_TEMPLATE || 
-		this.node_class == ama::N_CALL_CUDA_KERNEL || this.node_class == ama::N_PARAMETER_LIST
+		this.node_class == ama::N_CALL_CUDA_KERNEL || this.node_class == ama::N_PARAMETER_LIST || 
+		this.node_class == ama::N_FILE
 	);
 }
 
@@ -711,6 +712,10 @@ int! ama::Node::dfsValidate(ama::Node*+! this) {
 	if( g_validate_dedup[this] ) {
 		console.log('found cycle to', intptr_t(this), this.data == NULL ? "NULL" : JSON.stringify(this.data).c_str());
 		this.comments_before = new char[|]!('/*cycle ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
+		return 0;
+	}
+	if( this.p && this.node_class == ama::N_FILE ) {
+		console.log('the file node has a parent:', this.p.node_class);
 		return 0;
 	}
 	int! ret = 1;

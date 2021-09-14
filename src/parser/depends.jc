@@ -30,13 +30,21 @@ namespace ama {
 				char[+]! include_expr;
 				char[+]! comments_after;
 				ama::Node*+![+]! toDrop = new ama::Node*+![+]!();
+				ama::Node*+*+! pndi = &nd_raw.c.s;
 				for(ama::Node*+! ndi = nd_raw.c.s; ndi; ndi = ndi.s) {
+					if( ndi.node_class == ama::N_SCOPE ) {
+						//mistakenly-merged scope
+						*pndi = NULL;
+						nd_raw.Insert(ama::POS_AFTER, ndi);
+						break;
+					}
 					comments_before.push(ndi.comments_before);
 					ndi.comments_before = "";
 					comments_after.push(ndi.comments_after);
 					ndi.comments_after = "";
 					include_expr.push(ndi.toSource());
 					toDrop.push_back(ndi);
+					pndi = &ndi.s;
 				}
 				ama::Node*+! nd_real_include = ama::nString(new char[|]!(include_expr)).setCommentsBefore(
 					new char[|]!(comments_before)
@@ -73,7 +81,7 @@ namespace ama {
 				}
 				if( fn_found == NULL ) {
 					for(char[|]&! dir : c_include_paths) {
-						char[...]! fn_test = path.join(dir, fn_included);
+						char[+]! fn_test = path.join(dir, fn_included);
 						if( fs.existsSync(fn_test) ) {
 							fn_found = new char[|]!(fn_test);
 							break;
