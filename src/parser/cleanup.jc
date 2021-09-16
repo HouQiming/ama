@@ -24,8 +24,18 @@ namespace ama {
 		return nd_root;
 	}
 	private void! dfsPullComment(ama::Node*+! nd) {
+		ama::Node*+! ndi_last = NULL;
 		for(ama::Node*+! ndi : nd) {
 			dfsPullComment(ndi);
+			if( nd.node_class == ama::N_SCOPE && ndi_last && ndi.comments_before.length > 0 && ndi.comments_before[0] != '\n' ) {
+				//associate the first "line" of multi-line comments with the previous statement
+				intptr_t! p_newline = ndi.comments_before.indexOf('\n');
+				if( p_newline >= 0L ) {
+					ndi_last.comments_after = new char[|]!(ndi_last.comments_after + ndi.comments_before.subarray(0, p_newline));
+					ndi.comments_before = new char[|]!(ndi.comments_before.subarray(p_newline));
+				}
+			}
+			ndi_last = ndi;
 		}
 		if( nd.c && 
 		(nd.node_class == ama::N_CALL || nd.node_class == ama::N_CALL_TEMPLATE || nd.node_class == ama::N_CALL_CUDA_KERNEL || 
@@ -64,6 +74,34 @@ namespace ama {
 				nd.FreeASTStorage();
 			}
 		}
+		return nd_root;
+	}
+	private void! dfsAutoFormat(ama::Node*+! nd) {
+		for(ama::Node*+! ndi : nd) {
+			dfsAutoFormat(ndi);
+			if( nd.node_class == ama::N_SCOPE ) {
+				if( !ndi.indent_level ) {
+					ama::AdjustIndentLevel(ndi, 4);
+				}
+				if( !ndi.comments_before.length ) {
+					ndi.comments_before = ndi == nd.c ? "\n\t" : "\n";
+				}
+			} else if( nd.node_class == ama::N_RAW && ndi != nd.c ) {
+				if( !ndi.comments_before.length ) {
+					ndi.comments_before = " ";
+				}
+			} else if( nd.node_class == ama::N_FILE ) {
+				if( !ndi.comments_before.length ) {
+					ndi.comments_before = "\n";
+				}
+			}
+		}
+		if( nd.node_class == ama::N_SCOPE ) {
+			if( !nd.comments_after.length ) { nd.comments_after = "\n"; }
+		}
+	}
+	ama::Node*+! AutoFormat(ama::Node*+! nd_root) {
+		dfsAutoFormat(nd_root);
 		return nd_root;
 	}
 };

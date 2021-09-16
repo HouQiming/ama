@@ -7,6 +7,8 @@
 #include '../parser/literal.jch'
 #include './node.jch'
 
+private const int! DEBUG_NODE_ALLOCATOR = 0;
+
 namespace ama {
 	///////////////////
 	//the node pool
@@ -140,7 +142,7 @@ namespace ama {
 	}
 	void! AdjustIndentLevel(ama::Node*+! nd_stmt, intptr_t! delta) {
 		nd_stmt.indent_level = ama::ClampIndentLevel(nd_stmt.indent_level + delta);
-		if( !(nd_stmt.node_class == ama::N_RAW && (nd_stmt.flags & 0xffff)) ) {
+		if( !(nd_stmt.node_class == ama::N_RAW && (nd_stmt.flags & 0xffff)) && nd_stmt.node_class != ama::N_SCOPE ) {
 			for(ama::Node*+! ndi : nd_stmt) {
 				AdjustIndentLevel(ndi, delta);
 			}
@@ -277,6 +279,7 @@ auto ama::Node::Delete(ama::Node*+! this) {
 //	}
 //};
 ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new) {
+	assert(this.tmp_flags & ama::TMPF_IS_NODE);
 	ama::Node*+! nd_new_parent = pos == ama::POS_FRONT || pos == ama::POS_BACK ? this : this->p;
 	ama::Node*+! nd_tail = nd_new;
 	for(;;) {
@@ -470,6 +473,9 @@ private void! dfsFreeChildrenStorage(ama::Node*+! nd) {
 		}
 		n_steps += 1;
 	}
+	if( DEBUG_NODE_ALLOCATOR ) {
+		return;
+	}
 	if( ndi_last != NULL ) {
 		ndi_last.s = ama::g_free_nodes;
 		ama::g_free_nodes = nd.c;
@@ -481,6 +487,9 @@ void! ama::Node::FreeASTStorage(ama::Node*+! this) {
 	//do not wipe .data and stuff, we could use them again in a C++ expr
 	assert(!this.p);
 	dfsFreeChildrenStorage(this);
+	if( DEBUG_NODE_ALLOCATOR ) {
+		return;
+	}
 	this.tmp_flags &= ~ama::TMPF_IS_NODE;
 	this.s = ama::g_free_nodes;
 	ama::g_free_nodes = this;
@@ -714,6 +723,11 @@ int! ama::Node::dfsValidate(ama::Node*+! this) {
 		this.comments_before = new char[|]!('/*cycle ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
 		return 0;
 	}
+	if( !(this.tmp_flags & ama::TMPF_IS_NODE) ) {
+		console.log('found freed node', intptr_t(this));
+		this.comments_before = new char[|]!('/*freed ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
+		return 0;
+	}
 	if( this.p && this.node_class == ama::N_FILE ) {
 		console.log('the file node has a parent:', this.p.node_class);
 		return 0;
@@ -736,5 +750,23 @@ void! ama::Node::Validate(ama::Node*+! this) {
 		console.log('=== source code');
 		console.log(this.toSource());
 		assert(0);
+	}
+}
+
+int! ama::Node::NeedTrailingSemicolon(ama::Node*! this) {
+	switch( this.node_class ) {
+		default: {
+			return 1;
+		}
+		case ama::N_RAW: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: case ama::N_FUNCTION: case ama::N_CLASS: {
+			if( this.c ) { return this.LastChild().NeedTrailingSemicolon(); }
+			return 1;
+		}
+		case ama::N_DEPENDENCY: case ama::N_FILE: {
+			return 0;
+		}
+		case ama::N_SYMBOL: {
+			return this.data != ";" && this.data != ",";
+		}
 	}
 }

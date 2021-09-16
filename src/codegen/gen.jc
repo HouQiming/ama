@@ -60,7 +60,7 @@ namespace ama {
 				this.in_new_line = 0;
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					this->Generate(ndi);
-					if( !this.code.endsWith('}') && !this.code.endsWith(';') && !this.code.endsWith(',') ) {
+					if( ndi.NeedTrailingSemicolon() ) {
 						this->code.push_back(';');
 					}
 					//if( ndi.isExpr() && !(ndi.s && ndi.s.node_class == ama::N_SYMBOL && ndi.s.data == ";") ) {
@@ -124,11 +124,13 @@ namespace ama {
 				}
 				intptr_t! bk_indent = this.scope_indent_level;
 				this.scope_indent_level += nd.indent_level;
-				for(ama::Node*+! ndi = nd.c.s; ndi; ndi = ndi.s) {
-					this->Generate(ndi);
-					if( ndi.s ) {
-						this->code.push_back(',');
-						this.GenerateSpaceBefore(ndi.s);
+				if( nd.c ) {
+					for(ama::Node*+! ndi = nd.c.s; ndi; ndi = ndi.s) {
+						this->Generate(ndi);
+						if( ndi.s ) {
+							this->code.push_back(',');
+							this.GenerateSpaceBefore(ndi.s);
+						}
 					}
 				}
 				this.GenerateComment(this.scope_indent_level, nd.comments_after);

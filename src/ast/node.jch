@@ -111,10 +111,12 @@ namespace ama {
 			return this;
 		}
 		inline ama::Node*+! setCommentsBefore(ama::Node*+! this, char[|]! comments) {
+			assert(comments != NULL);
 			this.comments_before = comments;
 			return this;
 		}
 		inline ama::Node*+! setCommentsAfter(ama::Node*+! this, char[|]! comments) {
+			assert(comments != NULL);
 			this.comments_after = comments;
 			return this;
 		}
@@ -161,6 +163,7 @@ namespace ama {
 		int! isSymbol(ama::Node*! this, char[...]! name);
 		int! dfsValidate(ama::Node*+! this);
 		void! Validate(ama::Node*+! this);
+		int! NeedTrailingSemicolon(ama::Node*! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;

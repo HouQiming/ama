@@ -6,4 +6,5 @@ namespace ama {
 	ama::Node*+! SanitizeCommentPlacement(ama::Node*+! nd_root);
 	ama::Node*+! StripBinaryOperatorSpaces(ama::Node*+! nd_root);
 	ama::Node*+! RemoveRedundantSemicolon(ama::Node*+! nd_root);
+	ama::Node*+! AutoFormat(ama::Node*+! nd_root);
 };
