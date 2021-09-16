@@ -95,4 +95,30 @@ namespace ama {
 		dfsAutoFormat(nd_root);
 		return nd_root;
 	}
+	ama::Node*+! NodifySemicolonAndParenthesis(ama::Node*+! nd_root) {
+		for(ama::Node*+! nd_scope : nd_root.FindAll(ama::N_SCOPE, NULL)) {
+			ama::Node*+*+! link = &nd_scope.c;
+			for(ama::Node*+! ndi = nd_scope.c; ndi; ndi = ndi.s) {
+				while( ndi.s && ndi.s.isSymbol(";") ) {
+					ama::Node*+! nd_semicolon = ndi.s;
+					*link = nd_semicolon;
+					nd_semicolon.node_class = ama::N_SEMICOLON;
+					nd_semicolon.data = NULL;
+					nd_semicolon.c = ndi;
+					ndi.p = nd_semicolon;
+					ndi.s = NULL;
+					ndi.MergeCommentsAfter(nd_semicolon);
+					ndi = nd_semicolon;
+				}
+				link = &ndi.s;
+			}
+		}
+		for(ama::Node*&+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			if( nd_raw.isRawNode('(', ')') && nd_raw.c && !nd_raw.c.s ) {
+				nd_raw.node_class = ama::N_PAREN;
+				nd_raw.flags = 0;
+			}
+		}
+		return nd_root;
+	}
 };

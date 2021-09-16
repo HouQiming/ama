@@ -263,6 +263,23 @@ namespace ama {
 				//nothing
 				break;
 			}
+			case ama::N_SEMICOLON: {
+				this->Generate(nd.c);
+				this.code.push(';');
+				break;
+			}
+			case ama::N_PAREN: {
+				this.code.push('(');
+				intptr_t! bk_indent = this.scope_indent_level;
+				this.scope_indent_level += nd.indent_level;
+				this->Generate(nd.c);
+				if( this.in_new_line ) {
+					this.GenerateIndent(this.scope_indent_level);
+				}
+				this.scope_indent_level = bk_indent;
+				this.code.push(')');
+				break;
+			}
 		}
 		//case N_ITEM:
 	}

@@ -663,7 +663,7 @@ int! ama::Node::isExpr(ama::Node*! this) {
 		//case N_FUNCTION:
 		//case N_CLASS:
 		case ama::N_DOT: case ama::N_ITEM: case ama::N_CALL: //case N_DEPENDENCY:
-		case ama::N_BINOP: case ama::N_UNARY: case ama::N_ASSIGNMENT: {
+		case ama::N_BINOP: case ama::N_UNARY: case ama::N_ASSIGNMENT: case ama::N_PAREN: {
 			return 1;
 		}
 	}

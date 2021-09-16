@@ -247,7 +247,7 @@ namespace ama {
 						//unscoped statement
 						ndi_next = ama::BreakLink(&ndi.s);
 						//drop the ;
-						ama::BreakLink(pndi);
+						//ama::BreakLink(pndi);
 						ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
 						if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 							nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
@@ -509,6 +509,12 @@ namespace ama {
 			}
 			if( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 				//C unscoped statement
+				if( nd_raw.s && nd_raw.s.isSymbol(";") ) {
+					//pull in the misclassified ";"
+					ama::Node*+! nd_semicolon = nd_raw.s;
+					nd_semicolon.Delete();
+					nd_raw.Insert(ama::POS_BACK, nd_semicolon);
+				}
 				ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
 				if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 					nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;

@@ -450,8 +450,8 @@ namespace ama {
 		}
 		//DumpASTAsJSON(nd_root);
 		//nd_root.Validate();
+		ama::NodifySemicolonAndParenthesis(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
-		ama::SanitizeCommentPlacement(nd_root);
 		return nd_root;
 	}
 	private JSValueConst! JSParseCurrentFile(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic, JSValue*+! func_data) {
