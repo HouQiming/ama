@@ -213,7 +213,7 @@ namespace ama {
 					}
 					passed_newline = 0;
 				}
-				if( !ndi.hasBrackets() && ndi.comments_after.indexOf('\n') >= 0 ) {
+				if( ndi.comments_after.indexOf('\n') >= 0 ) {
 					passed_newline = 1;
 				}
 			}

@@ -27,7 +27,7 @@ namespace ama {
 		ama::Node*+! ndi_last = NULL;
 		for(ama::Node*+! ndi : nd) {
 			dfsPullComment(ndi);
-			if( nd.node_class == ama::N_SCOPE && ndi_last && !ndi_last.hasBrackets() && ndi.comments_before.length > 0 && ndi.comments_before[0] != '\n' ) {
+			if( nd.node_class == ama::N_SCOPE && ndi_last && ndi.comments_before.length > 0 && ndi.comments_before[0] != '\n' ) {
 				//associate the first "line" of multi-line comments with the previous statement
 				intptr_t! p_newline = ndi.comments_before.indexOf('\n');
 				if( p_newline >= 0L ) {
@@ -63,20 +63,6 @@ namespace ama {
 			ama::Node*+! nd_b = nd.c.s;
 			if( nd_b.comments_before.startsWith(' ') ) {
 				nd_b.comments_before = new char[|]!(nd_b.comments_before.subarray(1));
-			}
-		}
-		return nd_root;
-	}
-	ama::Node*+! RemoveRedundantSemicolon(ama::Node*+! nd_root) {
-		for(ama::Node*+! nd : nd_root.FindAll(ama::N_SYMBOL, ";")) {
-			if( nd.p.node_class == ama::N_SCOPE ) {
-				if( nd.s ) {
-					nd.s.comments_before = new char[|]!(nd.comments_before + nd.comments_after + nd.s.comments_before);
-				} else {
-					nd.comments_after = new char[|]!(nd.comments_before + nd.comments_after + nd.comments_after);
-				}
-				nd.Delete();
-				nd.FreeASTStorage();
 			}
 		}
 		return nd_root;

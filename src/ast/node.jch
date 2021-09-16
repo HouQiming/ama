@@ -148,7 +148,6 @@ namespace ama {
 		ama::Node*+[+]! FindAllBefore(ama::Node*! this, ama::Node*! nd_before, int32_t! boundary, int! node_class, char[|]! data);
 		int! isRawNode(ama::Node*! this, char! ch_open, char! ch_close);
 		char[|]! GetName(ama::Node*! this);
-		int! hasBrackets(ama::Node*! this);
 		/////////////
 		//src/codegen/gen.jc
 		char[+]! toSource(ama::Node*! this);

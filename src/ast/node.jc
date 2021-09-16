@@ -131,9 +131,7 @@ namespace ama {
 			if( nd_child ) {
 				ret.indent_level = nd_child.indent_level;
 				std::swap(ret.comments_before, nd_child.comments_before);
-				if( !ret.LastChild().hasBrackets() ) {
-					std::swap(ret.comments_after, ret.LastChild().comments_after);
-				}
+				std::swap(ret.comments_after, ret.LastChild().comments_after);
 			}
 			return ret;
 		} else {
@@ -629,15 +627,6 @@ int! ama::Node::isRawNode(ama::Node*! this, char! ch_open, char! ch_close) {
 
 int! ama::Node::isSymbol(ama::Node*! this, char[...]! name) {
 	return this.node_class == ama::N_SYMBOL && this.data == name;
-}
-
-int! ama::Node::hasBrackets(ama::Node*! this) {
-	return (
-		this.node_class == ama::N_RAW || this.node_class == ama::N_SCOPE || 
-		this.node_class == ama::N_CALL || this.node_class == ama::N_CALL_TEMPLATE || 
-		this.node_class == ama::N_CALL_CUDA_KERNEL || this.node_class == ama::N_PARAMETER_LIST || 
-		this.node_class == ama::N_FILE
-	);
 }
 
 int! ama::Node::isMethodCall(ama::Node*! this, char[|]! name) {

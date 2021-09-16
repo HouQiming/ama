@@ -450,7 +450,6 @@ namespace ama {
 		}
 		//DumpASTAsJSON(nd_root);
 		//nd_root.Validate();
-		ama::RemoveRedundantSemicolon(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		return nd_root;

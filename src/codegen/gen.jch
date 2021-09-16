@@ -4,7 +4,7 @@
 namespace ama {
 	`class CodeGenerator;`
 	`typedef int(*FGeneratorHook)(ama::CodeGenerator*,ama::Node*);`
-	`typedef int(*FGeneratorHookComment)(ama::CodeGenerator*,const char*,intptr_t,intptr_t);`
+	`typedef int(*FGeneratorHookComment)(ama::CodeGenerator*,const char*,intptr_t,int,intptr_t);`
 	class CodeGenerator {
 		//ignore offsets for now
 		//COULDDO: provide a separate service to convert some (unicode) tag into cite-like comments
@@ -19,11 +19,11 @@ namespace ama {
 		int32_t! tab_width = 4;
 		int8_t! in_new_line = 1;
 		void! GenerateDefault(ama::CodeGenerator*+! this, ama::Node*+! nd);
-		void! GenerateComment(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment);
+		void! GenerateComment(ama::CodeGenerator*+! this, int! is_after, intptr_t! expected_indent_level, char[...]! comment);
 		void! Generate(ama::CodeGenerator*+! this, ama::Node*+! nd);
 		void! GenerateSpaceBefore(ama::CodeGenerator*+! this, ama::Node*+! nd_next);
 		void! GenerateIndent(ama::CodeGenerator*+! this, intptr_t! expected_indent_level);
-		void! GenerateCommentDefault(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment);
+		void! GenerateCommentDefault(ama::CodeGenerator*+! this, int! is_after, intptr_t! expected_indent_level, char[...]! comment);
 	};
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options);
 };

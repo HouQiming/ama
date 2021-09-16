@@ -45,8 +45,10 @@ namespace ama {
 					this->Generate(ndi);
 				}
 				this.in_new_line = 0;
-				this.GenerateComment(this.scope_indent_level, nd.comments_after);
 				this.scope_indent_level = bk_indent;
+				if( this.in_new_line ) {
+					this.GenerateIndent(this.scope_indent_level);
+				}
 				char! ch_closing = char(nd.flags >> 8 & 0xff);
 				if( ch_closing ) {
 					this->code.push_back(ch_closing);
@@ -64,7 +66,9 @@ namespace ama {
 					//	this->code.push_back(';');
 					//}
 				}
-				this.GenerateComment(this.scope_indent_level, nd.comments_after);
+				if( this.in_new_line ) {
+					this.GenerateIndent(this.scope_indent_level);
+				}
 				this.scope_indent_level = bk_indent;
 				this->code.push_back('}');
 				break;
@@ -130,7 +134,9 @@ namespace ama {
 						}
 					}
 				}
-				this.GenerateComment(this.scope_indent_level, nd.comments_after);
+				if( this.in_new_line ) {
+					this.GenerateIndent(this.scope_indent_level);
+				}
 				this.scope_indent_level = bk_indent;
 				if( nd.node_class == ama::N_CALL_CUDA_KERNEL ) {
 					this->code.push('>>>');
@@ -154,7 +160,9 @@ namespace ama {
 						this.GenerateSpaceBefore(ndi.s);
 					}
 				}
-				this.GenerateComment(this.scope_indent_level, nd.comments_after);
+				if( this.in_new_line ) {
+					this.GenerateIndent(this.scope_indent_level);
+				}
 				this.scope_indent_level = bk_indent;
 				this->code.push_back(')');
 				break;
@@ -307,11 +315,11 @@ namespace ama {
 		}
 		this.p_last_indent = this.code.lastIndexOf('\n') + 1L;
 	}
-	void! ama::CodeGenerator::GenerateCommentDefault(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {
-		if( comment.indexOf('\n') < 0 ) {
-			this.code.push(comment);
-			return;
-		}
+	void! ama::CodeGenerator::GenerateCommentDefault(ama::CodeGenerator*+! this, int! is_after, intptr_t! expected_indent_level, char[...]! comment) {
+		//if( comment.indexOf('\n') < 0 ) {
+		//	this.code.push(comment);
+		//	return;
+		//}
 		for(char&! ch : comment) {
 			if( ch == '\n' ) {
 				this.in_new_line = int8_t(1);
@@ -330,15 +338,15 @@ namespace ama {
 			}
 			this.code.push(ch);
 		}
-		if( this.in_new_line ) {
+		if( this.in_new_line && !is_after ) {
 			this.GenerateIndent(expected_indent_level);
 		}
 	}
-	void! ama::CodeGenerator::GenerateComment(ama::CodeGenerator*+! this, intptr_t! expected_indent_level, char[...]! comment) {
+	void! ama::CodeGenerator::GenerateComment(ama::CodeGenerator*+! this, int! is_after, intptr_t! expected_indent_level, char[...]! comment) {
 		if( this.hook_comment != NULL ) {
-			if( this.hook_comment(this, comment.data(), comment.length, expected_indent_level) != 0 ) { return; }
+			if( this.hook_comment(this, comment.data(), comment.length, is_after, expected_indent_level) != 0 ) { return; }
 		}
-		this.GenerateCommentDefault(expected_indent_level, comment);
+		this.GenerateCommentDefault(is_after, expected_indent_level, comment);
 	}
 	void! ama::CodeGenerator::Generate(ama::CodeGenerator*+! this, ama::Node*+! nd) {
 		if( !nd ) {
@@ -349,21 +357,19 @@ namespace ama {
 		this.nd_current = nd;
 		intptr_t! expected_indent_level = this.scope_indent_level + intptr_t(nd.indent_level);
 		//expected_indent_level should be normally redundant
-		this.GenerateComment(expected_indent_level, nd.comments_before);
+		this.GenerateComment(0, expected_indent_level, nd.comments_before);
 		if( this.hook != NULL && this.hook(this, nd) != 0 ) {
 			//the hook generated it
 		} else {
 			this.GenerateDefault(nd);
 		}
-		if( nd.p && (nd.p.node_class == ama::N_SCOPE || nd.p.node_class == ama::N_FILE) && 
-		nd.NeedTrailingSemicolon() ) {
-			this->code.push_back(';');
-		}
+		//if( nd.p && (nd.p.node_class == ama::N_SCOPE || nd.p.node_class == ama::N_FILE) && 
+		//nd.NeedTrailingSemicolon() ) {
+		//	this->code.push_back(';');
+		//}
 		//the "normal" content of a node should not contain newline
-		if( !nd.hasBrackets() ) {
-			this.in_new_line = 0;
-			this.GenerateComment(expected_indent_level, nd.comments_after);
-		}
+		this.in_new_line = 0;
+		this.GenerateComment(1, expected_indent_level, nd.comments_after);
 		this.nd_current = bk;
 	}
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options) {

@@ -250,7 +250,13 @@ namespace ama {
 				case CHAR_TYPE_CLOSING: {
 					if( state_stack.length > 1L ) {
 						ama::Node*+! nd = state_stack.back().nd_parent;
-						nd.comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+						if( (comment_end - comment_begin) > 0 ) {
+							if( !nd.c ) {
+								nd.Insert(ama::POS_FRONT, ama::nAir());
+							}
+							ama::Node*+! nd_last = nd.LastChild();
+							nd_last.comments_after = new char[|]!(nd_last.comments_after + FormatComment(comment_indent_level, tab_width, comment_begin, comment_end));
+						}
 						nd.flags |= uint32_t(ch) << 8;
 						state_stack.pop_back();
 						feed += 1;
