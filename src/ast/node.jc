@@ -175,6 +175,7 @@ private ama::Node*+! dfsClone(std::unordered_map<ama::Node*, ama::Node*+>&+! map
 	mapping[nd] = ret;
 	ret.node_class = nd.node_class;
 	ret.flags = nd.flags;
+	ret.indent_level = nd.indent_level;
 	//ret.tmp_flags |= nd.tmp_flags & (SYSF_OPT_OUT_NEWLINE_BEFORE | SYSF_NONJC_UNTOUCHED | SYSF_MULTIVAR_DECL);
 	ret.data = nd.data;
 	//ret.opaque = nd.opaque;
