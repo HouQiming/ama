@@ -758,11 +758,15 @@ int! ama::Node::NeedTrailingSemicolon(ama::Node*! this) {
 		default: {
 			return 1;
 		}
-		case ama::N_RAW: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: case ama::N_FUNCTION: case ama::N_CLASS: {
+		case ama::N_RAW: {
+			if( this.isRawNode('{', '}') ) { return 0; }
+			if( this.flags & 0xffff ) { return 1; }
+		}
+		case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: case ama::N_FUNCTION: case ama::N_CLASS: {
 			if( this.c ) { return this.LastChild().NeedTrailingSemicolon(); }
 			return 1;
 		}
-		case ama::N_DEPENDENCY: case ama::N_FILE: {
+		case ama::N_DEPENDENCY: case ama::N_FILE: case ama::N_SCOPE: {
 			return 0;
 		}
 		case ama::N_SYMBOL: {

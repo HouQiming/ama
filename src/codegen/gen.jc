@@ -60,9 +60,6 @@ namespace ama {
 				this.in_new_line = 0;
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					this->Generate(ndi);
-					if( ndi.NeedTrailingSemicolon() ) {
-						this->code.push_back(';');
-					}
 					//if( ndi.isExpr() && !(ndi.s && ndi.s.node_class == ama::N_SYMBOL && ndi.s.data == ";") ) {
 					//	this->code.push_back(';');
 					//}
@@ -357,6 +354,10 @@ namespace ama {
 			//the hook generated it
 		} else {
 			this.GenerateDefault(nd);
+		}
+		if( nd.p && (nd.p.node_class == ama::N_SCOPE || nd.p.node_class == ama::N_FILE) && 
+		nd.NeedTrailingSemicolon() ) {
+			this->code.push_back(';');
 		}
 		//the "normal" content of a node should not contain newline
 		if( !nd.hasBrackets() ) {

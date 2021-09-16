@@ -8,19 +8,19 @@ namespace ama {
 	ama::Node*+! CleanupDummyRaws(ama::Node*+! nd_root) {
 		//need cleanup inside nodeofs
 		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
-			if( (nd_raw.flags & 0xffff) != 0 || !nd_raw.p ) { continue; }
+			if( (nd_raw.flags & 0xffff) != 0 || nd_raw == nd_root ) { continue; }
 			if( !nd_raw.c && nd_raw.p && nd_raw.p.node_class == ama::N_RAW ) {
 				nd_raw.Delete();
 			} else if( nd_raw.c && !nd_raw.c.s ) {
 				nd_raw.ReplaceWith(nd_raw.c);
 			}
 		}
-		while( nd_root.c && !nd_root.c.s && nd_root.c.node_class == ama::N_RAW && !(nd_root.c.flags & 0xffff) ) {
-			nd_root = nd_root.c;
-			nd_root.p.c = NULL;
-			nd_root.p.FreeASTStorage();
-			nd_root.p = NULL;
-		}
+		//while( nd_root.c && !nd_root.c.s && nd_root.c.node_class == ama::N_RAW && !(nd_root.c.flags & 0xffff) ) {
+		//	nd_root = nd_root.c;
+		//	nd_root.p.c = NULL;
+		//	nd_root.p.FreeASTStorage();
+		//	nd_root.p = NULL;
+		//}
 		return nd_root;
 	}
 	private void! dfsPullComment(ama::Node*+! nd) {
@@ -70,6 +70,11 @@ namespace ama {
 	ama::Node*+! RemoveRedundantSemicolon(ama::Node*+! nd_root) {
 		for(ama::Node*+! nd : nd_root.FindAll(ama::N_SYMBOL, ";")) {
 			if( nd.p.node_class == ama::N_SCOPE ) {
+				if( nd.s ) {
+					nd.s.comments_before = new char[|]!(nd.comments_before + nd.comments_after + nd.s.comments_before);
+				} else {
+					nd.comments_after = new char[|]!(nd.comments_before + nd.comments_after + nd.comments_after);
+				}
 				nd.Delete();
 				nd.FreeASTStorage();
 			}
