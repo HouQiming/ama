@@ -127,7 +127,6 @@ namespace ama {
 		/////////////
 		ama::TCloneResult! CloneEx(ama::Node*! this);
 		ama::Node*+! Clone(ama::Node*! this);
-		ama::Node*+! CloneList(ama::Node*! this);
 		auto ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new);
 		ama::Node*+! ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new);
 		auto Delete(ama::Node*+! this);

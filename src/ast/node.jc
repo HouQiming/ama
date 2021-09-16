@@ -166,7 +166,7 @@ namespace ama {
 
 ///////////////////
 //basic tree operations
-private ama::Node*+! dfsClone(std::unordered_map<ama::Node*, ama::Node*+>&+! mapping, ama::Node*! nd, int! is_root) {
+private ama::Node*+! dfsClone(std::unordered_map<ama::Node*, ama::Node*+>&+! mapping, ama::Node*! nd) {
 	ama::Node*+! ret = mapping[nd];
 	if( ret ) {
 		return ret;
@@ -187,20 +187,21 @@ private ama::Node*+! dfsClone(std::unordered_map<ama::Node*, ama::Node*+>&+! map
 	//ret.type = nd.type;
 	//ret.def = nd.def;
 	if( nd.c ) {
-		ret.c = dfsClone(mapping, nd.c, 0);
-		for(ama::Node*+! ndi = ret.c; ndi; ndi = ndi.s) {
-			ndi.p = ret;
+		ama::Node*+*+! link = &ret.c;
+		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+			ama::Node*+! ndi_clone = dfsClone(mapping, ndi);
+			ndi_clone.p = ret;
+			*link = ndi_clone;
+			link = &ndi_clone.s;
 		}
-	}
-	if( nd.s != NULL && !is_root ) {
-		ret.s = dfsClone(mapping, nd.s, 0);
+		*link = NULL;
 	}
 	return ret;
 }
 
 ama::TCloneResult! ama::Node::CloneEx(ama::Node*! this) {
 	std::unordered_map<ama::Node*, ama::Node*+>! mapping = new std::unordered_map<ama::Node*, ama::Node*+>!();
-	ama::Node*+! nd = dfsClone(mapping, this, 1);
+	ama::Node*+! nd = dfsClone(mapping, this);
 	return new ama::TCloneResult!{
 		mapping: <<mapping,
 		nd: nd
@@ -212,25 +213,9 @@ ama::Node*+! ama::Node::Clone(ama::Node*! this) {
 		return NULL;
 	}
 	std::unordered_map<ama::Node*, ama::Node*+>! mapping = new std::unordered_map<ama::Node*, ama::Node*+>!();
-	return dfsClone(mapping, this, 1);
+	return dfsClone(mapping, this);
 }
 
-ama::Node*+! ama::Node::CloneList(ama::Node*! this) {
-	if( !intptr_t(this) ) {
-		return NULL;
-	}
-	std::unordered_map<ama::Node*, ama::Node*+>! mapping = new std::unordered_map<ama::Node*, ama::Node*+>!();
-	return dfsClone(mapping, this, 0);
-}
-
-//Node*+! Node::CloneCB(Node*! this,Node*+!(*)(Node*+,std::unordered_map<Node*, Node*+>&+!) callback){
-//	std::unordered_map<Node*, Node*+>! mapping = new (std::unordered_map<Node*, Node*+>!)();
-//	nd=NULL;
-//	if( intptr_t(this) ) {
-//		nd=dfsClone(mapping, this, 1);
-//	}
-//	return callback(nd,mapping)
-//}
 auto ama::Node::ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new) {
 	if( !this->p ) {
 		return;
