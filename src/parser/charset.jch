@@ -37,6 +37,7 @@ namespace ama {
 				for(let j = 0; j < 8; j++) {
 					ok[j] = ~ok[j];
 				}
+				ok[0] &= ~1;
 			}
 			return ok;
 		}
