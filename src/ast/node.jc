@@ -741,7 +741,7 @@ int! ama::Node::NeedTrailingSemicolon(ama::Node*! this) {
 			if( this.c ) { return this.LastChild().NeedTrailingSemicolon(); }
 			return 1;
 		}
-		case ama::N_DEPENDENCY: case ama::N_FILE: case ama::N_SCOPE: {
+		case ama::N_DEPENDENCY: case ama::N_FILE: case ama::N_SCOPE: case ama::N_SEMICOLON: {
 			return 0;
 		}
 		case ama::N_SYMBOL: {

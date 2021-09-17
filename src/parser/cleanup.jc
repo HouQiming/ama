@@ -68,7 +68,7 @@ namespace ama {
 		return nd_root;
 	}
 	private void! dfsAutoFormat(ama::Node*+! nd) {
-		for(ama::Node*+! ndi : nd) {
+		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 			dfsAutoFormat(ndi);
 			if( nd.node_class == ama::N_SCOPE ) {
 				if( !ndi.indent_level ) {
@@ -76,6 +76,11 @@ namespace ama {
 				}
 				if( !ndi.comments_before.length ) {
 					ndi.comments_before = ndi == nd.c ? "\n\t" : "\n";
+				}
+				if( ndi.NeedTrailingSemicolon() ) {
+					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+					ndi.ReplaceWith(nd_tmp);
+					ndi = nd_tmp.ReplaceWith(ama::CreateNode(ama::N_SEMICOLON, ndi));
 				}
 			} else if( nd.node_class == ama::N_RAW && ndi != nd.c ) {
 				if( !ndi.comments_before.length ) {

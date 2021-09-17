@@ -38,6 +38,7 @@ int! main(int! argc, char**! argv) {
 	///////////
 	ama::InitScriptEnv();
 	char*! extra_script = NULL;
+	int! has_file = 0;
 	for(int! i = 1; i < argc; i += 1) {
 		if( strcmp(argv[i], "-s") == 0 && (i + 1) < argc ) {
 			extra_script = argv[i + 1];
@@ -53,7 +54,18 @@ int! main(int! argc, char**! argv) {
 		if( extra_script ) {
 			script_i = <<JC::string_concat(extra_script, ";\n", script_i);
 		}
+		has_file = 1;
 		if( !ama::RunScriptOnFile(script_i, argv[i], file_data.c_str()) ) {
+			return 1;
+		}
+	}
+	if( !has_file ) {
+		if( extra_script ) {
+			if( !ama::RunScriptOnFile(extra_script, "<command line>", extra_script) ) {
+				return 1;
+			}
+		} else {
+			console.log('usage: ama [-s script] <files>');
 			return 1;
 		}
 	}

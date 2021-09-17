@@ -1,8 +1,11 @@
 // //// JC version: 3
+#include <jc_platform.h>
 #include <json.jch>
 #include <path.jch>
 #include <fs.jch>
 #include <console.jch>
+#include <env.jch>
+#include <unicode.jch>
 #include <unicode/case.jch>
 #include "./quickjs/src/quickjs.h"
 #include "../ast/node.jch"
@@ -333,10 +336,7 @@ namespace ama {
 			return '(function(exports,module,__filename,__dirname){let require=__require.bind(null,__filename);' + s_code + '\n})\n';
 		}
 	}
-	private JSValueConst! JSRequire(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
-		//custom CommonJS module loader
-		const char[|]! fn_base = ama::UnwrapString(argv[0L]);
-		const char[|]! fn_required = ama::UnwrapString(argv[1L]);
+	private char[+]! ResolveJSRequire(char[...]! fn_base, char[...]! fn_required) {
 		char[+]! dir_base = path::dirname(path::resolve(fn_base));
 		char[+]! fn_final = path::resolve(dir_base, fn_required);
 		char[|]! fn_commonjs = NULL;
@@ -345,7 +345,7 @@ namespace ama {
 			//COULDDO: internal asset strings - faster and simpler than zip
 			fn_commonjs = ama::FindCommonJSModuleByPath(path.join(ama::std_module_dir, fn_required));
 			if( fn_commonjs == NULL ) {
-				fn_commonjs = ama::FindCommonJSModule(fn_required, new char[|]!(dir_base));
+				fn_commonjs = ama::FindCommonJSModule(new char[|]!(fn_required), new char[|]!(dir_base));
 			}
 			if( fn_commonjs != NULL ) {
 				fn_final = new char[+]!(fn_commonjs);
@@ -356,6 +356,21 @@ namespace ama {
 				fn_final = new char[+]!(fn_commonjs);
 			}
 		}
+		return <<fn_final;
+	}
+	private JSValueConst! JSResolveJSRequire(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 2 ) {
+			return JS_ThrowReferenceError(ctx, "need base name and required name");
+		}
+		const char[|]! fn_base = ama::UnwrapString(argv[0L]);
+		const char[|]! fn_required = ama::UnwrapString(argv[1L]);
+		return ama::WrapString(ResolveJSRequire(fn_base, fn_required));
+	}
+	private JSValueConst! JSRequire(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		//custom CommonJS module loader
+		const char[|]! fn_base = ama::UnwrapString(argv[0L]);
+		const char[|]! fn_required = ama::UnwrapString(argv[1L]);
+		char[+]! fn_final = ResolveJSRequire(fn_base, fn_required);
 		/////////////
 		JSValueConst! obj_module = JS_GetPropertyStr(ctx, g_require_cache, fn_final.str());
 		if( JS_IsUndefined(obj_module) ) {
@@ -403,6 +418,14 @@ namespace ama {
 			//JS_FreeValue(ctx,obj_module2)
 		}
 		return JS_GetPropertyStr(ctx, obj_module, 'exports');
+	}
+	private JSValueConst! JSGetEnv(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a name");
+		}
+		char[+]^+! ret = ENV::get(ama::UnwrapString(argv[0]));
+		if( !ret ) { return JS_UNDEFINED; }
+		return ama::WrapString(ret);
 	}
 	void! DumpASTAsJSON(ama::Node*+! nd) {
 		LazyInitScriptEnv();
@@ -541,15 +564,18 @@ namespace ama {
 		return ama::WrapNode(nd);
 	}
 	private JSValueConst! JSCreateNodeRaw(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
-		mutable ama::Node*+! c = (ama::Node*+)(NULL);
-		for(mutable int! i = argc - 1; i >= 1; --i) {
-			const ama::Node*+! ndi = ama::UnwrapNode(argv[intptr_t(i)]);
-			if( !ndi ) {
-				return JS_ThrowTypeError(ctx, 'child %d is not a node', i);
-			}
-			c = ama::cons(ndi, c);
+		//mutable ama::Node*+! c = (ama::Node*+)(NULL);
+		//for(mutable int! i = argc - 1; i >= 1; --i) {
+		//	const ama::Node*+! ndi = ama::UnwrapNode(argv[intptr_t(i)]);
+		//	if( !ndi ) {
+		//		return JS_ThrowTypeError(ctx, 'child %d is not a node', i);
+		//	}
+		//	c = ama::cons(ndi, c);
+		//}
+		if( argc < 2 ) {
+			return JS_ThrowReferenceError(ctx, "need a class and a node");
 		}
-		return ama::WrapNode(ama::CreateNode(ama::UnwrapInt32(argv[0], ama::N_NONE), c));
+		return ama::WrapNode(ama::CreateNode(ama::UnwrapInt32(argv[0], ama::N_NONE), ama::UnwrapNode(argv[1])));
 	}
 	//COULDDO: move to JS, base on process.stdfoo.write instead
 	private JSValueConst! JSConsoleWrite(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic) {
@@ -629,13 +655,67 @@ namespace ama {
 	}
 	private JSValueConst! JSReadFileSync(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		if( argc < 1 ) {
-			return JS_ThrowReferenceError(ctx, "need a file name");
+			return JS_ThrowReferenceError(ctx, "need a path");
 		}
 		char[+]^+! data = fs.readFileSync(ama::UnwrapString(argv[0]));
 		if( !data ) {
 			return JS_NULL;
 		}
 		return JS_NewArrayBufferCopy(ctx, (uint8_t*+)(data.data()), data.size());
+	}
+	private JSValueConst! JSExistsSync(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a path");
+		}
+		return JS_NewBool(ctx, fs.existsSync(ama::UnwrapString(argv[0])));
+	}
+	private JSValueConst! JSPathNormalize(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a path");
+		}
+		return ama::WrapString(path.normalize(ama::UnwrapString(argv[0])));
+	}
+	private JSValueConst! JSPathToAbsolute(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a path");
+		}
+		return ama::WrapString(path.toAbsolute(ama::UnwrapString(argv[0])));
+	}
+	private JSValueConst! JSBufferToString(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		size_t! size = 0;
+		const uint8_t*! ptr = JS_GetArrayBuffer(ctx, &size, this_val);
+		if( !ptr ) {
+			return JS_ThrowReferenceError(ctx, 'the buffer has to be an ArrayBuffer');
+		}
+		if( argc > 0 && !JS_IsUndefined(argv[0]) ) {
+			char*! encoding = JS_ToCString(ctx, argv[0]);
+			if( strcmp(encoding, 'latin1') == 0 || strcmp(encoding, 'binary') == 0 || strcmp(encoding, 'ascii') == 0 ) {
+				char[+]! ret = new char[+]!();
+				for(size_t! i = 0; i < size; i++) {
+					unicode::AppendUTF8Char(ret, int(uint32_t(ptr[i])));
+				}
+				return JS_NewStringLen(ctx, (char*)(ret.data()), ret.size());
+			} else if( strcmp(encoding, 'hex') == 0 ) {
+				const char*! hex = "0123456789abcdef";
+				char[+]! ret = new char[+]!();
+				for(size_t! i = 0; i < size; i++) {
+					ret.push(hex[int(uint32_t(ptr[i])) >> 4], hex[int(uint32_t(ptr[i])) & 15]);
+				}
+				return JS_NewStringLen(ctx, (char*)(ret.data()), ret.size());
+			} else if( strcmp(encoding, 'utf8') != 0 && strcmp(encoding, 'utf-8') != 0 ) {
+				return JS_ThrowReferenceError(ctx, 'unsupported encoding %s', encoding);
+			}
+		}
+		return JS_NewStringLen(ctx, (char*)(ptr), size);
+	}
+	private JSValueConst! JSGetPlaceHolder(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		return ama::WrapNode(ama::GetPlaceHolder());
+	}
+	private JSValueConst! JSPathParse(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a path");
+		}
+		return ama::WrapString(JSON.stringify(path.parse(ama::UnwrapString(argv[0]))));
 	}
 	void! InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
@@ -656,6 +736,13 @@ namespace ama {
 		JSValue! js_node_builder_names_array = JS_NewArray(ama::jsctx);
 		JS_SetPropertyStr(ama::jsctx, global, '__node_builder_names', js_node_builder_names_array);
 		GenerateNodeConstantCode();
+		#if defined(_WIN32)
+			JS_SetPropertyStr(ama::jsctx, global, '__platform', ama::WrapString("win32"));
+		#elif defined(__APPLE__)
+			JS_SetPropertyStr(ama::jsctx, global, '__platform', ama::WrapString("darwin"));
+		#else
+			JS_SetPropertyStr(ama::jsctx, global, '__platform', ama::WrapString("linux"));
+		#endif
 		JS_SetPropertyStr(
 			ama::jsctx, global, 'CreateNode', JS_NewCFunction(
 				ama::jsctx, JSCreateNodeRaw,
@@ -669,9 +756,21 @@ namespace ama {
 			)
 		);
 		JS_SetPropertyStr(
+			ama::jsctx, global, '__ResolveJSRequire', JS_NewCFunction(
+				ama::jsctx, JSResolveJSRequire,
+				'ResolveJSRequire', 2
+			)
+		);
+		JS_SetPropertyStr(
 			ama::jsctx, global, '__require', JS_NewCFunction(
 				ama::jsctx, JSRequire,
 				'require', 2
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__getenv', JS_NewCFunction(
+				ama::jsctx, JSGetEnv,
+				'getenv', 1
 			)
 		);
 		JS_SetPropertyStr(
@@ -680,7 +779,43 @@ namespace ama {
 				'readFileSync', 1
 			)
 		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__existsSync', JS_NewCFunction(
+				ama::jsctx, JSExistsSync,
+				'existsSync', 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__path_normalize', JS_NewCFunction(
+				ama::jsctx, JSPathNormalize,
+				'normalize', 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__path_toAbsolute', JS_NewCFunction(
+				ama::jsctx, JSPathToAbsolute,
+				'toAbsolute', 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__buffer_toString', JS_NewCFunction(
+				ama::jsctx, JSBufferToString,
+				'toString', 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__path_parse', JS_NewCFunction(
+				ama::jsctx, JSPathParse,
+				'parse', 1
+			)
+		);
 		JS_SetPropertyStr(ama::jsctx, global, 'Node', ama::g_node_proto);
+		JS_SetPropertyStr(
+			ama::jsctx, ama::g_node_proto, 'GetPlaceHolder', JS_NewCFunction(
+				ama::jsctx, JSGetPlaceHolder,
+				'GetPlaceHolder', 0
+			)
+		);
 		for(int! i = 0; i < g_filters.length; i += 1) {
 			JS_SetPropertyStr(
 				ama::jsctx, ama::g_node_proto, g_filters[i].name, JS_NewCFunctionMagic(
