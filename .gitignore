@@ -8,3 +8,5 @@ build/
 *.js.c
 *.js.h
 a.out
+modules/*.js
+!modules/jcs.js
