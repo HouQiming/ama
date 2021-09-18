@@ -1,0 +1,29 @@
+/*
+@ama
+let nd_root=ParseCurrentFile();
+nd_root.Validate();
+console.log(JSON.stringify(nd_root,null,2))
+console.log(nd_root.toSource())
+*/
+
+template<>
+class TestClass<int>:Base{
+	union TestUnion extends Base{
+		enum foo{
+			bar=3;
+		}
+	}
+	int fwdMethod(void)const;
+};
+
+int foo(){
+	if(name==='if'){
+		if_stk.push(ndi);
+	}else{
+		//do nothing
+	}
+	return cmake.CreateTarget(nd_root,name,{
+		format:format,
+		files:depends.ListAllDependency(nd_src_root,false)
+	})
+}

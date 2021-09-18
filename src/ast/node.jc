@@ -635,7 +635,7 @@ ama::Node*+! ama::Node::InsertCommentBefore(ama::Node*+! this, char[...]! s) {
 ama::Node*! ama::Node::Save(ama::Node*! this, char[|]! change_ext) {
 	ama::Node*! nd_root = this;
 	char[|]! fn = NULL;
-	if( nd_root.node_class == ama::N_RAW && !nd_root.p ) {
+	if( nd_root.node_class == ama::N_FILE && !nd_root.p ) {
 		fn = nd_root.data;
 		if( change_ext != NULL ) {
 			size_t! p_dot = fn.lastIndexOf('.');

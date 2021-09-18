@@ -8,7 +8,7 @@ jcs.TranslateJCS=function(nd_root){
 	for(let nd of nd_root.FindAll(N_SYMBOL,'===')){
 		nd.data='==';
 	}
-	nd_root.Save()
+	nd_root.Save(null)
 	for(let nd of nd_root.FindAll(N_SYMBOL,'!=')){
 		nd.data='!==';
 	}

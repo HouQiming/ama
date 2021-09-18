@@ -10,7 +10,12 @@
 namespace ama {
 	private const uint32_t[+]! g_identifier = ama::CharSet('0-9A-Za-z_#-');
 	void! ama::CodeGenerator::GenerateSpaceBefore(ama::CodeGenerator*+! this, ama::Node*+! nd_next) {
-		if( !nd_next.comments_before.startsWith('\n') ) {
+		if( this.auto_space && !(nd_next.comments_before.length && uint8_t(nd_next.comments_before[0]) <= uint8_t(' ')) ) {
+			this->code.push_back(' ');
+		}
+	}
+	void! ama::CodeGenerator::GenerateSpaceAfter(ama::CodeGenerator*+! this, ama::Node*+! nd_last) {
+		if( this.auto_space && !(nd_last.comments_after.length && uint8_t(nd_last.comments_after[nd_last.comments_after.length - 1]) <= uint8_t(' ')) ) {
 			this->code.push_back(' ');
 		}
 	}
@@ -44,11 +49,7 @@ namespace ama {
 					//}
 					this->Generate(ndi);
 				}
-				this.in_new_line = 0;
 				this.scope_indent_level = bk_indent;
-				if( this.in_new_line ) {
-					this.GenerateIndent(this.scope_indent_level);
-				}
 				char! ch_closing = char(nd.flags >> 8 & 0xff);
 				if( ch_closing ) {
 					this->code.push_back(ch_closing);
@@ -59,15 +60,11 @@ namespace ama {
 				this->code.push_back('{');
 				intptr_t! bk_indent = this.scope_indent_level;
 				this.scope_indent_level += nd.indent_level;
-				this.in_new_line = 0;
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					this->Generate(ndi);
 					//if( ndi.isExpr() && !(ndi.s && ndi.s.node_class == ama::N_SYMBOL && ndi.s.data == ";") ) {
 					//	this->code.push_back(';');
 					//}
-				}
-				if( this.in_new_line ) {
-					this.GenerateIndent(this.scope_indent_level);
 				}
 				this.scope_indent_level = bk_indent;
 				this->code.push_back('}');
@@ -89,8 +86,8 @@ namespace ama {
 			}
 			case ama::N_TYPED_VAR: {
 				this->Generate(nd.c);
-				if( !this.code.endsWith(' ') && !nd.c.s.comments_before.startsWith(' ') ) {
-					this.code.push_back(' ');
+				if( this.auto_space && !(nd.c.comments_after.length && uint8_t(nd.c.comments_after[nd.c.comments_after.length - 1]) <= uint8_t(' ')) ) {
+					this.GenerateSpaceBefore(nd.c.s);
 				}
 				this->Generate(nd.c.s);
 				break;
@@ -134,9 +131,6 @@ namespace ama {
 						}
 					}
 				}
-				if( this.in_new_line ) {
-					this.GenerateIndent(this.scope_indent_level);
-				}
 				this.scope_indent_level = bk_indent;
 				if( nd.node_class == ama::N_CALL_CUDA_KERNEL ) {
 					this->code.push('>>>');
@@ -160,9 +154,6 @@ namespace ama {
 						this.GenerateSpaceBefore(ndi.s);
 					}
 				}
-				if( this.in_new_line ) {
-					this.GenerateIndent(this.scope_indent_level);
-				}
 				this.scope_indent_level = bk_indent;
 				this->code.push_back(')');
 				break;
@@ -175,7 +166,8 @@ namespace ama {
 			//}
 			case ama::N_DEPENDENCY: {
 				if( (nd.flags & ama::DEP_TYPE_MASK) == ama::DEP_C_INCLUDE ) {
-					this.code.push('#include ');
+					this.code.push('#include');
+					this.GenerateSpaceBefore(nd.c);
 					if( nd.flags & ama::DEPF_C_INCLUDE_NONSTR ) {
 						this.code.push(nd.c.GetStringValue());
 					} else {
@@ -191,7 +183,8 @@ namespace ama {
 			}
 			case ama::N_BINOP: {
 				this->Generate(nd.c);
-				this.code.push(' ', nd.data);
+				this.GenerateSpaceAfter(nd.c);
+				this.code.push(nd.data);
 				this.GenerateSpaceBefore(nd.c.s);
 				this->Generate(nd.c.s);
 				break;
@@ -211,7 +204,7 @@ namespace ama {
 				if( nd.c.s.node_class == ama::N_AIR ) {
 					//do nothing
 				} else {
-					this.code.push(' ');
+					this.GenerateSpaceAfter(nd.c);
 					if( nd.data != NULL ) {
 						this.code.push(nd.data);
 					}
@@ -230,7 +223,7 @@ namespace ama {
 				//N_FUNCTION: before, paramlist, after, body
 				//N_SCOPED_STATEMENT, N_EXTENSION_CLAUSE: arg, body
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
-					if( ndi.node_class == ama::N_EXTENSION_CLAUSE ) {
+					if( ndi.node_class == ama::N_EXTENSION_CLAUSE || ndi.node_class == ama::N_SCOPE ) {
 						this.GenerateSpaceBefore(ndi);
 					}
 					this->Generate(ndi);
@@ -244,10 +237,12 @@ namespace ama {
 			}
 			case ama::N_CONDITIONAL: {
 				this->Generate(nd.c);
-				this.code.push(' ', '?');
+				this.GenerateSpaceAfter(nd.c);
+				this.code.push('?');
 				this.GenerateSpaceBefore(nd.c.s);
 				this->Generate(nd.c.s);
-				this.code.push(' ', ':');
+				this.GenerateSpaceAfter(nd.c.s);
+				this.code.push(':');
 				this.GenerateSpaceBefore(nd.c.s.s);
 				this->Generate(nd.c.s.s);
 				break;
@@ -273,9 +268,6 @@ namespace ama {
 				intptr_t! bk_indent = this.scope_indent_level;
 				this.scope_indent_level += nd.indent_level;
 				this->Generate(nd.c);
-				if( this.in_new_line ) {
-					this.GenerateIndent(this.scope_indent_level);
-				}
 				this.scope_indent_level = bk_indent;
 				this.code.push(')');
 				break;
@@ -284,7 +276,8 @@ namespace ama {
 		//case N_ITEM:
 	}
 	void! ama::CodeGenerator::GenerateIndent(ama::CodeGenerator*+! this, intptr_t! expected_indent_level) {
-		if( this.current_indent_level >= expected_indent_level ) {
+		intptr_t! current_indent_level = 0L;
+		if( current_indent_level >= expected_indent_level ) {
 			this.p_last_indent = this.code.lastIndexOf('\n') + 1L;
 			return;
 		}
@@ -293,41 +286,23 @@ namespace ama {
 		while( end_last_indent < this.code.length && (this.code[end_last_indent] == ' ' || this.code[end_last_indent] == '\t') ) {
 			end_last_indent += 1;
 		}
-		int! last_indent_level = 0;
-		while( p_last_line < end_last_indent && last_indent_level < this.current_indent_level ) {
-			char! ch = this.code[p_last_line];
-			int! bk_last_indent_level = last_indent_level;
-			if( ch == ' ' ) {
-				last_indent_level += 1;
-			} else if( ch == '\t' ) {
-				last_indent_level /= this.tab_width;
-				last_indent_level += 1;
-				last_indent_level *= this.tab_width;
-			}
-			if( last_indent_level > this.current_indent_level ) {
-				last_indent_level = bk_last_indent_level;
-				break;
-			}
-			last_indent_level += 1;
-			p_last_line += 1L;
-		}
-		while( this.current_indent_level < expected_indent_level ) {
-			if( (this.current_indent_level % this.tab_width) == 0 && (this.current_indent_level + this.tab_width) <= expected_indent_level && 
+		while( current_indent_level < expected_indent_level ) {
+			if( (current_indent_level % this.tab_width) == 0 && (current_indent_level + this.tab_width) <= expected_indent_level && 
 			!(p_last_line < end_last_indent && this.code[p_last_line] == ' ') ) {
 				if( p_last_line < end_last_indent ) {
 					assert(this.code[p_last_line] == '\t');
 					p_last_line += 1;
 				}
 				this.code.push_back('\t');
-				this.current_indent_level /= this.tab_width;
-				this.current_indent_level += 1;
-				this.current_indent_level *= this.tab_width;
+				current_indent_level /= this.tab_width;
+				current_indent_level += 1;
+				current_indent_level *= this.tab_width;
 			} else {
 				if( p_last_line < end_last_indent ) {
 					p_last_line += 1;
 				}
 				this.code.push_back(' ');
-				this.current_indent_level += 1L;
+				current_indent_level += 1L;
 			}
 		}
 		this.p_last_indent = this.code.lastIndexOf('\n') + 1L;
@@ -339,24 +314,11 @@ namespace ama {
 		//}
 		for(char&! ch : comment) {
 			if( ch == '\n' ) {
-				this.in_new_line = int8_t(1);
-				this.current_indent_level = 0L;
-			} else if( this->in_new_line ) {
-				if( ch == ' ' ) {
-					this.current_indent_level += 1L;
-				} else if( ch == '\t' ) {
-					this.current_indent_level /= this.tab_width;
-					this.current_indent_level += 1;
-					this.current_indent_level *= this.tab_width;
-				} else {
-					this.GenerateIndent(expected_indent_level);
-					this.in_new_line = int8_t(0);
-				}
+				this.code.push(ch);
+				this.GenerateIndent(expected_indent_level);
+				continue;
 			}
 			this.code.push(ch);
-		}
-		if( this.in_new_line && !is_after ) {
-			this.GenerateIndent(expected_indent_level);
 		}
 	}
 	void! ama::CodeGenerator::GenerateComment(ama::CodeGenerator*+! this, int! is_after, intptr_t! expected_indent_level, char[...]! comment) {
@@ -385,20 +347,21 @@ namespace ama {
 		//	this->code.push_back(';');
 		//}
 		//the "normal" content of a node should not contain newline
-		this.in_new_line = 0;
-		this.GenerateComment(1, expected_indent_level, nd.comments_after);
+		this.GenerateComment(1, this.scope_indent_level, nd.comments_after);
 		this.nd_current = bk;
 	}
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options) {
 		ama::CodeGenerator! ctx = new ama::CodeGenerator!();
 		ctx.tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
+		ctx.auto_space = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'auto_space'), 1);
 		ctx.Generate(nd);
 		return <<ctx.code;
 	}
 	char[+]! ama::Node::toSource(ama::Node*! this) {
-		JSValueConst! tmp_options = JS_NewObjectProto(ama::jsctx, JS_NULL);
-		char[+]! ret = GenerateCode((ama::Node*+)(this), tmp_options);
-		JS_FreeValue(ama::jsctx, tmp_options);
+		JSValueConst! default_options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
+		//JS_NewObjectProto(ama::jsctx, JS_NULL);
+		char[+]! ret = GenerateCode((ama::Node*+)(this), default_options);
+		//JS_FreeValue(ama::jsctx, default_options);
 		return <<ret;
 	}
 };
