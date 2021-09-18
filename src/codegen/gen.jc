@@ -221,7 +221,7 @@ namespace ama {
 				}
 				break;
 			}
-			case ama::N_CLASS: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: {
+			case ama::N_CLASS: case ama::N_KEYWORD_STATEMENT: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: {
 				this.code.push(nd.data);
 				//*** PASS THROUGH ***
 			}

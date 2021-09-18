@@ -737,7 +737,7 @@ int! ama::Node::NeedTrailingSemicolon(ama::Node*! this) {
 			if( this.isRawNode('{', '}') ) { return 0; }
 			if( this.flags & 0xffff ) { return 1; }
 		}
-		case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: case ama::N_FUNCTION: case ama::N_CLASS: {
+		case ama::N_KEYWORD_STATEMENT: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: case ama::N_FUNCTION: case ama::N_CLASS: {
 			if( this.c ) { return this.LastChild().NeedTrailingSemicolon(); }
 			return 1;
 		}

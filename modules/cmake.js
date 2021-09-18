@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('fs');
 const path=require('path');
+const depends=require('depends');
 let cmake=module.exports;
 
 let cmake_options={
@@ -96,17 +97,24 @@ cmake.CreateTarget=function(nd_root,name,options){
 	return nd_root.Insert(POS_BACK,ParseCode(new_target.join(''),cmake_options).Find(N_CALL,null))
 }
 
-//TODO: smart detection - also search for existing targets with the current file
-//TODO: CMakeLists.txt searching, on-demand creation, make a filter
+let nd_output_format_template=ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT,'#pragma')
 cmake.UpdateTargetWithSourceRoot=function(nd_root,nd_src_root){
 	let name=path.parse(nd_src_root.data).name;
 	let nd_target=cmake.FindTarget(nd_root,name);
 	if(nd_target){return nd_target;}
 	let format=undefined;
-	//TODO: search pragma for format - nd_src_root
-	//TODO: #pragma statement: they are important data holders... or naked string? works for JS and Python
+	for(let nd_format of nd_src_root.FindAll(N_KEYWORD_STATEMENT,'#pragma')){
+		let match=nd_format.Match(nd_output_format_template)
+		if(match){
+			format=match.format.GetStringValue();
+			break;
+		}
+	}
 	return cmake.CreateTarget(nd_root,name,{
 		format:format,
 		files:depends.ListAllDependency(nd_src_root,false)
 	})
 }
+
+//TODO: smart detection - also search for existing targets with the current file
+//TODO: CMakeLists.txt searching, on-demand creation, make a filter

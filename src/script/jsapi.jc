@@ -458,6 +458,9 @@ namespace ama {
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_scoped_statements'), 1) ) {
 			ama::ParseScopedStatements(nd_root, options);
 		}
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_keyword_statements'), 1) ) {
+			ama::ParseKeywordStatements(nd_root, options);
+		}
 		ama::ParseAssignment(nd_root, options);
 		int! has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_conditional'), 1);
 		int! has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_labels'), 1);

@@ -70,6 +70,7 @@ depends.ListAllDependency=function(nd_root, include_system_headers){
 				}
 			}
 		}
+		//TODO: #pragma add
 	}
 	return Q.map(ndi=>__path_toAbsolute(ndi.data))
 }
