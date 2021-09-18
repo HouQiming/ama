@@ -216,6 +216,9 @@ namespace ama {
 			}
 			case ama::N_CLASS: case ama::N_KEYWORD_STATEMENT: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: {
 				this.code.push(nd.data);
+				if( nd.c && !(nd.c.node_class == ama::N_EXTENSION_CLAUSE || nd.c.node_class == ama::N_SCOPE || nd.c.node_class == ama::N_AIR) ) {
+					this.GenerateSpaceBefore(nd.c);
+				}
 				//*** PASS THROUGH ***
 			}
 			case ama::N_FUNCTION: {

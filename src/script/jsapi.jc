@@ -469,7 +469,7 @@ namespace ama {
 		}
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
 			ama::ParseOperators(nd_root, options);
-			ama::StripBinaryOperatorSpaces(nd_root);
+			//ama::StripBinaryOperatorSpaces(nd_root);
 		}
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_variable_declarations'), 1) ) {
 			ama::ParseVariableDeclarations(nd_root, options);
