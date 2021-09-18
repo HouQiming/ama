@@ -453,13 +453,12 @@ namespace ama {
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root, ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_air_object'), 1));
 		ama::SanitizeCommentPlacement(nd_root);
-		ama::ParseNodeof(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
-		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_scoped_statements'), 1) ) {
-			ama::ParseScopedStatements(nd_root, options);
-		}
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_keyword_statements'), 1) ) {
 			ama::ParseKeywordStatements(nd_root, options);
+		}
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_scoped_statements'), 1) ) {
+			ama::ParseScopedStatements(nd_root, options);
 		}
 		ama::ParseAssignment(nd_root, options);
 		int! has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_conditional'), 1);
@@ -477,6 +476,7 @@ namespace ama {
 		//DumpASTAsJSON(nd_root);
 		//nd_root.Validate();
 		ama::NodifySemicolonAndParenthesis(nd_root);
+		ama::ParseNodeof(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		return nd_root;

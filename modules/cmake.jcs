@@ -97,7 +97,8 @@ cmake.CreateTarget = function(nd_root, name, options) {
 	return nd_root.Insert(POS_BACK, ParseCode(new_target.join(''), cmake_options).Find(N_CALL, null))
 }
 
-let nd_output_format_template = ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
+//let nd_output_format_template = ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
+let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format')))};
 cmake.UpdateTargetWithSourceRoot = function(nd_root, nd_src_root) {
 	let name = path.parse(nd_src_root.data).name;
 	let nd_target = cmake.FindTarget(nd_root, name);

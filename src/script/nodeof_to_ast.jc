@@ -32,25 +32,32 @@ namespace ama {
 		}
 		ret.push(ama::g_builder_names[nd.node_class], '(');
 		if( nd.data != NULL ) {
+			if( nd.node_class == ama::N_STRING ) {
+				//parse it
+				nd.GetStringValue();
+			}
 			ret.push(JSON.stringify(nd.data));
 			if( nd.c ) {
 				ret.push(', ');
 			}
 		}
-		for(ama::Node*+! @nojson ndi = nd.c; ndi; ndi = ndi.s) {
+		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 			dfsTranslate(ret, ndi);
 			if( ndi.s ) {
 				ret.push(', ');
 			}
 		}
 		ret.push(')');
-		if( nd.flags ) {
+		if( nd.flags && nd.node_class != ama::N_STRING ) {
 			ret.push('.setFlags(', JSON.stringify(nd.flags), ')');
-		} else if( nd.comments_before.length ) {
+		}
+		if( nd.comments_before.length ) {
 			ret.push('.setCommentsBefore(', JSON.stringify(nd.comments_before), ')');
-		} else if( nd.comments_after.length ) {
+		}
+		if( nd.comments_after.length ) {
 			ret.push('.setCommentsAfter(', JSON.stringify(nd.comments_after), ')');
-		} else if( nd.indent_level ) {
+		}
+		if( nd.indent_level ) {
 			ret.push('.setIndent(', JSON.stringify(nd.indent_level), ')');
 		}
 	}
