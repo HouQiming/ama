@@ -10,7 +10,7 @@ namespace ama {
 	}
 	ama::Node*+! ParsePostfix(ama::Node*+! nd_root, int! parse_air_object) {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL).reverse()) {
+		for(ama::Node*+! nd_raw : (new ama::Node*+![+] {nd_root}).concat(nd_root.FindAll(ama::N_SCOPE, NULL), nd_root.FindAll(ama::N_RAW, NULL)).reverse()) {
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+!*+! p_self = &nd_raw.c;
 			const int! LAST_PROTOTYPE_NONE = 0;
@@ -75,16 +75,30 @@ namespace ama {
 					ama::Node*+! ndi_next_next = nd_arglist.s;
 					nd_arglist.p = NULL;
 					nd_arglist.s = NULL;
+					//re-delimit everything completely
 					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 					new_children.push_back(ndi);
-					for(ama::Node*+! ndj : nd_arglist) {
-						//strip trailing ','s
-						ama::Node*+! ndj_last = ndj.LastChild();
-						if( ndj_last != NULL && ndj_last.isSymbol(",") ) {
-							ndj_last.Delete();
-							ndj_last.FreeASTStorage();
+					if( nd_arglist ) {
+						ama::Node*+[+]! comma_group = new ama::Node*+[+]!();
+						for(ama::Node*+! ndj : nd_arglist) {
+							//strip trailing ','s
+							if( ndj.isRawNode(0, 0) ) {
+								for(ama::Node*+! @nojson ndk = ndj.c; ndk; ndk = ndk.s) {
+									if( ndk.isSymbol(",") ) {
+										new_children.push_back(ama::toSingleNode(ama::InsertMany(comma_group)));
+										comma_group.clear();
+									} else {
+										comma_group.push_back(ndk);
+									}
+								}
+							} else if( ndj.isSymbol(",") ) {
+								new_children.push_back(ama::toSingleNode(ama::InsertMany(comma_group)));
+								comma_group.clear();
+							} else {
+								comma_group.push_back(ndj);
+							}
 						}
-						new_children.push_back(ndj);
+						new_children.push_back(ama::toSingleNode(ama::InsertMany(comma_group)));
 					}
 					for(int! i = 2; i < new_children.length; i += 1) {
 						if( new_children[i].comments_before.startsWith(' ') ) {

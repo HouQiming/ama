@@ -24,6 +24,7 @@ namespace ama {
 		void! GenerateIndent(ama::CodeGenerator*+! this, intptr_t! expected_indent_level);
 		void! GenerateCommentDefault(ama::CodeGenerator*+! this, int! is_after, intptr_t! expected_indent_level, char[...]! comment);
 		void! GenerateSpaceAfter(ama::CodeGenerator*+! this, ama::Node*+! nd_last);
+		void! GenerateSpaceBetween(ama::CodeGenerator*+! this, ama::Node*+! nd_last, ama::Node*+! nd_next);
 	};
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options);
 };

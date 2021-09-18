@@ -19,6 +19,11 @@ namespace ama {
 			this->code.push_back(' ');
 		}
 	}
+	void! ama::CodeGenerator::GenerateSpaceBetween(ama::CodeGenerator*+! this, ama::Node*+! nd_last, ama::Node*+! nd_next) {
+		if( this.auto_space && !(nd_next.comments_before.length && uint8_t(nd_next.comments_before[0]) <= uint8_t(' ')) ) {
+			this->GenerateSpaceAfter(nd_last);
+		}
+	}
 	void! ama::CodeGenerator::GenerateDefault(ama::CodeGenerator*+! this, ama::Node*+! nd) {
 		switch( nd.node_class ) {
 			default: {
@@ -43,11 +48,10 @@ namespace ama {
 					this.scope_indent_level += nd.indent_level;
 				}
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
-					//if( ndi.node_class != ama::N_SYMBOL && !(ndi.node_class == ama::N_RAW && (ndi.flags & 0xffff) != 0) && 
-					//this->code.length > 0 && ama::isInCharSet(g_identifier, uint8_t(this->code.back())) && !ndi.comments_before.length ) {
-					//	this->code.push(' ');
-					//}
 					this->Generate(ndi);
+					if( ndi.s && (ndi.isSymbol(",") || ndi.isSymbol(";")) ) {
+						this->GenerateSpaceBetween(ndi, ndi.s);
+					}
 				}
 				this.scope_indent_level = bk_indent;
 				char! ch_closing = char(nd.flags >> 8 & 0xff);
@@ -86,9 +90,7 @@ namespace ama {
 			}
 			case ama::N_TYPED_VAR: {
 				this->Generate(nd.c);
-				if( this.auto_space && !(nd.c.comments_after.length && uint8_t(nd.c.comments_after[nd.c.comments_after.length - 1]) <= uint8_t(' ')) ) {
-					this.GenerateSpaceBefore(nd.c.s);
-				}
+				this.GenerateSpaceBetween(nd.c, nd.c.s);
 				this->Generate(nd.c.s);
 				break;
 			}
