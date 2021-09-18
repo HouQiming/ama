@@ -89,12 +89,16 @@ private class ParserState {
 	intptr_t! indent_level;
 };
 
-private char[|]! FormatComment(intptr_t! comment_indent_level, int32_t! tab_width, char*! comment_begin, char*! comment_end) {
+//updates comment_indent_level0 to the minimum indent inside the comment
+private char[|]! FormatComment(intptr_t&+! comment_indent_level0, int32_t! tab_width, char*! comment_begin, char*! comment_end) {
+	intptr_t&+! comment_indent_level = comment_indent_level0;
 	if( !comment_indent_level || !memchr(comment_begin, '\n', comment_end - comment_begin) ) {
 		return new char[|]!(comment_begin, comment_end - comment_begin);
 	}
 	char[+]! tmp = new char[+]!();
 	tmp.reserve(comment_end - comment_begin);
+	`do_retry:`
+	int! retry = 0;
 	for(char*! s = comment_begin; s != comment_end; s++) {
 		char! ch = *s;
 		tmp.push_back(ch);
@@ -118,7 +122,16 @@ private char[|]! FormatComment(intptr_t! comment_indent_level, int32_t! tab_widt
 				tmp.push_back(' ');
 			}
 			if( s == comment_end ) { break; }
+			if( current_indent_level < comment_indent_level ) {
+				comment_indent_level = current_indent_level;
+				retry = 1;
+			}
 		}
+	}
+	if( retry ) {
+		comment_indent_level0 = comment_indent_level;
+		tmp.clear();
+		`goto do_retry;`
 	}
 	//size_t! n = tmp.length;
 	//while( n > 0L && (tmp[n - 1] == ' ' || tmp[n - 1] == '\t') ) {
@@ -218,8 +231,8 @@ namespace ama {
 						}
 					}
 					nd = ama::CreateNode(ama::N_SYMBOL, NULL);
-					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.data = new char[|]!(feed, lg);
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd.s;
@@ -231,8 +244,8 @@ namespace ama {
 				}
 				case CHAR_TYPE_OPENING: {
 					ama::Node*+! nd = ama::CreateNode(ama::N_RAW, NULL);
-					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.flags = uint32_t(ch);
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd.s;
@@ -253,13 +266,14 @@ namespace ama {
 					if( state_stack.length > 1L ) {
 						ama::Node*+! nd = state_stack.back().nd_parent;
 						if( (comment_end - comment_begin) > 0 ) {
+							char[|]! trailing_comment = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 							if( !nd.c ) {
 								nd.Insert(ama::POS_FRONT, ama::nAir().setIndent(
 									ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level)
 								));
 							}
 							ama::Node*+! nd_last = nd.LastChild();
-							nd_last.comments_after = new char[|]!(nd_last.comments_after + FormatComment(comment_indent_level, tab_width, comment_begin, comment_end));
+							nd_last.comments_after = new char[|]!(nd_last.comments_after + trailing_comment);
 						}
 						nd.flags |= uint32_t(ch) << 8;
 						state_stack.pop_back();
@@ -292,8 +306,8 @@ namespace ama {
 					char*! feed0 = feed;
 					feed = ama::SkipChars(feed, g_identifier);
 					nd = ama::CreateNode(ama::N_REF, NULL);
-					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.data = new char[|]!(feed0, feed - feed0);
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd.s;
@@ -318,8 +332,8 @@ namespace ama {
 						feed = ama::SkipChars(feed, g_exponent);
 					}
 					nd = ama::CreateNode(ama::N_NUMBER, NULL);
-					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.data = new char[|]!(feed0, feed - feed0);
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd.s;
@@ -348,8 +362,8 @@ namespace ama {
 						}
 					}
 					nd = ama::CreateNode(ama::N_STRING, NULL);
-					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd.data = new char[|]!(feed, lg);
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd.s;

@@ -22,6 +22,8 @@ int foo(){
 	}else{
 		//do nothing
 	}
+	if(name==='if')
+		if_stk.push(ndi);
 	return cmake.CreateTarget(nd_root,name,{
 		format:format,
 		files:depends.ListAllDependency(nd_src_root,false)
