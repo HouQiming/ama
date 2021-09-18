@@ -1,0 +1,6 @@
+// //// JC version: 3
+#pragma add("jc_files", "./nodegc.jc");
+
+namespace ama {
+	intptr_t! gc();
+};

@@ -55,7 +55,7 @@ namespace ama {
 		memset(ppool, 0, sizeof(TMemoryPool));
 	}
 	private TMemoryPool! g_node_pool = new TMemoryPool!();
-	private ama::Node*+! g_free_nodes = NULL;
+	ama::Node*+! g_free_nodes = NULL;
 	private char[|]! g_empty_comment = "";
 	ama::Node*+! AllocNode() {
 		ama::Node*+! ret = NULL;
@@ -87,6 +87,14 @@ namespace ama {
 			}
 		}
 		return in_block && (nd_tentative.tmp_flags & ama::TMPF_IS_NODE);
+	}
+	ama::Node*+[+]! GetAllPossibleNodeRanges() {
+		ama::Node*+[+]! ret = new ama::Node*+[+]!();
+		for(TBlockHeader*! block = g_node_pool.block; block; block = block.next) {
+			ret.push_back((ama::Node*+)(uintptr_t(block) + sizeof(TBlockHeader)));
+			ret.push_back((ama::Node*+)(uintptr_t(block) + sizeof(TBlockHeader) + (block->size - sizeof(TBlockHeader)) / sizeof(ama::Node!) * sizeof(ama::Node!)));
+		}
+		return <<ret;
 	}
 	///////////////////
 	ama::Node*+! CreateNode(uint8_t! node_class, ama::Node*+! child) {

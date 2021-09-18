@@ -9,6 +9,7 @@
 #include <unicode/case.jch>
 #include "./quickjs/src/quickjs.h"
 #include "../ast/node.jch"
+#include "../ast/nodegc.jch"
 #include "../codegen/gen.jch"
 #include "../parser/simppair.jch"
 #include "../parser/scoping.jch"
@@ -721,6 +722,9 @@ namespace ama {
 		}
 		return ama::WrapString(JSON.stringify(path.parse(ama::UnwrapString(argv[0]))));
 	}
+	private JSValueConst! JSNodeGC(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		return JS_NewInt64(ctx, ama::gc());
+	}
 	void! InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
@@ -818,6 +822,12 @@ namespace ama {
 			ama::jsctx, ama::g_node_proto, 'GetPlaceHolder', JS_NewCFunction(
 				ama::jsctx, JSGetPlaceHolder,
 				'GetPlaceHolder', 0
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, ama::g_node_proto, 'gc', JS_NewCFunction(
+				ama::jsctx, JSNodeGC,
+				'gc', 0
 			)
 		);
 		for(int! i = 0; i < g_filters.length; i += 1) {
