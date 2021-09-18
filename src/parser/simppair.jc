@@ -121,11 +121,12 @@ private char[|]! FormatComment(intptr_t&+! comment_indent_level0, int32_t! tab_w
 				current_indent_level -= 1;
 				tmp.push_back(' ');
 			}
-			if( s == comment_end ) { break; }
-			if( current_indent_level < comment_indent_level ) {
+			if( current_indent_level < comment_indent_level && !(s != comment_end && s[1] == '\n') ) {
+				//empty line doesn't count
 				comment_indent_level = current_indent_level;
 				retry = 1;
 			}
+			if( s == comment_end ) { break; }
 		}
 	}
 	if( retry ) {
