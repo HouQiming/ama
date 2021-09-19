@@ -757,3 +757,24 @@ int! ama::Node::NeedTrailingSemicolon(ama::Node*! this) {
 		}
 	}
 }
+
+int8_t! ama::Node::GetCommentedIndentLevel(ama::Node*! this, int32_t! tab_width) {
+	intptr_t! indent_level = this.indent_level;
+	int! p_newline = this.comments_before.lastIndexOf('\n');
+	if( p_newline >= 0 ) {
+		for(int! i = p_newline + 1L; i < this.comments_before.length; i += 1) {
+			char! ch = this.comments_before[i];
+			if( ch == '\t' ) {
+				indent_level /= tab_width;
+				indent_level += 1L;
+				indent_level *= tab_width;
+			} else if( ch == ' ' ) {
+				indent_level += 1L;
+			} else {
+				indent_level = this.indent_level;
+				break;
+			}
+		}
+	}
+	return ama::ClampIndentLevel(indent_level);
+}

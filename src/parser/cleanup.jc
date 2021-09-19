@@ -15,12 +15,12 @@ namespace ama {
 				nd_raw.ReplaceWith(nd_raw.c);
 			}
 		}
-		while( nd_root.c && !nd_root.c.s && nd_root.c.node_class == ama::N_RAW && !(nd_root.c.flags & 0xffff) ) {
-			nd_root = nd_root.c;
-			nd_root.p.c = NULL;
-			nd_root.p.FreeASTStorage();
-			nd_root.p = NULL;
-		}
+		//while( nd_root.c && !nd_root.c.s && nd_root.c.node_class == ama::N_RAW && !(nd_root.c.flags & 0xffff) ) {
+		//	nd_root = nd_root.c;
+		//	nd_root.p.c = NULL;
+		//	nd_root.p.FreeASTStorage();
+		//	nd_root.p = NULL;
+		//}
 		return nd_root;
 	}
 	private void! dfsPullComment(ama::Node*+! nd) {
@@ -137,6 +137,9 @@ namespace ama {
 			if( nd_raw.isRawNode('(', ')') && nd_raw.c && !nd_raw.c.s ) {
 				nd_raw.node_class = ama::N_PAREN;
 				nd_raw.flags = 0;
+			} else if( nd_raw.isRawNode(0, 0) && nd_raw.c && nd_raw.LastChild().isSymbol(";") ) {
+				nd_raw.LastChild().Delete();
+				nd_raw.ReplaceWith(ama::CreateNode(ama::N_SEMICOLON, ama::toSingleNode(nd_raw.c)));
 			}
 		}
 		return nd_root;

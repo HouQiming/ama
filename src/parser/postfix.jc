@@ -78,12 +78,12 @@ namespace ama {
 					//re-delimit everything completely
 					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 					new_children.push_back(ndi);
-					if( nd_arglist ) {
+					if( nd_arglist.c ) {
 						ama::Node*+[+]! comma_group = new ama::Node*+[+]!();
 						for(ama::Node*+! ndj : nd_arglist) {
 							//strip trailing ','s
 							if( ndj.isRawNode(0, 0) ) {
-								for(ama::Node*+! @nojson ndk = ndj.c; ndk; ndk = ndk.s) {
+								for(ama::Node*+! ndk = ndj.c; ndk; ndk = ndk.s) {
 									if( ndk.isSymbol(",") ) {
 										new_children.push_back(ama::toSingleNode(ama::InsertMany(comma_group)));
 										comma_group.clear();

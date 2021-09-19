@@ -66,9 +66,6 @@ namespace ama {
 				this.scope_indent_level += nd.indent_level;
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					this->Generate(ndi);
-					//if( ndi.isExpr() && !(ndi.s && ndi.s.node_class == ama::N_SYMBOL && ndi.s.data == ";") ) {
-					//	this->code.push_back(';');
-					//}
 				}
 				this.scope_indent_level = bk_indent;
 				this->code.push_back('}');
@@ -293,7 +290,7 @@ namespace ama {
 		}
 		while( current_indent_level < expected_indent_level ) {
 			if( (current_indent_level % this.tab_width) == 0 && (current_indent_level + this.tab_width) <= expected_indent_level && 
-			!(p_last_line < end_last_indent && this.code[p_last_line] == ' ') ) {
+			!(p_last_line < end_last_indent && this.code[p_last_line] == ' ') && this.tab_indent ) {
 				if( p_last_line < end_last_indent ) {
 					assert(this.code[p_last_line] == '\t');
 					p_last_line += 1;
@@ -359,6 +356,7 @@ namespace ama {
 		ama::CodeGenerator! ctx = new ama::CodeGenerator!();
 		ctx.tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
 		ctx.auto_space = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'auto_space'), 1);
+		ctx.tab_indent = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_indent'), 1);
 		ctx.Generate(nd);
 		return <<ctx.code;
 	}

@@ -166,6 +166,7 @@ namespace ama {
 		int! dfsValidate(ama::Node*+! this);
 		void! Validate(ama::Node*+! this);
 		int! NeedTrailingSemicolon(ama::Node*! this);
+		int8_t! GetCommentedIndentLevel(ama::Node*! this, int32_t! tab_width);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;

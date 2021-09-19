@@ -89,21 +89,21 @@ private class ParserState {
 	intptr_t! indent_level;
 };
 
-//updates comment_indent_level0 to the minimum indent inside the comment
+//updates comment_indent_level0 to the minimum indent inside the comment, which could be larger than its original value
 private char[|]! FormatComment(intptr_t&+! comment_indent_level0, int32_t! tab_width, char*! comment_begin, char*! comment_end) {
 	intptr_t&+! comment_indent_level = comment_indent_level0;
-	if( !comment_indent_level || !memchr(comment_begin, '\n', comment_end - comment_begin) ) {
-		return new char[|]!(comment_begin, comment_end - comment_begin);
-	}
+	//if( !comment_indent_level || !memchr(comment_begin, '\n', comment_end - comment_begin) ) {
+	//	return new char[|]!(comment_begin, comment_end - comment_begin);
+	//}
 	char[+]! tmp = new char[+]!();
 	tmp.reserve(comment_end - comment_begin);
-	`do_retry:`
-	int! retry = 0;
+	`retry:`
+	int32_t! min_indent_level = 0x7fffffff;
 	for(char*! s = comment_begin; s != comment_end; s++) {
 		char! ch = *s;
 		tmp.push_back(ch);
 		if( ch == '\n' ) {
-			int! current_indent_level = 0;
+			int32_t! current_indent_level = 0;
 			while( s != comment_end && ama::isInCharSet(g_spaces, uint32_t(uint8_t(s[1L]))) ) {
 				if( current_indent_level >= comment_indent_level ) {
 					break;
@@ -117,22 +117,38 @@ private char[|]! FormatComment(intptr_t&+! comment_indent_level0, int32_t! tab_w
 				}
 				s += 1;
 			}
+			///////////////
+			int32_t! real_indent_level = current_indent_level;
+			char*! s1 = s;
+			while( s1 != comment_end && ama::isInCharSet(g_spaces, uint32_t(uint8_t(s1[1L]))) ) {
+				if( s1[1L] == ' ' ) {
+					real_indent_level += 1L;
+				} else if( s1[1L] == '\t' ) {
+					real_indent_level /= tab_width;
+					real_indent_level += 1;
+					real_indent_level *= tab_width;
+				}
+				s1 += 1;
+			}
+			///////////////
 			while( current_indent_level > comment_indent_level ) {
 				current_indent_level -= 1;
 				tmp.push_back(' ');
 			}
-			if( current_indent_level < comment_indent_level && !(s != comment_end && s[1] == '\n') ) {
+			if( !(s != comment_end && s[1] == '\n') ) {
 				//empty line doesn't count
-				comment_indent_level = current_indent_level;
-				retry = 1;
+				if( min_indent_level > real_indent_level ) {
+					min_indent_level = real_indent_level;
+				}
 			}
 			if( s == comment_end ) { break; }
 		}
 	}
-	if( retry ) {
-		comment_indent_level0 = comment_indent_level;
+	if( min_indent_level != 0x7fffffff && min_indent_level != comment_indent_level ) {
+		comment_indent_level = min_indent_level;
+		comment_indent_level0 = min_indent_level;
 		tmp.clear();
-		`goto do_retry;`
+		`goto retry;`
 	}
 	//size_t! n = tmp.length;
 	//while( n > 0L && (tmp[n - 1] == ' ' || tmp[n - 1] == '\t') ) {
@@ -173,6 +189,7 @@ namespace ama {
 			}
 		}
 		int32_t! tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
+		int32_t! tab_indent = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_indent'), 2);
 		uint8_t[256]! char_lut;
 		memcpy(char_lut.data(), g_char_lut.data(), g_char_lut.size());
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'enable_hash_comment'), 0) ) {
@@ -192,6 +209,8 @@ namespace ama {
 		//interleave with parser lexer to fill indent_level, comments and all
 		intptr_t! comment_indent_level = 0L;
 		intptr_t! current_indent_level = 0L;
+		intptr_t! vote_tabness = 0L;
+		intptr_t! vote_spaceness = 0L;
 		for(;;) {
 			uint32_t! ch = uint32_t(uint8_t(feed[0L]));
 			ama::Node*+! nd;
@@ -385,10 +404,12 @@ namespace ama {
 						while( ama::isInCharSet(g_spaces, uint32_t(uint8_t(feed[0L]))) ) {
 							if( feed[0L] == ' ' ) {
 								current_indent_level += 1L;
+								vote_spaceness += 1;
 							} else if( feed[0L] == '\t' ) {
 								current_indent_level /= tab_width;
 								current_indent_level += 1;
 								current_indent_level *= tab_width;
+								vote_tabness += tab_width;
 							}
 							feed += 1;
 						}
@@ -399,6 +420,13 @@ namespace ama {
 				case CHAR_TYPE_ZERO: {
 					ama::FillParents(NULL, nd_root);
 					nd_root.comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					if( tab_indent == 2 ) {
+						//auto tab-indent: update the options object
+						JS_SetPropertyStr(ama::jsctx, options, 'tab_indent', JS_NewInt32(
+							ama::jsctx,
+							vote_tabness >= vote_spaceness ? 1 : 0
+						));
+					}
 					return nd_root;
 				}
 			}

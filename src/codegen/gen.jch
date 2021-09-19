@@ -17,6 +17,7 @@ namespace ama {
 		intptr_t! p_last_indent = 0L;
 		int32_t! tab_width = 4;
 		int8_t! auto_space = 1;
+		int8_t! tab_indent = 1;
 		void! GenerateDefault(ama::CodeGenerator*+! this, ama::Node*+! nd);
 		void! GenerateComment(ama::CodeGenerator*+! this, int! is_after, intptr_t! expected_indent_level, char[...]! comment);
 		void! Generate(ama::CodeGenerator*+! this, ama::Node*+! nd);
