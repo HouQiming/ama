@@ -157,7 +157,7 @@ namespace ama {
 		int! isMethodCall(ama::Node*! this, char[|]! name);
 		ama::Node*+! InsertDependency(ama::Node*+! this, uint32_t! flags, char[|]! name);
 		ama::Node*+! InsertCommentBefore(ama::Node*+! this, char[...]! s);
-		ama::Node*! Save(ama::Node*! this, char[|]! change_ext);
+		//ama::Node*! Save(ama::Node*! this, char[|]! change_ext);
 		ama::Node*+! MergeCommentsAfter(ama::Node*+! this, ama::Node*+! nd_after);
 		ama::Node*+! MergeCommentsBefore(ama::Node*+! this, ama::Node*+! nd_before);
 		char[|]! DestroyForSymbol(ama::Node*+! this);

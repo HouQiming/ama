@@ -516,6 +516,9 @@ namespace ama {
 		}
 		return ama::WrapNode(ParseCode(JS_ToCString(ama::jsctx, argv[0]), options));
 	}
+	private JSValueConst! JSGenerateCode(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		return ama::WrapString(ama::GenerateCode(ama::UnwrapNode(this_val), argc > 0 ? argv[0] : JS_NULL));
+	}
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data) {
 		LazyInitScriptEnv();
 		char![+]! s_fixed_code = '(function(__filename,__dirname,ParseCurrentFile){let require=__require.bind(null,__filename);' + script + '\n})\n';
@@ -668,6 +671,15 @@ namespace ama {
 		}
 		return JS_NewArrayBufferCopy(ctx, (uint8_t*+)(data.data()), data.size());
 	}
+	private JSValueConst! JSWriteFileSync(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 2 ) {
+			return JS_ThrowReferenceError(ctx, "need a path and a string");
+		}
+		size_t! len = 0uLL;
+		char*! ptr = JS_ToCStringLen(ama::jsctx, &len, argv[1]);
+		intptr_t! n_written = fs.writeFileSync(ama::UnwrapString(argv[0]), new char[...]!(ptr, intptr_t(len)));
+		return JS_NewInt64(ctx, n_written);
+	}
 	private JSValueConst! JSExistsSync(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		if( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a path");
@@ -788,6 +800,12 @@ namespace ama {
 			)
 		);
 		JS_SetPropertyStr(
+			ama::jsctx, global, '__writeFileSync', JS_NewCFunction(
+				ama::jsctx, JSWriteFileSync,
+				'writeFileSync', 1
+			)
+		);
+		JS_SetPropertyStr(
 			ama::jsctx, global, '__existsSync', JS_NewCFunction(
 				ama::jsctx, JSExistsSync,
 				'existsSync', 1
@@ -828,6 +846,12 @@ namespace ama {
 			ama::jsctx, ama::g_node_proto, 'gc', JS_NewCFunction(
 				ama::jsctx, JSNodeGC,
 				'gc', 0
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, ama::g_node_proto, 'toSource', JS_NewCFunction(
+				ama::jsctx, JSGenerateCode,
+				'toSource', 1
 			)
 		);
 		for(int! i = 0; i < g_filters.length; i += 1) {

@@ -14,3 +14,4 @@ fs.readFileSync = function(fn) {
 	return ret;
 }
 fs.existsSync = __existsSync;
+fs.writeFileSync = __writeFileSync;

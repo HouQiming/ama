@@ -353,6 +353,9 @@ namespace ama {
 		this.nd_current = bk;
 	}
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options) {
+		if( JS_IsNull(options) || JS_IsUndefined(options) ) {
+			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
+		}
 		ama::CodeGenerator! ctx = new ama::CodeGenerator!();
 		ctx.tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
 		ctx.auto_space = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'auto_space'), 1);
@@ -361,10 +364,6 @@ namespace ama {
 		return <<ctx.code;
 	}
 	char[+]! ama::Node::toSource(ama::Node*! this) {
-		JSValueConst! default_options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
-		//JS_NewObjectProto(ama::jsctx, JS_NULL);
-		char[+]! ret = GenerateCode((ama::Node*+)(this), default_options);
-		//JS_FreeValue(ama::jsctx, default_options);
-		return <<ret;
+		return GenerateCode((ama::Node*+)(this), JS_NULL);
 	}
 };

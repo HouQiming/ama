@@ -12,7 +12,7 @@ let cmake_options = {
 }
 
 cmake.LoadCMakeFile = function(fn, template) {
-	let nd_root = ParseCode((fs.readFileSync(fn) || template || '').toString(), cmake_options);
+	let nd_root = ParseCode((fs.readFileSync(fn) || (typeof(template) == 'function' ? template() : template) || '').toString(), cmake_options);
 	//if-endif pairing
 	while (nd_root.c && !nd_root.c.s && nd_root.c.node_class === N_RAW && !(nd_root.c.flags & 0xffff) && nd_root.c.c) {
 		nd_root.c.ReplaceWith(nd_root.c.c)
@@ -102,7 +102,10 @@ let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N
 cmake.UpdateTargetWithSourceRoot = function(nd_root, nd_src_root) {
 	let name = path.parse(nd_src_root.data).name;
 	let nd_target = cmake.FindTarget(nd_root, name);
-	if (nd_target) {return nd_target;}
+	if (nd_target) {
+		//TODO: add files
+		return nd_target;
+	}
 	let format = undefined;
 	for (let nd_format of nd_src_root.FindAll(N_KEYWORD_STATEMENT, '#pragma')) {
 		let match = nd_format.Match(nd_output_format_template)
@@ -117,5 +120,35 @@ cmake.UpdateTargetWithSourceRoot = function(nd_root, nd_src_root) {
 	})
 }
 
-//TODO: smart detection - also search for existing targets with the current file
-//TODO: CMakeLists.txt searching, on-demand creation, make a filter
+Node.UpdateCMakeLists = function(fn_cmake) {
+	let nd_root = this;
+	if (!fn_cmake) {
+		let dir = path.dirname(fn_cmake);
+		let dir_git = undefined;
+		for (; ;) {
+			let fn_test = path.join(dir, 'CMakeLists.txt');
+			if (fs.existsSync(path.join(dir, '.git'))) {
+				dir_git = dir;
+			}
+			if (fs.existsSync(fn_test)) {
+				fn_cmake = fn_test;
+				break;
+			}
+			if (dir_git) {break;}
+		}
+		if (dir_git && !fn_cmake) {
+			fn_cmake=path.join(dir_git, 'CMakeLists.txt')
+		}
+	}
+	let nd_cmake = cmake.LoadCMakeFile(fn_cmake, ()=>[
+		'cmake_minimum_required (VERSION 3.0)\n',
+		'project(',path.basename(path.dirname(path.resolve(fn_cmake))).replace(new(RegExp('[^0-9a-zA-Z]+', 'g')), '_'),')\n',
+		'if(NOT AMA)\n',
+		'  find_program(AMA ama)\n',
+		'endif()\n'
+	].join(''))
+	//TODO: insert files
+	//TODO: use ama to transform
+	//TODO: insert the ama command
+	nd_cmake.Save()
+}

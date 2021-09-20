@@ -6,5 +6,7 @@ void f() {
 	if(m_selectedInterface->actionInterface()->doAction(QAccessibleActionInterface::pressAction())){
 		//do nothing
 	}
+	
+	foo<T*> bar=sizeof baz;
 	return
 }

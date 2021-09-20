@@ -640,29 +640,28 @@ ama::Node*+! ama::Node::InsertCommentBefore(ama::Node*+! this, char[...]! s) {
 	return this;
 }
 
-ama::Node*! ama::Node::Save(ama::Node*! this, char[|]! change_ext) {
-	ama::Node*! nd_root = this;
-	char[|]! fn = NULL;
-	if( nd_root.node_class == ama::N_FILE && !nd_root.p ) {
-		fn = nd_root.data;
-		if( change_ext != NULL ) {
-			size_t! p_dot = fn.lastIndexOf('.');
-			if( p_dot < 0 ) {
-				p_dot = fn.length;
-			}
-			fn = new char[|]!(fn.subarray(0, p_dot) + (change_ext.startsWith('.') ? "" : ".") + change_ext);
-		}
-	} else {
-		if( change_ext == NULL ) {
-			console.log('file name expected for Node::Save');
-			return NULL;
-		}
-		fn = change_ext;
-	}
-	fs.writeFileSync(fn, this.toSource());
-	return nd_root;
-}
-
+//ama::Node*! ama::Node::Save(ama::Node*! this, char[|]! change_ext) {
+//	ama::Node*! nd_root = this;
+//	char[|]! fn = NULL;
+//	if( nd_root.node_class == ama::N_FILE && !nd_root.p ) {
+//		fn = nd_root.data;
+//		if( change_ext != NULL ) {
+//			size_t! p_dot = fn.lastIndexOf('.');
+//			if( p_dot < 0 ) {
+//				p_dot = fn.length;
+//			}
+//			fn = new char[|]!(fn.subarray(0, p_dot) + (change_ext.startsWith('.') ? "" : ".") + change_ext);
+//		}
+//	} else {
+//		if( change_ext == NULL ) {
+//			console.log('file name expected for Node::Save');
+//			return NULL;
+//		}
+//		fn = change_ext;
+//	}
+//	fs.writeFileSync(fn, this.toSource());
+//	return nd_root;
+//}
 int! ama::Node::isExpr(ama::Node*! this) {
 	switch( this.node_class ) {
 		//case N_RAW:

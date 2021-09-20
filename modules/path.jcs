@@ -12,3 +12,11 @@ path.resolve = function(...args) {
 path.parse = function(s) {
 	return JSON.parse(__path_parse(s));
 }
+
+path.dirname = function(s) {
+	return path.parse(s).dir;
+}
+
+path.basename = function(s) {
+	return path.parse(s).base;
+}

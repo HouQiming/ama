@@ -271,7 +271,6 @@ namespace ama {
 				nd_unary.FreeASTStorage();
 			}
 		}
-		//TODO: sizeof bug
 		//convert failed-to-fold named ops back
 		for(ama::Node*&+! nd_ref : nd_root.FindAll(ama::N_SYMBOL, NULL)) {
 			if( named_ops[nd_ref.data] ) {
