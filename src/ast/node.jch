@@ -46,6 +46,7 @@ namespace ama {
 	const uint32_t! REF_WRITTEN = 1u;
 	//REF_RW is only set for REF_WRITTEN nodes: non-written nodes are trivially read 
 	const uint32_t! REF_RW = 2u;
+	const uint32_t! CALL_IS_UNARY_OPERATOR = 1u;
 	const uint32_t! LITERAL_PARSED = 1u;
 	const uint32_t! STRING_SINGLE_QUOTED = 2u;
 	const uint32_t! DOT_PTR = 1u;

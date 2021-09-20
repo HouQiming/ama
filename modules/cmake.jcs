@@ -9,6 +9,9 @@ let cmake_options = {
 	parse_indent_as_scope: 0,
 	parse_c_forward_declarations: 0,
 	struct_can_be_type_prefix: 0,
+	//////////
+	tab_indent: 2,//2 for auto
+	auto_space: 0,
 }
 
 cmake.LoadCMakeFile = function(fn, template) {
@@ -44,6 +47,7 @@ cmake.TokenizeCMakeArgs = function(nd_call) {
 	let ret = [];
 	if (!nd_call.c.s) {return ret;}
 	function dfsTokenizeCMakeArgs(nd) {
+		//TODO: unquoted args
 		if (nd.node_class === N_RAW) {
 			for (let ndi = nd.c; ndi; ndi = ndi.s) {
 				dfsTokenizeCMakeArgs(ndi);
@@ -103,7 +107,7 @@ cmake.UpdateTargetWithSourceRoot = function(nd_root, nd_src_root) {
 	let name = path.parse(nd_src_root.data).name;
 	let nd_target = cmake.FindTarget(nd_root, name);
 	if (nd_target) {
-		//TODO: add files
+		//TODO: add files to existing target: group unquoted file names - TokenizeCMakeArgs
 		return nd_target;
 	}
 	let format = undefined;
@@ -150,5 +154,5 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 	//TODO: insert files
 	//TODO: use ama to transform
 	//TODO: insert the ama command
-	nd_cmake.Save()
+	nd_cmake.Save(cmake_options)
 }

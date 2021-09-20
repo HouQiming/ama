@@ -10,16 +10,16 @@ depends.Resolve = function(nd_depends) {
 	if ((nd.flags & DEP_TYPE_MASK) === DEP_C_INCLUDE) {
 		let fn = nd.c.GetStringValue()
 		if(nd.flags & DEPF_C_INCLUDE_NONSTR) {
-			fn = fn.replace(new(RegExp('[<>]', 'g')), '');
+			fn = fn.replace(new RegExp('[<>]', 'g'), '');
 		}
-		for (let dir of depends.c_include_paths) {
-			let fn_test = path.resolve(dir, fn)
+		if (!(nd.flags & DEPF_C_INCLUDE_NONSTR)) {
+			let fn_test = path.resolve(path.dirname(nd_depends.Root().data), fn);
 			if (fs.existsSync(fn_test)) {
 				return fn_test;
 			}
 		}
-		if (!(nd.flags & DEPF_C_INCLUDE_NONSTR)) {
-			let fn_test = path.resolve(__dirname, fn);
+		for (let dir of depends.c_include_paths) {
+			let fn_test = path.resolve(dir, fn)
 			if (fs.existsSync(fn_test)) {
 				return fn_test;
 			}
@@ -33,7 +33,7 @@ depends.Resolve = function(nd_depends) {
 	return undefined;
 }
 
-depends.cache = new(Map)();
+depends.cache = new Map();
 depends.LoadFile = function(fn) {
 	fn = __path_toAbsolute(fn);
 	let nd_cached = depends.cache.get(fn);
@@ -52,8 +52,9 @@ depends.LoadFile = function(fn) {
 	return nd_cached;
 }
 
+let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))};
 depends.ListAllDependency = function(nd_root, include_system_headers) {
-	let ret = new(Set());
+	let ret = new Set();
 	let Q = [nd_root];
 	for (let qi = 0; qi < Q.length; qi++) {
 		let nd_root = Q[qi];
@@ -70,7 +71,22 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 				}
 			}
 		}
-		//TODO: #pragma add
+		for (let match of nd_root.MatchAll(nd_add_template)) {
+			if (!match.kind.GetStringValue().endsWith('_files')) {continue;}
+			let fn_dep = path.resolve(path.dirname(nd_root.data), fn);
+			if (fs.existsSync(fn_dep) && !ret.has(fn_dep)) {
+				ret.add(fn_dep);
+				let ext = path.extname(fn_dep);
+				if (ext !== '.a' && ext !== '.so' && ext !== '.dll') {
+					let nd_root_dep = depends.LoadFile(fn_dep);
+					if (nd_root_dep) {
+						Q.push(nd_root_dep);
+					}
+				}
+			} else {
+				console.error('unable to find', fn_test);
+			}
+		}
 	}
 	return Q.map(ndi=>__path_toAbsolute(ndi.data))
 }

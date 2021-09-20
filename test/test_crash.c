@@ -7,6 +7,6 @@ void f() {
 		//do nothing
 	}
 	
-	foo<T*> bar=sizeof baz;
+	foo<T*> bar=sizeof baz + new Set();
 	return
 }

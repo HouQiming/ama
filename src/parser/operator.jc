@@ -263,10 +263,10 @@ namespace ama {
 		//convert named unary ops to call
 		for(ama::Node*&+! nd_unary : nd_root.FindAll(ama::N_UNARY, NULL)) {
 			if( named_ops[nd_unary.data] && !(nd_unary.flags & ama::UNARY_POSTFIX) ) {
-				if( nd_unary.c && nd_unary.c.comments_before == " " ) {
-					nd_unary.c.comments_before = '';
-				}
-				nd_unary.ReplaceWith(ama::CreateNode(ama::N_CALL, ama::cons(ama::nRef(nd_unary.data), nd_unary.c)));
+				//if( nd_unary.c && nd_unary.c.comments_before == " " ) {
+				//	nd_unary.c.comments_before = '';
+				//}
+				nd_unary.ReplaceWith(ama::CreateNode(ama::N_CALL, ama::cons(ama::nRef(nd_unary.data), nd_unary.c)).setFlags(ama::CALL_IS_UNARY_OPERATOR));
 				nd_unary.c = NULL;
 				nd_unary.FreeASTStorage();
 			}

@@ -117,7 +117,13 @@ namespace ama {
 				} else if( nd.node_class == ama::N_ITEM ) {
 					this->code.push_back('[');
 				} else {
-					this->code.push_back('(');
+					if( nd.flags & ama::CALL_IS_UNARY_OPERATOR ) {
+						if( nd.c.s ) {
+							this.GenerateSpaceBefore(nd.c.s);
+						}
+					} else {
+						this->code.push_back('(');
+					}
 				}
 				intptr_t! bk_indent = this.scope_indent_level;
 				this.scope_indent_level += nd.indent_level;
@@ -138,7 +144,11 @@ namespace ama {
 				} else if( nd.node_class == ama::N_ITEM ) {
 					this->code.push_back(']');
 				} else {
-					this->code.push_back(')');
+					if( nd.flags & ama::CALL_IS_UNARY_OPERATOR ) {
+						//do nothing
+					} else {
+						this->code.push_back(')');
+					}
 				}
 				break;
 			}
