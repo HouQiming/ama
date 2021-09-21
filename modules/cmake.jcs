@@ -47,7 +47,7 @@ cmake.TokenizeCMakeArgs = function(nd_call) {
 	let ret = [];
 	if (!nd_call.c.s) {return ret;}
 	function dfsTokenizeCMakeArgs(nd) {
-		//TODO: unquoted args
+		//TODO: unquoted args - merge and convert?! quoting individual names is fine
 		if (nd.node_class === N_RAW) {
 			for (let ndi = nd.c; ndi; ndi = ndi.s) {
 				dfsTokenizeCMakeArgs(ndi);
@@ -79,8 +79,6 @@ cmake.CreateTarget = function(nd_root, name, options) {
 	if (!options) {
 		options = {};
 	}
-	let nd_target = cmake.FindTarget(nd_root, name);
-	if (nd_target) {return nd_target;}
 	//create a new target
 	let new_target = ['\n'];
 	let output_format = options.format || 'exe';
@@ -146,7 +144,7 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 	}
 	let nd_cmake = cmake.LoadCMakeFile(fn_cmake, ()=>[
 		'cmake_minimum_required (VERSION 3.0)\n',
-		'project(',path.basename(path.dirname(path.resolve(fn_cmake))).replace(new(RegExp('[^0-9a-zA-Z]+', 'g')), '_'),')\n',
+		'project(',path.basename(path.dirname(path.resolve(fn_cmake))).replace(new RegExp('[^0-9a-zA-Z]+', 'g'), '_'),')\n',
 		'if(NOT AMA)\n',
 		'  find_program(AMA ama)\n',
 		'endif()\n'

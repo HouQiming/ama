@@ -38,6 +38,8 @@ namespace ama {
 	const uint8_t! N_SEMICOLON = 27;
 	const uint8_t! N_PAREN = 28;
 	const uint8_t! N_KEYWORD_STATEMENT = 29;
+	/////////////////
+	const uint8_t! N_JS_REGEXP = 30;
 	//don't start any other constant with N_
 	/////////////////
 	const uint16_t! TMPF_IS_NODE = 32768u;

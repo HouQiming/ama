@@ -8,5 +8,6 @@ void f() {
 	}
 	
 	foo<T*> bar=sizeof baz + new Set();
+	'()'.replace(/\([(]/g,'test')
 	return
 }

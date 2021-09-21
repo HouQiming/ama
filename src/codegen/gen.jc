@@ -81,7 +81,7 @@ namespace ama {
 					break;
 				}
 			}
-			case ama::N_SYMBOL: case ama::N_REF: case ama::N_NUMBER: {
+			case ama::N_JS_REGEXP: case ama::N_SYMBOL: case ama::N_REF: case ama::N_NUMBER: {
 				this->code.push(nd.data);
 				break;
 			}
