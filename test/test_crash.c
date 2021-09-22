@@ -1,4 +1,4 @@
-//example from "https://en.cppreference.com/w/cpp/language/attributes.html":
+//LICENSE
 void f() {
 	for (T * item : qAsConst(stash))
 		list->append(list, item);
@@ -9,5 +9,9 @@ void f() {
 	
 	foo<T*> bar=sizeof baz + new Set();
 	'()'.replace(/\([(]/g,'test')
+	if(1){
+		for (int i = 0; i < 10000; ++i)
+			QMetaType::fromName("Foo");
+	}
 	return
 }

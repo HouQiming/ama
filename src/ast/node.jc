@@ -777,3 +777,19 @@ int8_t! ama::Node::GetCommentedIndentLevel(ama::Node*! this, int32_t! tab_width)
 	}
 	return ama::ClampIndentLevel(indent_level);
 }
+
+ama::Node*+! ama::Node::GlobalNext(ama::Node*+! this, ama::Node*+! nd_root) {
+	if( this.c ) { return this.c; }
+	for(ama::Node*+! ndi = this; ndi != nd_root; ndi = ndi.p) {
+		if( ndi.s ) { return ndi.s; }
+	}
+	return NULL;
+}
+
+ama::Node*+! ama::Node::ParentStatement(ama::Node*+! this) {
+	mutable ama::Node*+! nd = (ama::Node*+)(this);
+	while( nd.p != NULL && nd.p.node_class != ama::N_SCOPE && nd.p.node_class != ama::N_FILE ) {
+		nd = nd.p;
+	}
+	return nd;
+}

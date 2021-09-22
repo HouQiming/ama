@@ -170,6 +170,8 @@ namespace ama {
 		void! Validate(ama::Node*+! this);
 		int! NeedTrailingSemicolon(ama::Node*! this);
 		int8_t! GetCommentedIndentLevel(ama::Node*! this, int32_t! tab_width);
+		ama::Node*+! GlobalNext(ama::Node*+! this, ama::Node*+! nd_root);
+		ama::Node*+! ParentStatement(ama::Node*+! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
