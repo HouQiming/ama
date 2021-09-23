@@ -116,21 +116,18 @@ namespace ama {
 	}
 	ama::Node*+! NodifySemicolonAndParenthesis(ama::Node*+! nd_root) {
 		for(ama::Node*+! nd_scope : nd_root.FindAll(ama::N_SCOPE, NULL)) {
-			ama::Node*+*+! link = &nd_scope.c;
 			for(ama::Node*+! ndi = nd_scope.c; ndi; ndi = ndi.s) {
 				while( ndi.s && ndi.s.isSymbol(";") ) {
 					ama::Node*+! nd_semicolon = ndi.s;
-					*link = nd_semicolon;
+					ndi.Delete();
 					nd_semicolon.node_class = ama::N_SEMICOLON;
 					nd_semicolon.data = NULL;
-					nd_semicolon.c = ndi;
 					nd_semicolon.indent_level = ndi.indent_level;
-					ndi.p = nd_semicolon;
-					ndi.s = NULL;
+					nd_semicolon.Insert(ama::POS_FRONT, ndi);
 					ndi.MergeCommentsAfter(nd_semicolon);
 					ndi = nd_semicolon;
 				}
-				link = &ndi.s;
+				ama::Node*+! @nojson*+! link = &ndi.s;
 			}
 		}
 		for(ama::Node*&+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {

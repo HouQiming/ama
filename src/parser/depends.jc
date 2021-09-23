@@ -30,11 +30,10 @@ namespace ama {
 				char[+]! include_expr;
 				char[+]! comments_after;
 				ama::Node*+![+]! toDrop = new ama::Node*+![+]!();
-				ama::Node*+*+! pndi = &nd_raw.c.s;
-				for(ama::Node*+! ndi = nd_raw.c.s; ndi; ndi = ndi.s) {
+				for(ama::Node*+! ndi = nd_raw.c.BreakSibling(); ndi; ndi = ndi.s) {
 					if( ndi.node_class == ama::N_SCOPE ) {
 						//mistakenly-merged scope
-						*pndi = NULL;
+						ndi.BreakSelf();
 						nd_raw.Insert(ama::POS_AFTER, ndi);
 						break;
 					}
@@ -44,7 +43,6 @@ namespace ama {
 					ndi.comments_after = "";
 					include_expr.push(ndi.toSource());
 					toDrop.push_back(ndi);
-					pndi = &ndi.s;
 				}
 				ama::Node*+! nd_real_include = ama::nString(new char[|]!(include_expr)).setCommentsBefore(
 					new char[|]!(comments_before)
@@ -57,13 +55,12 @@ namespace ama {
 					ndi.FreeASTStorage();
 				}
 				nd_real_include.p = nd_raw;
-				nd_raw.c.s = nd_real_include;
+				nd_raw.c.Insert(ama::POS_AFTER, nd_real_include);
 			}
-			ama::Node*+! nd_included = nd_raw.c.s;
+			ama::Node*+! nd_included = nd_raw.c.BreakSibling();
 			assert(nd_included.node_class == ama::N_STRING);
 			char[|]! fn_included = nd_included.GetStringValue();
 			nd_raw.ReplaceWith(ama::nDependency(nd_included).setFlags(flags));
-			nd_raw.c.s = NULL;
 			nd_raw.FreeASTStorage();
 		}
 		//re-check all nDependency and fill .data
@@ -110,8 +107,7 @@ namespace ama {
 		for(ama::Node*&+! nd_require : nd_root.FindAll(ama::N_CALL, 'require')) {
 			if( !nd_require.c.s || nd_require.c.s.node_class != ama::N_STRING || nd_require.c.s.s ) { continue; }
 			char[|]! fn_required = nd_require.c.s.GetStringValue();
-			nd_require.ReplaceWith(ama::nDependency(nd_require.c.s).setFlags(ama::DEP_JS_REQUIRE));
-			nd_require.c.s = NULL;
+			nd_require.ReplaceWith(ama::nDependency(nd_require.c.BreakSibling()).setFlags(ama::DEP_JS_REQUIRE));
 			nd_require.FreeASTStorage();
 		}
 		//re-check all nDependency and fill .data

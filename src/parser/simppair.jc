@@ -244,7 +244,7 @@ namespace ama {
 						feed += lg;
 						comment_end = feed;
 						break;
-					} else if( parse_js_regexp && ch == '/' && canHaveRegexpAfter(state_stack.back().nd_parent.LastChild()) ) {
+					} else if( parse_js_regexp && ch == '/' && canHaveRegexpAfter(state_stack.back().nd_parent.LastChildSP()) ) {
 						uint32_t! ch_closing = ch;
 						intptr_t! lg = 1L;
 						int! backslash_counter = 0;
@@ -350,7 +350,7 @@ namespace ama {
 									ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level)
 								));
 							}
-							ama::Node*+! nd_last = nd.LastChild();
+							ama::Node*+! nd_last = nd.LastChildSP();
 							nd_last.comments_after = new char[|]!(nd_last.comments_after + trailing_comment);
 						}
 						nd.flags |= uint32_t(ch) << 8;

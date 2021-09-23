@@ -86,7 +86,6 @@ namespace ama {
 				continue;
 			}
 			ama::Node*+[+]! new_children = new ama::Node*+[+]!();
-			ama::Node*+*+! pndi = &nd_raw.c;
 			ama::Node*+! ndi = nd_raw.c;
 			new_children.push_back(ndi);
 			char! changed = 0;
@@ -100,7 +99,7 @@ namespace ama {
 					//after_cpp_macro=0
 					//separate ; into its own statement
 					changed = ';';
-					ndi.s = NULL;
+					ndi.BreakSibling();
 					if( ndi_next ) {
 						new_children.push_back(ndi_next);
 					}
@@ -111,14 +110,14 @@ namespace ama {
 					}
 					//after_cpp_macro=0
 					changed = ';';
-					ndi.s = NULL;
+					ndi.BreakSibling();
 					if( ndi_next ) {
 						new_children.push_back(ndi_next);
 					}
 				} else if( ndi.node_class == ama::N_REF && ndi.data.startsWith('#') ) {
 					changed = ';';
 					if( !new_children.length && new_children.back() == ndi ) {
-						*pndi = NULL;
+						ndi.BreakSelf();
 						new_children.push_back(ndi);
 					}
 					after_cpp_macro = 1;
@@ -126,13 +125,12 @@ namespace ama {
 				if( after_cpp_macro && ndi.s != NULL && ndi.s.comments_before.indexOf('\n') >= 0 ) {
 					after_cpp_macro = 0;
 					changed = ';';
-					ndi.s = NULL;
+					ndi.BreakSibling();
 					if( ndi_next ) {
 						new_children.push_back(ndi_next);
 					}
 				}
 				//COULDDO: case:, default:
-				pndi = &ndi.s;
 				ndi = ndi_next;
 			}
 			if( !changed ) {
@@ -142,7 +140,7 @@ namespace ama {
 					if( ndi.node_class == ama::N_SYMBOL && ndi.data == "," ) {
 						//after_cpp_macro=0
 						changed = ',';
-						ndi.s = NULL;
+						ndi.BreakSibling();
 						if( ndi_next ) {
 							new_children.push_back(ndi_next);
 						}
@@ -155,9 +153,9 @@ namespace ama {
 					ama::Node*+! nd_inner = ama::toSingleNode(new_children[i]);
 					new_children[i] = nd_inner;
 					new_children[i].indent_level = nd_inner.indent_level;
-					new_children[i].p = nd_raw;
 				}
-				nd_raw.c = ama::InsertMany(new_children);
+				nd_raw.c = NULL;
+				nd_raw.Insert(ama::POS_FRONT, ama::InsertMany(new_children));
 			}
 			//if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
 			if( nd_raw.isRawNode('{', '}') && changed != ',' ) {
@@ -202,16 +200,15 @@ namespace ama {
 		for(ama::Node*+! nd_scope : scopes) {
 			ama::Node*+[+]! lines = new ama::Node*+[+]!();
 			int! passed_newline = 1;
-			ama::Node*+*+! pndi = &nd_scope.c;
 			lines.push_back(nd_scope.c);
 			//delimit first
-			for(ama::Node*+! ndi = nd_scope.c; ndi; (pndi = &ndi.s, ndi = ndi.s)) {
+			for(ama::Node*+! ndi = nd_scope.c; ndi; ndi = ndi.s) {
 				if( ndi.comments_before.indexOf('\n') >= 0 ) {
 					passed_newline = 1;
 				}
 				if( passed_newline ) {
 					if( ndi != lines.back() ) {
-						lines.push_back(ama::BreakLink(pndi));
+						lines.push_back(ndi.BreakSelf());
 					}
 					passed_newline = 0;
 				}
@@ -264,7 +261,8 @@ namespace ama {
 				//}
 				assert(!ndi.s);
 			}
-			nd_scope.c = ama::InsertMany(line_out_final);
+			nd_scope.c = NULL;
+			nd_scope.Insert(ama::POS_FRONT, ama::InsertMany(line_out_final));
 		}
 		return nd_root;
 	}

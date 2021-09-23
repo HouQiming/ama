@@ -103,6 +103,8 @@ namespace ama {
 		Node*+! @nojson s;
 		//parent
 		Node*+! @nojson p;
+		//last sibling
+		Node*+! @nojson v;
 		/////////////
 		inline! auto forEach(Node*! this, any loop_body) {
 			for(ama::Node*+! ndi = this->c; ndi; ndi = ndi.s) {
@@ -134,7 +136,7 @@ namespace ama {
 		/////////////
 		ama::TCloneResult! CloneEx(ama::Node*! this);
 		ama::Node*+! Clone(ama::Node*! this);
-		auto ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new);
+		//auto ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new);
 		ama::Node*+! ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new);
 		auto Delete(ama::Node*+! this);
 		ama::Node*+! Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new);
@@ -172,6 +174,11 @@ namespace ama {
 		int8_t! GetCommentedIndentLevel(ama::Node*! this, int32_t! tab_width);
 		ama::Node*+! GlobalNext(ama::Node*+! this, ama::Node*+! nd_root);
 		ama::Node*+! ParentStatement(ama::Node*+! this);
+		ama::Node*+! Prev(ama::Node*+! this);
+		ama::Node*+! BreakSibling(ama::Node*+! this);
+		ama::Node*+! BreakChild(ama::Node*+! this);
+		ama::Node*+! BreakSelf(ama::Node*+! this);
+		ama::Node*+! LastChildSP(ama::Node*! this);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
@@ -181,6 +188,7 @@ namespace ama {
 	inline ama::Node*+! cons(ama::Node*+! a, ama::Node*+! b) {
 		assert(a != b);
 		a.s = b;
+		if( b ) { b.v = a; }
 		return a;
 	}
 	inline ama::Node*+! InsertMany(ama::Node*+[...]! children) {
@@ -255,10 +263,21 @@ namespace ama {
 		g_placeholder.c = NULL;
 		return g_placeholder;
 	}
-	inline ama::Node*+! BreakLink(Node*+*+! pndi) {
-		ama::Node*+! ret = *pndi;
-		*pndi = NULL;
-		return ret;
+	//inline ama::Node*+! BreakLink(Node*+*+! pndi) {
+	//	ama::Node*+! ret = *pndi;
+	//	*pndi = NULL;
+	//	return ret;
+	//}
+	inline int! isValidPreviousSibling(Node*! v) {
+		return v && !(intptr_t(v) & 1);
+	}
+	inline Node*+! PackTailPointer(Node*+! nd_tail) {
+		assert(!(intptr_t(nd_tail) & 1L));
+		return (Node*+!)(intptr_t(nd_tail) | 1L);
+	}
+	inline Node*+! UnpackTailPointer(Node*+! nd_tail) {
+		assert(intptr_t(nd_tail) & 1L);
+		return (Node*+!)(intptr_t(nd_tail) & ~1L);
 	}
 	ama::Node*+! CreateNodeFromChildren(uint8_t! node_class, ama::Node*+[...]! children);
 	///////////////
@@ -277,4 +296,7 @@ namespace ama {
 	ama::Node*+! UnparseRaw(ama::Node*+! nd_raw);
 	ama::Node*+[+]! GetAllPossibleNodeRanges();
 	extern ama::Node*+! g_free_nodes;
+	int! ValidateChildRange(ama::Node*+! p0, ama::Node*+! p1);
+	void! DeleteChildRange(ama::Node*+! nd0, ama::Node*+! nd1);
+	ama::Node*+! ReplaceChildRange(ama::Node*+! nd0, ama::Node*+! nd1, ama::Node*+! nd_new);
 };

@@ -101,9 +101,14 @@ namespace ama {
 		ama::Node*+! ret = ama::AllocNode();
 		ret.node_class = node_class;
 		ret.c = child;
+		ama::Node*+! nd_last = child;
 		for(ama::Node*+! ndi = child; ndi; ndi = ndi.s) {
 			assert(ndi != ret);
 			ndi.p = ret;
+			nd_last = ndi;
+		}
+		if( child ) {
+			child.v = ama::PackTailPointer(nd_last);
 		}
 		return ret;
 	}
@@ -114,12 +119,21 @@ namespace ama {
 			nd.c = ama::cons(children[I], nd.c);
 			children[I].p = nd;
 		}
+		if( nd.c ) {
+			nd.c.v = ama::PackTailPointer(children.back());
+		}
 		return nd;
 	}
 	ama::Node*+! FillParents(ama::Node*+! nd_parent, ama::Node*+! nd) {
 		nd.p = nd_parent;
+		ama::Node*+! nd_last = NULL;
 		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+			if( ndi.s ) { ndi.s.v = ndi; }
+			nd_last = ndi;
 			FillParents(nd, ndi);
+		}
+		if( nd_last ) {
+			nd.c.v = ama::PackTailPointer(nd_last);
 		}
 		return nd;
 	}
@@ -162,13 +176,57 @@ namespace ama {
 		return nd_ret;
 	}
 	///////////////////////////////////////
-	private int! ValidateChildRange(ama::Node*+! p0, ama::Node*+! p1) {
-		if( p0 == p1 ) { return 1; }
-		for(ama::Node*+! ndi = p0.s; ndi; ndi = ndi.s) {
+	int! ValidateChildRange(ama::Node*+! p0, ama::Node*+! p1) {
+		for(ama::Node*+! ndi = p0; ndi; ndi = ndi.s) {
 			if( ndi == p1 ) { return 1; }
-			if( ndi == p0 ) { return 0; }
+			//if( ndi == p0 ) { return 0; }
 		}
 		return 0;
+	}
+	//both nd0 and nd1 are inclusive
+	void! DeleteChildRange(ama::Node*+! nd0, ama::Node*+! nd1) {
+		assert(ValidateChildRange(nd0, nd1));
+		if( nd1.s ) {
+			nd1.s.v = nd0.v;
+		} else if( nd1.p.c != nd0 ) {
+			//update tail pointer, here nd0.v is always a valid node since nd1.p.c != nd0
+			//the nd1.p.c == nd0 case is handled in the `assert(nd0.p.c == nd0);` scope
+			nd1.p.c.v = ama::PackTailPointer(nd0.v);
+		}
+		if( ama::isValidPreviousSibling(nd0.v) ) {
+			nd0.v.s = nd1.s;
+		} else if( nd0.p ) {
+			assert(nd0.p.c == nd0);
+			nd0.p.c = nd1.s;
+			//update tail pointer
+			if( nd1.s ) {
+				nd1.s.v = nd0.v;
+			}
+		}
+		//break links for safety
+		for(ama::Node*+! ndi = nd0; ndi; ndi = ndi.s) {
+			ndi.p = NULL;
+			if( ndi == nd1 ) { break; }
+		}
+		nd0.v = NULL;
+		nd1.s = NULL;
+	}
+	//both nd0 and nd1 are inclusive
+	ama::Node*+! ReplaceChildRange(ama::Node*+! nd0, ama::Node*+! nd1, ama::Node*+! nd_new) {
+		if( !nd_new ) {
+			DeleteChildRange(nd0, nd1);
+		} else {
+			ama::Node*+! nd_deleted_head = NULL;
+			if( nd0 != nd1 ) {
+				nd_deleted_head = nd0.s;
+				DeleteChildRange(nd0.s, nd1);
+			}
+			nd_new = nd0.ReplaceWith(nd_new);
+			if( nd_deleted_head ) {
+				ama::cons(nd0, nd_deleted_head);
+			}
+		}
+		return nd_new;
 	}
 };
 
@@ -195,14 +253,21 @@ private ama::Node*+! dfsClone(std::unordered_map<ama::Node*, ama::Node*+>&+! map
 	//ret.type = nd.type;
 	//ret.def = nd.def;
 	if( nd.c ) {
-		ama::Node*+*+! link = &ret.c;
+		ama::Node*+! nd_last = NULL;
 		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 			ama::Node*+! ndi_clone = dfsClone(mapping, ndi);
 			ndi_clone.p = ret;
-			*link = ndi_clone;
-			link = &ndi_clone.s;
+			if( !nd_last ) {
+				ret.c = ndi_clone;
+			} else {
+				nd_last.s = ndi_clone;
+				ndi_clone.v = nd_last;
+			}
+			nd_last = ndi_clone;
 		}
-		*link = NULL;
+		if( nd_last ) {
+			ret.c.v = ama::PackTailPointer(nd_last);
+		}
 	}
 	return ret;
 }
@@ -224,23 +289,18 @@ ama::Node*+! ama::Node::Clone(ama::Node*! this) {
 	return dfsClone(mapping, this);
 }
 
-auto ama::Node::ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new) {
-	if( !this->p ) {
-		return;
-	}
-	ama::Node*! nd = this;
-	ama::Node*+! nd_prev = this->p.c;
-	if( nd_prev == nd ) {
-		this->p.c = nd_new;
-		return;
-	}
-	//if anything is broken, we end up accessing NULL
-	while( nd_prev.s != nd ) {
-		nd_prev = nd_prev.s;
-	}
-	nd_prev.s = nd_new;
-}
-
+//auto ama::Node::ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new) {
+//	ama::Node*! nd = this;
+//	ama::Node*+! nd_prev = this->v;
+//	if( !nd_prev ) {
+//		//if !this->p, we access null, which is the best we can do
+//		assert(this->p.c==this)
+//		this->p.c = nd_new;
+//		return;
+//	}
+//	assert(nd_prev.s == this)
+//	nd_prev.s = nd_new;
+//}
 ama::Node*+! ama::Node::ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new) {
 	if( !nd_new ) {
 		this->Delete();
@@ -252,24 +312,35 @@ ama::Node*+! ama::Node::ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new) {
 }
 
 auto ama::Node::Delete(ama::Node*+! this) {
-	this->ReplaceLinkToThis(this->s);
+	if( this.s ) {
+		//this.s.v=this.v should work whether this.v is a tail pointer or not
+		//this.s.MergeCommentsBefore(this);
+		this.s.v = this.v;
+	} else {
+		if( this.p ) {
+			//this.p.comments_after = new char[|]!(this.comments_after + this.p.comments_after);
+			//this.comments_after = "";
+			if( this.p.c != this ) {
+				//update tail pointer
+				this.p.c.v = ama::PackTailPointer(this.v);
+			}
+		}
+	}
+	if( ama::isValidPreviousSibling(this.v) ) {
+		//this.v.MergeCommentsAfter(this);
+		this.v.s = this.s;
+	} else if( this.p ) {
+		//this.p.comments_before = new char[|]!(this.p.comments_before + this.comments_before);
+		//this.comments_before = "";
+		assert(this.p.c == this);
+		this.p.c = this.s;
+	}
 	//break links for safety
-	this->p = NULL;
-	this->s = NULL;
+	this.p = NULL;
+	this.s = NULL;
+	this.v = NULL;
 }
 
-//namespace jcc {
-//	private auto FillErrorInfo(ama::Node*+! nd_tar, ama::Node*! nd_src) {
-//		if( nd_tar.file == NULL ) {
-//			nd_tar.file = nd_src.file;
-//			nd_tar.ofs0 = nd_src.ofs0;
-//			nd_tar.ofs1 = nd_src.ofs1;
-//		}
-//		for(ama::Node*+! ndi : nd_tar) {
-//			FillErrorInfo(ndi, nd_src);
-//		}
-//	}
-//};
 ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new) {
 	assert(this.tmp_flags & ama::TMPF_IS_NODE);
 	ama::Node*+! nd_new_parent = pos == ama::POS_FRONT || pos == ama::POS_BACK ? this : this->p;
@@ -299,40 +370,84 @@ ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new)
 	//}
 	switch( pos ) {
 		case ama::POS_BEFORE: {
+			ama::Node*+! nd_prev = this.v;
+			if( ama::isValidPreviousSibling(nd_prev) ) {
+				assert(nd_prev.s == this);
+				nd_prev.s = nd_new;
+				nd_new.v = nd_prev;
+			} else {
+				assert(this.p.c == this);
+				this.p.c = nd_new;
+				nd_new.v = nd_prev;
+			}
 			nd_tail.s = this;
-			this->ReplaceLinkToThis(nd_new);
+			this.v = nd_tail;
 			break;
 		}
 		case ama::POS_AFTER: {
-			nd_tail.s = this->s;
-			this->s = nd_new;
+			ama::Node*+! nd_next = this.s;
+			nd_tail.s = nd_next;
+			if( nd_next ) {
+				nd_next.v = nd_tail;
+			} else if( this.p ) {
+				//insert after last, update tail pointer
+				this.p.c.v = ama::PackTailPointer(nd_tail);
+			}
+			this.s = nd_new;
+			nd_new.v = this;
 			break;
 		}
 		case ama::POS_FRONT: {
 			nd_tail.s = this->c;
-			this->c = nd_new;
+			if( this.c ) {
+				nd_new.v = this.c.v;
+				this.c.v = nd_tail;
+			} else {
+				nd_new.v = ama::PackTailPointer(nd_tail);
+			}
+			this.c = nd_new;
 			break;
 		}
 		case ama::POS_BACK: {
-			ama::Node*+! nd_my_tail = this->c;
-			if( nd_my_tail ) {
-				while( nd_my_tail.s ) {
-					nd_my_tail = nd_my_tail.s;
-				}
-			}
-			if( nd_my_tail ) {
-				nd_my_tail.s = nd_new;
+			//nd_tail.s = NULL;
+			if( !this.c ) {
+				this.c = nd_new;
 			} else {
-				this->c = nd_new;
+				ama::Node*+! nd_my_tail = ama::UnpackTailPointer(this.c.v);
+				nd_my_tail.s = nd_new;
+				nd_new.v = nd_my_tail;
 			}
+			this.c.v = ama::PackTailPointer(nd_tail);
 			break;
 		}
 		case ama::POS_REPLACE: {
-			nd_tail.s = this->s;
-			this->ReplaceLinkToThis(nd_new);
+			nd_tail.s = this.s;
+			if( this.s ) {
+				this.s.v = nd_tail;
+			} else if( this.p.c != this ) {
+				//update parent's last pointer if we weren't the first child
+				this.p.c.v = ama::PackTailPointer(nd_tail);
+			}
+			nd_new.v = this.v;
+			if( ama::isValidPreviousSibling(this.v) ) {
+				this.v.s = nd_new;
+			} else {
+				if( this.p ) {
+					assert(this.p.c == this);
+					this.p.c = nd_new;
+				}
+				if( this.v && ama::UnpackTailPointer(this.v) == this ) {
+					//we were the first AND last node
+					nd_new.v = ama::PackTailPointer(nd_tail);
+				} else {
+					//we were the first node, keep the old last node
+					nd_new.v = this.v;
+				}
+			}
 			//break links for safety
 			this->p = NULL;
 			this->s = NULL;
+			this->v = NULL;
 			break;
 		}
 	}
@@ -387,13 +502,27 @@ ama::Node*+! ama::Node::Owner(ama::Node*! this) {
 	return NULL;
 }
 
-ama::Node*+! ama::Node::LastChild(ama::Node*! this) {
+//for simppair.jc only
+ama::Node*+! ama::Node::LastChildSP(ama::Node*! this) {
 	ama::Node*+! ndi = this->c;
 	if( ndi ) {
 		while( ndi.s ) {
 			ndi = ndi.s;
 		}
 		return ndi;
+	} else {
+		return NULL;
+	}
+}
+
+ama::Node*+! ama::Node::LastChild(ama::Node*! this) {
+	ama::Node*+! ndi = this->c;
+	if( ndi ) {
+		//while( ndi.s ) {
+		//	ndi = ndi.s;
+		//}
+		//return ndi;
+		return ama::UnpackTailPointer(ndi.v);
 	} else {
 		return NULL;
 	}
@@ -715,13 +844,28 @@ int! ama::Node::dfsValidate(ama::Node*+! this) {
 		return 0;
 	}
 	int! ret = 1;
+	ama::Node*+! nd_last = NULL;
 	for(ama::Node*+! ndi = this.c; ndi; ndi = ndi.s) {
 		if( ndi.p != this ) {
 			console.log('bad parent', intptr_t(ndi), ndi.node_class, ndi.data == NULL ? "NULL" : JSON.stringify(ndi.data).c_str(), 'under', this.node_class);
 			ndi.comments_before = new char[|]!('/*bad parent ' + JSON.stringify(intptr_t(ndi)) + '*/' + ndi.comments_before);
 			ret = 0;
 		}
+		if( ndi.s && ndi.s.v != ndi ) {
+			console.log('bad previous sibling', intptr_t(ndi.s), ndi.s.node_class, ndi.s.data == NULL ? "NULL" : JSON.stringify(ndi.s.data).c_str(), 'after', ndi.node_class);
+			ndi.s.comments_before = new char[|]!('/*bad previous sibling ' + JSON.stringify(intptr_t(ndi.s)) + '*/' + ndi.s.comments_before);
+			ret = 0;
+		}
 		ret &= ndi.dfsValidate();
+		nd_last = ndi;
+	}
+	if( nd_last && this.c.v != ama::PackTailPointer(nd_last) ) {
+		console.log('bad tail pointer', intptr_t(this), this.node_class, this.data == NULL ? "NULL" : JSON.stringify(this.data).c_str(), intptr_t(this.c.v));
+		for(ama::Node*+! ndi = this.c; ndi; ndi = ndi.s) {
+			console.log('   ', intptr_t(ndi));
+		}
+		this.comments_before = new char[|]!('/*bad tail pointer ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
+		ret = 0;
 	}
 	return ret;
 }
@@ -792,4 +936,42 @@ ama::Node*+! ama::Node::ParentStatement(ama::Node*+! this) {
 		nd = nd.p;
 	}
 	return nd;
+}
+
+ama::Node*+! ama::Node::Prev(ama::Node*+! this) {
+	return ama::isValidPreviousSibling(this.v) ? this.v : NULL;
+}
+
+ama::Node*+! ama::Node::BreakSibling(ama::Node*+! this) {
+	ama::Node*+! ret = this.s;
+	this.s = NULL;
+	if( ret ) { ret.v = NULL; }
+	//update parent's last child
+	if( this.p ) {
+		this.p.c.v = ama::PackTailPointer(this);
+		//for consistency
+		for(ama::Node*+! ndi = ret; ndi; ndi = ndi.s) {
+			ndi.p = NULL;
+		}
+	}
+	return ret;
+}
+
+ama::Node*+! ama::Node::BreakChild(ama::Node*+! this) {
+	ama::Node*+! ret = this.c;
+	this.c = NULL;
+	if( ret ) { ret.p = NULL; }
+	return ret;
+}
+
+ama::Node*+! ama::Node::BreakSelf(ama::Node*+! this) {
+	if( ama::isValidPreviousSibling(this.v) ) {
+		assert(this.v.s == this);
+		return this.v.BreakSibling();
+	} else if( this.p && this.p.c == this ) {
+		return this.p.BreakChild();
+	} else {
+		//we're root, we're not attached to anything else
+		return this;
+	}
 }

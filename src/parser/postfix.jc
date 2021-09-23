@@ -12,12 +12,19 @@ namespace ama {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
 		for(ama::Node*+! nd_raw : (new ama::Node*+![+] {nd_root}).concat(nd_root.FindAll(ama::N_SCOPE, NULL), nd_root.FindAll(ama::N_RAW, NULL)).reverse()) {
 			ama::Node*+! ndi = nd_raw.c;
-			ama::Node*+!*+! p_self = &nd_raw.c;
 			const int! LAST_PROTOTYPE_NONE = 0;
 			const int! LAST_PROTOTYPE_CPP_LAMBDA = 1;
 			const int! LAST_PROTOTYPE_MAYBE_SUFFIX = 2;
 			int! last_prototype_kind = 0;
 			while( ndi ) {
+				//console.log(intptr_t(ndi), ndi.node_class, ndi.toSource());
+				//Map<ama::Node*, int>! dedup = new Map<ama::Node*, int>!();
+				//for(ama::Node*+! ndj = ndi; ndj; ndj = ndj.s) {
+				//	if( dedup[ndj] ) {
+				//		assert(0);
+				//	}
+				//	dedup[ndj] = 1;
+				//}
 				ama::Node*+! ndi_next = ndi.s;
 				if( parse_air_object && 
 				ndi.node_class == ama::N_SYMBOL && (ndi.data == "." || (!isCPPLambda(ndi) && ndi.data == "->") || ndi.data == "::") && 
@@ -29,16 +36,13 @@ namespace ama {
 					} else if( ndi.data == "::" ) {
 						dot_flags = ama::DOT_CLASS;
 					}
-					char[|]! name = ndi.s.data;
-					ama::Node*+! nd_dot = ama::nAir().dot(name).setFlags(dot_flags);
-					ndi.p = NULL;
-					ndi.s = NULL;
-					*p_self = nd_dot;
-					nd_dot.p = nd_raw;
-					nd_dot.s = ndi_next.s;
-					ndi_next.p = NULL;
-					ndi_next.FreeASTStorage();
-					ndi.FreeASTStorage();
+					ama::Node*+! ndi_next_next = ndi_next.BreakSibling();
+					ndi.BreakSelf();
+					char[|]! name = ndi_next.data;
+					ama::Node*+! nd_dot = ama::nAir().MergeCommentsAfter(ndi_next).dot(name).setFlags(dot_flags).setCommentsAfter(ndi_next.comments_after);
+					nd_raw.Insert(ama::POS_BACK, ama::cons(nd_dot, ndi_next_next));
+					ndi_next.p = NULL; ndi_next.FreeASTStorage();
+					ndi.p = NULL; ndi.s = NULL; ndi.FreeASTStorage();
 					ndi = nd_dot;
 					continue;
 				} else if( ndi.node_class == ama::N_SYMBOL ) {
@@ -54,27 +58,22 @@ namespace ama {
 						dot_flags = ama::DOT_CLASS;
 					}
 					ama::Node*+! nd_name = ndi_next.s;
+					nd_name.MergeCommentsBefore(ndi_next);
 					char[|]! name = nd_name.data;
-					*p_self = NULL;
-					ndi.p = NULL;
-					ndi.s = NULL;
-					ndi = ndi.dot(name).setFlags(dot_flags);
-					*p_self = ndi;
-					ndi.p = nd_raw;
-					ndi.s = nd_name.s;
+					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+					ama::ReplaceChildRange(ndi, nd_name, nd_tmp);
+					ndi = nd_tmp.ReplaceWith(
+						ndi.MergeCommentsAfter(ndi_next).MergeCommentsAfter(nd_name).dot(name).setFlags(dot_flags).setCommentsAfter(nd_name.comments_after)
+					);
 					nd_name.p = NULL; nd_name.FreeASTStorage();
 					ndi_next.p = NULL; ndi_next.FreeASTStorage();
 					continue;
 				} else if( ndi_next && (ndi_next.isRawNode('(', ')') || ndi_next.isRawNode('<', '>')) && !ndi_next.FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").length ) {
 					//call
-					ama::Node*+! nd_arglist = ndi.s;
+					ama::Node*+! nd_arglist = ndi.BreakSibling();
 					uint8_t! call_class = nd_arglist.isRawNode('<', '>') ? ama::N_CALL_TEMPLATE : ama::N_CALL;
-					*p_self = NULL;
-					ndi.p = NULL;
-					ndi.s = NULL;
-					ama::Node*+! ndi_next_next = nd_arglist.s;
-					nd_arglist.p = NULL;
-					nd_arglist.s = NULL;
+					ama::Node*+! ndi_next_next = nd_arglist.BreakSibling();
+					ndi.BreakSelf();
 					//re-delimit everything completely
 					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 					new_children.push_back(ndi);
@@ -113,20 +112,15 @@ namespace ama {
 					//console.log(JSON.stringify(ndi.toSource()), JSON.stringify(ndi.comments_after));
 					ndi.indent_level = ndi_old.indent_level;
 					//ndi_old.indent_level=0;
-					ndi.p = nd_raw;
-					ndi.s = ndi_next_next;
-					*p_self = ndi;
-					//nd_arglist is also N_RAW: but we shouldn't process it any more
+					//console.log('>>>', intptr_t(ndi_next_next), intptr_t(ndi_next_next.s));
+					nd_raw.Insert(ama::POS_BACK, ama::cons(ndi, ndi_next_next));
+					//nd_arglist is also N_RAW so it can't be freed right now: but we shouldn't process it any more
 					nd_arglist.c = NULL;
 					continue;
 				} else if( ndi.s && ndi.s.isRawNode('[', ']') ) {
 					//item
-					*p_self = NULL;
-					ndi.p = NULL;
-					ndi.s = NULL;
-					ama::Node*+! ndi_next_next = ndi_next.s;
-					ndi_next.p = NULL;
-					ndi_next.s = NULL;
+					ama::Node*+! ndi_next_next = ndi_next.BreakSibling();
+					ndi.BreakSelf();
 					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 					new_children.push_back(ndi);
 					for(ama::Node*+! ndj : ndi_next) {
@@ -141,12 +135,9 @@ namespace ama {
 					}
 					ndi = ama::CreateNodeFromChildren(ama::N_ITEM, new_children);
 					ndi.comments_after = ndi_next.comments_after;
-					ndi.p = nd_raw;
-					ndi.s = ndi_next_next;
-					*p_self = ndi;
+					nd_raw.Insert(ama::POS_BACK, ama::cons(ndi, ndi_next_next));
 					continue;
 				}
-				p_self = &ndi.s;
 				ndi = ndi_next;
 			}
 		}
@@ -155,7 +146,7 @@ namespace ama {
 	ama::Node*+! UnparseCall(ama::Node*+! nd) {
 		assert(nd.node_class == ama::N_CALL || nd.node_class == ama::N_CALL_TEMPLATE);
 		ama::Node*+[+]! args = new ama::Node*+[+]!();
-		for(ama::Node*+! ndi = nd.c.s; ndi; ndi = ndi.s) {
+		for(ama::Node*+! ndi = nd.c.BreakSibling(); ndi; ndi = ndi.s) {
 			args.push_back(ndi);
 			if( ndi.s ) {
 				args.push_back(ama::nSymbol(",").setCommentsAfter(" "));
@@ -165,8 +156,8 @@ namespace ama {
 		if( nd.node_class == ama::N_CALL_TEMPLATE ) {
 			flags = uint32_t('<') | uint32_t('>') << 8;
 		}
-		ama::Node*+! ret = nd.ReplaceWith(ama::cons(nd.c, ama::CreateNodeFromChildren(ama::N_RAW, args).setFlags(flags)));
-		nd.c = NULL;
+		ama::Node*+! ret = nd.ReplaceWith(ama::cons(nd.c.BreakSelf(), ama::CreateNodeFromChildren(ama::N_RAW, args).setFlags(flags)));
+		//nd.c = NULL;
 		nd.FreeASTStorage();
 		return ret;
 	}

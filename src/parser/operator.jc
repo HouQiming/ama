@@ -6,25 +6,26 @@
 
 namespace ama {
 	private class ColonStackItem {
-		ama::Node*+*+! phead = NULL;
-		ama::Node*+*+! pqmark = NULL;
-		ama::Node*+*+! pcolon = NULL;
+		ama::Node*+! nd_head = NULL;
+		ama::Node*+! nd_qmark = NULL;
+		ama::Node*+! nd_colon = NULL;
 	};
-	private ama::Node*+*+! FoldColonStack(ColonStackItem![+]&+! cstk, ama::Node*+*+! pnext) {
-		assert(cstk.back().pcolon);
-		ama::Node*+*+! phead = cstk.back().phead;
+	private ama::Node*+! FoldColonStack(ColonStackItem![+]&+! cstk, ama::Node*+! nd_next) {
+		assert(cstk.back().nd_colon);
+		ama::Node*+! nd_head = cstk.back().nd_head;
 		//console.log(cstk.length, phead);
-		ama::Node*+! nd_parent = (*phead).p;
-		ama::Node*+! nd_next = ama::BreakLink(pnext);
-		ama::Node*+! nd_colon = ama::BreakLink(cstk.back().pcolon);
+		ama::Node*+! nd_parent = nd_head.p;
+		if( nd_next ) { nd_next.BreakSelf(); }
+		ama::Node*+! nd_colon = cstk.back().nd_colon.BreakSelf();
 		ama::Node*+! nd_ret = NULL;
-		if( cstk.back().pqmark ) {
+		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+		nd_head.ReplaceWith(nd_tmp);
+		if( cstk.back().nd_qmark ) {
 			//N_CONDITIONAL
-			ama::Node*+! nd_qmark = ama::BreakLink(cstk.back().pqmark);
-			ama::Node*+! nd_head = ama::BreakLink(phead);
+			ama::Node*+! nd_qmark = cstk.back().nd_qmark.BreakSelf();
 			ama::Node*+! nd_cond = ama::toSingleNode(nd_head);
-			ama::Node*+! nd_true = ama::toSingleNode(nd_qmark.s);
-			ama::Node*+! nd_false = ama::toSingleNode(nd_colon.s);
+			ama::Node*+! nd_true = ama::toSingleNode(nd_qmark.BreakSibling());
+			ama::Node*+! nd_false = ama::toSingleNode(nd_colon.BreakSibling());
 			nd_cond.MergeCommentsAfter(nd_qmark);
 			nd_true.MergeCommentsBefore(nd_qmark);
 			nd_true.MergeCommentsAfter(nd_colon);
@@ -34,71 +35,68 @@ namespace ama {
 			nd_colon.p = NULL; nd_colon.FreeASTStorage();
 		} else {
 			//N_LABELED
-			ama::Node*+! nd_head = ama::BreakLink(phead);
 			ama::Node*+! nd_label = ama::toSingleNode(nd_head);
-			ama::Node*+! nd_value = ama::toSingleNode(nd_colon.s);
+			ama::Node*+! nd_value = ama::toSingleNode(nd_colon.BreakSibling());
 			nd_label.MergeCommentsAfter(nd_colon);
 			nd_value.MergeCommentsBefore(nd_colon);
 			nd_ret = ama::nLabeled(nd_label, nd_value);
 			nd_colon.p = NULL; nd_colon.FreeASTStorage();
 		}
-		*phead = nd_ret;
-		nd_ret.p = nd_parent;
-		nd_ret.s = nd_next;
+		nd_tmp.ReplaceWith(nd_ret);
+		if( nd_next ) { nd_ret.Insert(ama::POS_AFTER, nd_next); }
 		cstk.pop();
 		if( !cstk.length ) {
 			cstk.push(new ColonStackItem!{
 				phead: phead
 			});
 		}
-		return &nd_ret.s;
+		return nd_next;
 	}
 	ama::Node*+! ParseColons(ama::Node*+! nd_root, int! has_c_conditional) {
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			ColonStackItem![+]! cstk;
 			cstk.push(new ColonStackItem!{
-				phead: &nd_raw.c
+				nd_head: nd_raw.c
 			});
-			ama::Node*+*+! pndi = &nd_raw.c;
-			for(ama::Node*+! ndi = nd_raw.c; ndi; (pndi = &ndi.s, ndi = ndi.s)) {
+			for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
 				if( has_c_conditional && ndi.isSymbol("?") ) {
 					assert(cstk.length > 0);
-					if( cstk.back().pcolon ) {
+					if( cstk.back().nd_colon ) {
 						// foo?bar:baz? /*we are here*/
 						// bar:baz? /*we are here*/
 						// 1?1:0?2:3 == 1?1:(0?2:3) - here we need to create a new conditional
-						ama::Node*+! nd_colon = cstk.back().pcolon[0];
+						ama::Node*+! nd_colon = cstk.back().nd_colon;
 						assert(nd_colon);
 						cstk.push(new ColonStackItem!{
-							phead: &nd_colon->s,
-							pqmark: pndi
+							nd_head: nd_colon.s,
+							nd_qmark: ndi
 						});
-					} else if( cstk.back().pqmark ) {
+					} else if( cstk.back().nd_qmark ) {
 						//again, create a new conditional
-						ama::Node*+! nd_qmark = cstk.back().pqmark[0];
+						ama::Node*+! nd_qmark = cstk.back().nd_qmark;
 						assert(nd_qmark);
 						cstk.push(new ColonStackItem!{
-							phead: &nd_qmark->s,
-							pqmark: pndi
+							nd_head: nd_qmark.s,
+							nd_qmark: ndi
 						});
 					} else {
-						cstk.back().pqmark = pndi;
+						cstk.back().nd_qmark = ndi;
 					}
 				} else if( ndi.isSymbol(":") ) {
 					assert(cstk.length > 0);
-					while( cstk.back().pcolon ) {
+					while( cstk.back().nd_colon ) {
 						assert(cstk.length > 0);
-						pndi = FoldColonStack(cstk, pndi);
+						ndi = FoldColonStack(cstk, ndi);
 					}
 					//conditional -- foo?bar:
 					//label -- bar:
 					//both only involves setting pcolon
-					cstk.back().pcolon = pndi;
+					cstk.back().nd_colon = ndi;
 				}
 			}
 			while( cstk.length ) {
-				if( cstk.back().pcolon ) {
-					FoldColonStack(cstk, pndi);
+				if( cstk.back().nd_colon ) {
+					FoldColonStack(cstk, NULL);
 				} else {
 					cstk.pop();
 				}
@@ -116,7 +114,7 @@ namespace ama {
 				ama::Node*+! ndi_next = ndi.s;
 				if( ndi_next && ndi_next.s && 
 				ndi_next.isSymbol("=") ) {
-					ama::Node*+! ndi_next_next = ndi_next.s;
+					ama::Node*+! ndi_next_next = ndi_next.BreakSibling();
 					//move the comments
 					ndi.MergeCommentsAfter(ndi_next);
 					ndi_next.Delete();
@@ -127,7 +125,7 @@ namespace ama {
 					nd_value.indent_level = ndi_next_next.indent_level;
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
 					nd_raw.ReplaceWith(nd_tmp);
-					ndi.s = NULL;
+					//ndi.s = NULL;
 					ama::Node*+! nd_asgn = nd_tmp.ReplaceWith(ama::nAssignment(nd_raw, nd_value));
 					if( ndi.node_class == ama::N_SYMBOL && binop_priority[ndi.data] && ndi != nd_raw.c ) {
 						//updating assignment
@@ -252,11 +250,8 @@ namespace ama {
 				} else {
 					//we still have uninterpreted things, replace children
 					assert(stack.length > 1);
-					for(ama::Node*&+! ndi : stack) {
-						ndi.p = nd_raw;
-					}
-					ama::Node*+! nd_new_child = ama::InsertMany(stack);
-					nd_raw.c = nd_new_child;
+					nd_raw.c = NULL;
+					nd_raw.Insert(ama::POS_FRONT, ama::InsertMany(stack));
 				}
 			}
 		}
@@ -282,24 +277,25 @@ namespace ama {
 	ama::Node*+! ParsePointedBrackets(ama::Node*+! nd_root) {
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
 			//actually split it
-			ama::Node*+*+[+]! stack = new ama::Node*+*+[+]!();
-			ama::Node*+*+! p_self = &nd_raw.c;
+			ama::Node*+[+]! stack = new ama::Node*+[+]!();
 			int! was_ref = 0;
 			for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
 				if( ndi.node_class == ama::N_SYMBOL ) {
 					if( was_ref && ndi.data == "<" ) {
-						stack.push_back(p_self);
+						stack.push_back(ndi);
 					} else if( (ndi.data == ">" || ndi.data == ">>" || ndi.data == ">>>") && stack.length >= ndi.data.length ) {
-						for(int! j = 0; j < ndi.data.length; j += 1) {
-							ama::Node*+*+! p_ndi0 = stack.pop();
-							ama::Node*+! ndi0 = *p_ndi0;
-							*p_self = NULL;
-							ama::Node*+! nd_child = ama::CreateNode(ama::N_RAW, ndi0.s);
+						intptr_t! n_levels = ndi.data.length;
+						for(int! j = 0; j < n_levels; j += 1) {
+							ama::Node*+! ndi0 = stack.pop();
+							ndi.BreakSelf();
+							ama::Node*+! nd_child = ama::CreateNode(ama::N_RAW, ndi0.BreakSibling());
 							nd_child.flags = uint32_t('<') | uint32_t('>') << 8;
-							nd_child.s = ndi.s;
-							nd_child.p = nd_raw;
-							*p_ndi0 = nd_child;
-							p_self = &nd_child.s;
+							ndi0.ReplaceWith(nd_child);
+							nd_child.Insert(ama::POS_AFTER, ndi.BreakSibling());
+							//////////
+							ndi0.p = NULL; ndi0.FreeASTStorage();
+							ndi.p = NULL; ndi.FreeASTStorage();
+							ndi = nd_child;
 						}
 						was_ref = 0;
 						continue;
@@ -308,7 +304,6 @@ namespace ama {
 					}
 				}
 				was_ref = ndi.node_class == ama::N_REF;
-				p_self = &ndi.s;
 			}
 		}
 		return nd_root;
@@ -317,12 +312,11 @@ namespace ama {
 		ama::Node*+! nd_parent = nd_binop.p;
 		if( !nd_parent || nd_parent.node_class != ama::N_RAW ) {
 			nd_parent = nd_binop.ReplaceWith(ama::CreateNode(ama::N_RAW, NULL));
-			nd_parent.c = nd_binop;
-			nd_binop.p = nd_parent;
+			nd_parent.Insert(ama::POS_FRONT, nd_binop);
 			nd_parent.indent_level = nd_binop.indent_level;
 		}
-		ama::Node*+! nd_a = nd_binop.c;
-		ama::Node*+! nd_b = nd_binop.c.s;
+		ama::Node*+! nd_a = nd_binop.BreakChild();
+		ama::Node*+! nd_b = nd_a.s;
 		//.setCommentsBefore(nd_binop.data == ":" ? "" : " ").setCommentsAfter(" ")
 		ama::Node*+! ret = nd_binop.ReplaceWith(ama::cons(nd_a, ama::cons(ama::nSymbol(nd_binop.data), nd_b)));
 		if( nd_a.isRawNode(0, 0) ) {
@@ -331,7 +325,6 @@ namespace ama {
 		if( nd_b.isRawNode(0, 0) ) {
 			ama::UnparseRaw(nd_b);
 		}
-		nd_binop.c = NULL;
 		nd_binop.FreeASTStorage();
 		return ret;
 	}
