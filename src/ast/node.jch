@@ -179,6 +179,7 @@ namespace ama {
 		ama::Node*+! BreakChild(ama::Node*+! this);
 		ama::Node*+! BreakSelf(ama::Node*+! this);
 		ama::Node*+! LastChildSP(ama::Node*! this);
+		ama::Node*+! ReplaceUpto(ama::Node*+! this, ama::Node*+! nd_upto, ama::Node*+! nd_new);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;

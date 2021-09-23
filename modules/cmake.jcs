@@ -27,15 +27,10 @@ cmake.LoadCMakeFile = function(fn, template) {
 			if (name === 'if') {
 				if_stk.push(ndi);
 			} else if(name === 'endif' && if_stk.length > 0) {
-				!?
 				let nd0 = if_stk.pop();
-				let nd_body = nd0.s;
-				nd0.s = ndi.s;
-				ndi.s = null;
 				let nd_tmp = Node.GetPlaceHolder();
-				nd0.ReplaceWith(nd_tmp);
-				nd0.s = nd_body;
-				ndi = nd_tmp.ReplaceWith(CreateNode(N_RAW, nd0));
+				nd0.ReplaceUpto(ndi,nd_tmp)
+				ndi=nd_tmp.ReplaceWith(CreateNode(N_RAW, nd0));
 			} else {
 				//do nothing
 			}

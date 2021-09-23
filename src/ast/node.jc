@@ -976,3 +976,7 @@ ama::Node*+! ama::Node::BreakSelf(ama::Node*+! this) {
 		return this;
 	}
 }
+
+ama::Node*+! ama::Node::ReplaceUpto(ama::Node*+! this, ama::Node*+! nd_upto, ama::Node*+! nd_new) {
+	return ama::ReplaceChildRange(this, nd_upto, nd_new);
+}
