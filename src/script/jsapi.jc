@@ -467,6 +467,7 @@ namespace ama {
 		if( has_c_conditional || has_labels ) {
 			ama::ParseColons(nd_root, has_c_conditional);
 		}
+		//nd_root.Validate();
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
 			ama::ParseOperators(nd_root, options);
 			//ama::StripBinaryOperatorSpaces(nd_root);

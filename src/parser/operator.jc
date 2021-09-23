@@ -3,6 +3,7 @@
 #include '../ast/node.jch'
 #include "../script/jsenv.jch"
 #include "./operator.jch"
+#include <console.jch>
 
 namespace ama {
 	private class ColonStackItem {
@@ -14,12 +15,12 @@ namespace ama {
 		assert(cstk.back().nd_colon);
 		ama::Node*+! nd_head = cstk.back().nd_head;
 		//console.log(cstk.length, phead);
-		ama::Node*+! nd_parent = nd_head.p;
-		if( nd_next ) { nd_next.BreakSelf(); }
+		//COULDDO: range mode
+		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+		nd_head.ReplaceUpto(nd_next ? nd_next.Prev() : nd_head.p.LastChild(), nd_tmp);
+		//if( nd_next ) { nd_next.BreakSelf(); }
 		ama::Node*+! nd_colon = cstk.back().nd_colon.BreakSelf();
 		ama::Node*+! nd_ret = NULL;
-		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-		nd_head.ReplaceWith(nd_tmp);
 		if( cstk.back().nd_qmark ) {
 			//N_CONDITIONAL
 			ama::Node*+! nd_qmark = cstk.back().nd_qmark.BreakSelf();
@@ -43,17 +44,20 @@ namespace ama {
 			nd_colon.p = NULL; nd_colon.FreeASTStorage();
 		}
 		nd_tmp.ReplaceWith(nd_ret);
-		if( nd_next ) { nd_ret.Insert(ama::POS_AFTER, nd_next); }
+		//if( nd_next ) { nd_ret.Insert(ama::POS_AFTER, nd_next); }
 		cstk.pop();
 		if( !cstk.length ) {
 			cstk.push(new ColonStackItem!{
-				phead: phead
+				nd_head: nd_ret
 			});
 		}
 		return nd_next;
 	}
 	ama::Node*+! ParseColons(ama::Node*+! nd_root, int! has_c_conditional) {
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			if( !nd_raw.c ) { continue; }
+			//console.error('--------');
+			//console.error(nd_raw.toSource());
 			ColonStackItem![+]! cstk;
 			cstk.push(new ColonStackItem!{
 				nd_head: nd_raw.c
@@ -79,7 +83,7 @@ namespace ama {
 							nd_head: nd_qmark.s,
 							nd_qmark: ndi
 						});
-					} else {
+					} else if( cstk.back().nd_head != ndi ) {
 						cstk.back().nd_qmark = ndi;
 					}
 				} else if( ndi.isSymbol(":") ) {

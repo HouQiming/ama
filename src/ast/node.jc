@@ -219,7 +219,7 @@ namespace ama {
 			ama::Node*+! nd_deleted_head = NULL;
 			if( nd0 != nd1 ) {
 				nd_deleted_head = nd0.s;
-				DeleteChildRange(nd0.s, nd1);
+				DeleteChildRange(nd_deleted_head, nd1);
 			}
 			nd_new = nd0.ReplaceWith(nd_new);
 			if( nd_deleted_head ) {
@@ -835,6 +835,16 @@ int! ama::Node::dfsValidate(ama::Node*+! this) {
 		return 0;
 	}
 	g_validate_dedup[this] = 1;
+	if( this.comments_before == NULL ) {
+		console.log('comments_before == NULL', intptr_t(this));
+		this.comments_before = "/*NULL comments_before*/";
+		return 0;
+	}
+	if( this.comments_after == NULL ) {
+		console.log('comments_after == NULL', intptr_t(this));
+		this.comments_after = "/*NULL comments_after*/";
+		return 0;
+	}
 	if( !(this.tmp_flags & ama::TMPF_IS_NODE) ) {
 		console.log('found freed node', intptr_t(this));
 		this.comments_before = new char[|]!('/*freed ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
@@ -875,6 +885,7 @@ void! ama::Node::Validate(ama::Node*+! this) {
 	g_validate_dedup.clear();
 	if( !this.dfsValidate() ) {
 		console.log('=== source code');
+		fflush(stdout);
 		console.log(this.toSource());
 		assert(0);
 	}

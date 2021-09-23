@@ -229,7 +229,9 @@ namespace ama {
 							continue;
 						}
 					}
-				} else if( ndi.node_class == ama::N_SYMBOL && (ndi.data == "," || ndi.data == ";") ) {
+				} else if( ndi.node_class == ama::N_SYMBOL && ndi.data == ";" ) {
+					//we can't delimit at ",": C++ constructor parameter list
+					//ndi.data == ","
 					if( ndi.data == ";" && nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 						//unscoped statement
 						ndi_next = ndi.BreakSibling();
@@ -305,10 +307,9 @@ namespace ama {
 								ama::CreateNode(ama::N_CLASS, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
 							ndi.BreakSelf();
-							ama::Node*+! nd_before = ama::toSingleNode(nd_keyword.s);
-							ama::Node*+! nd_after = nd_class_name.BreakSibling();
+							ama::Node*+! nd_after = ama::toSingleNode(nd_class_name.BreakSibling());
 							nd_class_name.BreakSelf();
-							nd_after = ama::toSingleNode(nd_after);
+							ama::Node*+! nd_before = ama::toSingleNode(nd_keyword.s);
 							ama::ConvertToScope(ndi);
 							nd_class.Insert(
 								ama::POS_FRONT,
@@ -332,7 +333,7 @@ namespace ama {
 								nd_keyword, ndi,
 								ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
-							ama::Node*+! nd_arg = ama::toSingleNode(nd_keyword.s);
+							ama::Node*+! nd_arg = nd_keyword.s == ndi ? ama::nAir() : ama::toSingleNode(nd_keyword.s);
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							ndi.BreakSelf();
 							ama::ConvertToScope(ndi);
@@ -354,7 +355,7 @@ namespace ama {
 							}
 							ama::DeleteChildRange(nd_keyword, ndi);
 							assert(nd_last_scoped_stmt);
-							ama::Node*+! nd_arg = ama::toSingleNode(nd_keyword.s);
+							ama::Node*+! nd_arg = nd_keyword.s == ndi ? ama::nAir() : ama::toSingleNode(nd_keyword.s);
 							nd_arg.MergeCommentsBefore(nd_keyword);
 							ndi.BreakSelf();
 							//insert into the last statement
@@ -383,15 +384,18 @@ namespace ama {
 							//if we had a keyword, we won't have a C-like return type
 							if( !nd_keyword ) {
 								nd_keyword = nd_prototype_start;
-							} else if( nd_keyword.node_class == ama::N_CALL ) {
-								//the unparsing always creates a paramlist
-								nd_keyword = ama::UnparseCall(nd_keyword);
+							} else {
+								nd_prototype_start = nd_keyword.s;
+								if( nd_keyword.node_class == ama::N_CALL ) {
+									//the unparsing always creates a paramlist
+									nd_keyword = ama::UnparseCall(nd_keyword);
+								}
 							}
 							ama::Node*+! nd_paramlist = NULL;
-							for(ama::Node*+! ndj = nd_keyword.s; ndj != ndi; ndj = ndj.s) {
+							for(ama::Node*+! ndj = nd_prototype_start; ndj != ndi; ndj = ndj.s) {
 								if( ndj.isRawNode('(', ')') || ndj.node_class == ama::N_CALL ) {
 									nd_paramlist = ndj;
-								} else if( ndj.node_class == ama::N_SYMBOL && keywords_after_prototype[ndj.data] ) {
+								} else if( (ndj.node_class == ama::N_SYMBOL || (ndj.node_class == ama::N_REF && nd_paramlist)) && keywords_after_prototype[ndj.data] ) {
 									break;
 								} else if( parse_cpp11_lambda && ndj.isRawNode('[', ']') && ndj.s.isRawNode('(', ')') ) {
 									nd_paramlist = ndj.s;
@@ -402,7 +406,11 @@ namespace ama {
 								`goto not_declaration;`
 							}
 							if( nd_paramlist.node_class == ama::N_CALL ) {
+								int! keyword_was_paramlist = nd_keyword == nd_paramlist;
 								nd_paramlist = ama::UnparseCall(nd_paramlist).s;
+								if( keyword_was_paramlist ) {
+									nd_keyword = nd_paramlist;
+								}
 							}
 							//keyworded function shouldn't have any junk before... but C++ function has both junk before and junk after
 							//before (C++ return type plus junk plus name, or just a name), paramlist, after, body, figure out return type separately
