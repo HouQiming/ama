@@ -135,6 +135,8 @@ namespace ama {
 		Map<char[|], int>! keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
 		Map<char[|], int>! keywords_not_a_function = ama::GetPrioritizedList(options, "keywords_not_a_function");
 		int32_t! parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_forward_declarations'), 1);
+		//obsoleting: ParseColons is now after this
+		/*
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_colon_statements'), 1) ) {
 			//use reverse() to facilitate recursive unparsing of if foo:{}else:{}
 			for(ama::Node*+! nd_labeled : nd_root.FindAll(ama::N_LABELED, NULL).reverse()) {
@@ -176,6 +178,7 @@ namespace ama {
 				}
 			}
 		}
+		*/
 		int32_t! parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp11_lambda'), 1);
 		int32_t! struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'struct_can_be_type_prefix'), 1);
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
@@ -495,10 +498,15 @@ namespace ama {
 	}
 	ama::Node*+! ParseKeywordStatements(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
-			if( !nd_raw.isRawNode(0, 0) || !nd_raw.c || nd_raw.c.node_class != ama::N_REF ) { continue; }
-			ama::Node*+! nd_keyword = nd_raw.c;
-			if( keywords_statement[nd_keyword.data] ) {
+		for(ama::Node*+! nd_keyword : nd_root.FindAll(ama::N_REF, NULL)) {
+			if( !keywords_statement[nd_keyword.data] ) { continue; }
+			ama::Node*+! nd_parent = nd_keyword.p;
+			if( !nd_parent ) { continue; }
+			if( nd_parent.node_class == ama::N_SCOPE || nd_parent.node_class == ama::N_FILE ) {
+				nd_keyword.node_class = ama::N_KEYWORD_STATEMENT;
+				nd_keyword.Insert(ama::POS_FRONT, ama::nAir());
+			} else if( nd_parent.node_class == ama::N_RAW ) {
+				ama::Node*+! nd_raw = nd_parent;
 				ama::Node*+! nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword.BreakSibling()));
 				nd_keyword.BreakSelf();
 				nd_stmt.comments_before = nd_keyword.comments_before;

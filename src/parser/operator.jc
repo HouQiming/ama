@@ -91,7 +91,9 @@ namespace ama {
 					//conditional -- foo?bar:
 					//label -- bar:
 					//both only involves setting pcolon
-					cstk.back().nd_colon = ndi;
+					if( cstk.back().nd_head != ndi ) {
+						cstk.back().nd_colon = ndi;
+					}
 				}
 			}
 			while( cstk.length ) {

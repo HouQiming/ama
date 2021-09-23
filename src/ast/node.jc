@@ -424,7 +424,7 @@ ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new)
 			nd_tail.s = this.s;
 			if( this.s ) {
 				this.s.v = nd_tail;
-			} else if( this.p.c != this ) {
+			} else if( this.p && this.p.c != this ) {
 				//update parent's last pointer if we weren't the first child
 				this.p.c.v = ama::PackTailPointer(nd_tail);
 			}
@@ -834,6 +834,7 @@ int! ama::Node::dfsValidate(ama::Node*+! this) {
 		this.comments_before = new char[|]!('/*cycle ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
 		return 0;
 	}
+	g_validate_dedup[this] = 1;
 	if( !(this.tmp_flags & ama::TMPF_IS_NODE) ) {
 		console.log('found freed node', intptr_t(this));
 		this.comments_before = new char[|]!('/*freed ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);

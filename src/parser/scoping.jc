@@ -19,7 +19,11 @@ namespace ama {
 			(lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1].isRawNode('{', '}') || 
 			(lines_out[i1].isRawNode(0, 0) && lines_out[i1].c && (lines_out[i1].c.node_class == ama::N_SCOPE || lines_out[i1].c.isRawNode('{', '}'))) || 
 			((lines_out[i1 - 1].node_class == ama::N_SCOPE || lines_out[i1 - 1].isRawNode('{', '}')) && 
-			lines_out[i1].node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].data])) ) {
+			((lines_out[i1].node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].data]) || 
+			(lines_out[i1].node_class == ama::N_RAW && lines_out[i1].c && lines_out[i1].c.node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].c.data])))) ) {
+				if( (lines_out[i1 - 1].node_class == ama::N_SCOPE || lines_out[i1 - 1].isRawNode('{', '}')) && lines_out[i1].comments_before.startsWith('\n') ) {
+					lines_out[i1].comments_before = new char[|]!(lines_out[i1].comments_before.subarray(1));
+				}
 				i1 += 1;
 			}
 			if( (i1 - i0) <= 1 ) {
@@ -62,7 +66,13 @@ namespace ama {
 		if( nd_nextline ) {
 			intptr_t! p_newline = nd_nextline.comments_before.indexOf('\n');
 			if( p_newline >= 0 ) {
-				nd_new_scope.comments_after = new char[|]!(nd_new_scope.comments_after + nd_nextline.comments_before.subarray(0, p_newline + 1));
+				if( nd_new_scope.c ) {
+					ama::Node*+! nd_last = nd_new_scope.LastChild();
+					if( nd_last.comments_after.indexOf('\n') < 0L ) {
+						nd_last.comments_after = new char[|]!(nd_last.comments_after + "\n");
+					}
+				}
+				nd_new_scope.comments_after = new char[|]!(nd_new_scope.comments_after + nd_nextline.comments_before.subarray(0, p_newline));
 				nd_nextline.comments_before = new char[|]!(nd_nextline.comments_before.subarray(p_newline));
 			}
 			//MergeCommentsAfter(nd_nextline);
