@@ -8,7 +8,8 @@ void f() {
 	}
 	
 	foo<T*> bar=sizeof baz + new Set();
-	'()'.replace(/\([(]/g,'test')
+	'()'.replace(/\([(]/g,'test');
+	::test(p[a,b]);
 	if(1){
 		for (int i = 0; i < 10000; ++i)
 			QMetaType::fromName("Foo");

@@ -36,11 +36,11 @@ namespace ama {
 					} else if( ndi.data == "::" ) {
 						dot_flags = ama::DOT_CLASS;
 					}
-					ama::Node*+! ndi_next_next = ndi_next.BreakSibling();
-					ndi.BreakSelf();
 					char[|]! name = ndi_next.data;
-					ama::Node*+! nd_dot = ama::nAir().MergeCommentsAfter(ndi_next).dot(name).setFlags(dot_flags).setCommentsAfter(ndi_next.comments_after);
-					nd_raw.Insert(ama::POS_BACK, ama::cons(nd_dot, ndi_next_next));
+					ama::Node*+! nd_dot = ama::ReplaceChildRange(
+						ndi, ndi_next,
+						ama::nAir().setCommentsAfter(new char[|]!(ndi.comments_after + ndi_next.comments_before)).dot(name).setFlags(dot_flags).setCommentsBefore(ndi.comments_before).setCommentsAfter(ndi_next.comments_after)
+					);
 					ndi_next.p = NULL; ndi_next.FreeASTStorage();
 					ndi.p = NULL; ndi.s = NULL; ndi.FreeASTStorage();
 					ndi = nd_dot;
@@ -62,18 +62,23 @@ namespace ama {
 					char[|]! name = nd_name.data;
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
 					ama::ReplaceChildRange(ndi, nd_name, nd_tmp);
+					ndi.BreakSibling();
 					ndi = nd_tmp.ReplaceWith(
 						ndi.MergeCommentsAfter(ndi_next).MergeCommentsAfter(nd_name).dot(name).setFlags(dot_flags).setCommentsAfter(nd_name.comments_after)
 					);
 					nd_name.p = NULL; nd_name.FreeASTStorage();
 					ndi_next.p = NULL; ndi_next.FreeASTStorage();
 					continue;
-				} else if( ndi_next && (ndi_next.isRawNode('(', ')') || ndi_next.isRawNode('<', '>')) && !ndi_next.FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").length ) {
+				} else if( ndi_next && (ndi_next.isRawNode('(', ')') || ndi_next.isRawNode('<', '>') || ndi_next.isRawNode('[', ']')) && !ndi_next.FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").length ) {
 					//call
-					ama::Node*+! nd_arglist = ndi.BreakSibling();
-					uint8_t! call_class = nd_arglist.isRawNode('<', '>') ? ama::N_CALL_TEMPLATE : ama::N_CALL;
-					ama::Node*+! ndi_next_next = nd_arglist.BreakSibling();
-					ndi.BreakSelf();
+					ama::Node*+! nd_arglist = ndi.s;
+					uint8_t! call_class = ama::N_CALL;
+					if( nd_arglist.isRawNode('<', '>') ) {
+						call_class = ama::N_CALL_TEMPLATE;
+					} else if( nd_arglist.isRawNode('[', ']') ) {
+						call_class = ama::N_ITEM;
+					}
+					ndi.MergeCommentsAfter(nd_arglist);
 					//re-delimit everything completely
 					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 					new_children.push_back(ndi);
@@ -99,43 +104,22 @@ namespace ama {
 						}
 						new_children.push_back(ama::toSingleNode(ama::InsertMany(comma_group)));
 					}
-					for(int! i = 2; i < new_children.length; i += 1) {
-						if( new_children[i].comments_before.startsWith(' ') ) {
-							new_children[i].comments_before = new char[|]!(new_children[i].comments_before.subarray(1));
-						}
-					}
-					ama::Node*+! ndi_old = ndi;
-					ndi = ama::CreateNodeFromChildren(call_class, new_children);
-					//merge comments
-					ndi.comments_after = nd_arglist.comments_after;
-					ndi_old.MergeCommentsAfter(nd_arglist);
+					//for(int! i = 2; i < new_children.length; i += 1) {
+					//	if( new_children[i].comments_before.startsWith(' ') ) {
+					//		new_children[i].comments_before = new char[|]!(new_children[i].comments_before.subarray(1));
+					//	}
+					//}
+					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+					ama::ReplaceChildRange(ndi, nd_arglist, nd_tmp);
+					ama::Node*+! nd_call = nd_tmp.ReplaceWith(ama::CreateNodeFromChildren(call_class, new_children).setCommentsAfter(nd_arglist.comments_after));
 					//console.log(JSON.stringify(ndi.toSource()), JSON.stringify(ndi.comments_after));
-					ndi.indent_level = ndi_old.indent_level;
+					//ndi.indent_level = ndi_old.indent_level;
 					//ndi_old.indent_level=0;
 					//console.log('>>>', intptr_t(ndi_next_next), intptr_t(ndi_next_next.s));
-					nd_raw.Insert(ama::POS_BACK, ama::cons(ndi, ndi_next_next));
+					//nd_raw.Insert(ama::POS_BACK, ama::cons(ndi, ndi_next_next));
 					//nd_arglist is also N_RAW so it can't be freed right now: but we shouldn't process it any more
+					ndi = nd_call;
 					nd_arglist.c = NULL;
-					continue;
-				} else if( ndi.s && ndi.s.isRawNode('[', ']') ) {
-					//item
-					ama::Node*+! ndi_next_next = ndi_next.BreakSibling();
-					ndi.BreakSelf();
-					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
-					new_children.push_back(ndi);
-					for(ama::Node*+! ndj : ndi_next) {
-						//strip trailing ','s
-						ama::Node*+! ndj_last = ndj.LastChild();
-						if( ndj_last != NULL && ndj_last.node_class == ama::N_SYMBOL && ndj_last.data == "," ) {
-							ndj_last.Delete();
-							ndj_last.FreeASTStorage();
-						} else {
-							new_children.push_back(ndj);
-						}
-					}
-					ndi = ama::CreateNodeFromChildren(ama::N_ITEM, new_children);
-					ndi.comments_after = ndi_next.comments_after;
-					nd_raw.Insert(ama::POS_BACK, ama::cons(ndi, ndi_next_next));
 					continue;
 				}
 				ndi = ndi_next;
