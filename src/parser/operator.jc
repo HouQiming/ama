@@ -293,14 +293,21 @@ namespace ama {
 						intptr_t! n_levels = ndi.data.length;
 						for(int! j = 0; j < n_levels; j += 1) {
 							ama::Node*+! ndi0 = stack.pop();
-							ndi.BreakSelf();
-							ama::Node*+! nd_child = ama::CreateNode(ama::N_RAW, ndi0.BreakSibling());
+							ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+							ama::Node*+! @nojson ndi0_next = ndi0.s;
+							if( ndi0_next == ndi ) {
+								ndi0_next = NULL;
+							}
+							ndi0.ReplaceUpto(ndi, nd_tmp);
+							if( j == 0 ) { ndi.BreakSelf(); }
+							ama::Node*+! nd_child = ama::CreateNode(ama::N_RAW, ndi0_next);
 							nd_child.flags = uint32_t('<') | uint32_t('>') << 8;
-							ndi0.ReplaceWith(nd_child);
-							nd_child.Insert(ama::POS_AFTER, ndi.BreakSibling());
+							nd_tmp.ReplaceWith(nd_child);
 							//////////
-							ndi0.p = NULL; ndi0.FreeASTStorage();
-							ndi.p = NULL; ndi.FreeASTStorage();
+							ndi0.p = NULL; ndi0.s = NULL; ndi0.FreeASTStorage();
+							if( j == 0 ) {
+								ndi.p = NULL; ndi.s = NULL; ndi.FreeASTStorage();
+							}
 							ndi = nd_child;
 						}
 						was_ref = 0;
