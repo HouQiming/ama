@@ -63,7 +63,9 @@ namespace ama {
 	private const int! KW_FUNC = 4;
 	private const int! KW_NOT_FUNC = 5;
 	//void! DumpASTAsJSON(ama::Node*+! nd);
-	private ama::Node*+! TranslateCUnscopedStatement(ama::Node*+! nd_keyword) {
+	private ama::Node*+! TranslateCUnscopedStatement(ama::Node*+! nd_keyword, ama::Node*+! nd_end) {
+		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+		nd_keyword.ReplaceUpto(nd_end, nd_tmp);
 		ama::Node*+! nd_arg = NULL;
 		ama::Node*+! nd_body = nd_keyword.BreakSibling();
 		if( nd_keyword.node_class == ama::N_CALL ) {
@@ -94,7 +96,8 @@ namespace ama {
 			ama::POS_FRONT,
 			ama::cons(ama::toSingleNode(nd_arg).MergeCommentsBefore(nd_keyword), nd_scoped_body)
 		);
-		nd_keyword.ReplaceWith(nd_stmt);
+		nd_tmp.ReplaceWith(nd_stmt);
+		nd_keyword.s = NULL;
 		nd_keyword.FreeASTStorage();
 		return nd_stmt;
 	}
@@ -205,9 +208,9 @@ namespace ama {
 								continue;
 							} else if( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 								//extension of unscoped statement
-								ama::Node*+! nd_ext_keyword = ndi.BreakSelf();
-								ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
-								nd_stmt.Insert(ama::POS_AFTER, nd_ext_keyword);
+								//ama::Node*+! nd_ext_keyword = ndi.BreakSelf();
+								ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi.Prev());
+								//nd_stmt.Insert(ama::POS_AFTER, nd_ext_keyword);
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
 								continue;
@@ -234,23 +237,23 @@ namespace ama {
 					//ndi.data == ","
 					if( ndi.data == ";" && nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 						//unscoped statement
-						ndi_next = ndi.BreakSibling();
+						//ndi_next = ndi.BreakSibling();
 						//drop the ;
 						//ama::BreakLink(pndi);
-						ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
+						ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi);
 						if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 							nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
 							nd_stmt.Delete();
 							nd_last_scoped_stmt.Insert(ama::POS_BACK, nd_stmt);
 							ndi = nd_last_scoped_stmt;
 							assert(ndi.s == NULL);
-							ndi.Insert(ama::POS_AFTER, ndi_next);
+							//ndi.Insert(ama::POS_AFTER, ndi_next);
 							ndi = ndi_next;
 							nd_prototype_start = ndi;
 							kw_mode = KW_NONE;
 							nd_keyword = NULL;
 						} else {
-							nd_stmt.Insert(ama::POS_AFTER, ndi_next);
+							//nd_stmt.Insert(ama::POS_AFTER, ndi_next);
 							nd_last_scoped_stmt = nd_stmt;
 							nd_prototype_start = ndi_next;
 							ndi = ndi_next;
@@ -457,7 +460,7 @@ namespace ama {
 					nd_semicolon.Delete();
 					nd_raw.Insert(ama::POS_BACK, nd_semicolon);
 				}
-				ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword);
+				ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword, nd_raw.LastChild());
 				if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 					nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
 					nd_stmt.Delete();
