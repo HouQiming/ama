@@ -86,7 +86,7 @@ namespace ama {
 			dfsAutoFormat(ndi);
 			if( nd.node_class == ama::N_SCOPE ) {
 				if( !ndi.indent_level ) {
-					ama::AdjustIndentLevel(ndi, 4);
+					ndi.AdjustIndentLevel(4);
 				}
 				if( !ndi.comments_before.length ) {
 					ndi.comments_before = ndi == nd.c ? "\n\t" : "\n";

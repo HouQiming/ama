@@ -242,7 +242,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../codegen/gen.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../codegen/gen.jc
   MAIN_DEPENDENCY ../codegen/gen.jc
-  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../parser/literal.jch ../parser/charset.jch ../codegen/gen.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../parser/literal.jch ../parser/charset.jch ../codegen/gen.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -268,7 +268,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/postfix.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/postfix.jc
   MAIN_DEPENDENCY ../parser/postfix.jc
-  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/postfix.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/postfix.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -326,7 +326,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/operator.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/operator.jc
   MAIN_DEPENDENCY ../parser/operator.jc
-  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/operator.jch ${JC_LIB}/console.jch
+  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/operator.jch ${JC_LIB}/console.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(

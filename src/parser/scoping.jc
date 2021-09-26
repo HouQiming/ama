@@ -59,7 +59,7 @@ namespace ama {
 		ama::Node*+[+]&+! lines_out, int32_t! level, intptr_t! lineno, ama::Node*+! nd_nextline
 	) {
 		for(intptr_t! i = lineno; i < lines_out.length; i += 1) {
-			ama::AdjustIndentLevel(lines_out[i], -level);
+			lines_out[i].AdjustIndentLevel(-level);
 		}
 		ama::Node*+! nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(keywords_extension_clause, lines_out.subarray(lineno))));
 		nd_new_scope.indent_level = level;

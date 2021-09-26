@@ -42,14 +42,20 @@ cmake.LoadCMakeFile = function(fn, template) {
 cmake.TokenizeCMakeArgs = function(nd_call) {
 	let ret = [];
 	if (!nd_call.c.s) {return ret;}
+	let merge_group=[];
 	function dfsTokenizeCMakeArgs(nd) {
-		//TODO: unquoted args - merge and convert?! quoting individual names is fine
+		if(merge_group.length&&nd.comments_before.indexOf(' ')>=0){
+			//unquoted args - merge and convert. quoting individual names in target is fine
+			//TODO
+		}
 		if (nd.node_class === N_RAW) {
 			for (let ndi = nd.c; ndi; ndi = ndi.s) {
 				dfsTokenizeCMakeArgs(ndi);
 			}
-		} else if(nd.node_class === N_STRING || nd.node_class === N_REF || nd.node_class === N_NUMBER || nd.node_class === N_SYMBOL) {
+		} else if(nd.node_class === N_STRING) {
 			ret.push(nd)
+		}else if(nd.node_class === N_REF || nd.node_class === N_NUMBER || nd.node_class === N_SYMBOL){
+			merge_group.push(nd);
 		} else {
 			console.error('unrecognized cmake arg:', nd);
 			ret.push(nd)

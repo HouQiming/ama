@@ -84,25 +84,41 @@ namespace ama {
 					new_children.push_back(ndi);
 					if( nd_arglist.c ) {
 						ama::Node*+[+]! comma_group = new ama::Node*+[+]!();
+						char[+]! pending_comments_before;
 						for(ama::Node*+! ndj : nd_arglist) {
 							//strip trailing ','s
 							if( ndj.isRawNode(0, 0) ) {
+								pending_comments_before.push(ndj.comments_before);
 								for(ama::Node*+! ndk = ndj.c; ndk; ndk = ndk.s) {
 									if( ndk.isSymbol(",") ) {
-										new_children.push_back(ama::toSingleNode(ama::InsertMany(comma_group)));
+										ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+										nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
+										nd_arg.comments_after = new char[|]!(nd_arg.comments_after + ndk.comments_before);
+										new_children.push_back(nd_arg);
+										pending_comments_before.clear();
+										pending_comments_before.push(ndk.comments_after);
 										comma_group.clear();
 									} else {
 										comma_group.push_back(ndk);
 									}
 								}
+								pending_comments_before.push(ndj.comments_after);
 							} else if( ndj.isSymbol(",") ) {
-								new_children.push_back(ama::toSingleNode(ama::InsertMany(comma_group)));
+								ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+								nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
+								nd_arg.comments_after = new char[|]!(nd_arg.comments_after + ndj.comments_before);
+								new_children.push_back(nd_arg);
+								pending_comments_before.clear();
+								pending_comments_before.push(ndj.comments_after);
 								comma_group.clear();
 							} else {
 								comma_group.push_back(ndj);
 							}
 						}
-						new_children.push_back(ama::toSingleNode(ama::InsertMany(comma_group)));
+						assert(comma_group.size() > 0);
+						ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+						nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
+						new_children.push_back(nd_arg);
 					}
 					//for(int! i = 2; i < new_children.length; i += 1) {
 					//	if( new_children[i].comments_before.startsWith(' ') ) {

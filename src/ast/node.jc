@@ -160,14 +160,6 @@ namespace ama {
 			return nd_child;
 		}
 	}
-	void! AdjustIndentLevel(ama::Node*+! nd_stmt, intptr_t! delta) {
-		nd_stmt.indent_level = ama::ClampIndentLevel(nd_stmt.indent_level + delta);
-		if( !(nd_stmt.node_class == ama::N_RAW && (nd_stmt.flags & 0xffff)) && nd_stmt.node_class != ama::N_SCOPE ) {
-			for(ama::Node*+! ndi : nd_stmt) {
-				AdjustIndentLevel(ndi, delta);
-			}
-		}
-	}
 	ama::Node*+! UnparseRaw(ama::Node*+! nd_raw) {
 		assert(nd_raw.isRawNode(0, 0));
 		ama::Node*+! nd_ret = nd_raw.ReplaceWith(nd_raw.c);
@@ -232,6 +224,15 @@ namespace ama {
 
 ///////////////////
 //basic tree operations
+void! ama::Node::AdjustIndentLevel(ama::Node*+! this, intptr_t! delta) {
+	this.indent_level = ama::ClampIndentLevel(this.indent_level + delta);
+	if( !(this.node_class == ama::N_RAW && (this.flags & 0xffff)) && this.node_class != ama::N_SCOPE ) {
+		for(ama::Node*+! ndi : this) {
+			ndi.AdjustIndentLevel(delta);
+		}
+	}
+}
+
 private ama::Node*+! dfsClone(std::unordered_map<ama::Node*, ama::Node*+>&+! mapping, ama::Node*! nd) {
 	ama::Node*+! ret = mapping[nd];
 	if( ret ) {

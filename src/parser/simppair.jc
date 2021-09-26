@@ -355,6 +355,20 @@ namespace ama {
 						}
 						nd.flags |= uint32_t(ch) << 8;
 						state_stack.pop_back();
+						//snap to closing_indent_level: we could have the opening indent level screwed up in code like this
+						/*
+						void foo(   int bar,
+									int baz) {
+							//this scope's indent level will be screwed up
+						}
+						*/
+						int8_t! closing_indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
+						if( closing_indent_level < nd.indent_level ) {
+							for(auto ndi : nd) {
+								ndi.AdjustIndentLevel(nd.indent_level - closing_indent_level);
+							}
+						}
+						nd.indent_level = closing_indent_level;
 						feed += 1;
 						comment_indent_level = current_indent_level;
 						comment_begin = feed;

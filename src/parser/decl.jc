@@ -91,7 +91,7 @@ namespace ama {
 		if( nd_body.comments_before.indexOf('\n') >= 0 && nd_body.comments_after.indexOf('\n') < 0 ) {
 			nd_body.comments_after = new char[|]!(nd_body.comments_after + "\n");
 		}
-		ama::AdjustIndentLevel(nd_body, -nd_scoped_body.indent_level);
+		nd_body.AdjustIndentLevel(-nd_scoped_body.indent_level);
 		nd_stmt.Insert(
 			ama::POS_FRONT,
 			ama::cons(ama::toSingleNode(nd_arg).MergeCommentsBefore(nd_keyword), nd_scoped_body)
@@ -520,6 +520,7 @@ namespace ama {
 				ama::Node*+! nd_raw = nd_parent;
 				ama::Node*+! nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword.BreakSibling()));
 				nd_keyword.BreakSelf();
+				nd_stmt.indent_level = nd_keyword.indent_level;
 				nd_stmt.comments_before = nd_keyword.comments_before;
 				if( nd_stmt.c ) {
 					nd_stmt.c.MergeCommentsBefore(nd_keyword);
@@ -527,8 +528,12 @@ namespace ama {
 					nd_stmt.comments_after = new char[|]!(nd_keyword.comments_after + nd_stmt.comments_after);
 				}
 				nd_stmt.data = nd_keyword.DestroyForSymbol();
-				nd_raw.ReplaceWith(nd_stmt);
-				nd_raw.c = NULL; nd_raw.FreeASTStorage();
+				if( !nd_raw.c ) {
+					nd_raw.ReplaceWith(nd_stmt);
+					nd_raw.c = NULL; nd_raw.FreeASTStorage();
+				} else {
+					nd_raw.Insert(ama::POS_BACK, nd_stmt);
+				}
 			}
 		}
 		return nd_root;
