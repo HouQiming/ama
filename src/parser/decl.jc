@@ -246,7 +246,7 @@ namespace ama {
 							nd_stmt.Delete();
 							nd_last_scoped_stmt.Insert(ama::POS_BACK, nd_stmt);
 							ndi = nd_last_scoped_stmt;
-							assert(ndi.s == NULL);
+							//assert(ndi.s == NULL);
 							//ndi.Insert(ama::POS_AFTER, ndi_next);
 							ndi = ndi_next;
 							nd_prototype_start = ndi;

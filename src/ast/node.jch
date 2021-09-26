@@ -166,7 +166,9 @@ namespace ama {
 		ama::Node*+! MergeCommentsAfter(ama::Node*+! this, ama::Node*+! nd_after);
 		ama::Node*+! MergeCommentsBefore(ama::Node*+! this, ama::Node*+! nd_before);
 		char[|]! DestroyForSymbol(ama::Node*+! this);
-		int! isExpr(ama::Node*! this);
+		//expr is ill-defined once detached from a base language
+		//NeedTrailingSemicolon is more practical
+		//int! isExpr(ama::Node*! this);
 		int! isSymbol(ama::Node*! this, char[...]! name);
 		int! dfsValidate(ama::Node*+! this);
 		void! Validate(ama::Node*+! this);
@@ -180,6 +182,7 @@ namespace ama {
 		ama::Node*+! BreakSelf(ama::Node*+! this);
 		ama::Node*+! LastChildSP(ama::Node*! this);
 		ama::Node*+! ReplaceUpto(ama::Node*+! this, ama::Node*+! nd_upto, ama::Node*+! nd_new);
+		int! ValidateChildCount(ama::Node*+! this, int! n_children);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
@@ -300,4 +303,6 @@ namespace ama {
 	int! ValidateChildRange(ama::Node*+! p0, ama::Node*+! p1);
 	void! DeleteChildRange(ama::Node*+! nd0, ama::Node*+! nd1);
 	ama::Node*+! ReplaceChildRange(ama::Node*+! nd0, ama::Node*+! nd1, ama::Node*+! nd_new);
+	//it's in JSAPI
+	void! DumpASTAsJSON(ama::Node*+! nd);
 };
