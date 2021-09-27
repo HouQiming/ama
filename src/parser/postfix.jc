@@ -82,9 +82,10 @@ namespace ama {
 					//re-delimit everything completely
 					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
 					new_children.push_back(ndi);
+					char[+]! pending_comments_before;
 					if( nd_arglist.c ) {
+						//console.error(nd_arglist.toSource());
 						ama::Node*+[+]! comma_group = new ama::Node*+[+]!();
-						char[+]! pending_comments_before;
 						for(ama::Node*+! ndj : nd_arglist) {
 							//strip trailing ','s
 							if( ndj.isRawNode(0, 0) ) {
@@ -115,10 +116,13 @@ namespace ama {
 								comma_group.push_back(ndj);
 							}
 						}
-						assert(comma_group.size() > 0);
-						ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
-						nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
-						new_children.push_back(nd_arg);
+						//assert(comma_group.size() > 0);
+						//we could get comma_group.size() == 0 for a(foo,)
+						if( comma_group.size() > 0 || new_children.length > 0 ) {
+							ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+							nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
+							new_children.push_back(nd_arg);
+						}
 					}
 					//for(int! i = 2; i < new_children.length; i += 1) {
 					//	if( new_children[i].comments_before.startsWith(' ') ) {
@@ -128,6 +132,10 @@ namespace ama {
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
 					ama::ReplaceChildRange(ndi, nd_arglist, nd_tmp);
 					ama::Node*+! nd_call = nd_tmp.ReplaceWith(ama::CreateNodeFromChildren(call_class, new_children).setCommentsAfter(nd_arglist.comments_after));
+					if( pending_comments_before.length ) {
+						nd_call.comments_after = new char[|]!(pending_comments_before + nd_call.comments_after);
+						pending_comments_before.clear();
+					}
 					//console.log(JSON.stringify(ndi.toSource()), JSON.stringify(ndi.comments_after));
 					//ndi.indent_level = ndi_old.indent_level;
 					//ndi_old.indent_level=0;
