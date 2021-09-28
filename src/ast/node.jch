@@ -73,15 +73,15 @@ namespace ama {
 	/////////////////
 	const int32_t! BOUNDARY_FUNCTION = 1;
 	const int32_t! BOUNDARY_CLASS = 2;
-	const int32_t! BOUNDARY_LOOP = 4;
-	const int32_t! BOUNDARY_SWITCH = 8;
+	//const int32_t! BOUNDARY_LOOP = 4;
+	//const int32_t! BOUNDARY_SWITCH = 8;
 	//we no longer have macro decls
 	//const int32_t! BOUNDARY_MACRO_DECL = 16;
 	const int32_t! BOUNDARY_NODEOF = 32;
 	const int32_t! BOUNDARY_SCOPE = 64;
 	const int32_t! BOUNDARY_MATCH = 128;
 	const int32_t! BOUNDARY_ONE_LEVEL = 256;
-	const int32_t! BOUNDARY_PROTOTYPE = 512;
+	//const int32_t! BOUNDARY_PROTOTYPE = 512;
 	const int32_t! BOUNDARY_ANY = 0x7fffffff;
 	const int32_t! BOUNDARY_DEFAULT = BOUNDARY_NODEOF;
 	//we don't track original code locations, just report errors into the generated code using #error and stuff
@@ -170,11 +170,9 @@ namespace ama {
 		//NeedTrailingSemicolon is more practical
 		//int! isExpr(ama::Node*! this);
 		int! isSymbol(ama::Node*! this, char[...]! name);
-		int! dfsValidate(ama::Node*+! this);
 		void! Validate(ama::Node*+! this);
 		int! NeedTrailingSemicolon(ama::Node*! this);
 		int8_t! GetCommentedIndentLevel(ama::Node*! this, int32_t! tab_width);
-		ama::Node*+! GlobalNext(ama::Node*+! this, ama::Node*+! nd_root);
 		ama::Node*+! ParentStatement(ama::Node*+! this);
 		ama::Node*+! Prev(ama::Node*+! this);
 		ama::Node*+! BreakSibling(ama::Node*+! this);
@@ -184,6 +182,11 @@ namespace ama {
 		ama::Node*+! ReplaceUpto(ama::Node*+! this, ama::Node*+! nd_upto, ama::Node*+! nd_new);
 		int! ValidateChildCount(ama::Node*+! this, int! n_children);
 		void! AdjustIndentLevel(ama::Node*+! this, intptr_t! delta);
+		ama::Node*+! PreorderNext(ama::Node*+! this, ama::Node*+! nd_root);
+		ama::Node*+! PreorderSkipChildren(ama::Node*+! this, ama::Node*+! nd_root);
+		ama::Node*+! PostorderFirst(ama::Node*+! this);
+		ama::Node*+! PostorderNext(ama::Node*+! this, ama::Node*+! nd_root);
+		intptr_t! ValidateEx(ama::Node*+! this, intptr_t! max_depth, int! quiet);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;

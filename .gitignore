@@ -10,3 +10,4 @@ build/
 a.out
 modules/*.js
 !modules/jcs.js
+/test/test_tmp.*

@@ -654,94 +654,83 @@ char[|]! ama::Node::GetName(ama::Node*! this) {
 	}
 }
 
-private const int32_t! ROOT_FLAG = 0x80000000;
-
-private ama::Node*+! dfsFind(ama::Node*+! nd, ama::Node*+! nd_before, int32_t! boundary, int! node_class, char[|]! data, ama::Node*+[+]&+! ret, int! first_only) {
-	if( nd == nd_before ) {
-		//returning non-NULL terminates the search
-		return nd_before;
-	}
-	int32_t! my_boundary = ama::BOUNDARY_ONE_LEVEL;
-	if( int(nd.node_class) == node_class || node_class == ama::N_NONE ) {
-		int! matched = 1;
-		if( data != NULL ) {
-			matched = nd.GetName() == data;
+private ama::Node*+! FindImpl(ama::Node*+! nd_root, ama::Node*+! nd_before, int32_t! boundary, int! node_class, char[|]! data, ama::Node*+[+]*+! ret) {
+	ama::Node*+! nd_ret = NULL;
+	for(ama::Node*+! nd = nd_root; nd; nd = nd.PreorderNext(nd_root)) {
+		`skip_children:`
+		if( nd == nd_before ) {
+			break;
 		}
-		//matched
-		if( matched ) {
-			if( !first_only ) {
-				ret.push_back(nd);
-				my_boundary |= ama::BOUNDARY_MATCH;
-			} else {
-				return nd;
+		int32_t! my_boundary = ama::BOUNDARY_ONE_LEVEL;
+		if( int(nd.node_class) == node_class || node_class == ama::N_NONE ) {
+			int! matched = 1;
+			if( data != NULL ) {
+				matched = nd.GetName() == data;
+			}
+			//matched
+			if( matched ) {
+				if( ret ) {
+					ret->push_back(nd);
+					if( boundary & ama::BOUNDARY_MATCH ) {
+						//note: if we stop at a match, we SHOULD stop at the root, unlike the other boundary types
+						nd = nd.PreorderSkipChildren(nd_root);
+						`goto skip_children;`
+					}
+				} else {
+					nd_ret = nd;
+					break;
+				}
+			}
+		}
+		//don't test boundary on root: always allow the root to match
+		if( boundary && nd != nd_root ) {
+			//} else if( int(nd.node_class) == ama::N_C_FOR || int(nd.node_class) == ama::N_JC_FOR_IN || int(nd.node_class) == ama::N_DO || int(nd.node_class) == ama::N_WHILE || int(nd.node_class) == ama::N_JC_RANGE_FOR ) {
+			//	my_boundary |= ama::BOUNDARY_LOOP;
+			//} else if( int(nd.node_class) == ama::N_SWITCH ) {
+			//	my_boundary |= ama::BOUNDARY_SWITCH;
+			//} else if( int(nd.node_class) == ama::N_MACRO_DECL ) {
+			//	my_boundary |= ama::BOUNDARY_MACRO_DECL;
+			//} else 
+			// && !(nd.p && int(nd.p.node_class) == ama::N_STATIC_IF)
+			if( int(nd.node_class) == ama::N_FUNCTION ) {
+				my_boundary |= ama::BOUNDARY_FUNCTION;
+			} else if( int(nd.node_class) == ama::N_CLASS ) {
+				my_boundary |= ama::BOUNDARY_CLASS;
+			} else if( int(nd.node_class) == ama::N_NODEOF ) {
+				my_boundary |= ama::BOUNDARY_NODEOF;
+			} else if( int(nd.node_class) == ama::N_SCOPE ) {
+				my_boundary |= ama::BOUNDARY_SCOPE;
+			}
+			//} else if( int(nd.node_class) == ama::N_CALL && nd.p && nd.p.node_class == ama::N_RAW_DECLARATION ) {
+			//	my_boundary |= ama::BOUNDARY_PROTOTYPE;
+			if( boundary & my_boundary ) {
+				nd = nd.PreorderSkipChildren(nd_root);
+				`goto skip_children;`
 			}
 		}
 	}
-	//don't test boundary on root
-	//allow the boundary itself to match
-	//tests for ROOT_FLAG
-	if( boundary > 0 ) {
-		//if( int(nd.node_class) == ama::N_FUNCTION ) {
-		//	my_boundary |= ama::BOUNDARY_FUNCTION;
-		//} else if( int(nd.node_class) == ama::N_CLASS ) {
-		//	my_boundary |= ama::BOUNDARY_CLASS;
-		//} else if( int(nd.node_class) == ama::N_C_FOR || int(nd.node_class) == ama::N_JC_FOR_IN || int(nd.node_class) == ama::N_DO || int(nd.node_class) == ama::N_WHILE || int(nd.node_class) == ama::N_JC_RANGE_FOR ) {
-		//	my_boundary |= ama::BOUNDARY_LOOP;
-		//} else if( int(nd.node_class) == ama::N_SWITCH ) {
-		//	my_boundary |= ama::BOUNDARY_SWITCH;
-		//} else if( int(nd.node_class) == ama::N_MACRO_DECL ) {
-		//	my_boundary |= ama::BOUNDARY_MACRO_DECL;
-		//} else 
-		// && !(nd.p && int(nd.p.node_class) == ama::N_STATIC_IF)
-		if( int(nd.node_class) == ama::N_NODEOF ) {
-			my_boundary |= ama::BOUNDARY_NODEOF;
-		} else if( int(nd.node_class) == ama::N_SCOPE ) {
-			my_boundary |= ama::BOUNDARY_SCOPE;
-		}
-		//} else if( int(nd.node_class) == ama::N_CALL && nd.p && nd.p.node_class == ama::N_RAW_DECLARATION ) {
-		//	my_boundary |= ama::BOUNDARY_PROTOTYPE;
-		//TODO: dedicated prototype node class
-		if( boundary & my_boundary ) {
-			return NULL;
-		}
-	}
-	for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
-		assert(ndi != nd);
-		//console.log(nd.node_class, ndi.node_class);
-		//if ndi.s == ndi: {
-		//	for (Node* ndii = ndi; ndii; ndii = ndii.p) {
-		//		console.log(ndii.node_class);
-		//	}
-		//	assert(0);
-		//}
-		const ama::Node*+! nd_found = dfsFind(ndi, nd_before, boundary & ~ROOT_FLAG, node_class, data, ret, first_only);
-		if( nd_found ) {
-			return nd_found;
-		}
-	}
-	return NULL;
+	return nd_ret;
 }
 
 ama::Node*+! ama::Node::Find(ama::Node*! this, int! node_class, char[|]! data) {
-	const ama::Node*+[+]! ret = new ama::Node*+[+]!();
-	return dfsFind((ama::Node*+)(this), NULL, 0, node_class, data, ret, 1);
+	return FindImpl((ama::Node*+)(this), NULL, 0, node_class, data, NULL);
 }
 
 ama::Node*+[+]! ama::Node::FindAll(ama::Node*! this, int! node_class, char[|]! data) {
-	const ama::Node*+[+]! ret = new ama::Node*+[+]!();
-	dfsFind((ama::Node*+)(this), NULL, ama::BOUNDARY_DEFAULT | ROOT_FLAG, node_class, data, ret, 0);
+	ama::Node*+[+]! ret = new ama::Node*+[+]!();
+	FindImpl((ama::Node*+)(this), NULL, ama::BOUNDARY_DEFAULT, node_class, data, &ret);
 	return <<ret;
 }
 
 ama::Node*+[+]! ama::Node::FindAllWithin(ama::Node*! this, int32_t! boundary, int! node_class, char[|]! data) {
-	const ama::Node*+[+]! ret = new ama::Node*+[+]!();
-	dfsFind((ama::Node*+)(this), NULL, boundary | ROOT_FLAG, node_class, data, ret, 0);
+	ama::Node*+[+]! ret = new ama::Node*+[+]!();
+	FindImpl((ama::Node*+)(this), NULL, boundary, node_class, data, &ret);
 	return <<ret;
 }
 
 ama::Node*+[+]! ama::Node::FindAllBefore(ama::Node*! this, ama::Node*! nd_before, int32_t! boundary, int! node_class, char[|]! data) {
-	const ama::Node*+[+]! ret = new ama::Node*+[+]!();
-	dfsFind((ama::Node*+)(this), (ama::Node*+)(nd_before), boundary | ROOT_FLAG, node_class, data, ret, 0);
+	ama::Node*+[+]! ret = new ama::Node*+[+]!();
+	FindImpl((ama::Node*+)(this), (ama::Node*+)(nd_before), boundary, node_class, data, &ret);
 	return <<ret;
 }
 
@@ -826,10 +815,8 @@ char[|]! ama::Node::DestroyForSymbol(ama::Node*+! this) {
 	return ret;
 }
 
-private Map<ama::Node*+, int>! g_validate_dedup = new Map<ama::Node*+, int>!();
-
 int! ama::Node::ValidateChildCount(ama::Node*+! this, int! n_children) {
-	ama::Node*+! @nojson ndi = this.c;
+	ama::Node*+! ndi = this.c;
 	for(int! i = 0; i < n_children; i += 1) {
 		if( !ndi ) {
 			console.log('need', n_children, 'children but only got', i + 1, ':', intptr_t(this));
@@ -846,74 +833,95 @@ int! ama::Node::ValidateChildCount(ama::Node*+! this, int! n_children) {
 	return 1;
 }
 
-int! ama::Node::dfsValidate(ama::Node*+! this) {
-	if( g_validate_dedup[this] ) {
-		console.log('found cycle to', intptr_t(this), this.data == NULL ? "NULL" : JSON.stringify(this.data).c_str());
-		this.comments_before = new char[|]!('/*cycle ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
-		return 0;
-	}
-	g_validate_dedup[this] = 1;
-	if( this.comments_before == NULL ) {
-		console.log('comments_before == NULL', intptr_t(this));
-		this.comments_before = "/*NULL comments_before*/";
-		return 0;
-	}
-	if( this.comments_after == NULL ) {
-		console.log('comments_after == NULL', intptr_t(this));
-		this.comments_after = "/*NULL comments_after*/";
-		return 0;
-	}
-	if( !(this.tmp_flags & ama::TMPF_IS_NODE) ) {
-		console.log('found freed node', intptr_t(this));
-		this.comments_before = new char[|]!('/*freed ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
-		return 0;
-	}
-	if( this.p && this.node_class == ama::N_FILE ) {
-		console.log('the file node has a parent:', this.p.node_class);
-		return 0;
-	}
-	if( this.node_class == ama::N_FUNCTION ) {
-		if( !this.ValidateChildCount(4) ) {
-			return 0;
-		}
-	}
-	if( this.node_class == ama::N_CLASS ) {
-		if( !this.ValidateChildCount(4) ) {
-			return 0;
-		}
-	}
-	int! ret = 1;
-	ama::Node*+! nd_last = NULL;
-	for(ama::Node*+! ndi = this.c; ndi; ndi = ndi.s) {
-		if( ndi.p != this ) {
-			console.log('bad parent', intptr_t(ndi), ndi.node_class, ndi.data == NULL ? "NULL" : JSON.stringify(ndi.data).c_str(), 'under', this.node_class);
-			ndi.comments_before = new char[|]!('/*bad parent ' + JSON.stringify(intptr_t(ndi)) + '*/' + ndi.comments_before);
-			ret = 0;
-		}
-		if( ndi.s && ndi.s.v != ndi ) {
-			console.log('bad previous sibling', intptr_t(ndi.s), ndi.s.node_class, ndi.s.data == NULL ? "NULL" : JSON.stringify(ndi.s.data).c_str(), 'after', ndi.node_class);
-			ndi.s.comments_before = new char[|]!('/*bad previous sibling ' + JSON.stringify(intptr_t(ndi.s)) + '*/' + ndi.s.comments_before);
-			ret = 0;
-		}
-		ret &= ndi.dfsValidate();
-		nd_last = ndi;
-	}
-	if( nd_last && this.c.v != ama::PackTailPointer(nd_last) ) {
-		console.log('bad tail pointer', intptr_t(this), this.node_class, this.data == NULL ? "NULL" : JSON.stringify(this.data).c_str(), intptr_t(this.c.v));
-		for(ama::Node*+! ndi = this.c; ndi; ndi = ndi.s) {
-			console.log('   ', intptr_t(ndi));
-		}
-		this.comments_before = new char[|]!('/*bad tail pointer ' + JSON.stringify(intptr_t(this)) + '*/' + this.comments_before);
-		ret = 0;
-	}
-	return ret;
-}
-
-void! ama::Node::Validate(ama::Node*+! this) {
+intptr_t! ama::Node::ValidateEx(ama::Node*+! this, intptr_t! max_depth, int! quiet) {
+	intptr_t! error_count = 0L;
+	Map<ama::Node*+, int>! g_validate_dedup = new Map<ama::Node*+, int>!();
 	g_validate_dedup.clear();
-	if( !this.dfsValidate() ) {
+	//note: we CANNOT use PreorderNext here: it depends on p which could be invalid
+	//we cannot dfs either: it could have an acyclic long chain that triggers a stack overflow
+	ama::Node*+[+]! stack = new ama::Node*+[+]!();
+	stack.push_back(this);
+	while( stack.size() ) {
+		ama::Node*+! nd = stack.pop();
+		if( stack.size() >= max_depth ) {
+			if( !quiet ) { console.log('node too deep'); }
+			nd.comments_before = new char[|]!('/*too deep*/ ' + nd.comments_before);
+			error_count += 1;
+		}
+		if( g_validate_dedup[nd] ) {
+			if( !quiet ) { console.log('found cycle to', intptr_t(nd), nd.data == NULL ? "NULL" : JSON.stringify(nd.data).c_str()); }
+			nd.comments_before = new char[|]!('/*cycle ' + JSON.stringify(intptr_t(nd)) + '*/ ' + nd.comments_before);
+			error_count += 1;
+			continue;
+		}
+		g_validate_dedup[nd] = 1;
+		if( nd.s && !(nd.tmp_flags & ama::TMPF_IS_NODE) ) {
+			//validate sibling next: but don't do so for freed nodes since .s is now the freelist next
+			stack.push_back(nd.s);
+		}
+		//validate children even if the current node is freed:
+		//  we're not touching the node pool so its content won't change
+		//  we'll terminate as long as it's not a duplicate
+		if( nd.c ) { stack.push_back(nd.c); }
+		if( !(nd.tmp_flags & ama::TMPF_IS_NODE) ) {
+			if( !quiet ) { console.log('found freed node', intptr_t(nd)); }
+			nd.comments_before = new char[|]!('/*freed ' + JSON.stringify(intptr_t(nd)) + '*/ ' + nd.comments_before);
+			error_count += 1;
+			//other immediate validations do not make sense for a freed node
+			continue;
+		}
+		if( nd.comments_before == NULL ) {
+			if( !quiet ) { console.log('comments_before == NULL', intptr_t(nd)); }
+			nd.comments_before = "/*NULL comments_before*/";
+			error_count += 1;
+			continue;
+		}
+		if( nd.comments_after == NULL ) {
+			if( !quiet ) { console.log('comments_after == NULL', intptr_t(nd)); }
+			nd.comments_after = "/*NULL comments_after*/";
+			error_count += 1;
+			continue;
+		}
+		if( nd.p && nd.node_class == ama::N_FILE ) {
+			if( !quiet ) { console.log('the file node has a parent:', nd.p.node_class); }
+			error_count += 1;
+		}
+		if( nd.node_class == ama::N_FUNCTION ) {
+			if( !nd.ValidateChildCount(4) ) {
+				error_count += 1;
+			}
+		}
+		if( nd.node_class == ama::N_CLASS ) {
+			if( !nd.ValidateChildCount(4) ) {
+				error_count += 1;
+			}
+		}
+		ama::Node*+! nd_last = NULL;
+		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+			if( ndi.p != nd ) {
+				if( !quiet ) { console.log('bad parent', intptr_t(ndi), ndi.node_class, ndi.data == NULL ? "NULL" : JSON.stringify(ndi.data).c_str(), 'under', nd.node_class); }
+				ndi.comments_before = new char[|]!('/*bad parent ' + JSON.stringify(intptr_t(ndi)) + '*/ ' + ndi.comments_before);
+				error_count += 1;
+			}
+			if( ndi.s && ndi.s.v != ndi ) {
+				if( !quiet ) { console.log('bad previous sibling', intptr_t(ndi.s), ndi.s.node_class, ndi.s.data == NULL ? "NULL" : JSON.stringify(ndi.s.data).c_str(), 'after', ndi.node_class); }
+				ndi.s.comments_before = new char[|]!('/*bad previous sibling ' + JSON.stringify(intptr_t(ndi.s)) + '*/ ' + ndi.s.comments_before);
+				error_count += 1;
+			}
+			nd_last = ndi;
+		}
+		if( nd_last && nd.c.v != ama::PackTailPointer(nd_last) ) {
+			if( !quiet ) { console.log('bad tail pointer', intptr_t(nd), nd.node_class, nd.data == NULL ? "NULL" : JSON.stringify(nd.data).c_str(), intptr_t(nd.c.v)); }
+			for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+				if( !quiet ) { console.log('   ', intptr_t(ndi)); }
+			}
+			nd.comments_before = new char[|]!('/*bad tail pointer ' + JSON.stringify(intptr_t(nd)) + '*/ ' + nd.comments_before);
+			error_count += 1;
+		}
+	}
+	if( !quiet && error_count ) {
 		#if !defined(NDEBUG)
-			console.log('=== AST');
+			console.log('=== AST', error_count, 'errors');
 			ama::DumpASTAsJSON(this);
 			fflush(stdout);
 		#endif
@@ -922,6 +930,11 @@ void! ama::Node::Validate(ama::Node*+! this) {
 		console.log(this.toSource());
 		assert(0);
 	}
+	return error_count;
+}
+
+void! ama::Node::Validate(ama::Node*+! this) {
+	this.ValidateEx(0x3fffffffL, 0);
 }
 
 int! ama::Node::NeedTrailingSemicolon(ama::Node*! this) {
@@ -967,12 +980,33 @@ int8_t! ama::Node::GetCommentedIndentLevel(ama::Node*! this, int32_t! tab_width)
 	return ama::ClampIndentLevel(indent_level);
 }
 
-ama::Node*+! ama::Node::GlobalNext(ama::Node*+! this, ama::Node*+! nd_root) {
-	if( this.c ) { return this.c; }
+ama::Node*+! ama::Node::PreorderNext(ama::Node*+! this, ama::Node*+! nd_root) {
+	if( this.c ) { return this.c; } else { return this.PreorderSkipChildren(nd_root); }
+}
+
+ama::Node*+! ama::Node::PreorderSkipChildren(ama::Node*+! this, ama::Node*+! nd_root) {
 	for(ama::Node*+! ndi = this; ndi != nd_root; ndi = ndi.p) {
 		if( ndi.s ) { return ndi.s; }
 	}
 	return NULL;
+}
+
+ama::Node*+! ama::Node::PostorderFirst(ama::Node*+! this) {
+	ama::Node*+! nd = this;
+	while( nd.c ) {
+		nd = nd.c;
+	}
+	return nd;
+}
+
+ama::Node*+! ama::Node::PostorderNext(ama::Node*+! this, ama::Node*+! nd_root) {
+	if( this == nd_root ) {
+		return NULL;
+	} else if( this.s ) {
+		return this.s.PostorderFirst();
+	} else {
+		return this.p;
+	}
 }
 
 ama::Node*+! ama::Node::ParentStatement(ama::Node*+! this) {

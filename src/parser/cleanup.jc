@@ -23,49 +23,44 @@ namespace ama {
 		//}
 		return nd_root;
 	}
-	private void! dfsPullComment(ama::Node*+! nd) {
-		ama::Node*+! ndi_last = NULL;
-		for(ama::Node*+! ndi : nd) {
-			dfsPullComment(ndi);
-			if( nd.node_class == ama::N_SCOPE && ndi_last && ndi.comments_before.length > 0 && ndi.comments_before[0] != '\n' ) {
-				//associate the first "line" of multi-line comments with the previous statement
-				intptr_t! p_newline = ndi.comments_before.indexOf('\n');
-				if( p_newline >= 0L ) {
-					ndi_last.comments_after = new char[|]!(ndi_last.comments_after + ndi.comments_before.subarray(0, p_newline));
-					ndi.comments_before = new char[|]!(ndi.comments_before.subarray(p_newline));
-				}
-			}
-			ndi_last = ndi;
-		}
-		if( nd.c && 
-		(nd.node_class == ama::N_CALL || nd.node_class == ama::N_CALL_TEMPLATE || nd.node_class == ama::N_CALL_CUDA_KERNEL || 
-		nd.node_class == ama::N_BINOP || (nd.node_class == ama::N_UNARY && (nd.flags & ama::UNARY_POSTFIX)) || 
-		nd.node_class == ama::N_DOT || nd.node_class == ama::N_ITEM || nd.node_class == ama::N_FUNCTION || 
-		nd.node_class == ama::N_TYPED_VAR || nd.node_class == ama::N_ASSIGNMENT || nd.node_class == ama::N_CONDITIONAL || 
-		nd.node_class == ama::N_LABELED || nd.node_class == ama::N_SEMICOLON || 
-		(nd.node_class == ama::N_RAW && (nd.flags & 0xffff) == 0)) ) {
-			if( nd.c.comments_before.length ) {
-				nd.comments_before = new char[|]!(nd.comments_before + nd.c.comments_before);
-				nd.c.comments_before = '';
-			}
-		}
-		if( nd.c && 
-		(nd.node_class == ama::N_BINOP || (nd.node_class == ama::N_UNARY && !(nd.flags & ama::UNARY_POSTFIX)) || 
-		nd.node_class == ama::N_FUNCTION || nd.node_class == ama::N_CLASS || 
-		nd.node_class == ama::N_TYPED_VAR || nd.node_class == ama::N_ASSIGNMENT || nd.node_class == ama::N_CONDITIONAL || 
-		nd.node_class == ama::N_LABELED || nd.node_class == ama::N_SCOPED_STATEMENT || nd.node_class == ama::N_EXTENSION_CLAUSE || 
-		(nd.node_class == ama::N_RAW && (nd.flags & 0xffff) == 0)) ) {
-			ama::Node*+! nd_last = nd.LastChild();
-			if( nd_last.comments_after.length ) {
-				nd.comments_after = new char[|]!(nd.comments_after + nd_last.comments_after);
-				nd_last.comments_after = '';
-			}
-		}
-	}
 	ama::Node*+! SanitizeCommentPlacement(ama::Node*+! nd_root) {
 		//COULDDO: make \n a trailing comment for statements: what about the first line in a scope?
 		//pull comments_before out from nd.c for "headless" nodes
-		dfsPullComment(nd_root);
+		for(ama::Node*+! nd = nd_root.PostorderFirst(); nd; nd = nd.PostorderNext(nd_root)) {
+			if( nd.p && nd.p.node_class == ama::N_SCOPE && nd.Prev() && nd.comments_before.length > 0 && nd.comments_before[0] != '\n' ) {
+				ama::Node*+! ndi_last = nd.Prev();
+				//associate the first "line" of multi-line comments with the previous statement
+				intptr_t! p_newline = nd.comments_before.indexOf('\n');
+				if( p_newline > 0L ) {
+					ndi_last.comments_after = new char[|]!(ndi_last.comments_after + nd.comments_before.subarray(0, p_newline));
+					nd.comments_before = new char[|]!(nd.comments_before.subarray(p_newline));
+				}
+			}
+			if( nd.c && 
+			(nd.node_class == ama::N_CALL || nd.node_class == ama::N_CALL_TEMPLATE || nd.node_class == ama::N_CALL_CUDA_KERNEL || 
+			nd.node_class == ama::N_BINOP || (nd.node_class == ama::N_UNARY && (nd.flags & ama::UNARY_POSTFIX)) || 
+			nd.node_class == ama::N_DOT || nd.node_class == ama::N_ITEM || nd.node_class == ama::N_FUNCTION || 
+			nd.node_class == ama::N_TYPED_VAR || nd.node_class == ama::N_ASSIGNMENT || nd.node_class == ama::N_CONDITIONAL || 
+			nd.node_class == ama::N_LABELED || nd.node_class == ama::N_SEMICOLON || 
+			(nd.node_class == ama::N_RAW && (nd.flags & 0xffff) == 0)) ) {
+				if( nd.c.comments_before.length ) {
+					nd.comments_before = new char[|]!(nd.comments_before + nd.c.comments_before);
+					nd.c.comments_before = '';
+				}
+			}
+			if( nd.c && 
+			(nd.node_class == ama::N_BINOP || (nd.node_class == ama::N_UNARY && !(nd.flags & ama::UNARY_POSTFIX)) || 
+			nd.node_class == ama::N_FUNCTION || nd.node_class == ama::N_CLASS || 
+			nd.node_class == ama::N_TYPED_VAR || nd.node_class == ama::N_ASSIGNMENT || nd.node_class == ama::N_CONDITIONAL || 
+			nd.node_class == ama::N_LABELED || nd.node_class == ama::N_SCOPED_STATEMENT || nd.node_class == ama::N_EXTENSION_CLAUSE || 
+			(nd.node_class == ama::N_RAW && (nd.flags & 0xffff) == 0)) ) {
+				ama::Node*+! nd_last = nd.LastChild();
+				if( nd_last.comments_after.length ) {
+					nd.comments_after = new char[|]!(nd.comments_after + nd_last.comments_after);
+					nd_last.comments_after = '';
+				}
+			}
+		}
 		return nd_root;
 	}
 	ama::Node*+! StripBinaryOperatorSpaces(ama::Node*+! nd_root) {
