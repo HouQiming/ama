@@ -24,5 +24,9 @@ int main(int argc,char** argv){
 	}
 	if(a)c+=a;else c+=b;
 	c+=a*b;
+	do{
+		console.log('do-while');
+	}while(0);
+	console.log('after do-while');
 	return 0;
 }

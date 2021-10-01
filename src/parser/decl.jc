@@ -101,6 +101,24 @@ namespace ama {
 		nd_keyword.FreeASTStorage();
 		return nd_stmt;
 	}
+	private ama::Node*+! TranslateDoWhileClause(ama::Node*+! nd_keyword, ama::Node*+! nd_end) {
+		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+		nd_keyword.ReplaceUpto(nd_end, nd_tmp);
+		ama::Node*+! nd_arg = NULL;
+		ama::Node*+! nd_body = nd_keyword.BreakSibling();
+		if( nd_keyword.node_class == ama::N_CALL ) {
+			nd_keyword = ama::UnparseCall(nd_keyword);
+			nd_arg = nd_keyword.BreakSibling();
+		} else if( nd_body && nd_body.isRawNode('(', ')') ) {
+			nd_arg = nd_body;
+			nd_body = nd_body.BreakSibling();
+		}
+		ama::Node*+! nd_stmt = ama::CreateNode(ama::N_EXTENSION_CLAUSE, ama::toSingleNode(nd_arg).MergeCommentsBefore(nd_keyword)).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level);
+		nd_tmp.ReplaceWith(ama::cons(nd_stmt, nd_body));
+		nd_keyword.s = NULL;
+		nd_keyword.FreeASTStorage();
+		return nd_stmt;
+	}
 	private ama::Node*+! TranslateCForwardDeclaration(ama::Node*+! nd_raw) {
 		//N_FUNCTION with air body
 		//before, paramlist, after, body
@@ -240,7 +258,12 @@ namespace ama {
 						//ndi_next = ndi.BreakSibling();
 						//drop the ;
 						//ama::BreakLink(pndi);
-						ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi);
+						ama::Node*+! nd_stmt = NULL;
+						if( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword.GetName() == 'while' || nd_keyword.GetName() == 'until') ) {
+							nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
+						} else {
+							nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi);
+						}
 						if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 							nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
 							nd_stmt.Delete();
@@ -460,7 +483,13 @@ namespace ama {
 					nd_semicolon.Delete();
 					nd_raw.Insert(ama::POS_BACK, nd_semicolon);
 				}
-				ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword, nd_raw.LastChild());
+				ama::Node*+! ndi = nd_raw.LastChild();
+				ama::Node*+! nd_stmt = NULL;
+				if( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword.GetName() == 'while' || nd_keyword.GetName() == 'until') ) {
+					nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
+				} else {
+					nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi);
+				}
 				if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 					nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
 					nd_stmt.Delete();
