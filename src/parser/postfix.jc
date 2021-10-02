@@ -157,7 +157,7 @@ namespace ama {
 		for(ama::Node*+! ndi = nd.c.BreakSibling(); ndi; ndi = ndi.s) {
 			args.push_back(ndi);
 			if( ndi.s ) {
-				args.push_back(ama::nSymbol(",").setCommentsAfter(" "));
+				args.push_back(ama::nSymbol(","));
 			}
 		}
 		uint32_t! flags = uint32_t('(') | uint32_t(')') << 8;

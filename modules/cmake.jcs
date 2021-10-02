@@ -33,7 +33,9 @@ cmake.LoadCMakeFile = function(fn, template) {
 				ndi = nd_tmp.ReplaceWith(CreateNode(N_RAW, nd0));
 			} else {
 				//do nothing
-			} } }
+			}
+		}
+	}
 	return nd_root;
 }
 
@@ -86,7 +88,8 @@ Node.CMakeFindTarget = function(name) {
 		if (args.length && args[0].node_class === N_REF && args[0].data === name) {
 			//found
 			return nd_target;
-		} } 
+		}
+	}
 	return null;
 }
 
@@ -153,10 +156,12 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 				fn_cmake = fn_test;
 				break;
 			} 
-			if (dir_git) {break;} }
+			if (dir_git) {break;}
+		}
 		if (dir_git && !fn_cmake) {
 			fn_cmake=path.join(dir_git, 'CMakeLists.txt')
-		} } 
+		}
+	} 
 	let nd_cmake = cmake.LoadCMakeFile(fn_cmake, ()=>[
 		'cmake_minimum_required (VERSION 3.0)\n',
 		'project(',path.basename(path.dirname(path.resolve(fn_cmake))).replace(/[^0-9a-zA-Z]+/g, '_'),')\n',
