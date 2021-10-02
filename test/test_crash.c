@@ -28,7 +28,13 @@ void f() {
 		  COMMAND ${AMA} -s "__global.__cmakelist=\"${CMAKE_CURRENT_LIST_FILE}\"" -c "test_cmake.ama.cpp"
 		  MAIN_DEPENDENCY "test_cmake.ama.cpp"
 		  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-		)
+		);
+		nd_root
+			.then(require('jsism').EnableConsole)
+			.InsertCommentBefore('//ama output\n')
+			.UpdateCMakeLists('./CMakeLists.txt')
+			+ 1 
+			? 2 : 3;
 	}
 	return
 }

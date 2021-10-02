@@ -324,10 +324,27 @@ namespace ama {
 		//	this.code.push(comment);
 		//	return;
 		//}
-		for(char&! ch : comment) {
+		for(intptr_t! i = 0; i < comment.length; i++) {
+			char! ch = comment[i];
 			if( ch == '\n' ) {
 				this.code.push(ch);
-				this.GenerateIndent(expected_indent_level);
+				//unify in-comment indent
+				intptr_t! indent_level = expected_indent_level;
+				i += 1;
+				while( i < comment.length ) {
+					if( comment[i] == ' ' ) {
+						indent_level += 1;
+					} else if( comment[i] == '\t' ) {
+						indent_level /= this.tab_width;
+						indent_level += 1;
+						indent_level *= this.tab_width;
+					} else {
+						break;
+					}
+					i += 1;
+				}
+				i -= 1;
+				this.GenerateIndent(indent_level);
 				continue;
 			}
 			this.code.push(ch);
@@ -359,7 +376,7 @@ namespace ama {
 		//	this->code.push_back(';');
 		//}
 		//the "normal" content of a node should not contain newline
-		this.GenerateComment(1, this.scope_indent_level, nd.comments_after);
+		this.GenerateComment(1, this.scope_indent_level + (nd.s ? intptr_t(nd.s.indent_level) : 0L), nd.comments_after);
 		this.nd_current = bk;
 	}
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options) {

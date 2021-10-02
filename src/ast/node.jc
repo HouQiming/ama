@@ -805,6 +805,18 @@ ama::Node*+! ama::Node::MergeCommentsAfter(ama::Node*+! this, ama::Node*+! nd_af
 	return this;
 }
 
+ama::Node*+! ama::Node::MergeCommentsAndIndentAfter(ama::Node*+! this, ama::Node*+! nd_after) {
+	char[+]! ret = this.comments_after + nd_after.comments_before;
+	if( nd_after.comments_before.indexOf('\n') >= 0 && nd_after.indent_level > 0 ) {
+		for(intptr_t! i = 0L; i < intptr_t(nd_after.indent_level); i += 1) {
+			ret.push_back(' ');
+		}
+	}
+	this.comments_after = new char[|]!(ret);
+	nd_after.comments_before = "";
+	return this;
+}
+
 ama::Node*+! ama::Node::MergeCommentsBefore(ama::Node*+! this, ama::Node*+! nd_before) {
 	this.comments_before = new char[|]!(nd_before.comments_after + this.comments_before);
 	nd_before.comments_after = "";

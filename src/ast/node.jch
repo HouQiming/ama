@@ -187,6 +187,7 @@ namespace ama {
 		ama::Node*+! PostorderFirst(ama::Node*+! this);
 		ama::Node*+! PostorderNext(ama::Node*+! this, ama::Node*+! nd_root);
 		intptr_t! ValidateEx(ama::Node*+! this, intptr_t! max_depth, int! quiet);
+		ama::Node*+! MergeCommentsAndIndentAfter(ama::Node*+! this, ama::Node*+! nd_after);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;

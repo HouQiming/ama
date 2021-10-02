@@ -65,7 +65,7 @@ namespace ama {
 					ndi.ReplaceUpto(nd_name, nd_tmp);
 					ndi.BreakSibling();
 					ndi = nd_tmp.ReplaceWith(
-						ndi.MergeCommentsAfter(ndi_next).MergeCommentsAfter(nd_name).dot(name).setFlags(dot_flags).setCommentsAfter(nd_name.comments_after)
+						ndi.MergeCommentsAndIndentAfter(ndi_next).MergeCommentsAfter(nd_name).dot(name).setFlags(dot_flags).setCommentsAfter(nd_name.comments_after)
 					);
 					nd_name.p = NULL; nd_name.FreeASTStorage();
 					ndi_next.p = NULL; ndi_next.FreeASTStorage();
