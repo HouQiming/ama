@@ -20,6 +20,7 @@ cmake.LoadCMakeFile = function(fn, template) {
 	while (nd_root.c && !nd_root.c.s && nd_root.c.node_class == N_RAW && !(nd_root.c.flags & 0xffff) && nd_root.c.c) {
 		nd_root.c.ReplaceWith(nd_root.c.c)
 	}
+	nd_root.data = fn;
 	let if_stk = [];
 	for (let ndi = nd_root.c; ndi; ndi = ndi.s) {
 		if (ndi.node_class == N_CALL) {
@@ -40,7 +41,7 @@ cmake.LoadCMakeFile = function(fn, template) {
 }
 
 Node.TokenizeCMakeArgs = function() {
-	let nd_call=this;
+	let nd_call = this;
 	let ret = [];
 	if (!nd_call.c.s) {return ret;}
 	let merge_group = [];
@@ -103,26 +104,26 @@ Node.CMakeCreateTarget = function(name, options) {
 	let new_target = ['\n'];
 	let output_format = options.format || 'exe';
 	if (output_format == 'exe') {
-		new_target.push('add_executable(', target);
+		new_target.push('add_executable(', name);
 	} else if(output_format == 'dll') {
-		new_target.push('add_library(', target, ' SHARED');
+		new_target.push('add_library(', name, ' SHARED');
 	} else if(output_format == 'lib') {
-		new_target.push('add_library(', target)
+		new_target.push('add_library(', name)
 	} else {
 		throw new Error('invalid output format ' + output_format)
 	}
 	let files = options.files || [];
 	for (let fn of files) {
-		new_target.push('\n  ', fn)
+		new_target.push('\n  ', JSON.stringify(fn))
 	}
 	new_target.push('\n)')
 	return nd_root.Insert(POS_BACK, ParseCode(new_target.join(''), cmake_options).Find(N_CALL, null))
 }
 
-function TryRelative(dir_cmake,src_name_abs) {
-	let src_name_rel=path.relative(dir_cmake,src_name_abs);
-	if(path.isAbsolute(src_name_rel)||src_name_rel.length>src_name_abs.length){
-		src_name_rel=src_name_abs;
+function TryRelative(dir_cmake, src_name_abs) {
+	let src_name_rel = path.relative(dir_cmake, src_name_abs);
+	if (path.isAbsolute(src_name_rel) || src_name_rel.length > src_name_abs.length) {
+		src_name_rel = src_name_abs;
 	}
 	return src_name_rel;
 }
@@ -130,22 +131,22 @@ function TryRelative(dir_cmake,src_name_abs) {
 //let nd_output_format_template = ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
 let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format')))   };
 Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
-	let src_name_abs=path.resolve(nd_src_root.data);
-	let dir_cmake=path.dirname(path.resolve(this.data));
+	let src_name_abs = path.resolve(nd_src_root.data);
+	let dir_cmake = path.dirname(path.resolve(this.data));
 	let our_files = depends.ListAllDependency(nd_src_root, false)
-	let our_files_filtered=[];
-	let src_name_rel=TryRelative(dir_cmake,src_name_abs)
-	for(let fn of our_files){
-		if(path.extname(fn).startsWith('.h')&&fn!=src_name_abs){
+	let our_files_filtered = [];
+	let src_name_rel = TryRelative(dir_cmake, src_name_abs)
+	for (let fn of our_files) {
+		if (path.extname(fn).startsWith('.h') && fn != src_name_abs) {
 			//exclude all headers except the current file
 			continue;
 		}
 		//use relative dirs whenever possible
-		let fn_rel=TryRelative(dir_cmake,fn);
+		let fn_rel = TryRelative(dir_cmake, fn);
 		our_files_filtered.push(fn_rel)
 	}
 	//search for all targets containing src_name_rel, then add dependent files to them
-	let found_any=0;
+	let found_any = 0;
 	for (let nd_target of this.FindAll(N_CALL, 'add_executable').concat(this.FindAll(N_CALL, 'add_library'))) {
 		if (!nd_target.c.s) {continue;}
 		let args = nd_target.TokenizeCMakeArgs();
@@ -153,21 +154,21 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 		if (args.length >= 2 && args[1].GetName() == 'SHARED') {
 			p_files = 2;
 		}
-		let files = new Set(args.slice(p_files).map(nd=>nd.node_class==N_STRING?nd.GetStringValue():nd.GetName()));
-		if(!files.has(src_name_rel)){continue;}
-		found_any=1;
-		let new_files=our_files_filtered.filter(fn=>!files.has(fn));
-		if(new_files.length){
+		let files = new Set(args.slice(p_files).map(nd=>nd.node_class == N_STRING ? nd.GetStringValue() : nd.GetName()));
+		if (!files.has(src_name_rel)) {continue;}
+		found_any = 1;
+		let new_files = our_files_filtered.filter(fn=>!files.has(fn));
+		if (new_files.length) {
 			//append the new files
-			for(let fn of new_files){
-				nd_target.Insert(POS_BACK,nString(fn).setCommentsBefore(' '))
+			for (let fn of new_files) {
+				nd_target.Insert(POS_BACK, nString(fn).setCommentsBefore(' '))
 			}
 		}
 	}
-	if(found_any){
+	if (found_any) {
 		return;
 	}
-	let name = path.parse(nd_src_root.data).name;
+	let name = nd_src_root.data.replace(/[.].*/, '');
 	let format = undefined;
 	for (let nd_format of nd_src_root.FindAll(N_KEYWORD_STATEMENT, '#pragma')) {
 		let match = nd_format.Match(nd_output_format_template)
@@ -182,24 +183,24 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 	})
 }
 
-Node.CMakeInsertAMACommand=function(options){
-	let dir_cmake=path.dirname(path.resolve(this.data));
-	let fn_src=TryRelative(dir_cmake,options.source_file);
-	let fn_out=TryRelative(dir_cmake,options.output);
-	for(let nd_call of this.FindAll(N_CALL,'add_custom_command')){
-		let args=nd_call.TokenizeCMakeArgs();
-		for(let i=0;i+1<args.length;i++){
-			if(args[i].GetName()=='OUTPUT'&&args[i+1].GetName()==fn_out){
+Node.CMakeInsertAMACommand = function(options) {
+	let dir_cmake = path.dirname(path.resolve(this.data));
+	let fn_src = TryRelative(dir_cmake, options.source_file);
+	let fn_out = TryRelative(dir_cmake, options.output);
+	for (let nd_call of this.FindAll(N_CALL, 'add_custom_command')) {
+		let args = nd_call.TokenizeCMakeArgs();
+		for (let i = 0; i + 1 < args.length; i++) {
+			if (args[i].GetName() == 'OUTPUT' && args[i + 1].GetName() == fn_out) {
 				//we already have a command
 				return nd_call;
 			}
 		}
 	}
-	let cmd=[
-		'add_custom_command(\n',
+	let cmd = [
+		'\nadd_custom_command(\n',
 		'  OUTPUT ',JSON.stringify(fn_out),'\n',
-		'  COMMAND ',options.command.replace(/\$\{SOURCE_FILE\}/g,JSON.stringify(fn_src)),'\n',
-		'  MAIN_DEPENDENCY ',options.main_dependency.map(fn=>TryRelative(dir_cmake,fn)),'\n',
+		'  COMMAND ',options.command.replace(/\$\{SOURCE_FILE\}/g, JSON.stringify(fn_src)),'\n',
+		'  MAIN_DEPENDENCY ',options.main_dependency.map(fn=>JSON.stringify(TryRelative(dir_cmake, fn))).join(' '),'\n',
 		'  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n',
 		')\n'
 	].join('');
@@ -208,7 +209,7 @@ Node.CMakeInsertAMACommand=function(options){
 
 Node.UpdateCMakeLists = function(fn_cmake) {
 	if (!fn_cmake) {
-		fn_cmake=__global.__cmakelist;
+		fn_cmake = __global.__cmakelist;
 	}
 	if (!fn_cmake) {
 		let dir = path.dirname(fn_cmake);
@@ -241,15 +242,15 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 	//about with-ama dependencies: ama once manually to pull, we don't want to crawl dependent files for @ama
 	//by default, remove the last '.ama' from the current name
 	//if the file name doesn't contain '.ama', just don't generate the ama command
-	let fn_output=this.data;
-	let pama=fn_output.lastIndexOf('.ama');
-	if(pama>=0){
-		fn_output=fn_output.substr(0,pama)+fn_output.substr(pama+4)
+	let fn_output = this.data;
+	let pama = fn_output.lastIndexOf('.ama');
+	if (pama >= 0) {
+		fn_output = fn_output.substr(0, pama)+fn_output.substr(pama + 4)
 		nd_cmake.CMakeInsertAMACommand({
-			output:fn_output,
-			source_file:this.data,
-			command:'${AMA} -s "__global.__cmakelist=\"${CMAKE_CURRENT_LIST_FILE}\"" -c ${SOURCE_FILE}',
-			main_dependency:depends.ListAllDependency(this, false)
+			output: fn_output,
+			source_file: this.data,
+			command: '${AMA} -s "__global.__cmakelist=\\"${CMAKE_CURRENT_LIST_FILE}\\"" -c ${SOURCE_FILE}',
+			main_dependency: depends.ListAllDependency(this, false)
 		})
 		nd_cmake.Save(cmake_options);
 		///////////////////////

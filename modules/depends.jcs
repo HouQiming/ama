@@ -53,9 +53,9 @@ depends.LoadFile = function(fn) {
 }
 
 let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))  };
-depends.dependency_cache=new Map();
+depends.dependency_cache = new Map();
 depends.ListAllDependency = function(nd_root, include_system_headers) {
-	if(depends.dependency_cache.get(nd_root)){
+	if (depends.dependency_cache.get(nd_root)) {
 		return depends.dependency_cache.get(nd_root);
 	}
 	let ret = new Set();
@@ -63,7 +63,7 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 	for (let qi = 0; qi < Q.length; qi++) {
 		let nd_root = Q[qi];
 		for (let ndi of nd_root.FindAll(N_DEPENDENCY, null)) {
-			if (!include_system_headers && (nd.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE && ( nd.flags & DEPF_C_INCLUDE_NONSTR )) {
+			if (!include_system_headers && (ndi.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE && ( ndi.flags & DEPF_C_INCLUDE_NONSTR )) {
 				continue;
 			}
 			let fn_dep = depends.Resolve(ndi);
@@ -92,7 +92,7 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 			}
 		}
 	}
-	let ret=Q.map(ndi=>__path_toAbsolute(ndi.data));
-	depends.dependency_cache.set(nd_root,ret)
+	let qret = Q.map(ndi=>__path_toAbsolute(ndi.data));
+	depends.dependency_cache.set(nd_root, qret);
 	return ret;
 }

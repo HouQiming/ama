@@ -21,4 +21,5 @@ path.basename = function(s) {
 	return path.parse(s).base;
 }
 
-path.isAbsolute=__path_isAbsolute;
+path.isAbsolute = __path_isAbsolute;
+path.relative = __path_relative;

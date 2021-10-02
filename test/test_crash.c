@@ -22,5 +22,13 @@ void f() {
 		test(case 3: case 4:a?b?c:d?e:f?g?h:i);
 		a={3,4,5};
 	}
+	if (path.extname(fn).startsWith('.h')&&fn != src_name_abs) {
+		add_custom_command(
+		  OUTPUT "test_cmake.cpp"
+		  COMMAND ${AMA} -s "__global.__cmakelist=\"${CMAKE_CURRENT_LIST_FILE}\"" -c "test_cmake.ama.cpp"
+		  MAIN_DEPENDENCY "test_cmake.ama.cpp"
+		  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+		)
+	}
 	return
 }

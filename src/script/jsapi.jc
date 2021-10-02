@@ -740,6 +740,12 @@ namespace ama {
 		}
 		return JS_NewBool(ctx, path.isAbsolute(ama::UnwrapString(argv[0])));
 	}
+	private JSValueConst! JSPathRelative(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 2 ) {
+			return JS_ThrowReferenceError(ctx, "need 2 paths");
+		}
+		return ama::WrapString(path.relative(ama::UnwrapString(argv[0]), ama::UnwrapString(argv[1])));
+	}
 	private JSValueConst! JSNodeGC(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		return JS_NewInt64(ctx, ama::gc());
 	}
@@ -845,6 +851,12 @@ namespace ama {
 			ama::jsctx, global, '__path_isAbsolute', JS_NewCFunction(
 				ama::jsctx, JSPathIsAbsolute,
 				'isAbsolute', 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__path_relative', JS_NewCFunction(
+				ama::jsctx, JSPathRelative,
+				'relative', 2
 			)
 		);
 		JS_SetPropertyStr(ama::jsctx, global, 'Node', ama::g_node_proto);
