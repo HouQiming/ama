@@ -20,3 +20,5 @@ path.dirname = function(s) {
 path.basename = function(s) {
 	return path.parse(s).base;
 }
+
+path.isAbsolute=__path_isAbsolute;
