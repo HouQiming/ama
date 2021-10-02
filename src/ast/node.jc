@@ -846,19 +846,20 @@ intptr_t! ama::Node::ValidateEx(ama::Node*+! this, intptr_t! max_depth, int! qui
 	stack.push_back(this);
 	while( stack.size() ) {
 		ama::Node*+! nd = stack.pop();
-		if( stack.size() >= max_depth ) {
-			if( !quiet ) { console.log('node too deep'); }
-			nd.comments_before = new char[|]!('/*too deep*/ ' + nd.comments_before);
-			error_count += 1;
-		}
 		if( g_validate_dedup[nd] ) {
 			if( !quiet ) { console.log('found cycle to', intptr_t(nd), nd.data == NULL ? "NULL" : JSON.stringify(nd.data).c_str()); }
 			nd.comments_before = new char[|]!('/*cycle ' + JSON.stringify(intptr_t(nd)) + '*/ ' + nd.comments_before);
 			error_count += 1;
 			continue;
 		}
-		g_validate_dedup[nd] = 1;
-		if( nd.s && !(nd.tmp_flags & ama::TMPF_IS_NODE) ) {
+		int! depth = (nd.p ? g_validate_dedup[nd.p] : 0) + 1;
+		g_validate_dedup[nd] = depth;
+		if( stack.size() >= max_depth || depth >= max_depth ) {
+			if( !quiet ) { console.log('node too deep'); }
+			nd.comments_before = new char[|]!('/*too deep*/ ' + nd.comments_before);
+			error_count += 1;
+		}
+		if( nd.s && (nd.tmp_flags & ama::TMPF_IS_NODE) ) {
 			//validate sibling next: but don't do so for freed nodes since .s is now the freelist next
 			stack.push_back(nd.s);
 		}
