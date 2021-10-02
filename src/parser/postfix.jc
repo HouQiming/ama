@@ -37,9 +37,10 @@ namespace ama {
 						dot_flags = ama::DOT_CLASS;
 					}
 					char[|]! name = ndi_next.data;
-					ama::Node*+! nd_dot = ama::ReplaceChildRange(
-						ndi, ndi_next,
-						ama::nAir().setCommentsAfter(new char[|]!(ndi.comments_after + ndi_next.comments_before)).dot(name).setFlags(dot_flags).setCommentsBefore(ndi.comments_before).setCommentsAfter(ndi_next.comments_after)
+					//.setCommentsBefore(ndi.comments_before).setCommentsAfter(ndi_next.comments_after)
+					ama::Node*+! nd_dot = ndi.ReplaceUpto(
+						ndi_next,
+						ama::nAir().setCommentsAfter(new char[|]!(ndi.comments_after + ndi_next.comments_before)).dot(name).setFlags(dot_flags)
 					);
 					ndi_next.p = NULL; ndi_next.FreeASTStorage();
 					ndi.p = NULL; ndi.s = NULL; ndi.FreeASTStorage();
@@ -61,7 +62,7 @@ namespace ama {
 					nd_name.MergeCommentsBefore(ndi_next);
 					char[|]! name = nd_name.data;
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-					ama::ReplaceChildRange(ndi, nd_name, nd_tmp);
+					ndi.ReplaceUpto(nd_name, nd_tmp);
 					ndi.BreakSibling();
 					ndi = nd_tmp.ReplaceWith(
 						ndi.MergeCommentsAfter(ndi_next).MergeCommentsAfter(nd_name).dot(name).setFlags(dot_flags).setCommentsAfter(nd_name.comments_after)
@@ -122,6 +123,7 @@ namespace ama {
 							ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
 							nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
 							new_children.push_back(nd_arg);
+							pending_comments_before.clear();
 						}
 					}
 					//for(int! i = 2; i < new_children.length; i += 1) {
@@ -130,8 +132,9 @@ namespace ama {
 					//	}
 					//}
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-					ama::ReplaceChildRange(ndi, nd_arglist, nd_tmp);
-					ama::Node*+! nd_call = nd_tmp.ReplaceWith(ama::CreateNodeFromChildren(call_class, new_children).setCommentsAfter(nd_arglist.comments_after));
+					ndi.ReplaceUpto(nd_arglist, nd_tmp);
+					//.setCommentsAfter(nd_arglist.comments_after)
+					ama::Node*+! nd_call = nd_tmp.ReplaceWith(ama::CreateNodeFromChildren(call_class, new_children));
 					if( pending_comments_before.length ) {
 						nd_call.comments_after = new char[|]!(pending_comments_before + nd_call.comments_after);
 						pending_comments_before.clear();

@@ -113,7 +113,9 @@ namespace ama {
 			nd_arg = nd_body;
 			nd_body = nd_body.BreakSibling();
 		}
-		ama::Node*+! nd_stmt = ama::CreateNode(ama::N_EXTENSION_CLAUSE, ama::toSingleNode(nd_arg).MergeCommentsBefore(nd_keyword)).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level);
+		ama::Node*+! nd_stmt = ama::CreateNode(
+			ama::N_EXTENSION_CLAUSE, ama::cons(ama::toSingleNode(nd_arg).MergeCommentsBefore(nd_keyword), ama::nAir())
+		).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level);
 		nd_tmp.ReplaceWith(ama::cons(nd_stmt, nd_body));
 		nd_keyword.s = NULL;
 		nd_keyword.FreeASTStorage();

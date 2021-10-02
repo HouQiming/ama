@@ -51,7 +51,7 @@ cmake.TokenizeCMakeArgs = function(nd_call) {
 			merge_group.length = 0;
 		} else {
 			let str = merge_group.map(nd=>nd.toSource()).join('').trim();
-			ret.push(merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nString(str)) )
+			ret.push(merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nString(str)))
 			merge_group.length = 0;
 		}
 	}
@@ -94,38 +94,45 @@ Node.CMakeFindTarget = function(name) {
 }
 
 Node.CMakeCreateTarget = function(name, options) {
-	   let nd_root = this;
-	   if (!options) {
-	       options = {};
-	   }
-	   //create a new target
-	   let new_target = ['\n'];
-	   let output_format = options.format || 'exe';
-	   if (output_format == 'exe') {
-	       new_target.push('add_executable(', target);
-	   } else if(output_format == 'dll') {
-	       new_target.push('add_library(', target, ' SHARED');
-	   } else if(output_format == 'lib') {
-	       new_target.push('add_library(', target)
-	   } else {
-	       throw new Error('invalid output format ' + output_format)
-	   }
-	   let files = options.files || [];
-	   for (let fn of files) {
-	       new_target.push('\n  ', fn)
-	   }
-	   new_target.push('\n)')
-	   return nd_root.Insert(POS_BACK, ParseCode(new_target.join(''), cmake_options).Find(N_CALL, null))
-   }
+	let nd_root = this;
+	if (!options) {
+		options = {};
+	}
+	//create a new target
+	let new_target = ['\n'];
+	let output_format = options.format || 'exe';
+	if (output_format == 'exe') {
+		new_target.push('add_executable(', target);
+	} else if(output_format == 'dll') {
+		new_target.push('add_library(', target, ' SHARED');
+	} else if(output_format == 'lib') {
+		new_target.push('add_library(', target)
+	} else {
+		throw new Error('invalid output format ' + output_format)
+	}
+	let files = options.files || [];
+	for (let fn of files) {
+		new_target.push('\n  ', fn)
+	}
+	new_target.push('\n)')
+	return nd_root.Insert(POS_BACK, ParseCode(new_target.join(''), cmake_options).Find(N_CALL, null))
+}
 
 //let nd_output_format_template = ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
 let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format')))   };
 Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
+	let our_files = depends.ListAllDependency(nd_src_root, false)
 	let nd_root = this;
 	let name = path.parse(nd_src_root.data).name;
 	let nd_target = nd_root.CMakeFindTarget(name);
 	if (nd_target) {
-		//TODO: add files to existing target: group unquoted file names - TokenizeCMakeArgs
+		let args = cmake.TokenizeCMakeArgs(nd_target);
+		let p_files = 1;
+		if (args.length >= 2 && args[1].GetName() == 'SHARED') {
+			p_files = 2;
+		}
+		let files = args.slice(p_files);
+		//TODO: merge with our_files
 		return nd_target;
 	}
 	let format = undefined;
@@ -138,7 +145,7 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 	}
 	return nd_root.CMakeCreateTarget(name, {
 		format: format,
-		files: depends.ListAllDependency(nd_src_root, false)
+		files: our_files
 	})
 }
 
