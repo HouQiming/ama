@@ -17,16 +17,16 @@ let cmake_options = {
 cmake.LoadCMakeFile = function(fn, template) {
 	let nd_root = ParseCode((fs.readFileSync(fn) || (typeof(template) == 'function' ? template() : template) || '').toString(), cmake_options);
 	//if-endif pairing
-	while (nd_root.c && !nd_root.c.s && nd_root.c.node_class === N_RAW && !(nd_root.c.flags & 0xffff) && nd_root.c.c) {
+	while (nd_root.c && !nd_root.c.s && nd_root.c.node_class == N_RAW && !(nd_root.c.flags & 0xffff) && nd_root.c.c) {
 		nd_root.c.ReplaceWith(nd_root.c.c)
-	} 
+	}
 	let if_stk = [];
 	for (let ndi = nd_root.c; ndi; ndi = ndi.s) {
-		if (ndi.node_class === N_CALL) {
+		if (ndi.node_class == N_CALL) {
 			let name = ndi.GetName();
-			if (name === 'if') {
+			if (name == 'if') {
 				if_stk.push(ndi);
-			} else if(name === 'endif' && if_stk.length > 0) {
+			} else if(name == 'endif' && if_stk.length > 0) {
 				let nd0 = if_stk.pop();
 				let nd_tmp = Node.GetPlaceHolder();
 				nd0.ReplaceUpto(ndi, nd_tmp)
@@ -41,17 +41,17 @@ cmake.LoadCMakeFile = function(fn, template) {
 
 cmake.TokenizeCMakeArgs = function(nd_call) {
 	let ret = [];
-	if (!nd_call.c.s) {return ret;} 
+	if (!nd_call.c.s) {return ret;}
 	let merge_group = [];
 	function FlushMergeGroup() {
 		//unquoted args - merge and convert. quoting individual names in target is fine
-		if(merge_group.length==1&&merge_group[0].node_class==N_REF){
+		if (merge_group.length == 1 && merge_group[0].node_class == N_REF) {
 			//leave single identifiers alone
 			ret.push(merge_group[0])
 			merge_group.length = 0;
-		}else{
-			let str = merge_group.map(nd=>nd.toSource()).join('')
-			ret.push(merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nString(str)))
+		} else {
+			let str = merge_group.map(nd=>nd.toSource()).join('').trim();
+			ret.push(merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nString(str)) )
 			merge_group.length = 0;
 		}
 	}
@@ -59,19 +59,19 @@ cmake.TokenizeCMakeArgs = function(nd_call) {
 		if (merge_group.length && nd.comments_before.indexOf(' ') >= 0) {
 			FlushMergeGroup();
 		}
-		if (nd.node_class === N_RAW) {
+		if (nd.node_class == N_RAW) {
 			for (let ndi = nd.c; ndi; ndi = ndi.s) {
 				dfsTokenizeCMakeArgs(ndi);
 			}
-		} else if(nd.node_class === N_STRING) {
+		} else if(nd.node_class == N_STRING) {
 			ret.push(nd)
-		} else if(nd.node_class === N_REF || nd.node_class === N_NUMBER || nd.node_class === N_SYMBOL) {
+		} else if(nd.node_class == N_REF || nd.node_class == N_NUMBER || nd.node_class == N_SYMBOL) {
 			merge_group.push(nd);
 		} else {
 			//console.error('unrecognized cmake arg:', nd);
 			//ret.push(nd)
 			merge_group.push(nd);
-		} 
+		}
 	}
 	dfsTokenizeCMakeArgs(nd_call.c.s);
 	if (merge_group.length) {
@@ -83,9 +83,9 @@ cmake.TokenizeCMakeArgs = function(nd_call) {
 Node.CMakeFindTarget = function(name) {
 	let nd_root = this;
 	for (let nd_target of nd_root.FindAll(N_CALL, 'add_executable').concat(nd_root.FindAll(N_CALL, 'add_library'))) {
-		if (!nd_target.c.s) {continue;} 
+		if (!nd_target.c.s) {continue;}
 		let args = cmake.TokenizeCMakeArgs(nd_target);
-		if (args.length && args[0].node_class === N_REF && args[0].data === name) {
+		if (args.length && args[0].node_class == N_REF && args[0].data == name) {
 			//found
 			return nd_target;
 		}
@@ -94,32 +94,32 @@ Node.CMakeFindTarget = function(name) {
 }
 
 Node.CMakeCreateTarget = function(name, options) {
-	let nd_root = this;
-	if (!options) {
-		options = {};
-	} 
-	//create a new target
-	let new_target = ['\n'];
-	let output_format = options.format || 'exe';
-	if (output_format === 'exe') {
-		new_target.push('add_executable(', target);
-	} else if(output_format === 'dll') {
-		new_target.push('add_library(', target, ' SHARED');
-	} else if(output_format === 'lib') {
-		new_target.push('add_library(', target)
-	} else {
-		throw new Error('invalid output format ' + output_format)
-	} 
-	let files = options.files || [];
-	for (let fn of files) {
-		new_target.push('\n  ', fn)
-	} 
-	new_target.push('\n)')
-	return nd_root.Insert(POS_BACK, ParseCode(new_target.join(''), cmake_options).Find(N_CALL, null))
- }
+	   let nd_root = this;
+	   if (!options) {
+	       options = {};
+	   }
+	   //create a new target
+	   let new_target = ['\n'];
+	   let output_format = options.format || 'exe';
+	   if (output_format == 'exe') {
+	       new_target.push('add_executable(', target);
+	   } else if(output_format == 'dll') {
+	       new_target.push('add_library(', target, ' SHARED');
+	   } else if(output_format == 'lib') {
+	       new_target.push('add_library(', target)
+	   } else {
+	       throw new Error('invalid output format ' + output_format)
+	   }
+	   let files = options.files || [];
+	   for (let fn of files) {
+	       new_target.push('\n  ', fn)
+	   }
+	   new_target.push('\n)')
+	   return nd_root.Insert(POS_BACK, ParseCode(new_target.join(''), cmake_options).Find(N_CALL, null))
+   }
 
 //let nd_output_format_template = ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
-let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format'))) };
+let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format')))   };
 Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 	let nd_root = this;
 	let name = path.parse(nd_src_root.data).name;
@@ -127,15 +127,15 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 	if (nd_target) {
 		//TODO: add files to existing target: group unquoted file names - TokenizeCMakeArgs
 		return nd_target;
-	} 
+	}
 	let format = undefined;
 	for (let nd_format of nd_src_root.FindAll(N_KEYWORD_STATEMENT, '#pragma')) {
 		let match = nd_format.Match(nd_output_format_template)
 		if (match) {
 			format = match.format.GetStringValue();
 			break;
-		} 
-	} 
+		}
+	}
 	return nd_root.CMakeCreateTarget(name, {
 		format: format,
 		files: depends.ListAllDependency(nd_src_root, false)
@@ -151,24 +151,24 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 			let fn_test = path.join(dir, 'CMakeLists.txt');
 			if (fs.existsSync(path.join(dir, '.git'))) {
 				dir_git = dir;
-			} 
+			}
 			if (fs.existsSync(fn_test)) {
 				fn_cmake = fn_test;
 				break;
-			} 
+			}
 			if (dir_git) {break;}
 		}
 		if (dir_git && !fn_cmake) {
 			fn_cmake=path.join(dir_git, 'CMakeLists.txt')
 		}
-	} 
+	}
 	let nd_cmake = cmake.LoadCMakeFile(fn_cmake, ()=>[
 		'cmake_minimum_required (VERSION 3.0)\n',
 		'project(',path.basename(path.dirname(path.resolve(fn_cmake))).replace(/[^0-9a-zA-Z]+/g, '_'),')\n',
 		'if(NOT AMA)\n',
 		'  find_program(AMA ama)\n',
 		'endif()\n'
-	].join('')) 
+	].join(''))   
 	//TODO: insert files
 	//TODO: use ama to transform
 	//TODO: insert the ama command

@@ -3,11 +3,11 @@ const fs = require('fs');
 const path = require('path');
 let depends = module.exports;
 
-depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform === 'win32' ? ';' : ':');
+depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':');
 
 depends.Resolve = function(nd_depends) {
-	assert(nd_depends.node_class === N_DEPENDENCY)
-	if ((nd.flags & DEP_TYPE_MASK) === DEP_C_INCLUDE) {
+	assert(nd_depends.node_class == N_DEPENDENCY)
+	if ((nd.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE) {
 		let fn = nd.c.GetStringValue()
 		if(nd.flags & DEPF_C_INCLUDE_NONSTR) {
 			fn = fn.replace(new RegExp('[<>]', 'g'), '');
@@ -24,10 +24,10 @@ depends.Resolve = function(nd_depends) {
 				return fn_test;
 			}
 		}
-	} else if((nd.flags & DEP_TYPE_MASK) === DEP_JS_REQUIRE) {
+	} else if((nd.flags & DEP_TYPE_MASK) == DEP_JS_REQUIRE) {
 		//reuse the builtin searcher __ResolveJSRequire
-		if (nd.c && nd.c.node_class === N_STRING) {
-			return __ResolveJSRequire(__filename, nd.c.GetStringValue);
+		if (nd.c && nd.c.node_class == N_STRING) {
+			return __ResolveJSRequire(__filename, nd.c.GetStringValue)  ;
 		}
 	}
 	return undefined;
@@ -45,21 +45,21 @@ depends.LoadFile = function(fn) {
 			//do nothing
 		}
 		if (!data) {return null;}
-		nd_cached = ParseCode(data, __PrepareOptions(fn));
+		nd_cached = ParseCode(data, __PrepareOptions(fn))  ;
 		nd_cached.data = fn;
 		depends.cache.set(fn, nd_cached);
 	}
 	return nd_cached;
 }
 
-let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))};
+let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))  };
 depends.ListAllDependency = function(nd_root, include_system_headers) {
 	let ret = new Set();
 	let Q = [nd_root];
 	for (let qi = 0; qi < Q.length; qi++) {
 		let nd_root = Q[qi];
 		for (let ndi of nd_root.FindAll(N_DEPENDENCY, null)) {
-			if (!include_system_headers && (nd.flags & DEP_TYPE_MASK) === DEP_C_INCLUDE && ( nd.flags & DEPF_C_INCLUDE_NONSTR )) {
+			if (!include_system_headers && (nd.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE && ( nd.flags & DEPF_C_INCLUDE_NONSTR )) {
 				continue;
 			}
 			let fn_dep = depends.Resolve(ndi);
@@ -77,7 +77,7 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 			if (fs.existsSync(fn_dep) && !ret.has(fn_dep)) {
 				ret.add(fn_dep);
 				let ext = path.extname(fn_dep);
-				if (ext !== '.a' && ext !== '.so' && ext !== '.dll') {
+				if (ext != '.a' && ext != '.so' && ext != '.dll') {
 					let nd_root_dep = depends.LoadFile(fn_dep);
 					if (nd_root_dep) {
 						Q.push(nd_root_dep);
