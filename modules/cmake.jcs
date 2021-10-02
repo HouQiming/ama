@@ -52,21 +52,27 @@ Node.TokenizeCMakeArgs = function() {
 			ret.push(merge_group[0])
 			merge_group.length = 0;
 		} else {
-			let str = merge_group.map(nd=>nd.toSource()).join('').trim();
-			ret.push(merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nString(str)))
+			let n0 = ret.length;
+			for (let str of merge_group.map(nd=>nd.toSource()).join('').trim().split(' ')) {
+				ret.push(nString(str).setCommentsBefore(' '))
+			}
+			merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nScope.apply(null, ret.slice(n0)).c)
 			merge_group.length = 0;
 		}
 	}
 	function dfsTokenizeCMakeArgs(nd) {
-		if (merge_group.length && nd.comments_before.indexOf(' ') >= 0) {
+		if (merge_group.length && nd.comments_before.length > 0) {
 			FlushMergeGroup();
 		}
-		if (nd.node_class == N_RAW) {
+		if (nd.node_class == N_RAW && !(nd.flags & 0xffff)) {
 			for (let ndi = nd.c; ndi; ndi = ndi.s) {
 				dfsTokenizeCMakeArgs(ndi);
 			}
 		} else if(nd.node_class == N_STRING) {
-			ret.push(nd)
+			if (merge_group.length) {
+				FlushMergeGroup();
+			}
+			ret.push(nd);
 		} else if(nd.node_class == N_REF || nd.node_class == N_NUMBER || nd.node_class == N_SYMBOL) {
 			merge_group.push(nd);
 		} else {
@@ -75,7 +81,9 @@ Node.TokenizeCMakeArgs = function() {
 			merge_group.push(nd);
 		}
 	}
-	dfsTokenizeCMakeArgs(nd_call.c.s);
+	for (let ndi = nd_call.c.s; ndi; ndi = ndi.s) {
+		dfsTokenizeCMakeArgs(ndi);
+	}
 	if (merge_group.length) {
 		FlushMergeGroup();
 	}
@@ -136,6 +144,10 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 	let our_files = depends.ListAllDependency(nd_src_root, false)
 	let our_files_filtered = [];
 	let src_name_rel = TryRelative(dir_cmake, src_name_abs)
+	let pama = src_name_rel.lastIndexOf('.ama');
+	if (pama >= 0) {
+		src_name_rel = src_name_rel.substr(0, pama) + src_name_rel.substr(pama + 4);
+	}
 	for (let fn of our_files) {
 		if (path.extname(fn).startsWith('.h') && fn != src_name_abs) {
 			//exclude all headers except the current file
@@ -143,6 +155,10 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 		}
 		//use relative dirs whenever possible
 		let fn_rel = TryRelative(dir_cmake, fn);
+		let pama = fn_rel.lastIndexOf('.ama');
+		if (pama >= 0) {
+			fn_rel = fn_rel.substr(0, pama) + fn_rel.substr(pama + 4);
+		}
 		our_files_filtered.push(fn_rel)
 	}
 	//search for all targets containing src_name_rel, then add dependent files to them
@@ -154,7 +170,7 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 		if (args.length >= 2 && args[1].GetName() == 'SHARED') {
 			p_files = 2;
 		}
-		let files = new Set(args.slice(p_files).map(nd=>nd.node_class == N_STRING ? nd.GetStringValue() : nd.GetName()));
+		let files = new Set(args.slice(p_files).map(nd=>nd.GetName()));
 		if (!files.has(src_name_rel)) {continue;}
 		found_any = 1;
 		let new_files = our_files_filtered.filter(fn=>!files.has(fn));
@@ -245,7 +261,7 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 	let fn_output = this.data;
 	let pama = fn_output.lastIndexOf('.ama');
 	if (pama >= 0) {
-		fn_output = fn_output.substr(0, pama)+fn_output.substr(pama + 4)
+		fn_output = fn_output.substr(0, pama) + fn_output.substr(pama + 4);
 		nd_cmake.CMakeInsertAMACommand({
 			output: fn_output,
 			source_file: this.data,
@@ -254,6 +270,6 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 		})
 		nd_cmake.Save(cmake_options);
 		///////////////////////
-		this.Save(fn_output);
+		this.Save({name:fn_output});
 	}
 }

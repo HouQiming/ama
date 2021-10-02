@@ -94,5 +94,5 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 	}
 	let qret = Q.map(ndi=>__path_toAbsolute(ndi.data));
 	depends.dependency_cache.set(nd_root, qret);
-	return ret;
+	return qret;
 }

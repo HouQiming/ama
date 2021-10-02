@@ -11,3 +11,5 @@ a.out
 modules/*.js
 !modules/jcs.js
 /test/test_tmp.*
+/test/cmake/CMakeLists.txt
+/test/cmake/test_cmake.cpp
