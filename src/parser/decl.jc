@@ -498,7 +498,8 @@ namespace ama {
 					nd_stmt.Delete();
 					nd_last_scoped_stmt.Insert(ama::POS_BACK, nd_stmt);
 				}
-			} else if( kw_mode == KW_FUNC && nd_keyword && parse_c_forward_declarations ) {
+			} else if( kw_mode == KW_FUNC && nd_keyword && parse_c_forward_declarations && 
+			nd_raw.isRawNode(0, 0) && nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_FILE) ) {
 				//C forward declaration with extern
 				TranslateCForwardDeclaration(nd_raw);
 				//note that extern is not necessarily function... we may have extern "C"{}
@@ -510,6 +511,7 @@ namespace ama {
 				//have to rely on context? we can do Owner tests here 
 				ama::Node*+! nd_owner = nd_raw.Owner();
 				if( !(nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_FILE)) || nd_owner.node_class == ama::N_FUNCTION ) { continue; }
+				if( !nd_raw.isRawNode(0, 0) ) { continue; }
 				ama::Node*+! nd_proto = NULL;
 				//console.log('>>>', nd_owner.node_class, nd_raw.toSource());
 				for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {

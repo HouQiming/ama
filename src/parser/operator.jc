@@ -71,18 +71,22 @@ namespace ama {
 						// 1?1:0?2:3 == 1?1:(0?2:3) - here we need to create a new conditional
 						ama::Node*+! nd_colon = cstk.back().nd_colon;
 						assert(nd_colon);
-						cstk.push(new ColonStackItem!{
-							nd_head: nd_colon.s,
-							nd_qmark: ndi
-						});
+						if( nd_colon.s != ndi ) {
+							cstk.push(new ColonStackItem!{
+								nd_head: nd_colon.s,
+								nd_qmark: ndi
+							});
+						}
 					} else if( cstk.back().nd_qmark ) {
 						//again, create a new conditional
 						ama::Node*+! nd_qmark = cstk.back().nd_qmark;
 						assert(nd_qmark);
-						cstk.push(new ColonStackItem!{
-							nd_head: nd_qmark.s,
-							nd_qmark: ndi
-						});
+						if( nd_qmark.s != ndi ) {
+							cstk.push(new ColonStackItem!{
+								nd_head: nd_qmark.s,
+								nd_qmark: ndi
+							});
+						}
 					} else if( cstk.back().nd_head != ndi ) {
 						cstk.back().nd_qmark = ndi;
 					}
@@ -96,6 +100,7 @@ namespace ama {
 					//label -- bar:
 					//both only involves setting pcolon
 					if( cstk.back().nd_head != ndi ) {
+						assert(cstk.back().nd_qmark != ndi);
 						cstk.back().nd_colon = ndi;
 					}
 				}
