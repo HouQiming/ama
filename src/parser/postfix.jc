@@ -164,7 +164,7 @@ namespace ama {
 		if( nd.node_class == ama::N_CALL_TEMPLATE ) {
 			flags = uint32_t('<') | uint32_t('>') << 8;
 		}
-		ama::Node*+! ret = nd.ReplaceWith(ama::cons(nd.c.BreakSelf(), ama::CreateNodeFromChildren(ama::N_RAW, args).setFlags(flags)));
+		ama::Node*+! ret = nd.ReplaceWith(ama::cons(nd.c.BreakSelf(), ama::CreateNodeFromChildren(ama::N_RAW, args).setFlags(flags).setIndent(nd.indent_level)));
 		//nd.c = NULL;
 		nd.FreeASTStorage();
 		return ret;

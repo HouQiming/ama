@@ -15,7 +15,7 @@ namespace ama {
 			if( ndi.isSymbol(",") ) { continue; }
 			params.push(ndi);
 		}
-		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params);
+		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params).setIndent(nd_raw.indent_level).setCommentsBefore(nd_raw.comments_before).setCommentsAfter(nd_raw.comments_after);
 	}
 	private char[|]! GetFunctionName(int! is_keyworded, ama::Node*+! nd_func) {
 		char[|]! name = '';
