@@ -4,6 +4,7 @@ const path = require('path');
 const depends = require('depends');
 let cmake = module.exports;
 
+//as a new language support module, cmake.jcs extends Node
 //a small number will be interpreted as the opening char
 const CMAKE_CHANGED = 65536;
 
