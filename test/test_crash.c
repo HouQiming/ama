@@ -1,4 +1,6 @@
 //LICENSE
+#include   <stdio.h>
+
 AArch64TargetLowering::AArch64TargetLowering(const TargetMachine &TM,
                                              const AArch64Subtarget &STI)
     : TargetLowering(TM), Subtarget(&STI) {

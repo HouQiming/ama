@@ -178,11 +178,15 @@ namespace ama {
 					this.code.push('#include');
 					this.GenerateSpaceBefore(nd.c);
 					if( nd.flags & ama::DEPF_C_INCLUDE_NONSTR ) {
+						this.GenerateComment(0, this.scope_indent_level + intptr_t(nd.c.indent_level), nd.c.comments_before);
 						this.code.push(nd.c.GetStringValue());
+						this.GenerateComment(1, this.scope_indent_level + (nd.s ? intptr_t(nd.s.indent_level) : 0L), nd.c.comments_after);
 					} else {
 						this->Generate(nd.c);
 					}
-					this.code.push('\n');
+					if( this.auto_space && nd.comments_after.indexOf('\n') < 0 && !(nd.s && nd.s.comments_before.indexOf('\n') >= 0) ) {
+						this.code.push('\n');
+					}
 				} else if( (nd.flags & ama::DEP_TYPE_MASK) == ama::DEP_JS_REQUIRE ) {
 					this.code.push('require(');
 					this->Generate(nd.c);
