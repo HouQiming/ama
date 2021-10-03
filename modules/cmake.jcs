@@ -4,6 +4,9 @@ const path = require('path');
 const depends = require('depends');
 let cmake = module.exports;
 
+//a small number will be interpreted as the opening char
+const CMAKE_CHANGED = 65536;
+
 let cmake_options = {
 	enable_hash_comment: 1,
 	parse_indent_as_scope: 0,
@@ -15,11 +18,13 @@ let cmake_options = {
 }
 
 cmake.LoadCMakeFile = function(fn, template) {
-	let nd_root = ParseCode((fs.readFileSync(fn) || (typeof(template) == 'function' ? template() : template) || '').toString(), cmake_options);
+	let flags = 0;
+	let nd_root = ParseCode((fs.readFileSync(fn) || (flags = CMAKE_CHANGED,typeof(template) == 'function' ? template() : template) || '').toString(), cmake_options);
 	//if-endif pairing
 	while (nd_root.c && !nd_root.c.s && nd_root.c.node_class == N_RAW && !(nd_root.c.flags & 0xffff) && nd_root.c.c) {
 		nd_root.c.ReplaceWith(nd_root.c.c)
 	}
+	nd_root.flags |= flags;
 	nd_root.data = fn;
 	let if_stk = [];
 	for (let ndi = nd_root.c; ndi; ndi = ndi.s) {
@@ -177,6 +182,7 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 		if (new_files.length) {
 			//append the new files
 			for (let fn of new_files) {
+				this.flags |= CMAKE_CHANGED;
 				nd_target.Insert(POS_BACK, nString(fn).setCommentsBefore(' '))
 			}
 		}
@@ -184,6 +190,7 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 	if (found_any) {
 		return;
 	}
+	this.flags |= CMAKE_CHANGED;
 	let name = nd_src_root.data.replace(/[.].*/, '');
 	let format = undefined;
 	for (let nd_format of nd_src_root.FindAll(N_KEYWORD_STATEMENT, '#pragma')) {
@@ -212,6 +219,7 @@ Node.CMakeInsertAMACommand = function(options) {
 			}
 		}
 	}
+	this.flags |= CMAKE_CHANGED;
 	let cmd = [
 		'\nadd_custom_command(\n',
 		'  OUTPUT ',JSON.stringify(fn_out),'\n',
@@ -268,7 +276,9 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 			command: '${AMA} -s "__global.__cmakelist=\\"${CMAKE_CURRENT_LIST_FILE}\\"" -c ${SOURCE_FILE}',
 			main_dependency: depends.ListAllDependency(this, false)
 		})
-		nd_cmake.Save(cmake_options);
+		if (nd_cmake.flags & CMAKE_CHANGED) {
+			nd_cmake.Save(cmake_options);
+		}
 		///////////////////////
 		this.Save({name:fn_output});
 	}
