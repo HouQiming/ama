@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 //@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 const fs = require('fs');
 const path = require('path');
@@ -282,9 +282,9 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 		'endif()\n',
 		'if(NOT AMA_MODULES_GLOBAL)\n',
 		'  if(DEFINED ENV{AMA_MODULES_GLOBAL})\n',
-		'    set(AMA_MODULES "$ENV{AMA_MODULES_GLOBAL}")\n',
+		'    set(AMA_MODULES_GLOBAL "$ENV{AMA_MODULES_GLOBAL}")\n',
 		'  else()\n',
-		'    set(AMA_MODULES "/usr/share/ama_modules")\n',
+		'    set(AMA_MODULES_GLOBAL "/usr/share/ama_modules")\n',
 		'  endif()\n',
 		'endif()\n',
 	].join(''))   
@@ -301,7 +301,7 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 		nd_cmake.CMakeInsertAMACommand({
 			output: fn_output,
 			source_file: this.data,
-			command: '${AMA} -s "__global.__cmakelist=\\"${CMAKE_CURRENT_LIST_FILE}\\"" -c ${SOURCE_FILE}',
+			command: '${AMA} -s "__global.__cmakelist=\'${CMAKE_CURRENT_LIST_FILE}\'" ${SOURCE_FILE}',
 			main_dependency: [path.resolve(this.data)].concat(depends.ListLoadedFiles())
 		});
 		if (nd_cmake.flags & CMAKE_CHANGED) {
