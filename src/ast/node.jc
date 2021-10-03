@@ -639,7 +639,10 @@ char[|]! ama::Node::GetName(ama::Node*! this) {
 	//	return this.c.data;
 	//} else if( int(this.node_class) == ama::N_INCLUDE ) {
 	//	return this.c.GetStringValue();
-	if( this.node_class == ama::N_CALL || this.node_class == ama::N_CALL_TEMPLATE || this.node_class == ama::N_CALL_CUDA_KERNEL ) {
+	if( this.node_class == ama::N_FUNCTION ) {
+		//COULDDO: re-query the function name
+		return this.data;
+	} else if( this.node_class == ama::N_CALL || this.node_class == ama::N_CALL_TEMPLATE || this.node_class == ama::N_CALL_CUDA_KERNEL ) {
 		if( this.c && this.c.node_class != this.node_class && this.c.node_class != ama::N_CALL ) {
 			return this.c.GetName();
 		} else {

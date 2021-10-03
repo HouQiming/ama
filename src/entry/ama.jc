@@ -35,6 +35,7 @@ int! main(int! argc, char**! argv) {
 		home_dir = "/";
 	}
 	ama::std_module_dir = <<path.join(home_dir, '.ama_modules');
+	ama::std_module_dir_global = '/usr/share/ama_modules';
 	///////////
 	ama::InitScriptEnv();
 	char[+]! extra_script;

@@ -96,3 +96,14 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 	depends.dependency_cache.set(nd_root, qret);
 	return qret;
 }
+
+depends.ListLoadedFiles = function() {
+	let ret = [];
+	for (let name in __require_cache) {
+		ret.push(path.resolve(name));
+	}
+	depends.cache.forEach((nd_root, name)=> {
+		ret.push(path.resolve(name));
+	});
+	return ret;
+}

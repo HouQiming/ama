@@ -12,7 +12,8 @@ namespace ama {
 			if( !nd_raw.c && nd_raw.p && nd_raw.p.node_class == ama::N_RAW ) {
 				nd_raw.Delete();
 			} else if( nd_raw.c && !nd_raw.c.s ) {
-				nd_raw.ReplaceWith(nd_raw.c);
+				//nd_raw.ReplaceWith(nd_raw.c);
+				ama::UnparseRaw(nd_raw);
 			}
 		}
 		//while( nd_root.c && !nd_root.c.s && nd_root.c.node_class == ama::N_RAW && !(nd_root.c.flags & 0xffff) ) {

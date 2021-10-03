@@ -11,8 +11,19 @@ namespace ama {
 	private ama::Node*+! ConvertToParameterList(ama::Node*+! nd_raw) {
 		assert(nd_raw.isRawNode('(', ')'));
 		ama::Node*+[+]! params = new ama::Node*+[+]!();
-		for(auto ndi : nd_raw) {
+		for(ama::Node*+! ndi : nd_raw) {
 			if( ndi.isSymbol(",") ) { continue; }
+			if( ndi.isRawNode(0, 0) && ndi.c && ndi.c.s && ndi.LastChild().isSymbol(",") ) {
+				ama::Node*+! nd_comma = ndi.LastChild();
+				nd_comma.Delete();
+				ama::Node*+! nd_arg_last = ndi.LastChild();
+				nd_arg_last.MergeCommentsAndIndentAfter(nd_comma);
+				ndi.comments_after = new char[|]!(ndi.comments_after + nd_comma.comments_after);
+				nd_comma.FreeASTStorage();
+				if( !ndi.c.s ) {
+					ndi = ama::UnparseRaw(ndi);
+				}
+			}
 			params.push(ndi);
 		}
 		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params).setIndent(nd_raw.indent_level).setCommentsBefore(nd_raw.comments_before).setCommentsAfter(nd_raw.comments_after);

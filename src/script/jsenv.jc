@@ -11,6 +11,7 @@ namespace ama {
 	uint32_t! g_node_classid = 0u;
 	JSValue! g_node_proto = JS_NULL;
 	char[+]! std_module_dir;
+	char[+]! std_module_dir_global;
 	char*[+]! g_builder_names;
 	std::unordered_map<ama::Node*, JSValue>! g_js_node_map;
 	JSValueConst! WrapNode(ama::Node*! nd) {

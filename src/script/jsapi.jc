@@ -346,6 +346,9 @@ namespace ama {
 			//COULDDO: internal asset strings - faster and simpler than zip
 			fn_commonjs = ama::FindCommonJSModuleByPath(path.join(ama::std_module_dir, fn_required));
 			if( fn_commonjs == NULL ) {
+				fn_commonjs = ama::FindCommonJSModuleByPath(path.join(ama::std_module_dir_global, fn_required));
+			}
+			if( fn_commonjs == NULL ) {
 				fn_commonjs = ama::FindCommonJSModule(new char[|]!(fn_required), new char[|]!(dir_base));
 			}
 			if( fn_commonjs != NULL ) {
@@ -773,6 +776,8 @@ namespace ama {
 		#else
 			JS_SetPropertyStr(ama::jsctx, global, '__platform', ama::WrapString("linux"));
 		#endif
+		JS_SetPropertyStr(ama::jsctx, global, '__std_module_dir', ama::WrapString(ama::std_module_dir));
+		JS_SetPropertyStr(ama::jsctx, global, '__std_module_dir_global', ama::WrapString(ama::std_module_dir_global));
 		JS_SetPropertyStr(
 			ama::jsctx, global, 'CreateNode', JS_NewCFunction(
 				ama::jsctx, JSCreateNodeRaw,

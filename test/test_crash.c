@@ -37,6 +37,9 @@ void f() {
 			.UpdateCMakeLists('./CMakeLists.txt')
 			+ 1 
 			? 2 : 3;
+		depends.cache.forEach((nd_root, name)=> {
+			ret.push(path.resolve(name));
+		});
 	}
 	return
 }
