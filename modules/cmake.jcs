@@ -130,8 +130,8 @@ Node.CMakeCreateTarget = function(name, options) {
 	for (let fn of files) {
 		new_target.push('\n  ', JSON.stringify(fn))
 	}
-	new_target.push('\n)')
-	return nd_root.Insert(POS_BACK, ParseCode(new_target.join(''), cmake_options).Find(N_CALL, null))
+	new_target.push('\n)');
+	return nd_root.Insert(POS_BACK, ParseCode(new_target.join(''), cmake_options).Find(N_CALL, null));
 }
 
 function TryRelative(dir_cmake, src_name_abs) {
@@ -143,7 +143,7 @@ function TryRelative(dir_cmake, src_name_abs) {
 }
 
 //let nd_output_format_template = ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
-let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format')))   };
+let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format')))};
 Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 	let src_name_abs = path.resolve(nd_src_root.data);
 	let dir_cmake = path.dirname(path.resolve(this.data));
@@ -276,7 +276,7 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 			source_file: this.data,
 			command: '${AMA} -s "__global.__cmakelist=\\"${CMAKE_CURRENT_LIST_FILE}\\"" -c ${SOURCE_FILE}',
 			main_dependency: depends.ListAllDependency(this, false)
-		})
+		});
 		if (nd_cmake.flags & CMAKE_CHANGED) {
 			nd_cmake.Save(cmake_options);
 		}

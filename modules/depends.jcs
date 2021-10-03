@@ -6,7 +6,7 @@ let depends = module.exports;
 depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':');
 
 depends.Resolve = function(nd_depends) {
-	assert(nd_depends.node_class == N_DEPENDENCY)
+	assert(nd_depends.node_class == N_DEPENDENCY);
 	if ((nd.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE) {
 		let fn = nd.c.GetStringValue()
 		if(nd.flags & DEPF_C_INCLUDE_NONSTR) {
@@ -27,7 +27,7 @@ depends.Resolve = function(nd_depends) {
 	} else if((nd.flags & DEP_TYPE_MASK) == DEP_JS_REQUIRE) {
 		//reuse the builtin searcher __ResolveJSRequire
 		if (nd.c && nd.c.node_class == N_STRING) {
-			return __ResolveJSRequire(__filename, nd.c.GetStringValue)  ;
+			return __ResolveJSRequire(__filename, nd.c.GetStringValue);
 		}
 	}
 	return undefined;
@@ -45,14 +45,14 @@ depends.LoadFile = function(fn) {
 			//do nothing
 		}
 		if (!data) {return null;}
-		nd_cached = ParseCode(data, __PrepareOptions(fn))  ;
+		nd_cached = ParseCode(data, __PrepareOptions(fn));
 		nd_cached.data = fn;
 		depends.cache.set(fn, nd_cached);
 	}
 	return nd_cached;
 }
 
-let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))  };
+let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))};
 depends.dependency_cache = new Map();
 depends.ListAllDependency = function(nd_root, include_system_headers) {
 	if (depends.dependency_cache.get(nd_root)) {
