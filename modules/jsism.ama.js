@@ -1,4 +1,5 @@
 'use strict'
+//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 let jsism = module.exports;
 
 let console_method_to_options = {
