@@ -748,6 +748,10 @@ int! ama::Node::isSymbol(ama::Node*! this, char[...]! name) {
 	return this.node_class == ama::N_SYMBOL && this.data == name;
 }
 
+int! ama::Node::isRef(ama::Node*! this, char[...]! name) {
+	return this.node_class == ama::N_REF && this.data == name;
+}
+
 int! ama::Node::isMethodCall(ama::Node*! this, char[|]! name) {
 	return this.node_class == ama::N_CALL && this.c.node_class == ama::N_DOT && this.c.data == name;
 }

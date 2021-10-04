@@ -54,10 +54,11 @@ depends.LoadFile = function(fn) {
 }
 
 let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))};
-depends.dependency_cache = new Map();
+depends.dependency_cache = [new Map(),new Map()];
 depends.ListAllDependency = function(nd_root, include_system_headers) {
-	if (depends.dependency_cache.get(nd_root)) {
-		return depends.dependency_cache.get(nd_root);
+	let cache=depends.dependency_cache[0|!!include_system_headers];
+	if (.get(nd_root)) {
+		return cache.get(nd_root);
 	}
 	let ret = new Set();
 	let Q = [nd_root];
@@ -94,7 +95,7 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 		}
 	}
 	let qret = Q.map(ndi=>__path_toAbsolute(ndi.data));
-	depends.dependency_cache.set(nd_root, qret);
+	cache.set(nd_root, qret);
 	return qret;
 }
 
