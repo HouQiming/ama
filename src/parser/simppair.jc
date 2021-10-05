@@ -363,9 +363,13 @@ namespace ama {
 						}
 						*/
 						int8_t! closing_indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
-						if( closing_indent_level < nd.indent_level ) { for(auto ndi : nd) { ndi.AdjustIndentLevel(nd.indent_level - closing_indent_level); }
+						if( closing_indent_level < nd.indent_level ) {
+							//adjust inner indent levels
+							for(auto ndi : nd) {
+								ndi.AdjustIndentLevel(nd.indent_level - closing_indent_level);
+							}
+							nd.indent_level = closing_indent_level;
 						}
-						nd.indent_level = closing_indent_level;
 						feed += 1;
 						comment_indent_level = current_indent_level;
 						comment_begin = feed;

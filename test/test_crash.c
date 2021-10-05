@@ -37,9 +37,16 @@ void f() {
 			.UpdateCMakeLists('./CMakeLists.txt')
 			+ 1 
 			? 2 : 3;
+
+		/*
+		Comment after blank line
+		*/
 		depends.cache.forEach((nd_root, name)=> {
 			ret.push(path.resolve(name));
 		});
+		Vector3f newC = c + ( (AngleAxisf(angles[j*2+1], ax0)
+		                    * AngleAxisf(angles[j*2+0] * (l==1 ? 0.35 : 0.5), ax1)) * ax0)
+		                    * (mRadii[i] + radius*0.8);
 	}
 	return
 }
