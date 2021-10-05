@@ -910,13 +910,22 @@ namespace ama {
 		);
 		/////////////
 		//the QuickJS parser requires zero termination but doesn't tolerate the zero byte in the array
-		char[...]! bootstrap_code = @asset('./js_init.js');
-		mutable JSValueConst! ret = JS_Eval(
-			ama::jsctx, bootstrap_code.data(),
-			bootstrap_code.length - 1, '<js_init.js>', JS_EVAL_TYPE_GLOBAL
-		);
-		if( JS_IsException(ret) ) {
-			ama::DumpError(ama::jsctx);
+		char[|]! fn_initjs = ama::FindCommonJSModuleByPath(path.join(ama::std_module_dir, '_init.js'));
+		if( fn_initjs == NULL ) {
+			fn_initjs = ama::FindCommonJSModuleByPath(path.join(ama::std_module_dir_global, '_init.js'));
+		}
+		if( fn_initjs == NULL ) {
+			//we NEED that
+			console.error('panic: failed to find ${AMA_MODULES}/_init.js, things could break');
+		} else {
+			char[+]^+! bootstrap_code = fs.readFileSync(fn_initjs);
+			mutable JSValueConst! ret = JS_Eval(
+				ama::jsctx, bootstrap_code.str(),
+				bootstrap_code.length, fn_initjs.str(), JS_EVAL_TYPE_GLOBAL
+			);
+			if( JS_IsException(ret) ) {
+				ama::DumpError(ama::jsctx);
+			}
 		}
 	}
 	void! LazyInitScriptEnv() {

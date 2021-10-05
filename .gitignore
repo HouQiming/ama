@@ -12,6 +12,7 @@ modules/*.js
 !modules/jcs.js
 !modules/fs.js
 !modules/path.js
+!modules/_init.js
 !modules/*.ama.js
 /test/test_tmp.*
 /test/cmake/CMakeLists.txt
