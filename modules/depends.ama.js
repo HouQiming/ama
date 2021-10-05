@@ -2,19 +2,20 @@
 //@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 const fs = require('fs');
 const path = require('path');
+const assert = require('assert');
 let depends = module.exports;
 
 depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':');
 
-depends.Resolve = function(nd_depends) {
-	assert(nd_depends.node_class == N_DEPENDENCY);
+depends.Resolve = function(nd) {
+	assert(nd.node_class == N_DEPENDENCY);
 	if ((nd.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE) {
 		let fn = nd.c.GetStringValue()
 		if(nd.flags & DEPF_C_INCLUDE_NONSTR) {
 			fn = fn.replace(new RegExp('[<>]', 'g'), '');
 		}
 		if (!(nd.flags & DEPF_C_INCLUDE_NONSTR)) {
-			let fn_test = path.resolve(path.dirname(nd_depends.Root().data), fn);
+			let fn_test = path.resolve(path.dirname(nd.Root().data), fn);
 			if (fs.existsSync(fn_test)) {
 				return fn_test;
 			}
@@ -57,7 +58,7 @@ let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.M
 depends.dependency_cache = [new Map(),new Map()];
 depends.ListAllDependency = function(nd_root, include_system_headers) {
 	let cache = depends.dependency_cache[0 | !!include_system_headers];
-	if (.get(nd_root)) {
+	if (cache.get(nd_root)) {
 		return cache.get(nd_root);
 	}
 	let ret = new Set();
