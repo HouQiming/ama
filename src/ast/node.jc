@@ -556,8 +556,8 @@ ama::Node*+! ama::Node::CommonAncestor(ama::Node*! this, ama::Node*! b) {
 
 char[|]! ama::Node::GetStringValue(ama::Node*! this) {
 	ama::Node*+! nd_this = (ama::Node*+)(this);
-	assert(int(nd_this->node_class) == ama::N_STRING);
-	if( int(nd_this->node_class) != ama::N_STRING || nd_this->data == NULL || (nd_this->flags & ama::LITERAL_PARSED) ) {
+	assert((nd_this->node_class) == ama::N_STRING);
+	if( (nd_this->node_class) != ama::N_STRING || nd_this->data == NULL || (nd_this->flags & ama::LITERAL_PARSED) ) {
 		return nd_this->data;
 	} else {
 		//process on demand

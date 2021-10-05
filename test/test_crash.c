@@ -38,9 +38,12 @@ void f() {
 			+ 1 
 			? 2 : 3;
 
+
 		/*
 		Comment after blank line
-		*/
+		*/ if(1){
+			//do nothing
+		}
 		depends.cache.forEach((nd_root, name)=> {
 			ret.push(path.resolve(name));
 		});
