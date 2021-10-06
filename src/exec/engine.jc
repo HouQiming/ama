@@ -1,3 +1,4 @@
+#include <deque>
 #include '../ast/node.jch'
 #include './engine.jch'
 
@@ -12,7 +13,6 @@ ExecSession! ama::CreateSession(Node* nd_entry,Node*+[...] interests){
 }
 
 void ExecSession::AddInterest(Node* nd_interest){
-	//TODO: ExecInterest
 	kind=EINTEREST_VAR
 	name=nd_interest.GetName();
 	if nd_interest.node_class==N_FUNCTION:
@@ -35,14 +35,26 @@ void ExecSession::AddInterest(Node* nd_interest){
 }
 
 private void CollectLabels(Map<char[|],Node*+>&+! labels,Node* nd_entry){
-	for(ndi=nd_entry;ndi;ndi=ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL?ndi.PreorderSkipChildren(nd_entry):ndi.PreorderNext(nd_entry))
+	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
+		if ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL:
+			ndi=ndi.PreorderLastInside()
+			continue
 		if ndi.node_class==N_LABELED&&ndi.c.node_class==N_REF&&!(ndi.p.node_class==N_RAW&&(ndi.p.flags&0xffff)):
 			labels[ndi.data]=ndi.c.s
 }
 
 
 private void CollectComputedLabels(Node*+[+]&+! addressed_labels,Map<char[|],Node*+>&+! labels,Node* nd_entry){
-	!?
+	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
+		if ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL:
+			ndi=ndi.PreorderLastInside()
+			continue
+		if ndi.node_class==N_UNARY&&!(ndi.flags&UNARY_POSTFIX)&&ndi.data=='&&'&&ndi.c.node_class==N_REF:
+			nd_target=labels[ndi.c.data]
+			if nd_target:
+				addressed_labels.push_back(nd_target)
+	addressed_labels.sortby(nd=>intptr_t(nd))
+	addressed_labels.unique()
 }
 
 private const uint16_t TMPF_CONTAINS_INTEREST=1u;
@@ -55,7 +67,10 @@ ExecNode* ExecSession::CreateNodeGraph(Node* nd_entry){
 	labels=new Map<char[|],Node*+>
 	addressed_labels=new Node*+[+]
 	jump_targets=new Map<Node*+,Node*+>
-	for(ndi=nd_entry;ndi;ndi=ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL?ndi.PreorderSkipChildren(nd_entry):ndi.PreorderNext(nd_entry))
+	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
+		if ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL:
+			ndi=ndi.PreorderLastInside()
+			continue
 		//preorder means this initialization happens before we flag a parent as to-expand
 		ndi.tmp_flags&=~TMPF_CONTAINS_INTEREST
 		//if we see an interest, we need to expand parents
@@ -106,7 +121,7 @@ ExecNode* ExecSession::CreateNodeGraph(Node* nd_entry){
 					if labels_collected<2:
 						labels_collected=2
 						CollectComputedLabels(addressed_labels,labels,nd_entry)
-					//TODO: mark all addressed_labels as target... implicitly
+					!? //TODO: mark all addressed_labels as target... implicitly, mark computed goto and target common ancestor
 			if !nd_target&&ndi.data!='goto':
 				//break / continue / return: there is no target node
 				//we only need common ancestor and target execution node... point to the loop / function scope
@@ -160,12 +175,43 @@ ExecNode* ExecSession::CreateNodeGraph(Node* nd_entry){
 		if !jump_mattered:break
 	//create graph for the expanded nodes
 	//we only expand CFG nodes if they have TMPF_CFG_MATTERS_FOR_INTEREST: merely using an interest in the condition is no different than a basic block
-	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
+	//TODO: use deque
+	std::deque<Node*+> Q
+	Q.push_back(nd_entry)
+	while Q.size()
+		Node*+ ndi=ndi.pop_front()
+		role=ndi.GetCFGRole();
+		//nd_entry could be anything: we may end up calling this expanding some other node
+		switch role{
+		default:
+			assert(0);
+			break
+		case CFG_DECL:
+			if ndi==nd_entry:
+				//get into nd_entry no matter what
+				nd_scope=role.Find(N_SCOPE,NULL)
+				if nd_scope:
+					Q.push_back(nd_scope)
+				break
+			//otherwise, simply ignore
+			break
+		case CFG_BASIC:
+			if ndi.node_class==N_SCOPE:
+				//TODO: expand all - we need wrapped child nodes before we can connect them... go dfs?
+			else if ndi.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST:
+				//TODO: find non-basic children for basic
+			else
+				//TODO
+			break;
+		case CFG_JUMP:
+		case CFG_BRANCH:
+		case CFG_LOOP:
+		}
 		//a basic node could contain a branch inside: a=(foo&&bar?baz():0)
 		//the effects of a node should exclude its contained branches
-		//a branch needs to test all branch targets to see if we need to care
+		//TODO: find non-basic children for basic, expand scope, get into decl
+		//WTF is nd_entry? limit to scopes?
 		if ndi.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST:
-			//TODO: find non-basic children
-		//TODO: could work better as a dfs: we skip children too often
+		//TODO: could work better as a dfs: we skip children too often... or a BFS
 		//TODO: better utility for skipping
 }

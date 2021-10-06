@@ -13,6 +13,7 @@ namespace ama {
 	char[+]! std_module_dir;
 	char[+]! std_module_dir_global;
 	char*[+]! g_builder_names;
+	char*[+]! g_node_class_names;
 	std::unordered_map<ama::Node*, JSValue>! g_js_node_map;
 	JSValueConst! WrapNode(ama::Node*! nd) {
 		if( !nd ) {

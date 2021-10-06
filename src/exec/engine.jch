@@ -41,6 +41,8 @@ namespace ama{
 	const uint8_t SURE_NEVER=0
 	const uint8_t SURE_MAYBE=1
 	const uint8_t SURE_ALWAYS=2
+	//the effects of a node should exclude its contained branches:
+	//    a basic node could contain a branch inside: a=(foo&&bar?baz():0)
 	class ExecEffect
 		ExecEffect* next
 		uint16_t flags

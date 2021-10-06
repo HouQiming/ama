@@ -610,7 +610,7 @@ char[|]! ama::Node::GetName(ama::Node*! this) {
 		}
 	} else if( this.node_class == ama::N_ASSIGNMENT || this.node_class == ama::N_DEPENDENCY ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
 		return this.c.GetName();
-	} else if( this.node_class == ama::N_CLASS ) {
+	} else if( this.node_class == ama::N_CLASS || this.node_class == ama::N_TYPED_VAR ) {
 		return this.c.s.GetName();
 	} else if( this.node_class == ama::N_STRING ) {
 		ama::Node*+! nd_hack = (ama::Node*+)(this);
@@ -974,6 +974,14 @@ ama::Node*+! ama::Node::PreorderSkipChildren(ama::Node*+! this, ama::Node*+! nd_
 	return NULL;
 }
 
+ama::Node*+! ama::Node::PreorderLastInside(ama::Node*+! this) {
+	ama::Node*+! ndi = this;
+	while( ndi && ndi.c ) {
+		ndi = ndi.LastChild();
+	}
+	return ndi;
+}
+
 ama::Node*+! ama::Node::PostorderFirst(ama::Node*+! this) {
 	ama::Node*+! nd = this;
 	while( nd.c ) {
@@ -1046,47 +1054,60 @@ ama::Node*+! ama::Node::toSingleNode(ama::Node*+! this) {
 	return ama::toSingleNode(this);
 }
 
-uint8_t ama::Node::GetCFGRole(ama::Node*! this){
-	switch this.node_class{
-	case N_SCOPED_STATEMENT:
-		if this.data=='if'||this.data=='switch':
-			return CFG_BRANCH
-		else this.data=='for'||this.data=='while'||this.data=='do':
-			return CFG_LOOP
-		else this.data=='enum'
-			return CFG_DECL
-		break
-	case N_KEYWORD_STATEMENT:
-		if this.data=='return'||this.data=='throw'||this.data=='goto'||this.data=='break'||this.data=='continue':
-			return CFG_JUMP
-		break
-	case N_FUNCTION:case N_CLASS:
-		return CFG_DECL
-	case N_CONDITIONAL:
-		return CFG_BRANCH
-	case N_BINOP:
-		if this.data=='&&'||this.data=='||':
-			return CFG_BRANCH
-		break
+uint8_t! ama::Node::GetCFGRole(ama::Node*! this) {
+	switch( this.node_class ) {
+		case ama::N_SCOPED_STATEMENT: {
+			if( this.data == 'if' || this.data == 'switch' ) {
+				return ama::CFG_BRANCH;
+			} else if( this.data == 'for' || this.data == 'while' || this.data == 'do' ) {
+				return ama::CFG_LOOP;
+			} else if( this.data == 'enum' ) {
+				return ama::CFG_DECL;
+			}
+			break;
+		}
+		case ama::N_KEYWORD_STATEMENT: {
+			if( this.data == 'return' || this.data == 'throw' || this.data == 'goto' || this.data == 'break' || this.data == 'continue' ) {
+				return ama::CFG_JUMP;
+			}
+			break;
+		}
+		case ama::N_FUNCTION: case ama::N_CLASS: {
+			return ama::CFG_DECL;
+		}
+		case ama::N_CONDITIONAL: {
+			return ama::CFG_BRANCH;
+		}
+		case ama::N_BINOP: {
+			if( this.data == '&&' || this.data == '||' ) {
+				return ama::CFG_BRANCH;
+			}
+			break;
+		}
 	}
-	return CFG_BASIC
+	return ama::CFG_BASIC;
 }
 
 ///returns true if whether `nd_child` is reached depends on some aspect of `this`
 ///result is undefined if `nd_child` is not an immediate child of `this`
-int ama::Node::isChildCFGDependent(ama::Node*! this,ama::Node*! nd_child){
-	role=this.GetCFGRole()
-	if role!=CFG_BRANCH&&role!=CFG_LOOP:
-		return 0
-	switch this.node_class{
-	case N_SCOPED_STATEMENT:
-		return nd_child.node_class==N_SCOPE
-	case N_CONDITIONAL:
-		return nd_child.node_class!=this.c
-	case N_BINOP:
-		if this.data=='&&'||this.data=='||':
-			return nd_child.node_class!=this.c
-		break
+int! ama::Node::isChildCFGDependent(ama::Node*! this, ama::Node*! nd_child) {
+	uint8_t! role = this.GetCFGRole();
+	if( role != ama::CFG_BRANCH && role != ama::CFG_LOOP ) {
+		return 0;
 	}
-	return 0
+	switch( this.node_class ) {
+		case ama::N_SCOPED_STATEMENT: {
+			return nd_child.node_class == ama::N_SCOPE;
+		}
+		case ama::N_CONDITIONAL: {
+			return nd_child != this.c;
+		}
+		case ama::N_BINOP: {
+			if( this.data == '&&' || this.data == '||' ) {
+				return nd_child != this.c;
+			}
+			break;
+		}
+	}
+	return 0;
 }

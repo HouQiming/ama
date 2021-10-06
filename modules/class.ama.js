@@ -107,6 +107,10 @@ Node.ParseClass = function() {
 		}
 		shadows.add(properties[i].name);
 	}
+	return {
+		base_classes: base_classes,
+		properties: properties,
+	}
 }
 
 function LookupClassInFile(ret, nd_root, nd_name) {

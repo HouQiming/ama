@@ -85,12 +85,12 @@ namespace ama {
 	const int32_t! BOUNDARY_ANY = 0x7fffffff;
 	const int32_t! BOUNDARY_DEFAULT = BOUNDARY_NODEOF;
 	/////////////////
-	const uint8_t! CFG_BASIC=0
-	const uint8_t! CFG_BRANCH=1
-	const uint8_t! CFG_LOOP=2
-	const uint8_t! CFG_JUMP=3
+	const uint8_t! CFG_BASIC = 0;
+	const uint8_t! CFG_BRANCH = 1;
+	const uint8_t! CFG_LOOP = 2;
+	const uint8_t! CFG_JUMP = 3;
 	//decl is different from basic since we never get into them from the outside
-	const uint8_t! CFG_DECL=4
+	const uint8_t! CFG_DECL = 4;
 	//we don't track original code locations, just report errors into the generated code using #error and stuff
 	//try to fit into a 64 byte cacheline
 	class Node {
@@ -197,6 +197,9 @@ namespace ama {
 		ama::Node*+! MergeCommentsAndIndentAfter(ama::Node*+! this, ama::Node*+! nd_after);
 		ama::Node*+! toSingleNode(ama::Node*+! this);
 		int! isRef(ama::Node*! this, char[...]! name);
+		ama::Node*+! PreorderLastInside(ama::Node*+! this);
+		uint8_t! GetCFGRole(ama::Node*! this);
+		int! isChildCFGDependent(ama::Node*! this, ama::Node*! nd_child);
 	};
 	ama::Node*+! AllocNode();
 	extern ama::Node*+! g_placeholder;
