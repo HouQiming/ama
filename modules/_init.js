@@ -53,9 +53,9 @@ Node.toJSON=function(){
 Node.MatchAny=function(node_class,name){
 	if(name===undefined){
 		//node_class is actually the name
-		return nRef(node_class)
+		return nNodeof(nRef(node_class))
 	}else{
-		return nCall(nRef(__node_class_names[node_class]),nRef(name))
+		return nNodeof(nCall(nRef(__node_class_names[node_class]),nRef(name)))
 	}
 }
 

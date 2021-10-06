@@ -5,7 +5,7 @@ const path = require('path');
 const assert = require('assert');
 let depends = module.exports;
 
-depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':');
+depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':').filter(s=> s);
 
 depends.Resolve = function(nd) {
 	assert(nd.node_class == N_DEPENDENCY);
@@ -55,7 +55,7 @@ depends.LoadFile = function(fn) {
 }
 
 let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))};
-depends.dependency_cache = [new Map(),new Map()];
+depends.dependency_cache = [new Map(), new Map()];
 depends.ListAllDependency = function(nd_root, include_system_headers) {
 	let cache = depends.dependency_cache[0 | !!include_system_headers];
 	if (cache.get(nd_root)) {
@@ -80,18 +80,20 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 		}
 		for (let match of nd_root.MatchAll(nd_add_template)) {
 			if (!match.kind.GetStringValue().endsWith('_files')) {continue;}
-			let fn_dep = path.resolve(path.dirname(nd_root.data), fn);
-			if (fs.existsSync(fn_dep) && !ret.has(fn_dep)) {
-				ret.add(fn_dep);
-				let ext = path.extname(fn_dep);
-				if (ext != '.a' && ext != '.so' && ext != '.dll') {
-					let nd_root_dep = depends.LoadFile(fn_dep);
-					if (nd_root_dep) {
-						Q.push(nd_root_dep);
+			let fn_dep = path.resolve(path.dirname(nd_root.data), match.name.GetStringValue());
+			if (fs.existsSync(fn_dep) ) {
+				if (!ret.has(fn_dep)) {
+					ret.add(fn_dep);
+					let ext = path.extname(fn_dep);
+					if (ext != '.a' && ext != '.so' && ext != '.dll') {
+						let nd_root_dep = depends.LoadFile(fn_dep);
+						if (nd_root_dep) {
+							Q.push(nd_root_dep);
+						}
 					}
 				}
 			} else {
-				console.error('unable to find', fn_test);
+				console.error('unable to find', fn_dep);
 			}
 		}
 	}

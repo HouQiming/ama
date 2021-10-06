@@ -14,6 +14,7 @@ let cmake_options = {
 	parse_indent_as_scope: 0,
 	parse_c_forward_declarations: 0,
 	struct_can_be_type_prefix: 0,
+	keywords_scoped_statement: '',
 	//////////
 	tab_indent: 2,//2 for auto
 	auto_space: 0,
