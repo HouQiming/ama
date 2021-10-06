@@ -13,6 +13,7 @@ let cmake_options = {
 	enable_hash_comment: 1,
 	parse_indent_as_scope: 0,
 	parse_c_forward_declarations: 0,
+	parse_js_regexp: 0,
 	struct_can_be_type_prefix: 0,
 	keywords_scoped_statement: '',
 	//////////
@@ -175,6 +176,7 @@ Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
 		our_files_filtered.push(fn_rel)
 	}
 	//search for all targets containing src_name_rel, then add dependent files to them
+	//COULDDO: also add to 'set' commands
 	let found_any = 0;
 	for (let nd_target of this.FindAll(N_CALL, 'add_executable').concat(this.FindAll(N_CALL, 'add_library'))) {
 		if (!nd_target.c.s) {continue;}

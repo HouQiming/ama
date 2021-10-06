@@ -1,0 +1,76 @@
+#pragma add("jc_files", "./econtext.jc");
+#include '../util/mempool.jch'
+#include '../ast/node.jch'
+
+/*
+In general, we need to tolerate failures: we don't fully understand the code.
+So this engine will be best-effort by design.
+We should report our confidence, though.
+*/
+namespace ama{
+	//the immutable pattern doesn't work here: we actually expand stuff
+	//ExecNode and ExecEffect must be zero-initializable - they are pooled
+	const uint8_t ENODE_NORMAL=0
+	const uint8_t ENODE_PHI=1
+	//before / after a scope
+	const uint8_t ENODE_BEFORE=2
+	const uint8_t ENODE_AFTER=3
+	//ENODE_ENTER_FUNCTION means that a non-inheriting new context gets created
+	const uint8_t ENODE_ENTER_FUNCTION=4
+	//contexts are implicitly defined by nodes: what each node changes in each context
+	class ExecNodeExtraLink
+		ExecNode*+ target
+		ExecNodeExtraLink*+ next
+	class ExecNodeLinks
+		ExecNode*+[2]! fast
+		ExecNodeExtraLink*+ more
+	class ExecNode
+		//break / continue / return could create a good deal of prevs
+		//a linked list is more easily managed in a pool
+		ExecNodeLinks! prev
+		ExecNodeLinks! next
+		uint8_t kind
+		Node*+ nd_exec
+		//the lexical scope of this node's implicit context: scope / function / class
+		Node*+ nd_lexical_scope
+	//the effect any particular node could have is also lexical, and monotonically expanding as interests were added
+	const uint8_t EFFECT_READ=1
+	const uint8_t EFFECT_WRITE=2
+	const uint8_t EFFECT_SIDE_EFFECT_FUNC=4
+	const uint8_t EFFECT_SIDE_EFFECT_ARG=8
+	const uint8_t SURE_NEVER=0
+	const uint8_t SURE_MAYBE=1
+	const uint8_t SURE_ALWAYS=2
+	class ExecEffect
+		ExecEffect* next
+		uint16_t flags
+		uint8_t sure
+		//effects are only interesting when they affect an interest
+		Node* nd_interest
+		ExecNode* activation
+	////////////////////
+	const uint8_t EINTEREST_VAR=0
+	const uint8_t EINTEREST_FIELD=1
+	const uint8_t EINTEREST_FUNCTION=2
+	class ExecInterest
+		uint8_t kind
+		Node*+ nd_interest
+		Node*+ nd_lexical_scope
+		intptr_t same_name_next
+	class ExecEffectHead
+		//we are lazily filling effects so we need a mutable state for the laziness
+		ExecEffect*+ first
+		intptr_t last_interest_checked
+	const uint32_t UNCERTAIN_JUMP_TARGET=1
+	const uint32_t UNCERTAIN_FIELD_RESOLUTION=2
+	const uint32_t UNCERTAIN_FUNCTION_RESOLUTION=4
+	class ExecSession
+		TMemoryPool! pool
+		ExecNode*+ entry
+		uint32_t uncertainty
+		//interests are lexical: we don't care which context they are in, we only care which code text they represent 
+		ExecInterest![+] interests
+		Map<char[|],intptr_t> name_to_interest
+		//COULDDO: put a generic void* into nodes? or cheap mempool-offset-based SxS storage
+		Map<Node*,ExecEffectHead!> known_effects
+}

@@ -1,0 +1,171 @@
+#include '../ast/node.jch'
+#include './engine.jch'
+
+ExecSession! ama::CreateSession(Node* nd_entry,Node*+[...] interests){
+	//TODO: expand ifs containing interest right away? just rely on on-demand expansion for now
+	//the sole query to support is "lookup"
+	ret=new ExecSession!
+	for nd_interest in interests
+		ret.AddInterest(nd_interest)
+	ret.entry=ret.CreateNodeGraph(nd_entry)
+	return <<ret
+}
+
+void ExecSession::AddInterest(Node* nd_interest){
+	//TODO: ExecInterest
+	kind=EINTEREST_VAR
+	name=nd_interest.GetName();
+	if nd_interest.node_class==N_FUNCTION:
+		kind=EINTEREST_FUNCTION
+	else
+		assert(nd_interest.node_class==N_REF)
+		if nd_interest.Owner().node_class==N_CLASS:
+			kind=EINTEREST_FIELD
+	nd_lexical_scope=nd_interest.Owning(N_SCOPE)
+	if !nd_lexical_scope:
+		nd_lexical_scope=nd_interest.Root()
+	this.interests.push(new ExecInterest{
+		kind:kind,
+		nd_interest:nd_interest,
+		nd_lexical_scope:nd_lexical_scope,
+		same_name_next:this.name_to_interest[name]-1L
+	})
+	this.name_to_interest[name]=this.interests.length
+	//TODO: expand existing nodes
+}
+
+private void CollectLabels(Map<char[|],Node*+>&+! labels,Node* nd_entry){
+	for(ndi=nd_entry;ndi;ndi=ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL?ndi.PreorderSkipChildren(nd_entry):ndi.PreorderNext(nd_entry))
+		if ndi.node_class==N_LABELED&&ndi.c.node_class==N_REF&&!(ndi.p.node_class==N_RAW&&(ndi.p.flags&0xffff)):
+			labels[ndi.data]=ndi.c.s
+}
+
+
+private void CollectComputedLabels(Node*+[+]&+! addressed_labels,Map<char[|],Node*+>&+! labels,Node* nd_entry){
+	!?
+}
+
+private const uint16_t TMPF_CONTAINS_INTEREST=1u;
+private const uint16_t TMPF_CFG_MATTERS_FOR_INTEREST=2u;
+private const int32_t JSCOPE_PARENT_DECL=1;
+private const int32_t JSCOPE_PARENT_SWITCH=2;
+private const int32_t JSCOPE_PARENT_LOOP=4;
+ExecNode* ExecSession::CreateNodeGraph(Node* nd_entry){
+	labels_collected=0
+	labels=new Map<char[|],Node*+>
+	addressed_labels=new Node*+[+]
+	jump_targets=new Map<Node*+,Node*+>
+	for(ndi=nd_entry;ndi;ndi=ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL?ndi.PreorderSkipChildren(nd_entry):ndi.PreorderNext(nd_entry))
+		//preorder means this initialization happens before we flag a parent as to-expand
+		ndi.tmp_flags&=~TMPF_CONTAINS_INTEREST
+		//if we see an interest, we need to expand parents
+		if ndi.node_class==N_REF||ndi.node_class==N_DOT:
+			first=this.name_to_interest[ndi.data]-1L
+			for(i=first;i>=0L;i=this.interests[i].same_name_next)
+				//COULDDO: more accurate name resolution for dot / function
+				//we can always rule out an effect later as impossible
+				uint8_t sure=SURE_NEVER
+				if this.interests[i].kind==N_REF&&ndi.node_class==N_REF&&this.interests[i].nd_lexical_scope.isAncestorOf(ndi):
+					sure=SURE_ALWAYS
+				else if this.interests[i].kind==N_DOT&&ndi.node_class==N_DOT:
+					this.uncertainty|=UNCERTAIN_FIELD_RESOLUTION
+					sure=SURE_MAYBE
+				else if this.interests[i].kind==N_FUNCTION&&ndi.p&&ndi==ndi.p.c&&ndi.p.node_class==N_CALL:
+					//COULDDO: improve this
+					this.uncertainty|=UNCERTAIN_FUNCTION_RESOLUTION
+					sure=SURE_MAYBE
+				if sure!=SURE_NEVER:
+					//we got an interest, mark parents as to-expand
+					auto new_flags=TMPF_CONTAINS_INTEREST
+					Node*+ ndj_last=NULL
+					for(ndj=ndi;ndj;ndj=ndj.p)
+						if ndj_last&&ndj.isChildCFGDependent(ndj_last)
+							new_flags|=TMPF_CFG_MATTERS_FOR_INTEREST
+						if (ndj.tmp_flags&new_flags)==new_flags:break
+						ndj.tmp_flags|=new_flags
+						if ndj==nd_entry:break
+						ndj_last=ndj
+		else if ndi.GetCFGRole()==CFG_JUMP:
+			//resolve jump target
+			//which may not always work, but we can mark unknown jumps as always interesting
+			assert(ndi.node_class==N_KEYWORD_STATEMENT)
+			Node*+ nd_target=NULL
+			if ndi.data=='goto'||(ndi.data=='break'||ndi.data=='continue')&&ndi.c&&ndi.c.node_class==N_REF:
+				//collect labels lazily if we see goto
+				if !labels_collected:
+					labels_collected=1
+					CollectLabels(labels,nd_entry)
+				if ndi.c&&ndi.c.node_class==N_REF:
+					nd_target=labels[ndi.c.data]
+					if ndi.data!='goto'&&nd_target:
+						//were labeled break / continue to fail, we try the normal logic
+						nd_target=nd_target.Find(N_SCOPE,NULL)
+				else
+					//computed goto
+					this.uncertainty|=UNCERTAIN_JUMP_TARGET
+					if labels_collected<2:
+						labels_collected=2
+						CollectComputedLabels(addressed_labels,labels,nd_entry)
+					//TODO: mark all addressed_labels as target... implicitly
+			if !nd_target&&ndi.data!='goto':
+				//break / continue / return: there is no target node
+				//we only need common ancestor and target execution node... point to the loop / function scope
+				//all jumps can use the _AFTER positioning
+				parent_mode=JSCOPE_PARENT_DECL
+				if ndi.data=='return'||ndi.data=='throw':
+					//do nothing
+				else
+					parent_mode|=JSCOPE_PARENT_LOOP
+					if ndi.data=='break':
+						parent_mode|=JSCOPE_PARENT_SWITCH
+					else
+						assert(ndi.data=='continue')
+				for(ndj=ndi;ndj;ndj=ndj.p)
+					if ndj.node_class!=N_SCOPE:continue
+					//take the outer-most scope if we can't find a correct one
+					nd_target=ndj
+					nd_parent=ndj.p
+					if nd_parent:break
+					if ndj==nd_entry:break
+					auto role=nd_parent.GetCFGRole()
+					if (parent_mode&JSCOPE_PARENT_DECL)&&role==CFG_DECL:break
+					if (parent_mode&JSCOPE_PARENT_LOOP)&&role==CFG_LOOP:break
+					if (parent_mode&JSCOPE_PARENT_SWITCH)&&nd_parent.node_class==N_SCOPED_STATEMENT&&nd_parent.data=='switch':
+						break
+			if !nd_target:
+				//assume nop-jump
+				nd_target=ndi
+			jump_targets[ndi]=nd_target
+	//propagate TMPF_CFG_MATTERS_FOR_INTEREST to JUMPs crossing them: common ancestor test
+	for(;;)
+		jump_mattered=0
+		for nd_target,nd_source in jump_targets
+			auto nd_jump_range=nd_source.CommonAncestor(nd_target)
+			if nd_entry.isAncestorOf(nd_jump_range)&&(nd_jump_range.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
+				//we got a cross-interest jump, mark both side's parents as to-expand
+				auto new_flags=TMPF_CONTAINS_INTEREST|TMPF_CFG_MATTERS_FOR_INTEREST
+				Node*+ ndj_last=NULL
+				for(ndj=nd_source;ndj;ndj=ndj.p)
+					if (ndj.tmp_flags&new_flags)==new_flags:break
+					ndj.tmp_flags|=new_flags
+					jump_mattered=1
+					if ndj==nd_entry:break
+					ndj_last=ndj
+				for(ndj=nd_target;ndj;ndj=ndj.p)
+					if (ndj.tmp_flags&new_flags)==new_flags:break
+					ndj.tmp_flags|=new_flags
+					jump_mattered=1
+					if ndj==nd_entry:break
+					ndj_last=ndj
+		if !jump_mattered:break
+	//create graph for the expanded nodes
+	//we only expand CFG nodes if they have TMPF_CFG_MATTERS_FOR_INTEREST: merely using an interest in the condition is no different than a basic block
+	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
+		//a basic node could contain a branch inside: a=(foo&&bar?baz():0)
+		//the effects of a node should exclude its contained branches
+		//a branch needs to test all branch targets to see if we need to care
+		if ndi.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST:
+			//TODO: find non-basic children
+		//TODO: could work better as a dfs: we skip children too often
+		//TODO: better utility for skipping
+}

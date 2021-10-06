@@ -84,6 +84,13 @@ namespace ama {
 	//const int32_t! BOUNDARY_PROTOTYPE = 512;
 	const int32_t! BOUNDARY_ANY = 0x7fffffff;
 	const int32_t! BOUNDARY_DEFAULT = BOUNDARY_NODEOF;
+	/////////////////
+	const uint8_t! CFG_BASIC=0
+	const uint8_t! CFG_BRANCH=1
+	const uint8_t! CFG_LOOP=2
+	const uint8_t! CFG_JUMP=3
+	//decl is different from basic since we never get into them from the outside
+	const uint8_t! CFG_DECL=4
 	//we don't track original code locations, just report errors into the generated code using #error and stuff
 	//try to fit into a 64 byte cacheline
 	class Node {

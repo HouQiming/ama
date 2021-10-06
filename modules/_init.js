@@ -193,8 +193,8 @@ __global.default_options={
 	struct_can_be_type_prefix:1,
 	parse_js_regexp:1,
 	///////////
-	binary_operators:'||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n',
-	prefix_operators:'++ -- ! ~ + - * & typeof void delete sizeof await co_await new',
+	binary_operators:'||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
+	prefix_operators:'++ -- ! ~ + - * && & typeof void delete sizeof await co_await new',
 	postfix_operators:'++ --',
 	//void is too common in C/C++ to be treated as an operator by default
 	named_operators:'typeof delete sizeof await co_await new in instanceof as',
@@ -208,7 +208,7 @@ __global.default_options={
 	keywords_after_prototype:': -> => throw const noexcept override',
 	keywords_not_a_function:'#define #if return',
 	//case is better treated as a part of a label
-	keywords_statement:'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef',
+	keywords_statement:'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef break continue',
 	///////////
 	//codegen
 	tab_width: 4,

@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <json.jch>
 #include '../parser/literal.jch'
+#include '../util/mempool.jch'
 #include './node.jch'
 
 private const int! DEBUG_NODE_ALLOCATOR = 0;
@@ -12,49 +13,8 @@ private const int! DEBUG_NODE_ALLOCATOR = 0;
 namespace ama {
 	///////////////////
 	//the node pool
-	private const intptr_t! BLOCK_SIZE = (1L << 21) - 64L;
-	private class TBlockHeader {
-		TBlockHeader*+! next;
-		intptr_t! size;
-	};
-	//a zeroed TMemoryPool is an empty pool
-	private class TMemoryPool {
-		TBlockHeader*+! block;
-		intptr_t! block_size;
-		char*+! front;
-		intptr_t! sz_free;
-	};
-	private void*! poolAlloc(TMemoryPool*+! ppool, intptr_t! sz) {
-		intptr_t! align = sz & -sz;
-		if( align > 16 ) { align = 16; } else if( align < 1 ) { align = 1; }
-		intptr_t! align_offset = -intptr_t(ppool->front) & (align - 1);
-		if( ppool->sz_free < (align_offset + sz) ) {
-			if( !ppool->block_size ) {
-				ppool->block_size = BLOCK_SIZE;
-			}
-			intptr_t! sz_alloc = (ppool->block_size > (sz + align) ? ppool->block_size : sz + align) + sizeof(TBlockHeader);
-			TBlockHeader*+! new_block = (TBlockHeader*+)(calloc(1, sz_alloc));
-			new_block->next = ppool->block;
-			new_block->size = sz_alloc - sizeof(TBlockHeader);
-			ppool->front = (char*+)(new_block) + sizeof(TBlockHeader);
-			ppool->sz_free = sz_alloc - sizeof(TBlockHeader);
-			ppool->block = new_block;
-			align_offset = -intptr_t(ppool->front) & (align - 1);
-		}
-		char*+! ret = ppool->front + align_offset;
-		ppool->front = ret + sz;
-		ppool->sz_free -= align_offset + sz;
-		return (void*)(ret);
-	}
-	private void! poolRelease(TMemoryPool*+! ppool) {
-		for(TBlockHeader*+! i = ppool->block; i;) {
-			TBlockHeader*+! next = i->next;
-			free(i);
-			i = next;
-		}
-		memset(ppool, 0, sizeof(TMemoryPool));
-	}
-	private TMemoryPool! g_node_pool = new TMemoryPool!();
+	private const intptr_t! NODE_BLOCK_SIZE = (1L << 21) - 64L;
+	private ama::TMemoryPool! g_node_pool = new ama::TMemoryPool!();
 	ama::Node*+! g_free_nodes = NULL;
 	private char[|]! g_empty_comment = "";
 	ama::Node*+! AllocNode() {
@@ -68,7 +28,7 @@ namespace ama {
 			g_free_nodes = ret.s;
 			memset((void*+)(ret), 0, sizeof(ama::Node));
 		} else {
-			ret = (ama::Node*+)(poolAlloc(&g_node_pool, sizeof(ama::Node)));
+			ret = (ama::Node*+)(ama::poolAlloc(&g_node_pool, sizeof(ama::Node), NODE_BLOCK_SIZE));
 		}
 		ret.tmp_flags = ama::TMPF_IS_NODE;
 		//non-NULL guarantee for comments
@@ -79,8 +39,8 @@ namespace ama {
 	ama::Node*+! g_placeholder = AllocNode();
 	int! isValidNodePointer(ama::Node*! nd_tentative) {
 		int! in_block = 0;
-		for(TBlockHeader*! block = g_node_pool.block; block; block = block.next) {
-			uintptr_t! ofs = uintptr_t(nd_tentative) - (uintptr_t(block) + sizeof(TBlockHeader));
+		for(ama::TBlockHeader*! block = g_node_pool.block; block; block = block.next) {
+			uintptr_t! ofs = uintptr_t(nd_tentative) - (uintptr_t(block) + sizeof(ama::TBlockHeader));
 			if( ofs < uintptr_t(block.size) && (ofs + uintptr_t(sizeof(ama::Node))) < uintptr_t(block.size) && (ofs % uintptr_t(sizeof(ama::Node))) == 0 ) {
 				in_block = 1;
 				break;
@@ -90,9 +50,9 @@ namespace ama {
 	}
 	ama::Node*+[+]! GetAllPossibleNodeRanges() {
 		ama::Node*+[+]! ret = new ama::Node*+[+]!();
-		for(TBlockHeader*! block = g_node_pool.block; block; block = block.next) {
-			ret.push_back((ama::Node*+)(uintptr_t(block) + sizeof(TBlockHeader)));
-			ret.push_back((ama::Node*+)(uintptr_t(block) + sizeof(TBlockHeader) + (block->size - sizeof(TBlockHeader)) / sizeof(ama::Node!) * sizeof(ama::Node!)));
+		for(ama::TBlockHeader*! block = g_node_pool.block; block; block = block.next) {
+			ret.push_back((ama::Node*+)(uintptr_t(block) + sizeof(ama::TBlockHeader)));
+			ret.push_back((ama::Node*+)(uintptr_t(block) + sizeof(ama::TBlockHeader) + (block->size - sizeof(ama::TBlockHeader)) / sizeof(ama::Node!) * sizeof(ama::Node!)));
 		}
 		return <<ret;
 	}
@@ -1084,4 +1044,49 @@ ama::Node*+! ama::Node::ReplaceUpto(ama::Node*+! this, ama::Node*+! nd_upto, ama
 
 ama::Node*+! ama::Node::toSingleNode(ama::Node*+! this) {
 	return ama::toSingleNode(this);
+}
+
+uint8_t ama::Node::GetCFGRole(ama::Node*! this){
+	switch this.node_class{
+	case N_SCOPED_STATEMENT:
+		if this.data=='if'||this.data=='switch':
+			return CFG_BRANCH
+		else this.data=='for'||this.data=='while'||this.data=='do':
+			return CFG_LOOP
+		else this.data=='enum'
+			return CFG_DECL
+		break
+	case N_KEYWORD_STATEMENT:
+		if this.data=='return'||this.data=='throw'||this.data=='goto'||this.data=='break'||this.data=='continue':
+			return CFG_JUMP
+		break
+	case N_FUNCTION:case N_CLASS:
+		return CFG_DECL
+	case N_CONDITIONAL:
+		return CFG_BRANCH
+	case N_BINOP:
+		if this.data=='&&'||this.data=='||':
+			return CFG_BRANCH
+		break
+	}
+	return CFG_BASIC
+}
+
+///returns true if whether `nd_child` is reached depends on some aspect of `this`
+///result is undefined if `nd_child` is not an immediate child of `this`
+int ama::Node::isChildCFGDependent(ama::Node*! this,ama::Node*! nd_child){
+	role=this.GetCFGRole()
+	if role!=CFG_BRANCH&&role!=CFG_LOOP:
+		return 0
+	switch this.node_class{
+	case N_SCOPED_STATEMENT:
+		return nd_child.node_class==N_SCOPE
+	case N_CONDITIONAL:
+		return nd_child.node_class!=this.c
+	case N_BINOP:
+		if this.data=='&&'||this.data=='||':
+			return nd_child.node_class!=this.c
+		break
+	}
+	return 0
 }
