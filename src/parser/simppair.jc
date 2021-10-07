@@ -17,59 +17,6 @@ private const int! CHAR_TYPE_ZERO = 7;
 private const int! CHAR_TYPE_BACKSLASH = 8;
 private const int! CHAR_TYPE_OPENING = 9;
 private const int! CHAR_TYPE_CLOSING = 10;
-
-private macro MakeLUT() = function():auto {
-	const int! CHAR_TYPE_SYMBOL = 0;
-	const int! CHAR_TYPE_SPACE = 1;
-	const int! CHAR_TYPE_QUOTE = 2;
-	const int! CHAR_TYPE_SLASH = 3;
-	const int! CHAR_TYPE_NUMBER = 4;
-	const int! CHAR_TYPE_IDENTIFIER = 5;
-	const int! CHAR_TYPE_NEWLINE = 6;
-	const int! CHAR_TYPE_ZERO = 7;
-	const int! CHAR_TYPE_BACKSLASH = 8;
-	const int! CHAR_TYPE_OPENING = 9;
-	const int! CHAR_TYPE_CLOSING = 10;
-	let lut = new Uint8Array(256);
-	let asc(char*! s) {
-		return s.charCodeAt(0);
-	}
-	lut[0] = CHAR_TYPE_ZERO;
-	lut[asc(' ')] = CHAR_TYPE_SPACE;
-	lut[asc('\t')] = CHAR_TYPE_SPACE;
-	lut[asc('\r')] = CHAR_TYPE_SPACE;
-	for(let i = asc('0'); i <= asc('9'); i++) {
-		lut[i] = CHAR_TYPE_NUMBER;
-	}
-	for(let i = asc('A'); i <= asc('Z'); i++) {
-		lut[i] = CHAR_TYPE_IDENTIFIER;
-	}
-	for(let i = asc('a'); i <= asc('z'); i++) {
-		lut[i] = CHAR_TYPE_IDENTIFIER;
-	}
-	lut[asc('_')] = CHAR_TYPE_IDENTIFIER;
-	//hack for #if and friends
-	lut[asc('#')] = CHAR_TYPE_IDENTIFIER;
-	for(let i = 128; i < 256; i++) {
-		lut[i] = CHAR_TYPE_IDENTIFIER;
-	}
-	lut[asc('/')] = CHAR_TYPE_SLASH;
-	lut[asc('\n')] = CHAR_TYPE_NEWLINE;
-	lut[asc('"')] = CHAR_TYPE_QUOTE;
-	lut[asc("'")] = CHAR_TYPE_QUOTE;
-	lut[asc('\\')] = CHAR_TYPE_BACKSLASH;
-	lut[asc('(')] = CHAR_TYPE_OPENING;
-	lut[asc('[')] = CHAR_TYPE_OPENING;
-	lut[asc('{')] = CHAR_TYPE_OPENING;
-	lut[asc(')')] = CHAR_TYPE_CLOSING;
-	lut[asc(']')] = CHAR_TYPE_CLOSING;
-	lut[asc('}')] = CHAR_TYPE_CLOSING;
-	return compiler.ParseExpr('new uint8_t[256]{' + Array.prototype.slice.call(lut).map(inline(auto a):char![+]! {
-		return 'uint8_t(' + a.toString() + 'u)';
-	}).join(',') + '}');
-}
-
-private const uint8_t[256]! g_char_lut = MakeLUT();
 private const uint32_t[8]! g_spaces = ama::CharSet(' \t\r');
 //p and P are for C++ hex float, u and L are for C/C++ integers, n is for JS BigInt
 //b and o are for 0b and 0o
@@ -197,12 +144,41 @@ namespace ama {
 		}
 		int32_t! tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
 		int32_t! tab_indent = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_indent'), 2);
+		int32_t! parse_js_regexp = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_js_regexp'), 1);
+		//create char LUT
 		uint8_t[256]! char_lut;
-		memcpy(char_lut.data(), g_char_lut.data(), g_char_lut.size());
+		memset(char_lut.data(), CHAR_TYPE_SYMBOL, char_lut.size());
+		char[|]! s_idchars = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, 'identifier_characters'));
+		for(char&! ch : s_idchars) {
+			char_lut[uintptr_t(uint8_t(ch))] = CHAR_TYPE_IDENTIFIER;
+		}
+		//
+		char_lut[0] = CHAR_TYPE_ZERO;
+		char_lut[' '] = CHAR_TYPE_SPACE;
+		char_lut['\t'] = CHAR_TYPE_SPACE;
+		char_lut['\r'] = CHAR_TYPE_SPACE;
+		for(int! i = '0'; i <= '9'; i++) {
+			char_lut[i] = CHAR_TYPE_NUMBER;
+		}
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'enable_unicode_identifiers'), 1) ) {
+			for(int! i = 128; i < 256; i++) {
+				char_lut[i] = CHAR_TYPE_IDENTIFIER;
+			}
+		}
+		char_lut['/'] = CHAR_TYPE_SLASH;
+		char_lut['\n'] = CHAR_TYPE_NEWLINE;
+		char_lut['"'] = CHAR_TYPE_QUOTE;
+		char_lut['\''] = CHAR_TYPE_QUOTE;
+		char_lut['\\'] = CHAR_TYPE_BACKSLASH;
+		char_lut['('] = CHAR_TYPE_OPENING;
+		char_lut['['] = CHAR_TYPE_OPENING;
+		char_lut['{'] = CHAR_TYPE_OPENING;
+		char_lut[')'] = CHAR_TYPE_CLOSING;
+		char_lut[']'] = CHAR_TYPE_CLOSING;
+		char_lut['}'] = CHAR_TYPE_CLOSING;
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'enable_hash_comment'), 0) ) {
 			char_lut['#'] = CHAR_TYPE_SLASH;
 		}
-		int32_t! parse_js_regexp = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_js_regexp'), 1);
 		//UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, ''),0)
 		ama::Node*+! nd_root = ama::CreateNode(ama::N_RAW, NULL);
 		ParserState[+]! state_stack = new ParserState[+] {

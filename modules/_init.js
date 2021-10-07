@@ -179,6 +179,8 @@ __global.c_include_paths=['/usr/include','/usr/local/include']
 __global.default_options={
 	enable_hash_comment:0,
 	symbols:'!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->*',
+	identifier_characters:'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$#',
+	enable_unicode_identifiers:1,
 	///////////
 	parse_operators:1,
 	parse_pointed_brackets:1,

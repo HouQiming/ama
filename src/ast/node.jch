@@ -275,6 +275,10 @@ namespace ama {
 	inline ama::Node*+! nLabeled(Node*+! nd_label, Node*+! nd_value) {
 		return ama::CreateNode(N_LABELED, cons(nd_label, cons(nd_value, NULL)));
 	}
+	inline ama::Node*+! nDependency(Node*+! nd) {
+		nd.s = NULL;
+		return ama::CreateNode(N_DEPENDENCY, nd);
+	}
 	///////////////
 	inline ama::Node*+! GetPlaceHolder() {
 		assert(!g_placeholder.p);
@@ -302,15 +306,6 @@ namespace ama {
 	}
 	ama::Node*+! CreateNodeFromChildren(uint8_t! node_class, ama::Node*+[...]! children);
 	///////////////
-	//macro nRawDeclaration() = function(auto my_call, ...args):auto {
-	//	return require("./v3macros.js").ASTConstructor(my_call, args, "N_RAW_DECLARATION");
-	//}
-	macro nDependency() = function(auto my_call, ...args):auto {
-		return require("./v3macros.js").ASTConstructor(my_call, args, "N_DEPENDENCY");
-	}
-	macro nScope() = function(auto my_call, ...args):auto {
-		return require("./v3macros.js").ASTConstructor(my_call, args, "N_SCOPE");
-	}
 	int8_t! ClampIndentLevel(intptr_t! level);
 	ama::Node*+! toSingleNode(ama::Node*+! nd_child);
 	ama::Node*+! UnparseRaw(ama::Node*+! nd_raw);
