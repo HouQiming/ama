@@ -1,4 +1,3 @@
-#include <deque>
 #include '../ast/node.jch'
 #include './engine.jch'
 
@@ -31,7 +30,7 @@ void ExecSession::AddInterest(Node* nd_interest){
 		same_name_next:this.name_to_interest[name]-1L
 	})
 	this.name_to_interest[name]=this.interests.length
-	//TODO: expand existing nodes
+	//TODO: recheck existing nodes: can we update the TMPF_CFG_MATTERS_FOR_INTEREST flag incrementally?
 }
 
 private void CollectLabels(Map<char[|],Node*+>&+! labels,Node* nd_entry){
@@ -57,12 +56,149 @@ private void CollectComputedLabels(Node*+[+]&+! addressed_labels,Map<char[|],Nod
 	addressed_labels.unique()
 }
 
+private const intptr_t EXEC_BLOCK_SIZE=65536L-64L
+ExecNode*+ ExecSession::CreateExecNode(uint8_t kind,Node*+ nd_exec){
+	ExecNode*+ ret=poolAlloc(&this.pool, sizeof(ExecNode), EXEC_BLOCK_SIZE);
+	ret.kind=kind
+	ret.nd_exec=nd_exec
+	return ret
+}
+
+void ExecSession::AddLinkTo(ExecNodeLinks*+ plinks,ExecNode*+ ed_target){
+	if !plinks.fast[0]:
+		plinks.fast[0]=ed_target
+		return
+	if !plinks.fast[1]:
+		plinks.fast[1]=plinks.fast[0]
+		plinks.fast[0]=ed_target
+		return
+	ExecNodeExtraLink*+ new_link=poolAlloc(&this.pool, sizeof(ExecNodeExtraLink), EXEC_BLOCK_SIZE);
+	new_link.target=plinks.fast[1]
+	new_link.next=plinks.more
+	plinks.more=new_link
+	plinks.fast[1]=plinks.fast[0]
+	plinks.fast[0]=ed_target
+}
+
+void ExecSession::AddEdge(ExecNode*+ ed0,ExecNode*+ ed1){
+	//COULDDO: check for existing edge
+	//the caching mechanism shouldn't generate duplicate edges...
+	this.AddLinkTo(&ed0.next,ed1)
+	this.AddLinkTo(&ed1.prev,ed0)
+}
+
 private const uint16_t TMPF_CONTAINS_INTEREST=1u;
 private const uint16_t TMPF_CFG_MATTERS_FOR_INTEREST=2u;
 private const int32_t JSCOPE_PARENT_DECL=1;
 private const int32_t JSCOPE_PARENT_SWITCH=2;
 private const int32_t JSCOPE_PARENT_LOOP=4;
-ExecNode* ExecSession::CreateNodeGraph(Node* nd_entry){
+///dfsCreateNodeGraph relies on CreateNodeGraph for temp flag setting
+ExecRange! ExecSession::dfsCreateNodeGraph(Node*+ nd,Node*+ nd_entry,int cached){
+	if cached:
+		ExecRange! rg_canon=<<copy(this.canonicals[nd].rg_canon)
+		if rg_canon.entry:return <<copy(rg_canon)
+	uint16_t flags=0
+	role=nd.GetCFGRole();
+	//nd_entry could be anything: we may end up calling this expanding some other node
+	switch role{
+	default:
+		assert(0);
+		break
+	case CFG_DECL:
+		if nd==nd_entry:
+			//get into nd_entry no matter what
+			ed_enter=this.CreateExecNode(ENODE_NORMAL,nd)
+			nd_scope=role.Find(N_SCOPE,NULL)
+			if nd_scope:
+				ExecRange! rg_scope=dfsCreateNodeGraph(nd_scope,nd_entry,cached)
+				this.AddEdge(rg_scope.exit,ed_scope)
+				rg_scope.exit=ed_scope
+				if cached:
+					this.canonicals[nd].rg_canon=<<copy(rg_scope)
+				return <<copy(rg_scope)
+		//otherwise, simply ignore: create a dumb node
+		break 
+	case CFG_BASIC:
+		if nd.node_class==N_SCOPE:
+			ExecNode*+ ed_last=NULL
+			ExecNode*+ ed_first=NULL
+			for(auto ndi=nd.c;ndi;ndi=ndi.s)
+				ExecRange! rgi=this.dfsCreateNodeGraph(ndi,nd_entry,cached)
+				if ed_last:
+					this.AddEdge(ed_last,rgi.entry)
+				else
+					ed_first=rgi.entry
+				ed_last=rgi.exit
+			//create the end-of-scope node
+			ExecNode*+ ed_after=NULL
+			ExecNodeCanonicals*+ p_canon=NULL
+			if cached:
+				p_canon=&this.canonicals[nd]
+				ed_after=p_canon.ed_after
+			if !ed_after:
+				ed_after=this.CreateExecNode(ENODE_AFTER,nd)
+			if ed_last:
+				this.AddEdge(ed_last,ed_after)
+			else
+				ed_first=ed_after
+			if cached:
+				p_canon.rg_normal=new ExecRange{entry:ed_first,exit:ed_after}
+				p_canon.ed_after=ed_after
+			return new ExecRange{entry:ed_first,exit:ed_after}
+		else if nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST:
+			//a basic node could contain a branch inside: a=(foo&&bar?baz():0)
+			//thus the effects of a node should exclude its contained branches
+			Node*+[+] non_basic_children
+			for(auto ndi=nd;ndi;ndi=ndi.PreorderNext(nd))
+				role_i=ndi.GetCFGRole();
+				if role_i!=CFG_BASIC:
+					non_basic_children.push_back(ndi)
+					ndi=ndi.PreorderLastInside()
+					continue
+			if non_basic_children.length>1:
+				//use fork / join to represent non-deterministic order
+				auto ed_fork=this.CreateExecNode(ENODE_FORK,NULL)
+				auto ed_join=this.CreateExecNode(ENODE_JOIN,NULL)
+				for ndi in non_basic_children
+					ExecRange! rgi=this.dfsCreateNodeGraph(ndi,nd_entry,cached)
+					this.AddEdge(ed_fork,rgi.entry)
+					this.AddEdge(rgi.exit,ed_join)
+				auto ed_self=this.CreateExecNode(ENODE_NORMAL,nd)
+				this.AddEdge(ed_join,ed_self)
+				return new ExecRange{entry:ed_fork,exit:ed_self}
+			else if non_basic_children.length==1:
+				//this one is easy: just put non_basic_children[0] before nd
+				ExecRange! rgi=this.dfsCreateNodeGraph(non_basic_children[0],nd_entry,cached)
+				auto ed_self=this.CreateExecNode(ENODE_NORMAL,nd)
+				this.AddEdge(rgi.exit,ed_self)
+				rgi.exit=ed_self
+				return <<copy(rgi)
+		//otherwise, create a dumb node
+		break;
+	case CFG_JUMP:
+		//TODO: goto target problem: "canonical" ExecNode for each Node, and the after version
+		break
+	case CFG_BRANCH:
+		if !(nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
+			flags=ENODEF_FOLDED_CFG
+			break
+		//TODO:
+		break
+	case CFG_LOOP:
+		if !(nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
+			flags=ENODEF_FOLDED_CFG
+			break
+		//TODO:
+		break
+	}
+	//fall back path: create a normal node
+	ExecNode*+ ed=this.CreateExecNode(ENODE_NORMAL,nd)
+	ed.flags=flags
+	return new ExecRange{entry:ed,exit:ed}
+}
+
+ExecRange! ExecSession::CreateNodeGraph(Node* nd_entry,int cached){
+	//TODO: separate nd_entry from nd_parent_of_goto
 	labels_collected=0
 	labels=new Map<char[|],Node*+>
 	addressed_labels=new Node*+[+]
@@ -75,6 +211,7 @@ ExecNode* ExecSession::CreateNodeGraph(Node* nd_entry){
 		ndi.tmp_flags&=~TMPF_CONTAINS_INTEREST
 		//if we see an interest, we need to expand parents
 		if ndi.node_class==N_REF||ndi.node_class==N_DOT:
+			!? //TODO: incrementalize this logic
 			first=this.name_to_interest[ndi.data]-1L
 			for(i=first;i>=0L;i=this.interests[i].same_name_next)
 				//COULDDO: more accurate name resolution for dot / function
@@ -175,43 +312,7 @@ ExecNode* ExecSession::CreateNodeGraph(Node* nd_entry){
 		if !jump_mattered:break
 	//create graph for the expanded nodes
 	//we only expand CFG nodes if they have TMPF_CFG_MATTERS_FOR_INTEREST: merely using an interest in the condition is no different than a basic block
-	//TODO: use deque
-	std::deque<Node*+> Q
-	Q.push_back(nd_entry)
-	while Q.size()
-		Node*+ ndi=ndi.pop_front()
-		role=ndi.GetCFGRole();
-		//nd_entry could be anything: we may end up calling this expanding some other node
-		switch role{
-		default:
-			assert(0);
-			break
-		case CFG_DECL:
-			if ndi==nd_entry:
-				//get into nd_entry no matter what
-				nd_scope=role.Find(N_SCOPE,NULL)
-				if nd_scope:
-					Q.push_back(nd_scope)
-				break
-			//otherwise, simply ignore
-			break
-		case CFG_BASIC:
-			if ndi.node_class==N_SCOPE:
-				//TODO: expand all - we need wrapped child nodes before we can connect them... go dfs?
-			else if ndi.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST:
-				//TODO: find non-basic children for basic
-			else
-				//TODO
-			break;
-		case CFG_JUMP:
-		case CFG_BRANCH:
-		case CFG_LOOP:
-		}
-		//a basic node could contain a branch inside: a=(foo&&bar?baz():0)
-		//the effects of a node should exclude its contained branches
-		//TODO: find non-basic children for basic, expand scope, get into decl
-		//WTF is nd_entry? limit to scopes?
-		if ndi.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST:
-		//TODO: could work better as a dfs: we skip children too often... or a BFS
-		//TODO: better utility for skipping
+	return this.dfsCreateNodeGraph(ndi,nd_entry,cached)
 }
+
+//TODO: expand call, expand loop, diversify (expand phi)

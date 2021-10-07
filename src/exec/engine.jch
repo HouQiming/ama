@@ -11,12 +11,12 @@ namespace ama{
 	//the immutable pattern doesn't work here: we actually expand stuff
 	//ExecNode and ExecEffect must be zero-initializable - they are pooled
 	const uint8_t ENODE_NORMAL=0
-	const uint8_t ENODE_PHI=1
-	//before / after a scope
-	const uint8_t ENODE_BEFORE=2
-	const uint8_t ENODE_AFTER=3
-	//ENODE_ENTER_FUNCTION means that a non-inheriting new context gets created
-	const uint8_t ENODE_ENTER_FUNCTION=4
+	//after a scope or a label
+	const uint8_t ENODE_AFTER=1
+	//models parallel / non-determinstic execution
+	const uint8_t ENODE_FORK=2
+	const uint8_t ENODE_JOIN=3
+	const uint16_t ENODEF_FOLDED_CFG=1
 	//contexts are implicitly defined by nodes: what each node changes in each context
 	class ExecNodeExtraLink
 		ExecNode*+ target
@@ -29,10 +29,9 @@ namespace ama{
 		//a linked list is more easily managed in a pool
 		ExecNodeLinks! prev
 		ExecNodeLinks! next
+		uint16_t flags
 		uint8_t kind
 		Node*+ nd_exec
-		//the lexical scope of this node's implicit context: scope / function / class
-		Node*+ nd_lexical_scope
 	//the effect any particular node could have is also lexical, and monotonically expanding as interests were added
 	const uint8_t EFFECT_READ=1
 	const uint8_t EFFECT_WRITE=2
@@ -59,10 +58,15 @@ namespace ama{
 		Node*+ nd_interest
 		Node*+ nd_lexical_scope
 		intptr_t same_name_next
-	class ExecEffectHead
+	class ExecRange
+		ExecNode*+ entry
+		ExecNode*+ exit
+	class ExecNodeCanonicals
 		//we are lazily filling effects so we need a mutable state for the laziness
-		ExecEffect*+ first
 		intptr_t last_interest_checked
+		ExecEffect*+ effect
+		ExecRange! rg_canon
+		ExecNode*+ ed_after
 	const uint32_t UNCERTAIN_JUMP_TARGET=1
 	const uint32_t UNCERTAIN_FIELD_RESOLUTION=2
 	const uint32_t UNCERTAIN_FUNCTION_RESOLUTION=4
@@ -74,5 +78,7 @@ namespace ama{
 		ExecInterest![+] interests
 		Map<char[|],intptr_t> name_to_interest
 		//COULDDO: put a generic void* into nodes? or cheap mempool-offset-based SxS storage
-		Map<Node*,ExecEffectHead!> known_effects
+		Map<Node*,ExecNodeCanonicals!> canonicals
+		void __done__()
+			poolRelease(&pool)
 }
