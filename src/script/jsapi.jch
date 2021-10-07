@@ -10,3 +10,10 @@ namespace ama {
 	void! LazyInitScriptEnv();
 	void! DumpASTAsJSON(ama::Node*+! nd);
 };
+const int! PROCESS_AMA_NOT_FOUND = -1;
+const int! PROCESS_AMA_SCRIPT_FAILED = 0;
+const int! PROCESS_AMA_SUCCESS = 1;
+
+namespace ama {
+	int! ProcessAmaFile(char*! fn, char[...]! extra_script);
+};

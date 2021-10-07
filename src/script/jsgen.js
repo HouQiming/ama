@@ -81,18 +81,18 @@ function Generate(version,my_call) {
 			ret.jc_expr = ['ama::UnwrapPointer(', js_value, ')'].join('');
 		} else if( s_type === 'Node[]' ) {
 			ret.validation = [
-				'if !JS_IsArray(', js_value, '):{return JS_ThrowTypeError(jsctx, "array expected for `', js_value, '`");}'
+				'if(!JS_IsArray(', js_value, ')){return JS_ThrowTypeError(jsctx, "array expected for `', js_value, '`");}'
 			].join('');
 			ret.jc_expr = ['ama::UnwrapNodeArray(', js_value, ')'].join('');
 		} else if( s_type === 'string' || s_type === 'string^' ) {
 			ret.validation = [
-				'if !JS_IsString(', js_value, '):{return JS_ThrowTypeError(jsctx, "string expected for `', js_value, '`");}'
+				'if(!JS_IsString(', js_value, ')){return JS_ThrowTypeError(jsctx, "string expected for `', js_value, '`");}'
 			].join('');
 			//TODO: replace UnwrapString with sth cheaper
 			ret.jc_expr = [nd_type.toSource().indexOf('[+]') >= 0 ? 'ama::UnwrapStringResizable(' : 'ama::UnwrapString(', js_value, ')'].join('');
 		} else if( s_type === 'charptr' ) {
 			ret.validation = [
-				'if !JS_IsString(', js_value, '):{return JS_ThrowTypeError(jsctx, "string expected for `', js_value, '`");}'
+				'if(!JS_IsString(', js_value, ')){return JS_ThrowTypeError(jsctx, "string expected for `', js_value, '`");}'
 			].join('');
 			ret.jc_expr = ['JS_ToCString(jsctx, ', js_value, ')'].join('');
 		} else if( s_type === 'JSValue' ) {
@@ -101,16 +101,16 @@ function Generate(version,my_call) {
 		} else if( s_type === 'int' ) {
 			//we don't have i64 in Node
 			ret.validation = [
-				'res', res_counter, '=0;',
-				'if JS_ToInt32(jsctx, &res', res_counter, ', ', js_value, ')<0:{return JS_ThrowTypeError(jsctx, "int expected for `', js_value, '`");}'
+				'int32_t res', res_counter, '=0;',
+				'if(JS_ToInt32(jsctx, &res', res_counter, ', ', js_value, ')<0){return JS_ThrowTypeError(jsctx, "int expected for `', js_value, '`");}'
 			].join('');
 			ret.jc_expr = 'res' + res_counter.toString();
 			res_counter += 1;
 		} else if( s_type === 'float' ) {
 			//we don't have i64 in Node
 			ret.validation = [
-				'res', res_counter, '=0.0;',
-				'if JS_ToFloat64(jsctx, &res', res_counter, ', ', js_value, ')<0:{return JS_ThrowTypeError(jsctx, "float expected for `', js_value, '`");}'
+				'double res', res_counter, '=0.0;',
+				'if(JS_ToFloat64(jsctx, &res', res_counter, ', ', js_value, ')<0){return JS_ThrowTypeError(jsctx, "float expected for `', js_value, '`");}'
 			].join('');
 			ret.jc_expr = 'res' + res_counter.toString();
 			res_counter += 1;
@@ -202,7 +202,7 @@ function Generate(version,my_call) {
 		if( unwrap_code.validation && ClassifyType(nd_type) !== 'int' && ClassifyType(nd_type) !== 'float' ) {
 			//it's nullable, hack the null case
 			unwrap_code.validation = [
-				'if JS_IsNull(val):{',
+				'if(JS_IsNull(val)){',
 				(
 					'nd.' + ppt.name
 				),
@@ -254,13 +254,13 @@ function Generate(version,my_call) {
 		}
 		let nd_ret_type = method_i.return_type;
 		code_func.push(
-			'auto ', class_name, 'Call_', method_i.name, '(JSContext*+ jsctx, JSValueConst this_val, int argc, JSValueConst*+ argv){',
-			'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));'
+			'JSValue ', class_name, 'Call_', method_i.name, '(JSContext*+ jsctx, JSValueConst this_val, int argc, JSValueConst*+ argv){',
+			class_full_name, '*+ nd=(', class_full_name, '*+)(JS_GetOpaque(this_val, ', classid, '));'
 		);
 		if( class_name === 'Node' ) {
 			if( method_i.name === 'Insert' ) {
-				code_func.push('if nd==null:{return JS_ThrowTypeError(jsctx, "cannot insert at a null node");}');
-				code_func.push('if JS_IsNull(argv[1])||JS_IsUndefined(argv[1]):{return JS_ThrowTypeError(jsctx, "cannot insert a null node");}');
+				code_func.push('if(nd==null){return JS_ThrowTypeError(jsctx, "cannot insert at a null node");}');
+				code_func.push('if(JS_IsNull(argv[1])||JS_IsUndefined(argv[1])){return JS_ThrowTypeError(jsctx, "cannot insert a null node");}');
 			}
 		}
 		let nd_paramlist = method_i.paramlist;
@@ -288,7 +288,7 @@ function Generate(version,my_call) {
 			if( ClassifyType(nd_type) !== 'int' && ClassifyType(nd_type) !== 'float' && unwrap_code.validation ) {
 				//it's nullable, hack the null case
 				code_func.push(
-					'if argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L]):{',
+					'if(argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L])){',
 					unwrap_code.validation,
 					'}'
 				);
@@ -387,9 +387,9 @@ function Generate(version,my_call) {
 			code.join(''),
 			'}\n',
 			//for namespace ama
-			'}\n'
+			'}'
 		);
-		my_call.Insert(POS_BACK,ParseCode(code_func.join('')).AutoFormat());
+		my_call.Insert(POS_BACK,ParseCode(code_func.join('').replace(/\*\+/g,'*')).AutoFormat().c.setCommentsAfter(''));
 		return my_call;
 	}
 };

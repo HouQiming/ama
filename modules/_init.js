@@ -1,3 +1,5 @@
+(function(){
+/////////////
 Node.setFlags=function(flags){
 	this.flags=flags;
 	return this;
@@ -256,3 +258,6 @@ __global.process={
 	}),
 	platform:__platform
 };
+
+/////////////
+})();

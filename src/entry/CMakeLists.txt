@@ -93,7 +93,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc
   MAIN_DEPENDENCY ../script/jsapi.jc
-  DEPENDS ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/env.jch ${JC_LIB}/unicode.jch ${JC_LIB}/unicode/case.jch ../ast/node.jch ../ast/nodegc.jch ../codegen/gen.jch ../parser/simppair.jch ../parser/scoping.jch ../parser/depends.jch ../parser/postfix.jch ../parser/operator.jch ../parser/decl.jch ../parser/cleanup.jch ../script/nodeof_to_ast.jch ../script/jsenv.jch ../script/jsapi.jch ../script/jsgen.jch
+  DEPENDS ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/env.jch ${JC_LIB}/unicode.jch ${JC_LIB}/unicode/case.jch ../ast/node.jch ../ast/nodegc.jch ../codegen/gen.jch ../parser/simppair.jch ../parser/scoping.jch ../parser/depends.jch ../parser/postfix.jch ../parser/operator.jch ../parser/decl.jch ../parser/cleanup.jch ../parser/findama.jch ../script/nodeof_to_ast.jch ../script/jsenv.jch ../script/jsapi.jch ../script/jsgen.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(

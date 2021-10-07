@@ -46,19 +46,14 @@ int! main(int! argc, char**! argv) {
 			i += 1;
 			continue;
 		}
-		char[+]^+! file_data = fs.readFileSync(argv[i]);
-		if( file_data == NULL ) {
+		int! err_code = ama::ProcessAmaFile(argv[i], extra_script);
+		if( err_code == PROCESS_AMA_NOT_FOUND ) {
 			console.error('unable to load', argv[i]);
-			return 1;
 		}
-		char![+]! script_i = ama::FindAma(file_data);
-		if( extra_script.length ) {
-			script_i = <<JC::string_concat(extra_script, script_i);
+		if( err_code <= 0 ) {
+			return 1;
 		}
 		has_file = 1;
-		if( !ama::RunScriptOnFile(script_i, argv[i], file_data.c_str()) ) {
-			return 1;
-		}
 	}
 	if( !has_file ) {
 		if( extra_script.length ) {
