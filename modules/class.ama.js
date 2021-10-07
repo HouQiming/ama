@@ -22,20 +22,20 @@ function ListOwnProperties(properties, nd_class) {
 		}
 		let protection = lingering_protection;
 		for (let prot of g_protections) {
-			if (last_appearance[prot].isAncestorOf(ndi)) {
+			if (last_appearance[prot] && last_appearance[prot].isAncestorOf(ndi)) {
 				protection = prot;
 				break;
 			}
 		}
 		if (ndi.node_class == N_REF && (ndi.flags & REF_WRITTEN)) {
-			let is_static = last_appearance['static'].isAncestorOf(ndi);
+			let is_static = last_appearance['static'] && last_appearance['static'].isAncestorOf(ndi);
 			properties.push({
 				enumerable: !is_static | 0,
-				writable: !(last_appearance['final'].isAncestorOf(ndi) || last_appearance['const'].isAncestorOf(ndi)) | 0,
+				writable: !(last_appearance['final'] && last_appearance['final'].isAncestorOf(ndi) || last_appearance['const'] && last_appearance['const'].isAncestorOf(ndi)) | 0,
 				method: 0,
 				own: 1,
 				shadowed: 0,
-				static: is_static,
+				static: is_static | 0,
 				protection: protection,
 				node: ndi,
 				name: ndi.data
@@ -48,13 +48,13 @@ function ListOwnProperties(properties, nd_class) {
 					method: 1,
 					own: 1,
 					shadowed: 0,
-					static: last_appearance['static'].isAncestorOf(ndi),
+					static: 0 | (last_appearance['static'] && last_appearance['static'].isAncestorOf(ndi)),
 					protection: protection,
 					node: ndi,
 					name: ndi.data
 				});
 			}
-			ndi = ndi.PreorderSkipChildren(nd_root);
+			ndi = ndi.PreorderSkipChildren(nd_class);
 			continue;
 		}
 		ndi = ndi.PreorderNext(nd_scope)

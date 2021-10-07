@@ -80,30 +80,20 @@ namespace ama {
 	private void! dfsAutoFormat(ama::Node*+! nd) {
 		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 			dfsAutoFormat(ndi);
-			if( nd.node_class == ama::N_SCOPE ) {
-				if( !ndi.indent_level ) {
+			if( nd.node_class == ama::N_SCOPE || nd.node_class == ama::N_FILE ) {
+				if( !ndi.indent_level && nd.node_class == ama::N_SCOPE ) {
 					ndi.AdjustIndentLevel(4);
 				}
 				if( !ndi.comments_before.length ) {
-					ndi.comments_before = ndi == nd.c ? "\n\t" : "\n";
-				}
-				if( ndi.NeedTrailingSemicolon() ) {
-					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-					ndi.ReplaceWith(nd_tmp);
-					ndi = nd_tmp.ReplaceWith(ama::CreateNode(ama::N_SEMICOLON, ndi));
-				}
-			} else if( nd.node_class == ama::N_RAW && ndi != nd.c ) {
-				if( !ndi.comments_before.length ) {
-					ndi.comments_before = " ";
-				}
-			} else if( nd.node_class == ama::N_FILE ) {
-				if( !ndi.comments_before.length ) {
 					ndi.comments_before = "\n";
+				}
+				if( !ndi.s && !ndi.comments_after.length ) {
+					ndi.comments_after = "\n";
 				}
 			}
 		}
-		if( nd.node_class == ama::N_SCOPE ) {
-			if( !nd.comments_after.length ) { nd.comments_after = "\n"; }
+		if( nd.node_class == ama::N_SCOPE && nd.c ) {
+			if( !nd.LastChild().comments_after.length ) { nd.LastChild().comments_after = "\n"; }
 		}
 	}
 	ama::Node*+! AutoFormat(ama::Node*+! nd_root) {

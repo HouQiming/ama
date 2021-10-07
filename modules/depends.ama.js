@@ -36,7 +36,7 @@ depends.Resolve = function(nd) {
 }
 
 depends.cache = new Map();
-depends.LoadFile = function(fn) {
+depends.LoadFile = function(fn, options) {
 	fn = __path_toAbsolute(fn);
 	let nd_cached = depends.cache.get(fn);
 	if (!nd_cached) {
@@ -47,7 +47,7 @@ depends.LoadFile = function(fn) {
 			//do nothing
 		}
 		if (!data) {return null;}
-		nd_cached = ParseCode(data, __PrepareOptions(fn));
+		nd_cached = ParseCode(data, options || __PrepareOptions(fn));
 		nd_cached.data = fn;
 		depends.cache.set(fn, nd_cached);
 	}

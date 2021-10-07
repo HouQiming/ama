@@ -222,6 +222,7 @@ namespace ama {
 		return ama::WrapString(ama::GenerateCode(ama::UnwrapNode(this_val), argc > 0 ? argv[0] : JS_NULL));
 	}
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data) {
+		//we must not hold any Node* here: the script could gc them and native-only pointers can get freed
 		LazyInitScriptEnv();
 		char![+]! s_fixed_code = '(function(__filename,__dirname,ParseCurrentFile){let require=__require.bind(null,__filename);' + script + '\n})\n';
 		JSValueConst! ret = JS_Eval(
@@ -348,6 +349,10 @@ namespace ama {
 			fo: ama::ParseOperators
 		},
 		new NodeFilterDesc!{
+			name: 'AutoFormat',
+			f: ama::AutoFormat
+		},
+		new NodeFilterDesc!{
 			name: 'StripBinaryOperatorSpaces',
 			f: ama::StripBinaryOperatorSpaces
 		}
@@ -468,13 +473,13 @@ namespace ama {
 		JS_NewClass(ama::g_runtime_handle, ama::g_node_classid, &class_def);
 		ama::g_node_proto = JS_NewObject(ama::jsctx);
 		///////////
+		ama::GeneratedJSBindings();
 		JSValueConst! global = JS_GetGlobalObject(ama::jsctx);
 		JS_SetPropertyStr(ama::jsctx, global, '__global', global);
 		JSValue! js_node_class_names_array = JS_NewArray(ama::jsctx);
 		JS_SetPropertyStr(ama::jsctx, global, '__node_class_names', js_node_class_names_array);
 		JSValue! js_node_builder_names_array = JS_NewArray(ama::jsctx);
 		JS_SetPropertyStr(ama::jsctx, global, '__node_builder_names', js_node_builder_names_array);
-		ama::GeneratedJSBindings();
 		for(int! i = 0; i < ama::g_node_class_names.length; i += 1) {
 			JS_SetPropertyStr(ama::jsctx, global, ama::g_node_class_names[i], JS_NewInt32(ama::jsctx, i));
 			JS_SetPropertyStr(ama::jsctx, global, ama::g_builder_names[i], JS_NewCFunctionMagic(

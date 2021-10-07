@@ -14,7 +14,7 @@ int! main(int! argc, char**! argv) {
 	if( argc < 2 ) {
 		//no macros, no output file name
 		//whatever you need, put in the script
-		console.log('usage: ama [-s script] <files>');
+		console.log('usage: ama [-s script] [files]');
 		return 1;
 	}
 	///////////

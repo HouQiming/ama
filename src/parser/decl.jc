@@ -602,7 +602,7 @@ namespace ama {
 				nd_param = nd_tmp.ReplaceWith(ama::nAssignment(nd_param, ama::nAir()));
 			}
 		}
-		for(ama::Node*+! nd_asgn : nd_root.FindAll(ama::N_ASSIGNMENT, NULL)) {
+		for(ama::Node*+! nd_asgn : nd_root.FindAll(ama::N_ASSIGNMENT, NULL).concat(nd_root.FindAll(ama::N_FUNCTION, NULL))) {
 			ama::Node*+! nd_def = nd_asgn.c;
 			if( nd_def.node_class == ama::N_RAW ) {
 				nd_def = nd_def.LastChild();
@@ -616,6 +616,12 @@ namespace ama {
 				assert(nd_def.s.node_class == ama::N_SYMBOL);
 				//avoid space before type suffix
 				//nd_def.s.comments_before = "";
+				while( nd_def.s ) {
+					nd_def = nd_def.s;
+				}
+			}
+			while( nd_def.node_class == ama::N_UNARY && !(nd_def.flags & ama::UNARY_POSTFIX) && ambiguous_type_suffix[nd_def.data] ) {
+				nd_def = ama::UnparseUnary(nd_def);
 				while( nd_def.s ) {
 					nd_def = nd_def.s;
 				}

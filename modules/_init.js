@@ -203,7 +203,7 @@ __global.default_options={
 	keywords_class:'class struct union namespace interface impl trait',
 	keywords_scoped_statement:'enum if for while do try switch',
 	keywords_extension_clause:'until else elif except catch finally while #elif #else',
-	keywords_function:'extern function fn def',
+	keywords_function:'extern function fn def inline',
 	keywords_after_class_name:': extends implements for where',
 	keywords_after_prototype:': -> => throw const noexcept override',
 	keywords_not_a_function:'#define #if return',
@@ -219,11 +219,18 @@ __global.default_options={
 	only_write_changed: 1,
 };
 
+let g_jc_options=Object.assign(Object.create(__global.default_options),{
+	ambiguous_type_suffix:'* ** ^ & && ! +',
+	parse_js_regexp:0
+});
 __global.extension_specific_options={
 	'.py':Object.assign(Object.create(__global.default_options),{
 		enable_hash_comment:1,
-		parse_indent_as_scope:1
-	})
+		parse_indent_as_scope:1,
+		parse_js_regexp:0
+	}),
+	'.jc':g_jc_options,
+	'.jch':g_jc_options
 }
 
 __global.__PrepareOptions=function(filename,options){

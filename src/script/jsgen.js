@@ -88,6 +88,7 @@ function Generate(version,my_call) {
 			ret.validation = [
 				'if !JS_IsString(', js_value, '):{return JS_ThrowTypeError(jsctx, "string expected for `', js_value, '`");}'
 			].join('');
+			//TODO: replace UnwrapString with sth cheaper
 			ret.jc_expr = [nd_type.toSource().indexOf('[+]') >= 0 ? 'ama::UnwrapStringResizable(' : 'ama::UnwrapString(', js_value, ')'].join('');
 		} else if( s_type === 'charptr' ) {
 			ret.validation = [
@@ -135,10 +136,8 @@ function Generate(version,my_call) {
 		});
 		nd_class_scope.FindAllWithin(BOUNDARY_SCOPE | BOUNDARY_FUNCTION, N_EXTERN, null).forEach(nd_i=> {
 			let nd_def = nd_i.c;
-			if( class_name === 'Node' ) {
-				if( nd_def.data === 'CloneEx' || nd_def.data === 'CloneCB' ) {
-					return;
-				}
+			if( nd_def.data === 'CloneEx' || nd_def.data === 'CloneCB' || nd_def.data === 'forEach' ) {
+				return;
 			}
 			if( nd_def.data === '__init__' || nd_def.data === '__done__' ) {
 				return;
@@ -159,6 +158,7 @@ function Generate(version,my_call) {
 			})
 		});
 	}else{
+		//console.log(JSON.stringify(nd_node_jch,null,1))
 		let class_desc = nd_node_jch.Find(N_CLASS,'Node').ParseClass();
 		for(let ppt of class_desc.properties){
 			if(ppt.enumerable){
@@ -175,6 +175,9 @@ function Generate(version,my_call) {
 				}
 			}
 			if(ppt.method){
+				if( ppt.name === 'CloneEx' || ppt.name === 'CloneCB' || ppt.name === 'forEach' ) {
+					continue;
+				}
 				let nd_func=ppt.node;
 				let nd_type=nd_func.c;
 				if(nd_type.node_class===N_TYPED_VAR){
@@ -210,11 +213,11 @@ function Generate(version,my_call) {
 			unwrap_code.jc_expr = unwrap_code.jc_expr + ';}';
 		}
 		code_func.push(
-			'function ', class_name, 'Get_', ppt.name, '(JSContext*+ jsctx, JSValueConst this_val){',
+			'auto ', class_name, 'Get_', ppt.name, '(JSContext*+ jsctx, JSValueConst this_val){',
 			'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));',
 			'return ', WrapValue(nd_type, 'nd.' + ppt.name), ';',
 			'}',
-			'function ', class_name, 'Set_', ppt.name, '(JSContext*+ jsctx, JSValueConst this_val, JSValueConst val){',
+			'auto ', class_name, 'Set_', ppt.name, '(JSContext*+ jsctx, JSValueConst this_val, JSValueConst val){',
 			'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));',
 			unwrap_code.validation
 		);
@@ -244,14 +247,14 @@ function Generate(version,my_call) {
 	}
 	for(let method_i of methods){
 		if( method_i.name === 'CloneEx' || method_i.name === 'CloneCB' ) {
-			return;
+			continue;
 		}
 		if( method_i.name === '__init__' || method_i.name === '__done__' ) {
-			return;
+			continue;
 		}
 		let nd_ret_type = method_i.return_type;
 		code_func.push(
-			'function ', class_name, 'Call_', method_i.name, '(JSContext*+ jsctx, JSValueConst this_val, int argc, JSValueConst*+ argv){',
+			'auto ', class_name, 'Call_', method_i.name, '(JSContext*+ jsctx, JSValueConst this_val, int argc, JSValueConst*+ argv){',
 			'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));'
 		);
 		if( class_name === 'Node' ) {
@@ -386,7 +389,8 @@ function Generate(version,my_call) {
 			//for namespace ama
 			'}\n'
 		);
-		my_call.Insert(POS_BACK,ParseCode(code_func.join('')).AutoFormat())
+		my_call.Insert(POS_BACK,ParseCode(code_func.join('')).AutoFormat());
+		return my_call;
 	}
 };
 

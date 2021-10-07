@@ -2,9 +2,9 @@
 //run this from ama
 const fs=require('fs');
 const path=require('path');
+const assert=require('assert');
 const depends=require('depends');
 const cmake=require('cmake');
-const assert=require('assert');
 
 function MigrateProject(fn){
 	fn=path.resolve(fn);
