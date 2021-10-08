@@ -16,7 +16,10 @@ int! main(int! argc, char**! argv) {
 	char[+]^+! data = fs.readFileSync('./engine_input.c');
 	ama::Node*+! nd_root = ama::ParseCode(data.c_str(), JS_UNDEFINED);
 	ama::Node*+[+]! xs = nd_root.FindAll(ama::N_REF, "x");
-	ama::ExecSession! sess = ama::CreateSession(nd_root, xs.subarray(xs.length - 1));
+	ama::ExecSession! sess = ama::CreateSession(nd_root.Find(ama::N_FUNCTION, 'main'), xs.subarray(xs.length - 1));
+	fs.writeFileSync('/tmp/dump.dot', sess.DumpGraphviz());
+	system("dot -Tpdf /tmp/dump.dot > /tmp/dump.pdf");
+	/////////
 	ama::Node*+! nd_last_use = xs.back();
 	ama::ExecRange! rg = sess.LocateNode(nd_last_use);
 	//TODO: search backward... for declaration: N_TYPED_VAR

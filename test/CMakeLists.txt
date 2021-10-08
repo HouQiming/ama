@@ -38,7 +38,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../src/exec/engine.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../src/exec/engine.jc
   MAIN_DEPENDENCY ../src/exec/engine.jc
-  DEPENDS ${JC_LIB}/console.jch ../src/ast/node.jch ../src/exec/engine.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../src/ast/node.jch ../src/script/jsenv.jch ../src/codegen/gen.jch ../src/exec/engine.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(

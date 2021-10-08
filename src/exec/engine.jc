@@ -1,6 +1,9 @@
 // //// JC version: 3
 #include <console.jch>
+#include <json.jch>
 #include '../ast/node.jch'
+#include '../script/jsenv.jch'
+#include '../codegen/gen.jch'
 #include './engine.jch'
 
 namespace ama {
@@ -599,12 +602,90 @@ ama::ExecRange! ama::ExecSession::LocateNode(ama::ExecSession*+! this, ama::Node
 	return <<rgi;
 }
 
+private char*![+]! g_superscript_digits = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
+
+private class GraphvizDumpingContext {
+	ama::ExecSession*+! sess;
+	Map<ama::Node*+, intptr_t>! node_numbers;
+	intptr_t! cur_num;
+	ama::Node*+! nd_dumping;
+	void! DumpNodeName(GraphvizDumpingContext*+! this, char[+]&+! code, ama::Node*+! nd, int! superscript);
+};
+
+void! GraphvizDumpingContext::DumpNodeName(GraphvizDumpingContext*+! this, char[+]&+! code, ama::Node*+! nd, int! superscript) {
+	intptr_t! num = this.node_numbers[nd];
+	if( !num ) {
+		num = ++this.cur_num;
+		this.node_numbers[nd] = num;
+	}
+	if( superscript ) {
+		code.push('˙');
+		for(auto ch : JSON.stringify(num)) {
+			code.push(g_superscript_digits[ch - '0']);
+		}
+	} else {
+		code.push(JSON.stringify(num));
+	}
+}
+
+private int! GraphvizGenerateNode(ama::CodeGenerator*+! gctx, ama::Node*+! nd) {
+	GraphvizDumpingContext*+! dctx = (GraphvizDumpingContext*+)(gctx.opaque);
+	if( nd != dctx.nd_dumping ) {
+		if( dctx.sess.canonicals[nd].rg_canon.entry ) {
+			dctx.DumpNodeName(gctx.code, nd, 1);
+			return 1;
+		}
+	}
+	if( nd.node_class == ama::N_SCOPE ) {
+		gctx.code.push('{...}');
+		return 1;
+	}
+	return 0;
+}
+
+private char*![+]! g_enode_names = ['nd', 'after', 'fork', 'join', 'br', 'phi', 'jump', 'loop'];
+private char*![+]! g_enode_shapes = ['box', 'invtrapezium', 'triangle', 'invtriangle', 'diamond', 'invhouse', 'oval', 'parallelogram'];
+
 char[+]! ama::ExecSession::DumpGraphviz(ama::ExecSession*+! this) {
 	char[+]! ret = new char[+]!();
-	ret.push('{.graphviz caption="Execution graph dump"}\n');
+	ret.push(
+		'digraph session {\n'
+	);
 	///////////////////
 	ama::ExecNode*+[+]! eds = this.ComputeReachableSet(this.entries);
-	//TODO: abbreviating code generator: hide all cached children, and tag them (unicode superscript name)
+	//////////////
+	GraphvizDumpingContext! dctx = new GraphvizDumpingContext!();
+	dctx.sess = this;
+	dctx.cur_num = 0;
+	dctx.nd_dumping = NULL;
+	ama::CodeGenerator! gctx = new ama::CodeGenerator!();
+	gctx.opaque = &dctx;
+	gctx.hook = GraphvizGenerateNode;
+	gctx.tab_indent = 0;
+	for(ama::ExecNode*&! ed : eds) {
+		dctx.nd_dumping = ed.nd;
+		gctx.code.clear();
+		gctx.code.push(g_enode_names[ed.kind]);
+		dctx.DumpNodeName(gctx.code, ed.nd, 0);
+		gctx.code.push('\n');
+		gctx.Generate(ed.nd);
+		ret.push(g_enode_names[ed.kind]);
+		dctx.DumpNodeName(ret, ed.nd, 0);
+		ret.push(' [label=', JSON.stringify(gctx.code), ',shape=', g_enode_shapes[ed.kind], ']\n');
+	}
+	//the edges
+	for(ama::ExecNode*&! ed : eds) {
+		for(ama::ExecNodeExtraLink*+! link = ed.next.more; link; link = link.x) {
+			ama::ExecNode*+! edi = link.target;
+			ret.push(g_enode_names[ed.kind]);
+			dctx.DumpNodeName(ret, ed.nd, 0);
+			ret.push(' -> ');
+			ret.push(g_enode_names[edi.kind]);
+			dctx.DumpNodeName(ret, edi.nd, 0);
+			ret.push('\n');
+		}
+	}
+	ret.push('}\n');
 	return <<ret;
 }
 //TODO: expand call, expand loop, diversify (expand phi), add entry point
