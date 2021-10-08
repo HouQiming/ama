@@ -40,24 +40,25 @@ ama::ExecNode*+[+]! ama::ExecSession::ComputeReachableSet(ama::ExecNode*+[...]! 
 }
 
 void! ama::ExecSession::AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_interest) {
-	uint8_t! kind = ama::EINTEREST_VAR;
+	uint8_t! kind = ama::N_REF;
 	char[|]! name = nd_interest.GetName();
 	if( nd_interest.node_class == ama::N_FUNCTION ) {
-		kind = ama::EINTEREST_FUNCTION;
+		kind = ama::N_FUNCTION;
 	} else {
 		assert(nd_interest.node_class == ama::N_REF);
 		if( nd_interest.Owner().node_class == ama::N_CLASS ) {
-			kind = ama::EINTEREST_FIELD;
+			kind = ama::N_DOT;
 		}
 	}
-	ama::Node*+! nd_lexical_scope = nd_interest.Owning(ama::N_SCOPE);
-	if( !nd_lexical_scope ) {
-		nd_lexical_scope = nd_interest.Root();
+	//Owning(ama::N_SCOPE)
+	ama::Node*+! nd_owner = nd_interest.Owner();
+	if( !nd_owner ) {
+		nd_owner = nd_interest.Root();
 	}
 	this.interests.push(new ama::ExecInterest!{
 		kind: kind,
 		nd_interest: nd_interest,
-		nd_lexical_scope: nd_lexical_scope,
+		nd_owner: nd_owner,
 		same_name_next: this.name_to_interest[name] - 1L
 	});
 	this.name_to_interest[name] = this.interests.length;
@@ -296,7 +297,9 @@ ama::ExecRange! NodeGraphContext::dfsCreateNodeGraph(NodeGraphContext*+! this, a
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					ama::ExecRange! rgi = this->dfsCreateNodeGraph(ndi);
 					if( ed_last ) {
-						this->sess.AddEdge(ed_last, rgi.entry);
+						if( ed_last.kind != ama::ENODE_JUMP ) {
+							this->sess.AddEdge(ed_last, rgi.entry);
+						}
 					} else {
 						ed_first = rgi.entry;
 					}
@@ -311,12 +314,16 @@ ama::ExecRange! NodeGraphContext::dfsCreateNodeGraph(NodeGraphContext*+! this, a
 					p_canon.ed_after = ed_after;
 				}
 				if( ed_last ) {
-					this->sess.AddEdge(ed_last, ed_after);
+					if( ed_last.kind != ama::ENODE_JUMP ) {
+						this->sess.AddEdge(ed_last, ed_after);
+					}
 				} else {
 					ed_first = ed_after;
 				}
 				p_canon.rg_canon = new ama::ExecRange!{entry: ed_first, exit: ed_after};
 				return new ama::ExecRange!{entry: ed_first, exit: ed_after};
+			} else if( nd.node_class == ama::N_SEMICOLON ) {
+				return this->dfsCreateNodeGraph(nd.c);
 			} else if( nd.tmp_flags & TMPF_CFG_MATTERS_FOR_INTEREST ) {
 				//a basic node could contain a branch inside: a=(foo&&bar?baz():0)
 				//thus the effects of a node should exclude its contained branches
@@ -336,7 +343,9 @@ ama::ExecRange! NodeGraphContext::dfsCreateNodeGraph(NodeGraphContext*+! this, a
 					for(ama::Node*+! ndi : non_basic_children) {
 						ama::ExecRange! rgi = this->dfsCreateNodeGraph(ndi);
 						this->sess.AddEdge(ed_fork, rgi.entry);
-						this->sess.AddEdge(rgi.exit, ed_join);
+						if( rgi.exit.kind != ama::ENODE_JUMP ) {
+							this->sess.AddEdge(rgi.exit, ed_join);
+						}
 					}
 					ama::ExecNode*+! ed_self = this->sess.CreateExecNode(ama::ENODE_NORMAL, nd);
 					this->sess.AddEdge(ed_join, ed_self);
@@ -346,7 +355,9 @@ ama::ExecRange! NodeGraphContext::dfsCreateNodeGraph(NodeGraphContext*+! this, a
 					//sess one is easy: just put non_basic_children[0] before nd
 					ama::ExecRange! rgi = this->dfsCreateNodeGraph(non_basic_children[0]);
 					ama::ExecNode*+! ed_self = this->sess.CreateExecNode(ama::ENODE_NORMAL, nd);
-					this->sess.AddEdge(rgi.exit, ed_self);
+					if( rgi.exit.kind != ama::ENODE_JUMP ) {
+						this->sess.AddEdge(rgi.exit, ed_self);
+					}
 					rgi.exit = ed_self;
 					this->sess.canonicals[nd].rg_canon = <<copy(rgi);
 					return <<copy(rgi);
@@ -379,7 +390,7 @@ ama::ExecRange! NodeGraphContext::dfsCreateNodeGraph(NodeGraphContext*+! this, a
 							ama::Node*+! nd_scope = nd_maybe_else.Find(ama::N_SCOPE, NULL);
 							if( nd_scope ) {
 								has_else = 1;
-								ama::ExecRange! rg_else = this->dfsCreateNodeGraph(nd.c.s);
+								ama::ExecRange! rg_else = this->dfsCreateNodeGraph(nd_scope);
 								this->sess.AddEdge(ed, rg_else.entry);
 								this->sess.AddEdge(rg_else.exit, ed_phi);
 							}
@@ -480,7 +491,7 @@ int! ama::ExecSession::CheckInterest(ama::ExecSession*+! this, ama::Node*+! ndi,
 			//COULDDO: more accurate name resolution for dot / function
 			//we can always rule out an effect later as impossible
 			int! couldbe_interest = 0;
-			if( this.interests[i].kind == ama::N_REF && ndi.node_class == ama::N_REF && this.interests[i].nd_lexical_scope.isAncestorOf(ndi) ) {
+			if( this.interests[i].kind == ama::N_REF && ndi.node_class == ama::N_REF && this.interests[i].nd_owner.isAncestorOf(ndi) ) {
 				couldbe_interest = 1;
 			} else if( this.interests[i].kind == ama::N_DOT && ndi.node_class == ama::N_DOT ) {
 				couldbe_interest = 1;
@@ -671,7 +682,11 @@ char[+]! ama::ExecSession::DumpGraphviz(ama::ExecSession*+! this) {
 		gctx.Generate(ed.nd);
 		ret.push(g_enode_names[ed.kind]);
 		dctx.DumpNodeName(ret, ed.nd, 0);
-		ret.push(' [label=', JSON.stringify(gctx.code), ',shape=', g_enode_shapes[ed.kind], ']\n');
+		ret.push(' [label=', JSON.stringify(gctx.code), ',shape=', g_enode_shapes[ed.kind]);
+		if( ed.flags & ama::ENODEF_FOLDED_CFG ) {
+			ret.push(',style=dashed');
+		}
+		ret.push(']\n');
 	}
 	//the edges
 	for(ama::ExecNode*&! ed : eds) {

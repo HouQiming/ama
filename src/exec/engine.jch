@@ -61,13 +61,10 @@ namespace ama {
 		ama::Node*! nd_interest;
 		ExecNode*! activation;
 	};////////////////////
-	const uint8_t! EINTEREST_VAR = 0;
-	const uint8_t! EINTEREST_FIELD = 1;
-	const uint8_t! EINTEREST_FUNCTION = 2;
 	class ExecInterest {
 		uint8_t! kind;
 		ama::Node*+! nd_interest;
-		ama::Node*+! nd_lexical_scope;
+		ama::Node*+! nd_owner;
 		intptr_t! same_name_next;
 	};
 	class ExecRange {
