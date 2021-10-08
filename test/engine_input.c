@@ -7,6 +7,11 @@ int main(){
 	}else{
 		y="else";
 	}
+	if(x>2){
+		y='unrelated then'
+	}else{
+		y="unrelated else";
+	}
 	x="after";
 	console.log(x);
 	return 0;

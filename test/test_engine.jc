@@ -17,12 +17,13 @@ int! main(int! argc, char**! argv) {
 	ama::Node*+! nd_root = ama::ParseCode(data.c_str(), JS_UNDEFINED);
 	ama::Node*+[+]! xs = nd_root.FindAll(ama::N_REF, "x");
 	ama::ExecSession! sess = ama::CreateSession(nd_root.Find(ama::N_FUNCTION, 'main'), xs.subarray(xs.length - 1));
-	fs.writeFileSync('/tmp/dump.dot', sess.DumpGraphviz());
-	system("dot -Tpdf /tmp/dump.dot > /tmp/dump.pdf");
 	/////////
 	ama::Node*+! nd_last_use = xs.back();
 	ama::ExecRange! rg = sess.LocateNode(nd_last_use);
+	rg.entry.flags |= ama::ENODEF_DUMP_ACTIVE;
 	//TODO: search backward... for declaration: N_TYPED_VAR
 	//TODO: effect resolution
+	fs.writeFileSync('/tmp/dump.dot', sess.DumpGraphviz());
+	system("dot -Tpdf /tmp/dump.dot > /tmp/dump.pdf");
 	return 0;
 }

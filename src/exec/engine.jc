@@ -39,6 +39,26 @@ ama::ExecNode*+[+]! ama::ExecSession::ComputeReachableSet(ama::ExecNode*+[...]! 
 	return <<Q;
 }
 
+///the full-statement range of an ENODE_PHI or ENODE_AFTER
+ama::ExecNode*+[+]! ama::ExecSession::ComputeStatementRangeBackward(ama::ExecNode*+! ed_exit) {
+	ama::ExecNode*+[+]! Q = new ama::ExecNode*+[+]!();
+	Map<ama::ExecNode*+, intptr_t>! inQ = new Map<ama::ExecNode*+, intptr_t>!();
+	Q.push_back(ed_exit);
+	inQ[ed_exit] = 1;
+	for(int! qi = 0; qi < Q.length; qi += 1) {
+		//stop at the statement start
+		if( qi > 0 && Q[qi].nd == ed_exit.nd ) { continue; }
+		for(ama::ExecNodeExtraLink*+! link = Q[qi].prev.more; link; link = link.x) {
+			ama::ExecNode*+! edi = link.target;
+			if( !inQ[edi] ) {
+				Q.push(edi);
+				inQ[edi] = 1;
+			}
+		}
+	}
+	return <<Q;
+}
+
 void! ama::ExecSession::AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_interest) {
 	uint8_t! kind = ama::N_REF;
 	char[|]! name = nd_interest.GetName();
@@ -55,6 +75,7 @@ void! ama::ExecSession::AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_in
 	if( !nd_owner ) {
 		nd_owner = nd_interest.Root();
 	}
+	//QueryEffects depends on same_name_next being strictly backward
 	this.interests.push(new ama::ExecInterest!{
 		kind: kind,
 		nd_interest: nd_interest,
@@ -458,7 +479,9 @@ ama::ExecRange! NodeGraphContext::dfsCreateNodeGraph(NodeGraphContext*+! this, a
 			ama::ExecNodeCanonicals*+! p_canon = &this->sess.canonicals[nd];
 			ed_after = p_canon.ed_after;
 			if( !ed_after ) {
-				ed_after = this->sess.CreateExecNode(ama::ENODE_AFTER, nd);
+				//we HAVE data divergence here, so the kind is PHI instead of AFTER
+				//we are also a goto target, so set ed_after
+				ed_after = this->sess.CreateExecNode(ama::ENODE_PHI, nd);
 				p_canon.ed_after = ed_after;
 			}
 			/////////////
@@ -483,6 +506,20 @@ ama::ExecRange! NodeGraphContext::dfsCreateNodeGraph(NodeGraphContext*+! this, a
 	return new ama::ExecRange!{entry: ed, exit: ed};
 }
 
+int! ama::ExecSession::MatchInterest(ama::ExecSession*! this, ama::Node*+! ndi, intptr_t! i) {
+	if( !(ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT) ) { return 0; }
+	int! couldbe_interest = 0;
+	if( this.interests[i].kind == ama::N_REF && ndi.node_class == ama::N_REF && this.interests[i].nd_owner.isAncestorOf(ndi) ) {
+		couldbe_interest = 1;
+	} else if( this.interests[i].kind == ama::N_DOT && ndi.node_class == ama::N_DOT ) {
+		couldbe_interest = 1;
+	} else if( this.interests[i].kind == ama::N_FUNCTION && ndi.p && ndi == ndi.p.c && ndi.p.node_class == ama::N_CALL ) {
+		//COULDDO: improve this
+		couldbe_interest = 1;
+	}
+	return couldbe_interest;
+}
+
 int! ama::ExecSession::CheckInterest(ama::ExecSession*+! this, ama::Node*+! ndi, ama::Node*+! nd_entry) {
 	int! ret = 0;
 	if( ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT ) {
@@ -490,16 +527,7 @@ int! ama::ExecSession::CheckInterest(ama::ExecSession*+! this, ama::Node*+! ndi,
 		for(intptr_t! i = first; i >= 0L; i = this.interests[i].same_name_next) {
 			//COULDDO: more accurate name resolution for dot / function
 			//we can always rule out an effect later as impossible
-			int! couldbe_interest = 0;
-			if( this.interests[i].kind == ama::N_REF && ndi.node_class == ama::N_REF && this.interests[i].nd_owner.isAncestorOf(ndi) ) {
-				couldbe_interest = 1;
-			} else if( this.interests[i].kind == ama::N_DOT && ndi.node_class == ama::N_DOT ) {
-				couldbe_interest = 1;
-			} else if( this.interests[i].kind == ama::N_FUNCTION && ndi.p && ndi == ndi.p.c && ndi.p.node_class == ama::N_CALL ) {
-				//COULDDO: improve this
-				couldbe_interest = 1;
-			}
-			if( couldbe_interest ) {
+			if( this.MatchInterest(ndi, i) ) {
 				//we got an interest, mark parents as to-expand
 				uint16_t! new_flags = TMPF_CONTAINS_INTEREST;
 				ama::Node*+! ndj_last = NULL;
@@ -613,13 +641,113 @@ ama::ExecRange! ama::ExecSession::LocateNode(ama::ExecSession*+! this, ama::Node
 	return <<rgi;
 }
 
+ama::ExecEffect*+! ama::ExecSession::QueryEffects(ama::ExecSession*+! this, ama::ExecNode*+! ed) {
+	ama::ExecNodeCanonicals*+! p_canon = &this->canonicals[ed.nd];
+	ama::ExecEffectList*+! pef = ed.kind == ama::ENODE_PHI || ed.kind == ama::ENODE_AFTER ? &p_canon.effects_after : &p_canon.effects;
+	if( pef.last_interest_checked < this.interests.length ) {
+		ama::Node*+! nd_activation = ed.nd;
+		switch( ed.kind ) {
+			case ama::ENODE_NORMAL: case ama::ENODE_FORK: case ama::ENODE_BRANCH: case ama::ENODE_LOOP: default: {
+				//check newly-added interests
+				for(ama::Node*+! ndi = nd_activation; ndi; ndi = ndi.PreorderNext(nd_activation)) {
+					if( ndi != nd_activation && (ndi.GetCFGRole() == ama::CFG_DECL || this.canonicals[ndi].rg_canon.entry) ) {
+						ndi = ndi.PreorderLastInside();
+						continue;
+					}
+					if( ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT ) {
+						intptr_t! first = this.name_to_interest[ndi.data] - 1L;
+						for(intptr_t! i = first; i >= pef.last_interest_checked; i = this.interests[i].same_name_next) {
+							if( this.MatchInterest(ndi, i) ) {
+								//new effect
+								ama::ExecEffect*+! new_effect = (ama::ExecEffect*+)(ama::poolAlloc(&this.pool, sizeof(ama::ExecEffect), EXEC_BLOCK_SIZE));
+								new_effect.interest_id = i;
+								new_effect.nd_alleged_ref = ndi;
+								new_effect.x = pef.first;
+								pef.first = new_effect;
+							}
+						}
+					}
+				}
+				break;
+			}
+			case ama::ENODE_PHI: {
+				//this is nd-cached! we must avoid ed ops! scan the statement instead
+				//auto eds_stmt=this.ComputeStatementRangeBackward(ed)
+				uint8_t[+]! affected = new uint8_t[+]!(this.interests.length - pef.last_interest_checked);
+				for(ama::Node*+! ndi = nd_activation; ndi; ndi = ndi.PreorderNext(nd_activation)) {
+					//we CANNOT skip already-cached, non-decl children here: they're exactly what we phi!
+					if( ndi != nd_activation && ndi.GetCFGRole() == ama::CFG_DECL ) {
+						ndi = ndi.PreorderLastInside();
+						continue;
+					}
+					//COULDDO: recurse
+					//if ndi!=nd_activation&&this.canonicals[ndi].rg_canon.entry:
+					if( ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT ) {
+						//console.log('lol',ndi.data)
+						intptr_t! first = this.name_to_interest[ndi.data] - 1L;
+						for(intptr_t! i = first; i >= pef.last_interest_checked; i = this.interests[i].same_name_next) {
+							if( this.MatchInterest(ndi, i) ) {
+								affected[i - pef.last_interest_checked] = 1;
+							}
+						}
+					}
+				}
+				//include each interest at most once
+				for(int! i = 0; i < affected.length; i += 1) {
+					if( affected[i] ) {
+						ama::ExecEffect*+! new_effect = (ama::ExecEffect*+)(ama::poolAlloc(&this.pool, sizeof(ama::ExecEffect), EXEC_BLOCK_SIZE));
+						new_effect.interest_id = pef.last_interest_checked + i;
+						//nd_alleged_ref is pointless for phi
+						new_effect.nd_alleged_ref = nd_activation;
+						new_effect.x = pef.first;
+						pef.first = new_effect;
+					}
+				}
+				break;
+			}
+			case ama::ENODE_AFTER: {
+				//destruction effects: declaration search
+				for(ama::Node*+! ndi = nd_activation; ndi; ndi = ndi.PreorderNext(nd_activation)) {
+					if( ndi != nd_activation && (ndi.GetCFGRole() == ama::CFG_DECL || this.canonicals[ndi].rg_canon.entry) ) {
+						ndi = ndi.PreorderLastInside();
+						continue;
+					}
+					if( ndi.node_class == ama::N_REF && (ndi.flags & ama::REF_WRITTEN) ) {
+						intptr_t! first = this.name_to_interest[ndi.data] - 1L;
+						for(intptr_t! i = first; i >= pef.last_interest_checked; i = this.interests[i].same_name_next) {
+							if( this.MatchInterest(ndi, i) ) {
+								//new effect
+								ama::ExecEffect*+! new_effect = (ama::ExecEffect*+)(ama::poolAlloc(&this.pool, sizeof(ama::ExecEffect), EXEC_BLOCK_SIZE));
+								new_effect.interest_id = i;
+								new_effect.nd_alleged_ref = ndi;
+								new_effect.x = pef.first;
+								pef.first = new_effect;
+							}
+						}
+					}
+				}
+				break;
+			}
+			case ama::ENODE_JUMP: case ama::ENODE_JOIN: {
+				//nothing to do
+				break;
+			}
+		}
+		pef.last_interest_checked = this.interests.length;
+	}
+	return pef.first;
+}
+
+////////////////////////////
 private char*![+]! g_superscript_digits = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
+private char*![+]! g_subscript_digits = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
 
 private class GraphvizDumpingContext {
 	ama::ExecSession*+! sess;
 	Map<ama::Node*+, intptr_t>! node_numbers;
 	intptr_t! cur_num;
 	ama::Node*+! nd_dumping;
+	Map<ama::Node*+, intptr_t>! node_interest_ids;
 	void! DumpNodeName(GraphvizDumpingContext*+! this, char[+]&+! code, ama::Node*+! nd, int! superscript);
 };
 
@@ -649,9 +777,16 @@ private int! GraphvizGenerateNode(ama::CodeGenerator*+! gctx, ama::Node*+! nd) {
 	}
 	if( nd.node_class == ama::N_SCOPE ) {
 		gctx.code.push('{...}');
-		return 1;
+	} else {
+		gctx.GenerateDefault(nd);
 	}
-	return 0;
+	intptr_t! interest_id = dctx.node_interest_ids[nd] - 1;
+	if( interest_id >= 0L ) {
+		for(auto ch : JSON.stringify(interest_id)) {
+			gctx.code.push(g_subscript_digits[ch - '0']);
+		}
+	}
+	return 1;
 }
 
 private char*![+]! g_enode_names = ['nd', 'after', 'fork', 'join', 'br', 'phi', 'jump', 'loop'];
@@ -673,11 +808,30 @@ char[+]! ama::ExecSession::DumpGraphviz(ama::ExecSession*+! this) {
 	gctx.opaque = &dctx;
 	gctx.hook = GraphvizGenerateNode;
 	gctx.tab_indent = 0;
-	for(ama::ExecNode*&! ed : eds) {
+	for(ama::ExecNode*+! ed : eds) {
 		dctx.nd_dumping = ed.nd;
+		dctx.node_interest_ids.clear();
+		//dump effects - QueryEffects is kinda a write accesss... which should be fine
+		//use node dumper styling
+		for(ama::ExecEffect*+! eff = this.QueryEffects(ed); eff; eff = eff.x) {
+			dctx.node_interest_ids[eff.nd_alleged_ref] = eff.interest_id + 1;
+		}
 		gctx.code.clear();
 		gctx.code.push(g_enode_names[ed.kind]);
 		dctx.DumpNodeName(gctx.code, ed.nd, 0);
+		int! has_interest = 0;
+		for(ama::ExecEffect*+! eff = this.QueryEffects(ed); eff; eff = eff.x) {
+			if( !has_interest ) {
+				has_interest = 1;
+				gctx.code.push(': [');
+			} else {
+				gctx.code.push(', ');
+			}
+			gctx.code.push(JSON.stringify(eff.interest_id));
+		}
+		if( has_interest ) {
+			gctx.code.push(']');
+		}
 		gctx.code.push('\n');
 		gctx.Generate(ed.nd);
 		ret.push(g_enode_names[ed.kind]);
@@ -685,6 +839,9 @@ char[+]! ama::ExecSession::DumpGraphviz(ama::ExecSession*+! this) {
 		ret.push(' [label=', JSON.stringify(gctx.code), ',shape=', g_enode_shapes[ed.kind]);
 		if( ed.flags & ama::ENODEF_FOLDED_CFG ) {
 			ret.push(',style=dashed');
+		}
+		if( ed.flags & ama::ENODEF_DUMP_ACTIVE ) {
+			ret.push(',color=red');
 		}
 		ret.push(']\n');
 	}
