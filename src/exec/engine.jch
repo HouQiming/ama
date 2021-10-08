@@ -26,8 +26,11 @@ namespace ama{
 		ExecNode*+ target
 		ExecNodeExtraLink*+ next
 	class ExecNodeLinks
-		ExecNode*+[2]! fast
+		//ExecNode*+[2]! fast
 		ExecNodeExtraLink*+ more
+		inline forEach(auto loop_body)
+			for(auto link=this.more;link;link=link.next)
+				loop_body(link.target)
 	class ExecNode
 		//break / continue / return could create a good deal of prevs
 		//a linked list is more easily managed in a pool
@@ -71,18 +74,20 @@ namespace ama{
 		ExecEffect*+ effect
 		ExecRange! rg_canon
 		ExecNode*+ ed_after
+		uint8_t in_session
 	const uint32_t UNCERTAIN_JUMP_TARGET=1
 	const uint32_t UNCERTAIN_FIELD_RESOLUTION=2
 	const uint32_t UNCERTAIN_FUNCTION_RESOLUTION=4
 	class ExecSession
 		TMemoryPool! pool
-		ExecNode*+ entry
+		ExecNode*+[+] entries
 		uint32_t uncertainty
 		//interests are lexical: we don't care which context they are in, we only care which code text they represent 
 		ExecInterest![+] interests
 		Map<char[|],intptr_t> name_to_interest
 		//COULDDO: put a generic void* into nodes? or cheap mempool-offset-based SxS storage
 		Map<Node*,ExecNodeCanonicals!> canonicals
+		Node*+[+] owners
 		void __done__()
 			poolRelease(&pool)
 }

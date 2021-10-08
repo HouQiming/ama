@@ -2,13 +2,28 @@
 #include './engine.jch'
 
 ExecSession! ama::CreateSession(Node* nd_entry,Node*+[...] interests){
-	//TODO: expand ifs containing interest right away? just rely on on-demand expansion for now
+	//remove the default entry / interest? that's just `new ExecSession!`
 	//the sole query to support is "lookup"
 	ret=new ExecSession!
 	for nd_interest in interests
 		ret.AddInterest(nd_interest)
-	ret.entry=ret.CreateNodeGraph(nd_entry)
+	auto ed=ret.CreateNodeGraph(nd_entry).entry
+	ret.entries.push_back(ed)
 	return <<ret
+}
+
+ExecNode*+[+] ExecSession::ComputeReachableSet(ExecNode*+[...] entries){
+	Q=new ExecNode*+[+]!
+	inQ=new Map<ExecNode*+,intptr_t>!
+	for ed in entries
+		Q.push_back(ed)
+		inQ[ed]=1
+	for qi=0:Q.n-1
+		for edi in Q[i].next
+			if !inQ[edi]:
+				Q.push(edi)
+				inQ[edi]=1
+	return <<Q
 }
 
 void ExecSession::AddInterest(Node* nd_interest){
@@ -30,7 +45,22 @@ void ExecSession::AddInterest(Node* nd_interest){
 		same_name_next:this.name_to_interest[name]-1L
 	})
 	this.name_to_interest[name]=this.interests.length
-	!? //TODO: recheck existing nodes: can we update the TMPF_CFG_MATTERS_FOR_INTEREST flag incrementally?
+	////////////
+	////do we want to keep the temp flags for too long?
+	//int changed=0
+	//for nd_owner in this.owners
+	//	for(ndi=nd_owner;ndi;ndi=ndi.PreorderNext(nd_owner))
+	//		if ndi!=nd_owner&&ndi.GetCFGRole()==CFG_DECL:
+	//			ndi=ndi.PreorderLastInside()
+	//			continue
+	//	changed|=this.CheckInterest(ndi)
+	//if !changed:return
+	////////////
+	for ed in this.ComputeReachableSet(this.entries)
+		if ed.flags&ENODEF_FOLDED_CFG:
+			rg_new=this.CreateNodeGraph(ed.nd)
+			if !(rg_new.entry.flags&ENODEF_FOLDED_CFG):
+				this.ReplaceNode(ed,<<copy(rg_new))
 }
 
 private void CollectLabels(Map<char[|],Node*+>&+! labels,Node* nd_entry){
@@ -66,19 +96,23 @@ ExecNode*+ ExecSession::CreateExecNode(uint8_t kind,Node*+ nd_exec){
 }
 
 void ExecSession::AddLinkTo(ExecNodeLinks*+ plinks,ExecNode*+ ed_target){
-	if !plinks.fast[0]:
-		plinks.fast[0]=ed_target
-		return
-	if !plinks.fast[1]:
-		plinks.fast[1]=plinks.fast[0]
-		plinks.fast[0]=ed_target
-		return
+	//if !plinks.fast[0]:
+	//	plinks.fast[0]=ed_target
+	//	return
+	//if !plinks.fast[1]:
+	//	plinks.fast[1]=plinks.fast[0]
+	//	plinks.fast[0]=ed_target
+	//	return
+	//ExecNodeExtraLink*+ new_link=poolAlloc(&this.pool, sizeof(ExecNodeExtraLink), EXEC_BLOCK_SIZE);
+	//new_link.target=plinks.fast[1]
+	//new_link.next=plinks.more
+	//plinks.more=new_link
+	//plinks.fast[1]=plinks.fast[0]
+	//plinks.fast[0]=ed_target
 	ExecNodeExtraLink*+ new_link=poolAlloc(&this.pool, sizeof(ExecNodeExtraLink), EXEC_BLOCK_SIZE);
-	new_link.target=plinks.fast[1]
+	new_link.target=ed_target
 	new_link.next=plinks.more
 	plinks.more=new_link
-	plinks.fast[1]=plinks.fast[0]
-	plinks.fast[0]=ed_target
 }
 
 void ExecSession::AddEdge(ExecNode*+ ed0,ExecNode*+ ed1){
@@ -86,6 +120,17 @@ void ExecSession::AddEdge(ExecNode*+ ed0,ExecNode*+ ed1){
 	//the caching mechanism shouldn't generate duplicate edges...
 	this.AddLinkTo(&ed0.next,ed1)
 	this.AddLinkTo(&ed1.prev,ed0)
+}
+
+void ExecSession::ReplaceNode(ExecNode*+ ed_old,ExecRange! rg_new){
+	for edi in ed_old.prev
+		for(link=edi.next.more;link;link=link.next)
+			if link.target==ed_old:
+				link.target=rg_new.entry
+	for edi in ed_old.next
+		for(link=edi.prev.more;link;link=link.next)
+			if link.target==ed_old:
+				link.target=rg_new.exit
 }
 
 private const uint16_t TMPF_CONTAINS_INTEREST=1u;
@@ -335,7 +380,41 @@ ExecRange! ExecSession::dfsCreateNodeGraph(NodeGraphContext*+ ngctx,Node*+ nd){
 	return new ExecRange{entry:ed,exit:ed}
 }
 
+int ExecSession::CheckInterest(Node*+ ndi)
+	ret=0
+	if ndi.node_class==N_REF||ndi.node_class==N_DOT:
+		first=this.name_to_interest[ndi.data]-1L
+		for(i=first;i>=0L;i=this.interests[i].same_name_next)
+			//COULDDO: more accurate name resolution for dot / function
+			//we can always rule out an effect later as impossible
+			auto couldbe_interest=0
+			if this.interests[i].kind==N_REF&&ndi.node_class==N_REF&&this.interests[i].nd_lexical_scope.isAncestorOf(ndi):
+				couldbe_interest=1
+			else if this.interests[i].kind==N_DOT&&ndi.node_class==N_DOT:
+				couldbe_interest=1
+			else if this.interests[i].kind==N_FUNCTION&&ndi.p&&ndi==ndi.p.c&&ndi.p.node_class==N_CALL:
+				//COULDDO: improve this
+				couldbe_interest=1
+			if couldbe_interest:
+				//we got an interest, mark parents as to-expand
+				auto new_flags=TMPF_CONTAINS_INTEREST
+				Node*+ ndj_last=NULL
+				for(ndj=ndi;ndj;ndj=ndj.p)
+					if ndj_last&&ndj.isChildCFGDependent(ndj_last)
+						new_flags|=TMPF_CFG_MATTERS_FOR_INTEREST
+					if (ndj.tmp_flags&new_flags)==new_flags:break
+					ndj.tmp_flags|=new_flags
+					ret=1
+					if ndj==nd_entry:break
+					ndj_last=ndj
+	return ret
+
 ExecRange! ExecSession::CreateNodeGraph(Node* nd_entry){
+	//put the owner in session
+	nd_owner=nd_entry.Owner()
+	if !this.canonicals[nd_owner].in_session
+		this.canonicals[nd_owner].in_session=1
+		this.owners.push_back(nd_owner)
 	ngctx=new NodeGraphContext!{
 		nd_entry:nd_entry
 	}
@@ -344,36 +423,10 @@ ExecRange! ExecSession::CreateNodeGraph(Node* nd_entry){
 			ndi=ndi.PreorderLastInside()
 			continue
 		//preorder means this initialization happens before we flag a parent as to-expand
-		ndi.tmp_flags&=~TMPF_CONTAINS_INTEREST
+		ndi.tmp_flags&=~(TMPF_CONTAINS_INTEREST|TMPF_CFG_MATTERS_FOR_INTEREST)
 		//if we see an interest, we need to expand parents
-		if ndi.node_class==N_REF||ndi.node_class==N_DOT:
-			!? //TODO: incrementalize this logic
-			first=this.name_to_interest[ndi.data]-1L
-			for(i=first;i>=0L;i=this.interests[i].same_name_next)
-				//COULDDO: more accurate name resolution for dot / function
-				//we can always rule out an effect later as impossible
-				uint8_t sure=SURE_NEVER
-				if this.interests[i].kind==N_REF&&ndi.node_class==N_REF&&this.interests[i].nd_lexical_scope.isAncestorOf(ndi):
-					sure=SURE_ALWAYS
-				else if this.interests[i].kind==N_DOT&&ndi.node_class==N_DOT:
-					this.uncertainty|=UNCERTAIN_FIELD_RESOLUTION
-					sure=SURE_MAYBE
-				else if this.interests[i].kind==N_FUNCTION&&ndi.p&&ndi==ndi.p.c&&ndi.p.node_class==N_CALL:
-					//COULDDO: improve this
-					this.uncertainty|=UNCERTAIN_FUNCTION_RESOLUTION
-					sure=SURE_MAYBE
-				if sure!=SURE_NEVER:
-					//we got an interest, mark parents as to-expand
-					auto new_flags=TMPF_CONTAINS_INTEREST
-					Node*+ ndj_last=NULL
-					for(ndj=ndi;ndj;ndj=ndj.p)
-						if ndj_last&&ndj.isChildCFGDependent(ndj_last)
-							new_flags|=TMPF_CFG_MATTERS_FOR_INTEREST
-						if (ndj.tmp_flags&new_flags)==new_flags:break
-						ndj.tmp_flags|=new_flags
-						if ndj==nd_entry:break
-						ndj_last=ndj
-		else if ndi.GetCFGRole()==CFG_JUMP:
+		this.CheckInterest(ndi)
+		if ndi.GetCFGRole()==CFG_JUMP:
 			//resolve jump target
 			//which may not always work, but we can mark unknown jumps as always interesting
 			ngctx.QueryJumpTarget(ndi)
