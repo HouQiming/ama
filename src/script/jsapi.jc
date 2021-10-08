@@ -259,16 +259,16 @@ namespace ama {
 		char[+]^+! file_data = fs.readFileSync(fn);
 		if( file_data == NULL ) {
 			console.error('unable to load', fn);
-			return PROCESS_AMA_NOT_FOUND;
+			return ama::PROCESS_AMA_NOT_FOUND;
 		}
 		char![+]! script_i = ama::FindAma(file_data);
 		if( extra_script.length ) {
 			script_i = <<JC::string_concat(extra_script, script_i);
 		}
 		if( !ama::RunScriptOnFile(script_i, fn, file_data.c_str()) ) {
-			return PROCESS_AMA_SCRIPT_FAILED;
+			return ama::PROCESS_AMA_SCRIPT_FAILED;
 		}
-		return PROCESS_AMA_SUCCESS;
+		return ama::PROCESS_AMA_SUCCESS;
 	}
 	private JSValueConst! JSProcessAmaFile(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		if( argc < 1 ) {

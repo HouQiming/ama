@@ -1,50 +1,63 @@
+// //// JC version: 3
+#include <console.jch>
 #include '../ast/node.jch'
 #include './engine.jch'
 
-ExecSession! ama::CreateSession(Node* nd_entry,Node*+[...] interests){
-	//remove the default entry / interest? that's just `new ExecSession!`
-	//the sole query to support is "lookup"
-	ret=new ExecSession!
-	for nd_interest in interests
-		ret.AddInterest(nd_interest)
-	auto ed=ret.CreateNodeGraph(nd_entry).entry
-	ret.entries.push_back(ed)
-	return <<ret
+namespace ama {
+	ama::ExecSession! CreateSession(ama::Node*+! nd_entry, ama::Node*+[...]! interests) {
+		//remove the default entry / interest? that's just `new ExecSession!`
+		//the sole query to support is "lookup"
+		ama::ExecSession! ret = new ama::ExecSession!();
+		for(ama::Node*+! nd_interest : interests) {
+			ret.AddInterest(nd_interest);
+		}
+		ama::ExecNode*+! ed = ret.CreateNodeGraph(nd_entry).entry;
+		ret.entries.push_back(ed);
+		return <<ret;
+	}
+};
+
+ama::ExecNode*+[+]! ama::ExecSession::ComputeReachableSet(ama::ExecNode*+[...]! entries) {
+	ama::ExecNode*+[+]! Q = new ama::ExecNode*+[+]!();
+	Map<ama::ExecNode*+, intptr_t>! inQ = new Map<ama::ExecNode*+, intptr_t>!();
+	for(ama::ExecNode*&+! ed : entries) {
+		Q.push_back(ed);
+		inQ[ed] = 1;
+	}
+	for(int! qi = 0; qi < Q.length; qi += 1) {
+		for(ama::ExecNodeExtraLink*+! link = Q[qi].next.more; link; link = link.x) {
+			ama::ExecNode*+! edi = link.target;
+			if( !inQ[edi] ) {
+				Q.push(edi);
+				inQ[edi] = 1;
+			}
+		}
+	}
+	return <<Q;
 }
 
-ExecNode*+[+] ExecSession::ComputeReachableSet(ExecNode*+[...] entries){
-	Q=new ExecNode*+[+]!
-	inQ=new Map<ExecNode*+,intptr_t>!
-	for ed in entries
-		Q.push_back(ed)
-		inQ[ed]=1
-	for qi=0:Q.n-1
-		for edi in Q[i].next
-			if !inQ[edi]:
-				Q.push(edi)
-				inQ[edi]=1
-	return <<Q
-}
-
-void ExecSession::AddInterest(Node* nd_interest){
-	kind=EINTEREST_VAR
-	name=nd_interest.GetName();
-	if nd_interest.node_class==N_FUNCTION:
-		kind=EINTEREST_FUNCTION
-	else
-		assert(nd_interest.node_class==N_REF)
-		if nd_interest.Owner().node_class==N_CLASS:
-			kind=EINTEREST_FIELD
-	nd_lexical_scope=nd_interest.Owning(N_SCOPE)
-	if !nd_lexical_scope:
-		nd_lexical_scope=nd_interest.Root()
-	this.interests.push(new ExecInterest{
-		kind:kind,
-		nd_interest:nd_interest,
-		nd_lexical_scope:nd_lexical_scope,
-		same_name_next:this.name_to_interest[name]-1L
-	})
-	this.name_to_interest[name]=this.interests.length
+void! ama::ExecSession::AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_interest) {
+	uint8_t! kind = ama::EINTEREST_VAR;
+	char[|]! name = nd_interest.GetName();
+	if( nd_interest.node_class == ama::N_FUNCTION ) {
+		kind = ama::EINTEREST_FUNCTION;
+	} else {
+		assert(nd_interest.node_class == ama::N_REF);
+		if( nd_interest.Owner().node_class == ama::N_CLASS ) {
+			kind = ama::EINTEREST_FIELD;
+		}
+	}
+	ama::Node*+! nd_lexical_scope = nd_interest.Owning(ama::N_SCOPE);
+	if( !nd_lexical_scope ) {
+		nd_lexical_scope = nd_interest.Root();
+	}
+	this.interests.push(new ama::ExecInterest!{
+		kind: kind,
+		nd_interest: nd_interest,
+		nd_lexical_scope: nd_lexical_scope,
+		same_name_next: this.name_to_interest[name] - 1L
+	});
+	this.name_to_interest[name] = this.interests.length;
 	////////////
 	////do we want to keep the temp flags for too long?
 	//int changed=0
@@ -56,46 +69,56 @@ void ExecSession::AddInterest(Node* nd_interest){
 	//	changed|=this.CheckInterest(ndi)
 	//if !changed:return
 	////////////
-	for ed in this.ComputeReachableSet(this.entries)
-		if ed.flags&ENODEF_FOLDED_CFG:
-			rg_new=this.CreateNodeGraph(ed.nd)
-			if !(rg_new.entry.flags&ENODEF_FOLDED_CFG):
-				this.ReplaceNode(ed,<<copy(rg_new))
+	for(ama::ExecNode*+! ed : this.ComputeReachableSet(this.entries)) {
+		if( ed.flags & ama::ENODEF_FOLDED_CFG ) {
+			ama::ExecRange! rg_new = this.CreateNodeGraph(ed.nd);
+			if( !(rg_new.entry.flags & ama::ENODEF_FOLDED_CFG) ) {
+				this.ReplaceNode(ed, <<copy(rg_new));
+			}
+		}
+	}
 }
 
-private void CollectLabels(Map<char[|],Node*+>&+! labels,Node* nd_entry){
-	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
-		if ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL:
-			ndi=ndi.PreorderLastInside()
-			continue
-		if ndi.node_class==N_LABELED&&ndi.c.node_class==N_REF&&!(ndi.p.node_class==N_RAW&&(ndi.p.flags&0xffff)):
+private void! CollectLabels(Map<char[|], ama::Node*+>&+! labels, ama::Node*+! nd_entry) {
+	for(ama::Node*+! ndi = nd_entry; ndi; ndi = ndi.PreorderNext(nd_entry)) {
+		if( ndi != nd_entry && ndi.GetCFGRole() == ama::CFG_DECL ) {
+			ndi = ndi.PreorderLastInside();
+			continue;
+		}
+		if( ndi.node_class == ama::N_LABELED && ndi.c.node_class == ama::N_REF && !(ndi.p.node_class == ama::N_RAW && (ndi.p.flags & 0xffff)) ) {
 			//jump to the label - it gets an ExecNode created, the "target" ndi.c.s doesn't
-			labels[ndi.data]=ndi
+			labels[ndi.data] = ndi;
+		}
+	}
 }
 
-
-private void CollectComputedLabels(Node*+[+]&+! addressed_labels,Map<char[|],Node*+>&+! labels,Node* nd_entry){
-	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
-		if ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL:
-			ndi=ndi.PreorderLastInside()
-			continue
-		if ndi.node_class==N_UNARY&&!(ndi.flags&UNARY_POSTFIX)&&ndi.data=='&&'&&ndi.c.node_class==N_REF:
-			nd_target=labels[ndi.c.data]
-			if nd_target:
-				addressed_labels.push_back(nd_target)
-	addressed_labels.sortby(nd=>intptr_t(nd))
-	addressed_labels.unique()
+private void! CollectComputedLabels(ama::Node*+[+]&+! addressed_labels, Map<char[|], ama::Node*+>&+! labels, ama::Node*+! nd_entry) {
+	for(ama::Node*+! ndi = nd_entry; ndi; ndi = ndi.PreorderNext(nd_entry)) {
+		if( ndi != nd_entry && ndi.GetCFGRole() == ama::CFG_DECL ) {
+			ndi = ndi.PreorderLastInside();
+			continue;
+		}
+		if( ndi.node_class == ama::N_UNARY && !(ndi.flags & ama::UNARY_POSTFIX) && ndi.data == '&&' && ndi.c.node_class == ama::N_REF ) {
+			ama::Node*+! nd_target = labels[ndi.c.data];
+			if( nd_target ) {
+				addressed_labels.push_back(nd_target);
+			}
+		}
+	}
+	addressed_labels.sortby(inline(auto nd):intptr_t! { return intptr_t(nd); });
+	addressed_labels.unique();
 }
 
-private const intptr_t EXEC_BLOCK_SIZE=65536L-64L
-ExecNode*+ ExecSession::CreateExecNode(uint8_t kind,Node*+ nd_exec){
-	ExecNode*+ ret=poolAlloc(&this.pool, sizeof(ExecNode), EXEC_BLOCK_SIZE);
-	ret.kind=kind
-	ret.nd_exec=nd_exec
-	return ret
+private const intptr_t! EXEC_BLOCK_SIZE = 65536L - 64L;
+
+ama::ExecNode*+! ama::ExecSession::CreateExecNode(ama::ExecSession*+! this, uint8_t! kind, ama::Node*+! nd_exec) {
+	ama::ExecNode*+! ret = (ama::ExecNode*+)(ama::poolAlloc(&this.pool, sizeof(ama::ExecNode), EXEC_BLOCK_SIZE));
+	ret.kind = kind;
+	ret.nd = nd_exec;
+	return ret;
 }
 
-void ExecSession::AddLinkTo(ExecNodeLinks*+ plinks,ExecNode*+ ed_target){
+void! ama::ExecSession::AddLinkTo(ama::ExecSession*+! this, ama::ExecNodeLinks*+! plinks, ama::ExecNode*+! ed_target) {
 	//if !plinks.fast[0]:
 	//	plinks.fast[0]=ed_target
 	//	return
@@ -105,376 +128,460 @@ void ExecSession::AddLinkTo(ExecNodeLinks*+ plinks,ExecNode*+ ed_target){
 	//	return
 	//ExecNodeExtraLink*+ new_link=poolAlloc(&this.pool, sizeof(ExecNodeExtraLink), EXEC_BLOCK_SIZE);
 	//new_link.target=plinks.fast[1]
-	//new_link.next=plinks.more
+	//new_link.x=plinks.more
 	//plinks.more=new_link
 	//plinks.fast[1]=plinks.fast[0]
 	//plinks.fast[0]=ed_target
-	ExecNodeExtraLink*+ new_link=poolAlloc(&this.pool, sizeof(ExecNodeExtraLink), EXEC_BLOCK_SIZE);
-	new_link.target=ed_target
-	new_link.next=plinks.more
-	plinks.more=new_link
+	ama::ExecNodeExtraLink*+! new_link = (ama::ExecNodeExtraLink*+)(ama::poolAlloc(&this.pool, sizeof(ama::ExecNodeExtraLink), EXEC_BLOCK_SIZE));
+	new_link.target = ed_target;
+	new_link.x = plinks.more;
+	plinks.more = new_link;
 }
 
-void ExecSession::AddEdge(ExecNode*+ ed0,ExecNode*+ ed1){
+void! ama::ExecSession::AddEdge(ama::ExecSession*+! this, ama::ExecNode*+! ed0, ama::ExecNode*+! ed1) {
 	//COULDDO: check for existing edge
 	//the caching mechanism shouldn't generate duplicate edges...
-	this.AddLinkTo(&ed0.next,ed1)
-	this.AddLinkTo(&ed1.prev,ed0)
+	this.AddLinkTo(&ed0.next, ed1);
+	this.AddLinkTo(&ed1.prev, ed0);
 }
 
-void ExecSession::ReplaceNode(ExecNode*+ ed_old,ExecRange! rg_new){
-	for edi in ed_old.prev
-		for(link=edi.next.more;link;link=link.next)
-			if link.target==ed_old:
-				link.target=rg_new.entry
-	for edi in ed_old.next
-		for(link=edi.prev.more;link;link=link.next)
-			if link.target==ed_old:
-				link.target=rg_new.exit
+void! ama::ExecSession::ReplaceNode(ama::ExecNode*+! ed_old, ama::ExecRange! rg_new) {
+	for(ama::ExecNodeExtraLink*+! link0 = ed_old.prev.more; link0; link0 = link0.x) {
+		for(ama::ExecNodeExtraLink*+! link = link0.target.next.more; link; link = link.x) {
+			if( link.target == ed_old ) {
+				link.target = rg_new.entry;
+			}
+		}
+	}
+	for(ama::ExecNodeExtraLink*+! link0 = ed_old.next.more; link0; link0 = link0.x) {
+		for(ama::ExecNodeExtraLink*+! link = link0.target.prev.more; link; link = link.x) {
+			if( link.target == ed_old ) {
+				link.target = rg_new.entry;
+			}
+		}
+	}
 }
 
-private const uint16_t TMPF_CONTAINS_INTEREST=1u;
-private const uint16_t TMPF_CFG_MATTERS_FOR_INTEREST=2u;
-private const int32_t JSCOPE_PARENT_DECL=1;
-private const int32_t JSCOPE_PARENT_SWITCH=2;
-private const int32_t JSCOPE_PARENT_LOOP=4;
+private const uint16_t! TMPF_CONTAINS_INTEREST = 1u;
+private const uint16_t! TMPF_CFG_MATTERS_FOR_INTEREST = 2u;
+private const int32_t! JSCOPE_PARENT_DECL = 1;
+private const int32_t! JSCOPE_PARENT_SWITCH = 2;
+private const int32_t! JSCOPE_PARENT_LOOP = 4;
 
-private class NodeGraphContext
-	//the cache is mainly for goto labels
-	Node*+ nd_entry=NULL
-	labels_collected=0
-	labels=new Map<char[|],Node*+>
-	addressed_labels=new Node*+[+]
-	jump_targets=new Map<Node*+,Node*+>
-	jump_jobs=new ExecNode*+[+]
-	Node*+ QueryJumpTarget(Node*+ ndi)
-		assert(ndi.node_class==N_KEYWORD_STATEMENT)
-		Node*+ nd_target=jump_targets[ndi]
-		if nd_target:return nd_target
-		if ndi.data=='goto'||(ndi.data=='break'||ndi.data=='continue')&&ndi.c&&ndi.c.node_class==N_REF:
-			//collect labels lazily if we see goto
-			if !labels_collected:
-				labels_collected=1
-				CollectLabels(labels,nd_entry.Onwer())
-			if ndi.c&&ndi.c.node_class==N_REF:
-				nd_target=labels[ndi.c.data]
-				if ndi.data!='goto'&&nd_target:
-					//were labeled break / continue to fail, we try the normal logic
-					nd_target=nd_target.Find(N_SCOPE,NULL)
-			else
-				//computed goto
-				this.uncertainty|=UNCERTAIN_JUMP_TARGET
-				if labels_collected<2:
-					labels_collected=2
-					CollectComputedLabels(addressed_labels,labels,nd_entry.Onwer())
-		if !nd_target&&ndi.data!='goto':
-			//break / continue / return: there is no target node
-			//we only need common ancestor and target execution node... point to the loop / function scope
-			//all jumps can use the _AFTER positioning
-			parent_mode=JSCOPE_PARENT_DECL
-			if ndi.data=='return'||ndi.data=='throw':
-				//do nothing
-			else
-				parent_mode|=JSCOPE_PARENT_LOOP
-				if ndi.data=='break':
-					parent_mode|=JSCOPE_PARENT_SWITCH
-				else
-					assert(ndi.data=='continue')
-			for(ndj=ndi;ndj;ndj=ndj.p)
-				if ndj.node_class!=N_SCOPE:continue
-				//take the outer-most scope if we can't find a correct one
-				nd_target=ndj
-				nd_parent=ndj.p
-				if nd_parent:break
-				if ndj==nd_entry:break
-				auto parent_role=nd_parent.GetCFGRole()
-				if (parent_mode&JSCOPE_PARENT_DECL)&&parent_role==CFG_DECL:break
-				if (parent_mode&JSCOPE_PARENT_LOOP)&&parent_role==CFG_LOOP:
-					if ndi.data=='break':
-						nd_target=nd_parent
-					break
-				if (parent_mode&JSCOPE_PARENT_SWITCH)&&nd_parent.node_class==N_SCOPED_STATEMENT&&nd_parent.data=='switch':
-					break
-		if !nd_target:
-			//assume nop-jump
-			nd_target=ndi
-		jump_targets[ndi]=nd_target
-		return nd_target
+ama::Node*+! ama::NodeGraphContext::QueryJumpTarget(ama::NodeGraphContext*+! this, ama::Node*+! ndi) {
+	assert(ndi.node_class == ama::N_KEYWORD_STATEMENT);
+	ama::Node*+! nd_target = this->jump_targets[ndi];
+	if( nd_target ) { return nd_target; }
+	if( ndi.data == 'goto' || ((ndi.data == 'break' || ndi.data == 'continue') && ndi.c && ndi.c.node_class == ama::N_REF) ) {
+		//collect labels lazily if we see goto
+		if( !this->labels_collected ) {
+			this->labels_collected = 1;
+			CollectLabels(this->labels, this->nd_entry.Owner());
+		}
+		if( ndi.c && ndi.c.node_class == ama::N_REF ) {
+			nd_target = this->labels[ndi.c.data];
+			if( ndi.data != 'goto' && nd_target ) {
+				//were labeled break / continue to fail, we try the normal logic
+				nd_target = nd_target.Find(ama::N_SCOPE, NULL);
+			}
+		} else {
+			//computed goto
+			//this.uncertainty |= ama::UNCERTAIN_JUMP_TARGET;
+			if( this->labels_collected < 2 ) {
+				this->labels_collected = 2;
+				CollectComputedLabels(this->addressed_labels, this->labels, this->nd_entry.Owner());
+			}
+		}
+	}
+	if( !nd_target && ndi.data != 'goto' ) {
+		//break / continue / return: there is no target node
+		//we only need common ancestor and target execution node... point to the loop / function scope
+		//all jumps can use the _AFTER positioning
+		int32_t! parent_mode = JSCOPE_PARENT_DECL;
+		if( ndi.data == 'return' || ndi.data == 'throw' ) {
+			//do nothing
+		} else {
+			parent_mode |= JSCOPE_PARENT_LOOP;
+			if( ndi.data == 'break' ) {
+				parent_mode |= JSCOPE_PARENT_SWITCH;
+			} else {
+				assert(ndi.data == 'continue');
+			}
+		}
+		for(ama::Node*+! ndj = ndi; ndj; ndj = ndj.p) {
+			if( ndj.node_class != ama::N_SCOPE ) { continue; }
+			//take the outer-most scope if we can't find a correct one
+			nd_target = ndj;
+			ama::Node*+! nd_parent = ndj.p;
+			if( nd_parent ) { break; }
+			if( ndj == this->nd_entry ) { break; }
+			uint8_t! parent_role = nd_parent.GetCFGRole();
+			if( (parent_mode & JSCOPE_PARENT_DECL) && parent_role == ama::CFG_DECL ) { break; }
+			if( (parent_mode & JSCOPE_PARENT_LOOP) && parent_role == ama::CFG_LOOP ) {
+				if( ndi.data == 'break' ) {
+					nd_target = nd_parent;
+				}
+				break;
+			}
+			if( (parent_mode & JSCOPE_PARENT_SWITCH) && nd_parent.node_class == ama::N_SCOPED_STATEMENT && nd_parent.data == 'switch' ) {
+				break;
+			}
+		}
+	}
+	if( !nd_target ) {
+		//assume nop-jump
+		nd_target = ndi;
+	}
+	this->jump_targets[ndi] = nd_target;
+	return nd_target;
+}
 
 ///dfsCreateNodeGraph relies on CreateNodeGraph for temp flag setting
-ExecRange! ExecSession::dfsCreateNodeGraph(NodeGraphContext*+ ngctx,Node*+ nd){
-	ExecRange! rg_canon=<<copy(this.canonicals[nd].rg_canon)
-	if rg_canon.entry:return <<copy(rg_canon)
-	uint16_t flags=0
-	role=nd.GetCFGRole();
+ama::ExecRange! ama::ExecSession::dfsCreateNodeGraph(ama::ExecSession*+! this, ama::NodeGraphContext*+! ngctx, ama::Node*+! nd) {
+	ama::ExecRange! rg_canon = <<copy(this.canonicals[nd].rg_canon);
+	if( rg_canon.entry ) { return <<copy(rg_canon); }
+	uint16_t! flags = 0;
+	uint8_t! role = nd.GetCFGRole();
 	//nd_entry could be anything: we may end up calling this expanding some other node
-	switch role{
-	default:
-		assert(0);
-		break
-	case CFG_DECL:
-		if nd==ngctx.nd_entry:
-			//get into nd_entry no matter what
-			ed_enter=this.CreateExecNode(ENODE_NORMAL,nd)
-			auto nd_scope=nd.Find(N_SCOPE,NULL)
-			if nd_scope:
-				ExecRange! rg_scope=dfsCreateNodeGraph(ngctx,nd_scope)
-				this.AddEdge(rg_scope.exit,ed_scope)
-				rg_scope.exit=ed_scope
-				this.canonicals[nd].rg_canon=<<copy(rg_scope)
-				return <<copy(rg_scope)
-		//otherwise, simply ignore: create a dumb node
-		break 
-	case CFG_BASIC:
-		if nd.node_class==N_SCOPE:
-			ExecNode*+ ed_last=NULL
-			ExecNode*+ ed_first=NULL
-			for(auto ndi=nd.c;ndi;ndi=ndi.s)
-				ExecRange! rgi=this.dfsCreateNodeGraph(ngctx,ndi)
-				if ed_last:
-					this.AddEdge(ed_last,rgi.entry)
-				else
-					ed_first=rgi.entry
-				ed_last=rgi.exit
-			//create the end-of-scope node
-			ExecNode*+ ed_after=NULL
-			ExecNodeCanonicals*+ p_canon=&this.canonicals[nd]
-			ed_after=p_canon.ed_after
-			if !ed_after:
-				ed_after=this.CreateExecNode(ENODE_AFTER,nd)
-				p_canon.ed_after=ed_after
-			if ed_last:
-				this.AddEdge(ed_last,ed_after)
-			else
-				ed_first=ed_after
-			p_canon.rg_canon=new ExecRange{entry:ed_first,exit:ed_after}
-			return new ExecRange{entry:ed_first,exit:ed_after}
-		else if nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST:
-			//a basic node could contain a branch inside: a=(foo&&bar?baz():0)
-			//thus the effects of a node should exclude its contained branches
-			Node*+[+] non_basic_children
-			for(auto ndi=nd;ndi;ndi=ndi.PreorderNext(nd))
-				role_i=ndi.GetCFGRole();
-				if role_i!=CFG_BASIC:
-					non_basic_children.push_back(ndi)
-					ndi=ndi.PreorderLastInside()
-					continue
-			if non_basic_children.length>1:
-				//use fork / join to represent non-deterministic order
-				auto ed_fork=this.CreateExecNode(ENODE_FORK,nd)
-				auto ed_join=this.CreateExecNode(ENODE_JOIN,nd)
-				for ndi in non_basic_children
-					ExecRange! rgi=this.dfsCreateNodeGraph(ngctx,ndi)
-					this.AddEdge(ed_fork,rgi.entry)
-					this.AddEdge(rgi.exit,ed_join)
-				auto ed_self=this.CreateExecNode(ENODE_NORMAL,nd)
-				this.AddEdge(ed_join,ed_self)
-				this.canonicals[nd].rg_canon=new ExecRange{entry:ed_fork,exit:ed_self}
-				return new ExecRange{entry:ed_fork,exit:ed_self}
-			else if non_basic_children.length==1:
-				//this one is easy: just put non_basic_children[0] before nd
-				ExecRange! rgi=this.dfsCreateNodeGraph(ngctx,non_basic_children[0])
-				auto ed_self=this.CreateExecNode(ENODE_NORMAL,nd)
-				this.AddEdge(rgi.exit,ed_self)
-				rgi.exit=ed_self
-				this.canonicals[nd].rg_canon=<<copy(rgi)
-				return <<copy(rgi)
-		//otherwise, create a dumb node
-		break;
-	case CFG_JUMP:
-		ExecNode*+ ed=this.CreateExecNode(ENODE_NORMAL,nd)
-		ngctx.jump_jobs.push(ed)
-		this.canonicals[nd].rg_canon=new ExecRange{entry:ed,exit:ed}
-		return new ExecRange{entry:ed,exit:ed}
-	case CFG_BRANCH:
-		if !(nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
-			flags=ENODEF_FOLDED_CFG
-			break
-		ExecNode*+ ed=this.CreateExecNode(ENODE_BRANCH,nd)
-		ExecNode*+ ed_phi=this.CreateExecNode(ENODE_PHI,nd)
-		if nd.node_class==N_SCOPED_STATEMENT:
-			has_else=0
-			if nd.data=='if':
-				ExecRange! rg_yes=this.dfsCreateNodeGraph(ngctx,nd.c.s)
-				this.AddEdge(ed,rg_yes.entry)
-				this.AddEdge(rg_yes.exit,ed_phi)
-				for(nd_maybe_else=nd.c.s.s;nd_maybe_else;nd_maybe_else=nd_maybe_else.s)
-					if nd_maybe_else&&nd_maybe_else.node_class==N_EXTENSION_CLAUSE&&(nd_maybe_else.data=='else'||nd_maybe_else.data=='elif'):
-						auto nd_scope=nd_maybe_else.Find(N_SCOPE,NULL)
-						if nd_scope:
-							has_else=1
-							ExecRange! rg_else=this.dfsCreateNodeGraph(ngctx,nd.c.s)
-							this.AddEdge(ed,rg_else.entry)
-							this.AddEdge(rg_else.exit,ed_phi)
-			else if nd.data=='switch':
-				//populate the cache first
-				auto nd_scope=nd.c.s
-				ExecRange! rg_inside=this.dfsCreateNodeGraph(ngctx,nd_scope)
-				for(auto ndi=nd_scope;ndi;ndi=ndi.PreorderNext(nd_scope))
-					//search for cases / default: they could be inside arbitrary language constructs
-					if ndi.GetCFGRole()==CFG_DECL||ndi.node_class==N_SCOPED_STATEMENT&&ndi.data=='switch':
-						//except another switch or a declaration
-						ndi=ndi.PreorderLastInside()
-						continue
-					if ndi.node_class==N_LABELED&&(ndi.c.node_class==N_RAW&&ndi.c.c&&ndi.c.c.isRef('case')||ndi.c.isRef('default')):
-						//should be cached
-						ExecRange! rg_case=this.dfsCreateNodeGraph(ngctx,ndi)
-						this.AddEdge(ed,rg_case.entry)
-						this.AddEdge(rg_case.exit,ed_phi)
-						if ndi.c.isRef('default'):
-							has_else=1
-			else
-				console.error('panic: unrecognized branch statement:')
-				console.error(nd.toSource())
-				abort()
-			if !has_else:
-				//we could end up not-executing any of the included scopes
-				this.AddEdge(ed,ed_phi)
-		else if nd.node_class==N_CONDITIONAL:
-			ExecRange! rg_yes=this.dfsCreateNodeGraph(ngctx,nd.c.s)
-			ExecRange! rg_no=this.dfsCreateNodeGraph(ngctx,nd.c.s.s)
-			this.AddEdge(ed,rg_yes.entry)
-			this.AddEdge(rg_yes.exit,ed_phi)
-			this.AddEdge(ed,rg_no.entry)
-			this.AddEdge(rg_no.exit,ed_phi)
-		else if nd.node_class==N_BINOP:
-			//&& ||
-			ExecRange! rg_yes=this.dfsCreateNodeGraph(ngctx,nd.c.s)
-			this.AddEdge(ed,rg_yes.entry)
-			this.AddEdge(rg_yes.exit,ed_phi)
-			this.AddEdge(ed,ed_phi)
-		else
-			console.error('panic: unrecognized branch statement class:')
-			console.error(nd.toSource())
-			abort()
-		this.canonicals[nd].rg_canon=new ExecRange{entry:ed,exit:ed_phi}
-		return new ExecRange{entry:ed,exit:ed_phi}
-	case CFG_LOOP:
-		if !(nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
-			flags=ENODEF_FOLDED_CFG
-			break
-		assert(nd.node_class==N_SCOPED_STATEMENT)
-		ExecNode*+ ed_after=NULL
-		ExecNodeCanonicals*+ p_canon=&this.canonicals[nd]
-		ed_after=p_canon.ed_after
-		if !ed_after:
-			ed_after=this.CreateExecNode(ENODE_AFTER,nd)
-			p_canon.ed_after=ed_after
-		/////////////
-		auto nd_scope=nd.c.s
-		ExecRange! rg_scope=dfsCreateNodeGraph(ngctx,nd_scope)
-		this.AddEdge(ed,rg_scope.entry)
-		if nd.data!='do':
-			//could skip
-			this.AddEdge(ed,ed_after)
-		//rg_scope.exit should be the N_SCOPE's ed_after
-		this.AddEdge(rg_scope.exit,rg_scope.entry)
-		this.AddEdge(rg_scope.exit,ed_after)
-		p_canon.rg_canon=new ExecRange{entry:ed,exit:ed_after}
-		return new ExecRange{entry:ed,exit:ed_after}
+	switch( role ) {
+		default: {
+			assert(0);
+			break;
+		}
+		case ama::CFG_DECL: {
+			if( nd == ngctx.nd_entry ) {
+				//get into nd_entry no matter what
+				ama::Node*+! nd_scope = nd.Find(ama::N_SCOPE, NULL);
+				if( nd_scope ) {
+					ama::ExecNode*+! ed_enter = this.CreateExecNode(ama::ENODE_NORMAL, nd);
+					ama::ExecNode*+! ed_after = NULL;
+					ama::ExecNodeCanonicals*+! p_canon = &this.canonicals[nd];
+					ed_after = p_canon.ed_after;
+					if( !ed_after ) {
+						ed_after = this.CreateExecNode(ama::ENODE_AFTER, nd);
+						p_canon.ed_after = ed_after;
+					}
+					ama::ExecRange! rg_scope = this->dfsCreateNodeGraph(ngctx, nd_scope);
+					this.AddEdge(ed_enter, rg_scope.entry);
+					this.AddEdge(rg_scope.exit, ed_after);
+					rg_scope.entry = ed_enter;
+					rg_scope.exit = ed_after;
+					p_canon.rg_canon = <<copy(rg_scope);
+					return <<copy(rg_scope);
+				}
+			}
+			//otherwise, simply ignore: create a dumb node
+			break;
+		}
+		case ama::CFG_BASIC: {
+			if( nd.node_class == ama::N_SCOPE ) {
+				ama::ExecNode*+! ed_last = NULL;
+				ama::ExecNode*+! ed_first = NULL;
+				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+					ama::ExecRange! rgi = this.dfsCreateNodeGraph(ngctx, ndi);
+					if( ed_last ) {
+						this.AddEdge(ed_last, rgi.entry);
+					} else {
+						ed_first = rgi.entry;
+					}
+					ed_last = rgi.exit;
+				}
+				//create the end-of-scope node
+				ama::ExecNode*+! ed_after = NULL;
+				ama::ExecNodeCanonicals*+! p_canon = &this.canonicals[nd];
+				ed_after = p_canon.ed_after;
+				if( !ed_after ) {
+					ed_after = this.CreateExecNode(ama::ENODE_AFTER, nd);
+					p_canon.ed_after = ed_after;
+				}
+				if( ed_last ) {
+					this.AddEdge(ed_last, ed_after);
+				} else {
+					ed_first = ed_after;
+				}
+				p_canon.rg_canon = new ama::ExecRange!{entry: ed_first, exit: ed_after};
+				return new ama::ExecRange!{entry: ed_first, exit: ed_after};
+			} else if( nd.tmp_flags & TMPF_CFG_MATTERS_FOR_INTEREST ) {
+				//a basic node could contain a branch inside: a=(foo&&bar?baz():0)
+				//thus the effects of a node should exclude its contained branches
+				ama::Node*+[+]! non_basic_children;
+				for(ama::Node*+! ndi = nd; ndi; ndi = ndi.PreorderNext(nd)) {
+					uint8_t! role_i = ndi.GetCFGRole();
+					if( role_i != ama::CFG_BASIC ) {
+						non_basic_children.push_back(ndi);
+						ndi = ndi.PreorderLastInside();
+						continue;
+					}
+				}
+				if( non_basic_children.length > 1 ) {
+					//use fork / join to represent non-deterministic order
+					ama::ExecNode*+! ed_fork = this.CreateExecNode(ama::ENODE_FORK, nd);
+					ama::ExecNode*+! ed_join = this.CreateExecNode(ama::ENODE_JOIN, nd);
+					for(ama::Node*+! ndi : non_basic_children) {
+						ama::ExecRange! rgi = this.dfsCreateNodeGraph(ngctx, ndi);
+						this.AddEdge(ed_fork, rgi.entry);
+						this.AddEdge(rgi.exit, ed_join);
+					}
+					ama::ExecNode*+! ed_self = this.CreateExecNode(ama::ENODE_NORMAL, nd);
+					this.AddEdge(ed_join, ed_self);
+					this.canonicals[nd].rg_canon = new ama::ExecRange!{entry: ed_fork, exit: ed_self};
+					return new ama::ExecRange!{entry: ed_fork, exit: ed_self};
+				} else if( non_basic_children.length == 1 ) {
+					//this one is easy: just put non_basic_children[0] before nd
+					ama::ExecRange! rgi = this.dfsCreateNodeGraph(ngctx, non_basic_children[0]);
+					ama::ExecNode*+! ed_self = this.CreateExecNode(ama::ENODE_NORMAL, nd);
+					this.AddEdge(rgi.exit, ed_self);
+					rgi.exit = ed_self;
+					this.canonicals[nd].rg_canon = <<copy(rgi);
+					return <<copy(rgi);
+				}
+			}
+			//otherwise, create a dumb node
+			break;
+		}
+		case ama::CFG_JUMP: {
+			ama::ExecNode*+! ed = this.CreateExecNode(ama::ENODE_NORMAL, nd);
+			ngctx.jump_jobs.push(ed);
+			this.canonicals[nd].rg_canon = new ama::ExecRange!{entry: ed, exit: ed};
+			return new ama::ExecRange!{entry: ed, exit: ed};
+		}
+		case ama::CFG_BRANCH: {
+			if( !(nd.tmp_flags & TMPF_CFG_MATTERS_FOR_INTEREST) ) {
+				flags = ama::ENODEF_FOLDED_CFG;
+				break;
+			}
+			ama::ExecNode*+! ed = this.CreateExecNode(ama::ENODE_BRANCH, nd);
+			ama::ExecNode*+! ed_phi = this.CreateExecNode(ama::ENODE_PHI, nd);
+			if( nd.node_class == ama::N_SCOPED_STATEMENT ) {
+				int! has_else = 0;
+				if( nd.data == 'if' ) {
+					ama::ExecRange! rg_yes = this.dfsCreateNodeGraph(ngctx, nd.c.s);
+					this.AddEdge(ed, rg_yes.entry);
+					this.AddEdge(rg_yes.exit, ed_phi);
+					for(ama::Node*+! nd_maybe_else = nd.c.s.s; nd_maybe_else; nd_maybe_else = nd_maybe_else.s) {
+						if( nd_maybe_else && nd_maybe_else.node_class == ama::N_EXTENSION_CLAUSE && (nd_maybe_else.data == 'else' || nd_maybe_else.data == 'elif') ) {
+							ama::Node*+! nd_scope = nd_maybe_else.Find(ama::N_SCOPE, NULL);
+							if( nd_scope ) {
+								has_else = 1;
+								ama::ExecRange! rg_else = this.dfsCreateNodeGraph(ngctx, nd.c.s);
+								this.AddEdge(ed, rg_else.entry);
+								this.AddEdge(rg_else.exit, ed_phi);
+							}
+						}
+					}
+				} else if( nd.data == 'switch' ) {
+					//populate the cache first
+					ama::Node*+! nd_scope = nd.c.s;
+					ama::ExecRange! rg_inside = this.dfsCreateNodeGraph(ngctx, nd_scope);
+					for(ama::Node*+! ndi = nd_scope; ndi; ndi = ndi.PreorderNext(nd_scope)) {
+						//search for cases / default: they could be inside arbitrary language constructs
+						if( ndi.GetCFGRole() == ama::CFG_DECL || (ndi.node_class == ama::N_SCOPED_STATEMENT && ndi.data == 'switch') ) {
+							//except another switch or a declaration
+							ndi = ndi.PreorderLastInside();
+							continue;
+						}
+						if( ndi.node_class == ama::N_LABELED && ((ndi.c.node_class == ama::N_RAW && ndi.c.c && ndi.c.c.isRef('case')) || ndi.c.isRef('default')) ) {
+							//should be cached
+							ama::ExecRange! rg_case = this.dfsCreateNodeGraph(ngctx, ndi);
+							this.AddEdge(ed, rg_case.entry);
+							this.AddEdge(rg_case.exit, ed_phi);
+							if( ndi.c.isRef('default') ) {
+								has_else = 1;
+							}
+						}
+					}
+				} else {
+					console.error('panic: unrecognized branch statement:');
+					console.error(nd.toSource());
+					abort();
+				}
+				if( !has_else ) {
+					//we could end up not-executing any of the included scopes
+					this.AddEdge(ed, ed_phi);
+				}
+			} else if( nd.node_class == ama::N_CONDITIONAL ) {
+				ama::ExecRange! rg_yes = this.dfsCreateNodeGraph(ngctx, nd.c.s);
+				ama::ExecRange! rg_no = this.dfsCreateNodeGraph(ngctx, nd.c.s.s);
+				this.AddEdge(ed, rg_yes.entry);
+				this.AddEdge(rg_yes.exit, ed_phi);
+				this.AddEdge(ed, rg_no.entry);
+				this.AddEdge(rg_no.exit, ed_phi);
+			} else if( nd.node_class == ama::N_BINOP ) {
+				//&& ||
+				ama::ExecRange! rg_yes = this.dfsCreateNodeGraph(ngctx, nd.c.s);
+				this.AddEdge(ed, rg_yes.entry);
+				this.AddEdge(rg_yes.exit, ed_phi);
+				this.AddEdge(ed, ed_phi);
+			} else {
+				console.error('panic: unrecognized branch statement class:');
+				console.error(nd.toSource());
+				abort();
+			}
+			this.canonicals[nd].rg_canon = new ama::ExecRange!{entry: ed, exit: ed_phi};
+			return new ama::ExecRange!{entry: ed, exit: ed_phi};
+		}
+		case ama::CFG_LOOP: {
+			if( !(nd.tmp_flags & TMPF_CFG_MATTERS_FOR_INTEREST) ) {
+				flags = ama::ENODEF_FOLDED_CFG;
+				break;
+			}
+			assert(nd.node_class == ama::N_SCOPED_STATEMENT);
+			ama::ExecNode*+! ed = this.CreateExecNode(ama::ENODE_NORMAL, nd);
+			ama::ExecNode*+! ed_after = NULL;
+			ama::ExecNodeCanonicals*+! p_canon = &this.canonicals[nd];
+			ed_after = p_canon.ed_after;
+			if( !ed_after ) {
+				ed_after = this.CreateExecNode(ama::ENODE_AFTER, nd);
+				p_canon.ed_after = ed_after;
+			}
+			/////////////
+			ama::Node*+! nd_scope = nd.c.s;
+			ama::ExecRange! rg_scope = this->dfsCreateNodeGraph(ngctx, nd_scope);
+			this.AddEdge(ed, rg_scope.entry);
+			if( nd.data != 'do' ) {
+				//could skip
+				this.AddEdge(ed, ed_after);
+			}
+			//rg_scope.exit should be the N_SCOPE's ed_after
+			this.AddEdge(rg_scope.exit, rg_scope.entry);
+			this.AddEdge(rg_scope.exit, ed_after);
+			p_canon.rg_canon = new ama::ExecRange!{entry: ed, exit: ed_after};
+			return new ama::ExecRange!{entry: ed, exit: ed_after};
+		}
 	}
 	//fall back path: create a normal node
-	ExecNode*+ ed=this.CreateExecNode(ENODE_NORMAL,nd)
-	ed.flags=flags
-	this.canonicals[nd].rg_canon=new ExecRange{entry:ed,exit:ed}
-	return new ExecRange{entry:ed,exit:ed}
+	ama::ExecNode*+! ed = this.CreateExecNode(ama::ENODE_NORMAL, nd);
+	ed.flags = flags;
+	this.canonicals[nd].rg_canon = new ama::ExecRange!{entry: ed, exit: ed};
+	return new ama::ExecRange!{entry: ed, exit: ed};
 }
 
-int ExecSession::CheckInterest(Node*+ ndi)
-	ret=0
-	if ndi.node_class==N_REF||ndi.node_class==N_DOT:
-		first=this.name_to_interest[ndi.data]-1L
-		for(i=first;i>=0L;i=this.interests[i].same_name_next)
+int! ama::ExecSession::CheckInterest(ama::ExecSession*+! this, ama::Node*+! ndi, ama::Node*+! nd_entry) {
+	int! ret = 0;
+	if( ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT ) {
+		intptr_t! first = this.name_to_interest[ndi.data] - 1L;
+		for(intptr_t! i = first; i >= 0L; i = this.interests[i].same_name_next) {
 			//COULDDO: more accurate name resolution for dot / function
 			//we can always rule out an effect later as impossible
-			auto couldbe_interest=0
-			if this.interests[i].kind==N_REF&&ndi.node_class==N_REF&&this.interests[i].nd_lexical_scope.isAncestorOf(ndi):
-				couldbe_interest=1
-			else if this.interests[i].kind==N_DOT&&ndi.node_class==N_DOT:
-				couldbe_interest=1
-			else if this.interests[i].kind==N_FUNCTION&&ndi.p&&ndi==ndi.p.c&&ndi.p.node_class==N_CALL:
+			int! couldbe_interest = 0;
+			if( this.interests[i].kind == ama::N_REF && ndi.node_class == ama::N_REF && this.interests[i].nd_lexical_scope.isAncestorOf(ndi) ) {
+				couldbe_interest = 1;
+			} else if( this.interests[i].kind == ama::N_DOT && ndi.node_class == ama::N_DOT ) {
+				couldbe_interest = 1;
+			} else if( this.interests[i].kind == ama::N_FUNCTION && ndi.p && ndi == ndi.p.c && ndi.p.node_class == ama::N_CALL ) {
 				//COULDDO: improve this
-				couldbe_interest=1
-			if couldbe_interest:
+				couldbe_interest = 1;
+			}
+			if( couldbe_interest ) {
 				//we got an interest, mark parents as to-expand
-				auto new_flags=TMPF_CONTAINS_INTEREST
-				Node*+ ndj_last=NULL
-				for(ndj=ndi;ndj;ndj=ndj.p)
-					if ndj_last&&ndj.isChildCFGDependent(ndj_last)
-						new_flags|=TMPF_CFG_MATTERS_FOR_INTEREST
-					if (ndj.tmp_flags&new_flags)==new_flags:break
-					ndj.tmp_flags|=new_flags
-					ret=1
-					if ndj==nd_entry:break
-					ndj_last=ndj
-	return ret
-
-ExecRange! ExecSession::CreateNodeGraph(Node* nd_entry){
-	//put the owner in session
-	nd_owner=nd_entry.Owner()
-	if !this.canonicals[nd_owner].in_session
-		this.canonicals[nd_owner].in_session=1
-		this.owners.push_back(nd_owner)
-	ngctx=new NodeGraphContext!{
-		nd_entry:nd_entry
+				uint16_t! new_flags = TMPF_CONTAINS_INTEREST;
+				ama::Node*+! ndj_last = NULL;
+				for(ama::Node*+! ndj = ndi; ndj; ndj = ndj.p) {
+					if( ndj_last && ndj.isChildCFGDependent(ndj_last) ) {
+						new_flags |= TMPF_CFG_MATTERS_FOR_INTEREST;
+					}
+					if( (ndj.tmp_flags & new_flags) == new_flags ) { break; }
+					ndj.tmp_flags |= new_flags;
+					ret = 1;
+					if( ndj == nd_entry ) { break; }
+					ndj_last = ndj;
+				}
+			}
+		}
 	}
-	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
-		if ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL:
-			ndi=ndi.PreorderLastInside()
-			continue
-		//preorder means this initialization happens before we flag a parent as to-expand
-		ndi.tmp_flags&=~(TMPF_CONTAINS_INTEREST|TMPF_CFG_MATTERS_FOR_INTEREST)
-		//if we see an interest, we need to expand parents
-		this.CheckInterest(ndi)
-		if ndi.GetCFGRole()==CFG_JUMP:
-			//resolve jump target
-			//which may not always work, but we can mark unknown jumps as always interesting
-			ngctx.QueryJumpTarget(ndi)
-	//propagate TMPF_CFG_MATTERS_FOR_INTEREST to JUMPs crossing them: common ancestor test
-	for(;;)
-		jump_mattered=0
-		for nd_target,nd_source in ngctx.jump_targets
-			auto nd_jump_range=nd_source.CommonAncestor(nd_target)
-			if nd_entry.isAncestorOf(nd_jump_range)&&(nd_jump_range.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
-				//we got a cross-interest jump, mark both side's parents as to-expand
-				auto new_flags=TMPF_CONTAINS_INTEREST|TMPF_CFG_MATTERS_FOR_INTEREST
-				Node*+ ndj_last=NULL
-				for(ndj=nd_source;ndj;ndj=ndj.p)
-					if (ndj.tmp_flags&new_flags)==new_flags:break
-					ndj.tmp_flags|=new_flags
-					jump_mattered=1
-					if ndj==nd_entry:break
-					ndj_last=ndj
-				for(ndj=nd_target;ndj;ndj=ndj.p)
-					if (ndj.tmp_flags&new_flags)==new_flags:break
-					ndj.tmp_flags|=new_flags
-					jump_mattered=1
-					if ndj==nd_entry:break
-					ndj_last=ndj
-		if !jump_mattered:break
-	//create graph for the expanded nodes
-	//we only expand CFG nodes if they have TMPF_CFG_MATTERS_FOR_INTEREST: merely using an interest in the condition is no different than a basic block
-	ExecRange! rg=this.dfsCreateNodeGraph(&ngctx,ndi)
-	//jump edges have to be filled after we populate the cache
-	for ed in ngctx.jump_jobs
-		nd_jump=ed.nd
-		nd_target=ngctx.QueryJumpTarget(nd)
-		if nd_jump.data=='goto'&&nd_jump.c&&nd_jump.c.node_class!=N_REF:
-			//the whole addressed_labels for computed goto
-			for nd_addressed_label in ngctx.addressed_labels
-				rgi=this.canonicals[nd_addressed_label].rg_canon
-				if rgi.entry:
-					this.AddEdge(ed,rgi.entry)
-		else if nd_target:
-			if nd_jump.data=='goto':
-				rgi=this.canonicals[nd_addressed_label].rg_canon
-				if rgi.entry:
-					this.AddEdge(ed,rgi.entry)
-			else
-				auto ed_after=this.canonicals[nd_addressed_label].ed_after
-				if ed_after:
-					this.AddEdge(ed,ed_after)
-	return <<copy(rg)
+	return ret;
 }
 
+ama::ExecRange! ama::ExecSession::CreateNodeGraph(ama::ExecSession*+! this, ama::Node*+! nd_entry) {
+	//put the owner in session
+	ama::Node*+! nd_owner = nd_entry.Owner();
+	if( !this.canonicals[nd_owner].in_session ) {
+		this.canonicals[nd_owner].in_session = 1;
+		this.owners.push_back(nd_owner);
+	}
+	ama::NodeGraphContext! ngctx = new ama::NodeGraphContext!{
+		nd_entry: nd_entry
+	};
+	for(ama::Node*+! ndi = nd_entry; ndi; ndi = ndi.PreorderNext(nd_entry)) {
+		if( ndi != nd_entry && ndi.GetCFGRole() == ama::CFG_DECL ) {
+			ndi = ndi.PreorderLastInside();
+			continue;
+		}
+		//preorder means this initialization happens before we flag a parent as to-expand
+		ndi.tmp_flags &= ~(TMPF_CONTAINS_INTEREST | TMPF_CFG_MATTERS_FOR_INTEREST);
+		//if we see an interest, we need to expand parents
+		this.CheckInterest(ndi, nd_entry);
+		if( ndi.GetCFGRole() == ama::CFG_JUMP ) {
+			//resolve jump target
+			//which may not always work, but we can mark unknown jumps as always interesting
+			ngctx.QueryJumpTarget(ndi);
+		}
+	}
+	//propagate TMPF_CFG_MATTERS_FOR_INTEREST to JUMPs crossing them: common ancestor test
+	for(;;) {
+		int! jump_mattered = 0;
+		for(ama::Node*+! nd_target, ama::Node*+! nd_source : ngctx.jump_targets) {
+			ama::Node*! nd_jump_range = nd_source.CommonAncestor(nd_target);
+			if( nd_entry.isAncestorOf(nd_jump_range) && (nd_jump_range.tmp_flags & TMPF_CFG_MATTERS_FOR_INTEREST) ) {
+				//we got a cross-interest jump, mark both side's parents as to-expand
+				uint16_t! new_flags = TMPF_CONTAINS_INTEREST | TMPF_CFG_MATTERS_FOR_INTEREST;
+				ama::Node*+! ndj_last = NULL;
+				for(ama::Node*+! ndj = nd_source; ndj; ndj = ndj.p) {
+					if( (ndj.tmp_flags & new_flags) == new_flags ) { break; }
+					ndj.tmp_flags |= new_flags;
+					jump_mattered = 1;
+					if( ndj == nd_entry ) { break; }
+					ndj_last = ndj;
+				}
+				for(ama::Node*+! ndj = nd_target; ndj; ndj = ndj.p) {
+					if( (ndj.tmp_flags & new_flags) == new_flags ) { break; }
+					ndj.tmp_flags |= new_flags;
+					jump_mattered = 1;
+					if( ndj == nd_entry ) { break; }
+					ndj_last = ndj;
+				}
+			}
+		}
+		if( !jump_mattered ) { break; }
+	}
+	//create graph for the expanded nodes
+	//we only expand CFG nodes if they have TMPF_CFG_MATTERS_FOR_INTEREST: merely using an interest in the condition is no different than a basic block
+	ama::ExecRange! rg = this.dfsCreateNodeGraph(&ngctx, nd_entry);
+	//jump edges have to be filled after we populate the cache
+	for(ama::ExecNode*+! ed : ngctx.jump_jobs) {
+		ama::Node*+! nd_jump = ed.nd;
+		ama::Node*+! nd_target = ngctx.QueryJumpTarget(nd_jump);
+		if( nd_jump.data == 'goto' && nd_jump.c && nd_jump.c.node_class != ama::N_REF ) {
+			//the whole addressed_labels for computed goto
+			for(ama::Node*+! nd_addressed_label : ngctx.addressed_labels) {
+				ama::ExecRange! rgi = <<copy(this.canonicals[nd_addressed_label].rg_canon);
+				if( rgi.entry ) {
+					this.AddEdge(ed, rgi.entry);
+				}
+			}
+		} else if( nd_target ) {
+			if( nd_jump.data == 'goto' ) {
+				ama::ExecRange! rgi = <<copy(this.canonicals[nd_target].rg_canon);
+				if( rgi.entry ) {
+					this.AddEdge(ed, rgi.entry);
+				}
+			} else {
+				ama::ExecNode*+! ed_after = this.canonicals[nd_target].ed_after;
+				if( ed_after ) {
+					this.AddEdge(ed, ed_after);
+				}
+			}
+		}
+	}
+	return <<copy(rg);
+}
+
+ama::ExecRange! ama::ExecSession::LocateNode(ama::ExecSession*+! this, ama::Node*+! nd) {
+	ama::ExecRange! rgi;
+	for(ama::Node*+! ndi = nd; ndi; ndi = ndi.p) {
+		rgi = <<copy(this.canonicals[ndi].rg_canon);
+		if( rgi.entry ) { break; }
+	}
+	return <<rgi;
+}
 //TODO: expand call, expand loop, diversify (expand phi), add entry point

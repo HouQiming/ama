@@ -1,4 +1,5 @@
-#pragma add("jc_files", "./econtext.jc");
+// //// JC version: 3
+#pragma add("jc_files", "./engine.jc");
 #include '../util/mempool.jch'
 #include '../ast/node.jch'
 
@@ -7,87 +8,126 @@ In general, we need to tolerate failures: we don't fully understand the code.
 So this engine will be best-effort by design.
 We should report our confidence, though.
 */
-namespace ama{
+namespace ama {
 	//the immutable pattern doesn't work here: we actually expand stuff
 	//ExecNode and ExecEffect must be zero-initializable - they are pooled
 	//there is one and only one next for ENODE_NORMAL and ENODE_AFTER
-	const uint8_t ENODE_NORMAL=0
+	const uint8_t! ENODE_NORMAL = 0;
 	//after a scope or a label
-	const uint8_t ENODE_AFTER=1
+	const uint8_t! ENODE_AFTER = 1;
 	//models parallel / non-determinstic execution, all next-s will get executed
-	const uint8_t ENODE_FORK=2
-	const uint8_t ENODE_JOIN=3
+	const uint8_t! ENODE_FORK = 2;
+	const uint8_t! ENODE_JOIN = 3;
 	//only one next gets executed for ENODE_BRANCH, branches always converge into ENODE_PHI
-	const uint8_t ENODE_BRANCH=4
-	const uint8_t ENODE_PHI=5
-	const uint16_t ENODEF_FOLDED_CFG=1
+	const uint8_t! ENODE_BRANCH = 4;
+	const uint8_t! ENODE_PHI = 5;
+	const uint16_t! ENODEF_FOLDED_CFG = 1;
 	//contexts are implicitly defined by nodes: what each node changes in each context
-	class ExecNodeExtraLink
-		ExecNode*+ target
-		ExecNodeExtraLink*+ next
-	class ExecNodeLinks
+	class ExecNodeExtraLink {
+		ExecNode*+! target;
+		//we don't want to confuse this with ExecNode::next
+		ExecNodeExtraLink*+! x;
+	};
+	class ExecNodeLinks {
 		//ExecNode*+[2]! fast
-		ExecNodeExtraLink*+ more
-		inline forEach(auto loop_body)
-			for(auto link=this.more;link;link=link.next)
-				loop_body(link.target)
-	class ExecNode
+		ExecNodeExtraLink*+! more;
+	};
+	class ExecNode {
 		//break / continue / return could create a good deal of prevs
 		//a linked list is more easily managed in a pool
-		ExecNodeLinks! prev
-		ExecNodeLinks! next
-		uint16_t flags
-		uint8_t kind
-		Node*+ nd_exec
+		ExecNodeLinks! prev;
+		ExecNodeLinks! next;
+		uint16_t! flags;
+		uint8_t! kind;
+		ama::Node*+! nd;
+	};
 	//the effect any particular node could have is also lexical, and monotonically expanding as interests were added
-	const uint8_t EFFECT_READ=1
-	const uint8_t EFFECT_WRITE=2
-	const uint8_t EFFECT_SIDE_EFFECT_FUNC=4
-	const uint8_t EFFECT_SIDE_EFFECT_ARG=8
-	const uint8_t SURE_NEVER=0
-	const uint8_t SURE_MAYBE=1
-	const uint8_t SURE_ALWAYS=2
+	const uint8_t! EFFECT_READ = 1;
+	const uint8_t! EFFECT_WRITE = 2;
+	const uint8_t! EFFECT_SIDE_EFFECT_FUNC = 4;
+	const uint8_t! EFFECT_SIDE_EFFECT_ARG = 8;
+	const uint8_t! SURE_NEVER = 0;
+	const uint8_t! SURE_MAYBE = 1;
+	const uint8_t! SURE_ALWAYS = 2;
 	//the effects of a node should exclude its contained branches:
 	//    a basic node could contain a branch inside: a=(foo&&bar?baz():0)
-	class ExecEffect
-		ExecEffect* next
-		uint16_t flags
-		uint8_t sure
+	class ExecEffect {
+		ExecEffect*! next;
+		uint16_t! flags;
+		uint8_t! sure;
 		//effects are only interesting when they affect an interest
-		Node* nd_interest
-		ExecNode* activation
-	////////////////////
-	const uint8_t EINTEREST_VAR=0
-	const uint8_t EINTEREST_FIELD=1
-	const uint8_t EINTEREST_FUNCTION=2
-	class ExecInterest
-		uint8_t kind
-		Node*+ nd_interest
-		Node*+ nd_lexical_scope
-		intptr_t same_name_next
-	class ExecRange
-		ExecNode*+ entry
-		ExecNode*+ exit
-	class ExecNodeCanonicals
+		ama::Node*! nd_interest;
+		ExecNode*! activation;
+	};////////////////////
+	const uint8_t! EINTEREST_VAR = 0;
+	const uint8_t! EINTEREST_FIELD = 1;
+	const uint8_t! EINTEREST_FUNCTION = 2;
+	class ExecInterest {
+		uint8_t! kind;
+		ama::Node*+! nd_interest;
+		ama::Node*+! nd_lexical_scope;
+		intptr_t! same_name_next;
+	};
+	class ExecRange {
+		ExecNode*+! entry;
+		ExecNode*+! exit;
+	};
+	class ExecNodeCanonicals {
 		//we are lazily filling effects so we need a mutable state for the laziness
-		intptr_t last_interest_checked
-		ExecEffect*+ effect
-		ExecRange! rg_canon
-		ExecNode*+ ed_after
-		uint8_t in_session
-	const uint32_t UNCERTAIN_JUMP_TARGET=1
-	const uint32_t UNCERTAIN_FIELD_RESOLUTION=2
-	const uint32_t UNCERTAIN_FUNCTION_RESOLUTION=4
-	class ExecSession
-		TMemoryPool! pool
-		ExecNode*+[+] entries
-		uint32_t uncertainty
+		intptr_t! last_interest_checked;
+		ExecEffect*+! effect;
+		ExecRange! rg_canon;
+		ExecNode*+! ed_after;
+		uint8_t! in_session;
+	};
+	//const uint32_t! UNCERTAIN_JUMP_TARGET = 1;
+	//const uint32_t! UNCERTAIN_FIELD_RESOLUTION = 2;
+	//const uint32_t! UNCERTAIN_FUNCTION_RESOLUTION = 4;
+	//for internal use only
+	class NodeGraphContext {
+		ama::Node*+! nd_entry = NULL;
+		int! labels_collected = 0;
+		Map<char[|], ama::Node*+>! labels = new Map<char[|], ama::Node*+>!();
+		ama::Node*+[+]! addressed_labels = new ama::Node*+[+]!();
+		Map<ama::Node*+, ama::Node*+>! jump_targets = new Map<ama::Node*+, ama::Node*+>!();
+		ama::ExecNode*+[+]! jump_jobs = new ama::ExecNode*+[+]!();
+		ama::Node*+! QueryJumpTarget(ama::NodeGraphContext*+! this, ama::Node*+! ndi);
+	};
+	class ExecSession {
+		ama::TMemoryPool! pool;
+		ExecNode*+[+]! entries;
+		//uint32_t! uncertainty;
 		//interests are lexical: we don't care which context they are in, we only care which code text they represent 
-		ExecInterest![+] interests
-		Map<char[|],intptr_t> name_to_interest
+		ExecInterest![+]! interests;
+		Map<char[|], intptr_t>! name_to_interest;
 		//COULDDO: put a generic void* into nodes? or cheap mempool-offset-based SxS storage
-		Map<Node*,ExecNodeCanonicals!> canonicals
-		Node*+[+] owners
-		void __done__()
-			poolRelease(&pool)
-}
+		Map<ama::Node*, ExecNodeCanonicals!>! canonicals;
+		ama::Node*+[+]! owners;
+		void! __init__(ExecSession*! this) {
+			memset(&this->pool, 0, sizeof(this->pool));
+		}
+		void! __init__(ExecSession*! this, ExecSession&&! theirs) {
+			#pragma construct(entries(std::move(theirs.entries)));
+			#pragma construct(interests(std::move(theirs.interests)));
+			#pragma construct(name_to_interest(std::move(theirs.name_to_interest)));
+			#pragma construct(canonicals(std::move(theirs.canonicals)));
+			#pragma construct(owners(std::move(theirs.owners)));
+			memcpy(&this->pool, &theirs.pool, sizeof(theirs.pool));
+			memset(&theirs.pool, 0, sizeof(theirs.pool));
+		}
+		void! __done__(ExecSession*! this) {
+			ama::poolRelease(&this->pool);
+		}
+		ama::ExecNode*+[+]! ComputeReachableSet(ama::ExecNode*+[...]! entries);
+		void! AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_interest);
+		ama::ExecNode*+! CreateExecNode(ama::ExecSession*+! this, uint8_t! kind, ama::Node*+! nd_exec);
+		void! AddLinkTo(ama::ExecSession*+! this, ama::ExecNodeLinks*+! plinks, ama::ExecNode*+! ed_target);
+		void! AddEdge(ama::ExecSession*+! this, ama::ExecNode*+! ed0, ama::ExecNode*+! ed1);
+		void! ReplaceNode(ama::ExecNode*+! ed_old, ama::ExecRange! rg_new);
+		ama::ExecRange! dfsCreateNodeGraph(ama::ExecSession*+! this, ama::NodeGraphContext*+! ngctx, ama::Node*+! nd);
+		int! CheckInterest(ama::ExecSession*+! this, ama::Node*+! ndi, ama::Node*+! nd_entry);
+		ama::ExecRange! CreateNodeGraph(ama::ExecSession*+! this, ama::Node*+! nd_entry);
+		ama::ExecRange! LocateNode(ama::ExecSession*+! this, ama::Node*+! nd);
+	};
+	ama::ExecSession! CreateSession(ama::Node*+! nd_entry, ama::Node*+[...]! interests);
+};

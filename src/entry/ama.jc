@@ -47,7 +47,7 @@ int! main(int! argc, char**! argv) {
 			continue;
 		}
 		int! err_code = ama::ProcessAmaFile(argv[i], extra_script);
-		if( err_code == PROCESS_AMA_NOT_FOUND ) {
+		if( err_code == ama::PROCESS_AMA_NOT_FOUND ) {
 			console.error('unable to load', argv[i]);
 		}
 		if( err_code <= 0 ) {

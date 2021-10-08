@@ -26,7 +26,7 @@ private const uint32_t[8]! g_e = ama::CharSet('eE');
 private const uint32_t[8]! g_p = ama::CharSet('pP');
 private const uint32_t[8]! g_exponent = ama::CharSet('0-9f');
 //private const uint32_t[8]! g_identifier = ama::CharSet('0-9A-Za-z_#-');
-private const uint32_t[8]! g_c_identifier = ama::CharSet('0-9A-Za-z_');
+//private const uint32_t[8]! g_c_identifier = ama::CharSet('0-9A-Za-z_');
 private const uint32_t[8]! g_not_newline = ama::CharSet('^\n');
 private const uint32_t[8]! g_letter = ama::CharSet('A-Za-z');
 
