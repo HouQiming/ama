@@ -10,12 +10,16 @@ We should report our confidence, though.
 namespace ama{
 	//the immutable pattern doesn't work here: we actually expand stuff
 	//ExecNode and ExecEffect must be zero-initializable - they are pooled
+	//there is one and only one next for ENODE_NORMAL and ENODE_AFTER
 	const uint8_t ENODE_NORMAL=0
 	//after a scope or a label
 	const uint8_t ENODE_AFTER=1
-	//models parallel / non-determinstic execution
+	//models parallel / non-determinstic execution, all next-s will get executed
 	const uint8_t ENODE_FORK=2
 	const uint8_t ENODE_JOIN=3
+	//only one next gets executed for ENODE_BRANCH, branches always converge into ENODE_PHI
+	const uint8_t ENODE_BRANCH=4
+	const uint8_t ENODE_PHI=5
 	const uint16_t ENODEF_FOLDED_CFG=1
 	//contexts are implicitly defined by nodes: what each node changes in each context
 	class ExecNodeExtraLink

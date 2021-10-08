@@ -30,7 +30,7 @@ void ExecSession::AddInterest(Node* nd_interest){
 		same_name_next:this.name_to_interest[name]-1L
 	})
 	this.name_to_interest[name]=this.interests.length
-	//TODO: recheck existing nodes: can we update the TMPF_CFG_MATTERS_FOR_INTEREST flag incrementally?
+	!? //TODO: recheck existing nodes: can we update the TMPF_CFG_MATTERS_FOR_INTEREST flag incrementally?
 }
 
 private void CollectLabels(Map<char[|],Node*+>&+! labels,Node* nd_entry){
@@ -39,7 +39,8 @@ private void CollectLabels(Map<char[|],Node*+>&+! labels,Node* nd_entry){
 			ndi=ndi.PreorderLastInside()
 			continue
 		if ndi.node_class==N_LABELED&&ndi.c.node_class==N_REF&&!(ndi.p.node_class==N_RAW&&(ndi.p.flags&0xffff)):
-			labels[ndi.data]=ndi.c.s
+			//jump to the label - it gets an ExecNode created, the "target" ndi.c.s doesn't
+			labels[ndi.data]=ndi
 }
 
 
@@ -92,11 +93,73 @@ private const uint16_t TMPF_CFG_MATTERS_FOR_INTEREST=2u;
 private const int32_t JSCOPE_PARENT_DECL=1;
 private const int32_t JSCOPE_PARENT_SWITCH=2;
 private const int32_t JSCOPE_PARENT_LOOP=4;
+
+private class NodeGraphContext
+	//the cache is mainly for goto labels
+	Node*+ nd_entry=NULL
+	labels_collected=0
+	labels=new Map<char[|],Node*+>
+	addressed_labels=new Node*+[+]
+	jump_targets=new Map<Node*+,Node*+>
+	jump_jobs=new ExecNode*+[+]
+	Node*+ QueryJumpTarget(Node*+ ndi)
+		assert(ndi.node_class==N_KEYWORD_STATEMENT)
+		Node*+ nd_target=jump_targets[ndi]
+		if nd_target:return nd_target
+		if ndi.data=='goto'||(ndi.data=='break'||ndi.data=='continue')&&ndi.c&&ndi.c.node_class==N_REF:
+			//collect labels lazily if we see goto
+			if !labels_collected:
+				labels_collected=1
+				CollectLabels(labels,nd_entry.Onwer())
+			if ndi.c&&ndi.c.node_class==N_REF:
+				nd_target=labels[ndi.c.data]
+				if ndi.data!='goto'&&nd_target:
+					//were labeled break / continue to fail, we try the normal logic
+					nd_target=nd_target.Find(N_SCOPE,NULL)
+			else
+				//computed goto
+				this.uncertainty|=UNCERTAIN_JUMP_TARGET
+				if labels_collected<2:
+					labels_collected=2
+					CollectComputedLabels(addressed_labels,labels,nd_entry.Onwer())
+		if !nd_target&&ndi.data!='goto':
+			//break / continue / return: there is no target node
+			//we only need common ancestor and target execution node... point to the loop / function scope
+			//all jumps can use the _AFTER positioning
+			parent_mode=JSCOPE_PARENT_DECL
+			if ndi.data=='return'||ndi.data=='throw':
+				//do nothing
+			else
+				parent_mode|=JSCOPE_PARENT_LOOP
+				if ndi.data=='break':
+					parent_mode|=JSCOPE_PARENT_SWITCH
+				else
+					assert(ndi.data=='continue')
+			for(ndj=ndi;ndj;ndj=ndj.p)
+				if ndj.node_class!=N_SCOPE:continue
+				//take the outer-most scope if we can't find a correct one
+				nd_target=ndj
+				nd_parent=ndj.p
+				if nd_parent:break
+				if ndj==nd_entry:break
+				auto parent_role=nd_parent.GetCFGRole()
+				if (parent_mode&JSCOPE_PARENT_DECL)&&parent_role==CFG_DECL:break
+				if (parent_mode&JSCOPE_PARENT_LOOP)&&parent_role==CFG_LOOP:
+					if ndi.data=='break':
+						nd_target=nd_parent
+					break
+				if (parent_mode&JSCOPE_PARENT_SWITCH)&&nd_parent.node_class==N_SCOPED_STATEMENT&&nd_parent.data=='switch':
+					break
+		if !nd_target:
+			//assume nop-jump
+			nd_target=ndi
+		jump_targets[ndi]=nd_target
+		return nd_target
+
 ///dfsCreateNodeGraph relies on CreateNodeGraph for temp flag setting
-ExecRange! ExecSession::dfsCreateNodeGraph(Node*+ nd,Node*+ nd_entry,int cached){
-	if cached:
-		ExecRange! rg_canon=<<copy(this.canonicals[nd].rg_canon)
-		if rg_canon.entry:return <<copy(rg_canon)
+ExecRange! ExecSession::dfsCreateNodeGraph(NodeGraphContext*+ ngctx,Node*+ nd){
+	ExecRange! rg_canon=<<copy(this.canonicals[nd].rg_canon)
+	if rg_canon.entry:return <<copy(rg_canon)
 	uint16_t flags=0
 	role=nd.GetCFGRole();
 	//nd_entry could be anything: we may end up calling this expanding some other node
@@ -105,16 +168,15 @@ ExecRange! ExecSession::dfsCreateNodeGraph(Node*+ nd,Node*+ nd_entry,int cached)
 		assert(0);
 		break
 	case CFG_DECL:
-		if nd==nd_entry:
+		if nd==ngctx.nd_entry:
 			//get into nd_entry no matter what
 			ed_enter=this.CreateExecNode(ENODE_NORMAL,nd)
-			nd_scope=role.Find(N_SCOPE,NULL)
+			auto nd_scope=nd.Find(N_SCOPE,NULL)
 			if nd_scope:
-				ExecRange! rg_scope=dfsCreateNodeGraph(nd_scope,nd_entry,cached)
+				ExecRange! rg_scope=dfsCreateNodeGraph(ngctx,nd_scope)
 				this.AddEdge(rg_scope.exit,ed_scope)
 				rg_scope.exit=ed_scope
-				if cached:
-					this.canonicals[nd].rg_canon=<<copy(rg_scope)
+				this.canonicals[nd].rg_canon=<<copy(rg_scope)
 				return <<copy(rg_scope)
 		//otherwise, simply ignore: create a dumb node
 		break 
@@ -123,7 +185,7 @@ ExecRange! ExecSession::dfsCreateNodeGraph(Node*+ nd,Node*+ nd_entry,int cached)
 			ExecNode*+ ed_last=NULL
 			ExecNode*+ ed_first=NULL
 			for(auto ndi=nd.c;ndi;ndi=ndi.s)
-				ExecRange! rgi=this.dfsCreateNodeGraph(ndi,nd_entry,cached)
+				ExecRange! rgi=this.dfsCreateNodeGraph(ngctx,ndi)
 				if ed_last:
 					this.AddEdge(ed_last,rgi.entry)
 				else
@@ -131,19 +193,16 @@ ExecRange! ExecSession::dfsCreateNodeGraph(Node*+ nd,Node*+ nd_entry,int cached)
 				ed_last=rgi.exit
 			//create the end-of-scope node
 			ExecNode*+ ed_after=NULL
-			ExecNodeCanonicals*+ p_canon=NULL
-			if cached:
-				p_canon=&this.canonicals[nd]
-				ed_after=p_canon.ed_after
+			ExecNodeCanonicals*+ p_canon=&this.canonicals[nd]
+			ed_after=p_canon.ed_after
 			if !ed_after:
 				ed_after=this.CreateExecNode(ENODE_AFTER,nd)
+				p_canon.ed_after=ed_after
 			if ed_last:
 				this.AddEdge(ed_last,ed_after)
 			else
 				ed_first=ed_after
-			if cached:
-				p_canon.rg_normal=new ExecRange{entry:ed_first,exit:ed_after}
-				p_canon.ed_after=ed_after
+			p_canon.rg_canon=new ExecRange{entry:ed_first,exit:ed_after}
 			return new ExecRange{entry:ed_first,exit:ed_after}
 		else if nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST:
 			//a basic node could contain a branch inside: a=(foo&&bar?baz():0)
@@ -157,52 +216,129 @@ ExecRange! ExecSession::dfsCreateNodeGraph(Node*+ nd,Node*+ nd_entry,int cached)
 					continue
 			if non_basic_children.length>1:
 				//use fork / join to represent non-deterministic order
-				auto ed_fork=this.CreateExecNode(ENODE_FORK,NULL)
-				auto ed_join=this.CreateExecNode(ENODE_JOIN,NULL)
+				auto ed_fork=this.CreateExecNode(ENODE_FORK,nd)
+				auto ed_join=this.CreateExecNode(ENODE_JOIN,nd)
 				for ndi in non_basic_children
-					ExecRange! rgi=this.dfsCreateNodeGraph(ndi,nd_entry,cached)
+					ExecRange! rgi=this.dfsCreateNodeGraph(ngctx,ndi)
 					this.AddEdge(ed_fork,rgi.entry)
 					this.AddEdge(rgi.exit,ed_join)
 				auto ed_self=this.CreateExecNode(ENODE_NORMAL,nd)
 				this.AddEdge(ed_join,ed_self)
+				this.canonicals[nd].rg_canon=new ExecRange{entry:ed_fork,exit:ed_self}
 				return new ExecRange{entry:ed_fork,exit:ed_self}
 			else if non_basic_children.length==1:
 				//this one is easy: just put non_basic_children[0] before nd
-				ExecRange! rgi=this.dfsCreateNodeGraph(non_basic_children[0],nd_entry,cached)
+				ExecRange! rgi=this.dfsCreateNodeGraph(ngctx,non_basic_children[0])
 				auto ed_self=this.CreateExecNode(ENODE_NORMAL,nd)
 				this.AddEdge(rgi.exit,ed_self)
 				rgi.exit=ed_self
+				this.canonicals[nd].rg_canon=<<copy(rgi)
 				return <<copy(rgi)
 		//otherwise, create a dumb node
 		break;
 	case CFG_JUMP:
-		//TODO: goto target problem: "canonical" ExecNode for each Node, and the after version
-		break
+		ExecNode*+ ed=this.CreateExecNode(ENODE_NORMAL,nd)
+		ngctx.jump_jobs.push(ed)
+		this.canonicals[nd].rg_canon=new ExecRange{entry:ed,exit:ed}
+		return new ExecRange{entry:ed,exit:ed}
 	case CFG_BRANCH:
 		if !(nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
 			flags=ENODEF_FOLDED_CFG
 			break
-		//TODO:
-		break
+		ExecNode*+ ed=this.CreateExecNode(ENODE_BRANCH,nd)
+		ExecNode*+ ed_phi=this.CreateExecNode(ENODE_PHI,nd)
+		if nd.node_class==N_SCOPED_STATEMENT:
+			has_else=0
+			if nd.data=='if':
+				ExecRange! rg_yes=this.dfsCreateNodeGraph(ngctx,nd.c.s)
+				this.AddEdge(ed,rg_yes.entry)
+				this.AddEdge(rg_yes.exit,ed_phi)
+				for(nd_maybe_else=nd.c.s.s;nd_maybe_else;nd_maybe_else=nd_maybe_else.s)
+					if nd_maybe_else&&nd_maybe_else.node_class==N_EXTENSION_CLAUSE&&(nd_maybe_else.data=='else'||nd_maybe_else.data=='elif'):
+						auto nd_scope=nd_maybe_else.Find(N_SCOPE,NULL)
+						if nd_scope:
+							has_else=1
+							ExecRange! rg_else=this.dfsCreateNodeGraph(ngctx,nd.c.s)
+							this.AddEdge(ed,rg_else.entry)
+							this.AddEdge(rg_else.exit,ed_phi)
+			else if nd.data=='switch':
+				//populate the cache first
+				auto nd_scope=nd.c.s
+				ExecRange! rg_inside=this.dfsCreateNodeGraph(ngctx,nd_scope)
+				for(auto ndi=nd_scope;ndi;ndi=ndi.PreorderNext(nd_scope))
+					//search for cases / default: they could be inside arbitrary language constructs
+					if ndi.GetCFGRole()==CFG_DECL||ndi.node_class==N_SCOPED_STATEMENT&&ndi.data=='switch':
+						//except another switch or a declaration
+						ndi=ndi.PreorderLastInside()
+						continue
+					if ndi.node_class==N_LABELED&&(ndi.c.node_class==N_RAW&&ndi.c.c&&ndi.c.c.isRef('case')||ndi.c.isRef('default')):
+						//should be cached
+						ExecRange! rg_case=this.dfsCreateNodeGraph(ngctx,ndi)
+						this.AddEdge(ed,rg_case.entry)
+						this.AddEdge(rg_case.exit,ed_phi)
+						if ndi.c.isRef('default'):
+							has_else=1
+			else
+				console.error('panic: unrecognized branch statement:')
+				console.error(nd.toSource())
+				abort()
+			if !has_else:
+				//we could end up not-executing any of the included scopes
+				this.AddEdge(ed,ed_phi)
+		else if nd.node_class==N_CONDITIONAL:
+			ExecRange! rg_yes=this.dfsCreateNodeGraph(ngctx,nd.c.s)
+			ExecRange! rg_no=this.dfsCreateNodeGraph(ngctx,nd.c.s.s)
+			this.AddEdge(ed,rg_yes.entry)
+			this.AddEdge(rg_yes.exit,ed_phi)
+			this.AddEdge(ed,rg_no.entry)
+			this.AddEdge(rg_no.exit,ed_phi)
+		else if nd.node_class==N_BINOP:
+			//&& ||
+			ExecRange! rg_yes=this.dfsCreateNodeGraph(ngctx,nd.c.s)
+			this.AddEdge(ed,rg_yes.entry)
+			this.AddEdge(rg_yes.exit,ed_phi)
+			this.AddEdge(ed,ed_phi)
+		else
+			console.error('panic: unrecognized branch statement class:')
+			console.error(nd.toSource())
+			abort()
+		this.canonicals[nd].rg_canon=new ExecRange{entry:ed,exit:ed_phi}
+		return new ExecRange{entry:ed,exit:ed_phi}
 	case CFG_LOOP:
 		if !(nd.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
 			flags=ENODEF_FOLDED_CFG
 			break
-		//TODO:
-		break
+		assert(nd.node_class==N_SCOPED_STATEMENT)
+		ExecNode*+ ed_after=NULL
+		ExecNodeCanonicals*+ p_canon=&this.canonicals[nd]
+		ed_after=p_canon.ed_after
+		if !ed_after:
+			ed_after=this.CreateExecNode(ENODE_AFTER,nd)
+			p_canon.ed_after=ed_after
+		/////////////
+		auto nd_scope=nd.c.s
+		ExecRange! rg_scope=dfsCreateNodeGraph(ngctx,nd_scope)
+		this.AddEdge(ed,rg_scope.entry)
+		if nd.data!='do':
+			//could skip
+			this.AddEdge(ed,ed_after)
+		//rg_scope.exit should be the N_SCOPE's ed_after
+		this.AddEdge(rg_scope.exit,rg_scope.entry)
+		this.AddEdge(rg_scope.exit,ed_after)
+		p_canon.rg_canon=new ExecRange{entry:ed,exit:ed_after}
+		return new ExecRange{entry:ed,exit:ed_after}
 	}
 	//fall back path: create a normal node
 	ExecNode*+ ed=this.CreateExecNode(ENODE_NORMAL,nd)
 	ed.flags=flags
+	this.canonicals[nd].rg_canon=new ExecRange{entry:ed,exit:ed}
 	return new ExecRange{entry:ed,exit:ed}
 }
 
-ExecRange! ExecSession::CreateNodeGraph(Node* nd_entry,int cached){
-	//TODO: separate nd_entry from nd_parent_of_goto
-	labels_collected=0
-	labels=new Map<char[|],Node*+>
-	addressed_labels=new Node*+[+]
-	jump_targets=new Map<Node*+,Node*+>
+ExecRange! ExecSession::CreateNodeGraph(Node* nd_entry){
+	ngctx=new NodeGraphContext!{
+		nd_entry:nd_entry
+	}
 	for(ndi=nd_entry;ndi;ndi=ndi.PreorderNext(nd_entry))
 		if ndi!=nd_entry&&ndi.GetCFGRole()==CFG_DECL:
 			ndi=ndi.PreorderLastInside()
@@ -240,58 +376,11 @@ ExecRange! ExecSession::CreateNodeGraph(Node* nd_entry,int cached){
 		else if ndi.GetCFGRole()==CFG_JUMP:
 			//resolve jump target
 			//which may not always work, but we can mark unknown jumps as always interesting
-			assert(ndi.node_class==N_KEYWORD_STATEMENT)
-			Node*+ nd_target=NULL
-			if ndi.data=='goto'||(ndi.data=='break'||ndi.data=='continue')&&ndi.c&&ndi.c.node_class==N_REF:
-				//collect labels lazily if we see goto
-				if !labels_collected:
-					labels_collected=1
-					CollectLabels(labels,nd_entry)
-				if ndi.c&&ndi.c.node_class==N_REF:
-					nd_target=labels[ndi.c.data]
-					if ndi.data!='goto'&&nd_target:
-						//were labeled break / continue to fail, we try the normal logic
-						nd_target=nd_target.Find(N_SCOPE,NULL)
-				else
-					//computed goto
-					this.uncertainty|=UNCERTAIN_JUMP_TARGET
-					if labels_collected<2:
-						labels_collected=2
-						CollectComputedLabels(addressed_labels,labels,nd_entry)
-					!? //TODO: mark all addressed_labels as target... implicitly, mark computed goto and target common ancestor
-			if !nd_target&&ndi.data!='goto':
-				//break / continue / return: there is no target node
-				//we only need common ancestor and target execution node... point to the loop / function scope
-				//all jumps can use the _AFTER positioning
-				parent_mode=JSCOPE_PARENT_DECL
-				if ndi.data=='return'||ndi.data=='throw':
-					//do nothing
-				else
-					parent_mode|=JSCOPE_PARENT_LOOP
-					if ndi.data=='break':
-						parent_mode|=JSCOPE_PARENT_SWITCH
-					else
-						assert(ndi.data=='continue')
-				for(ndj=ndi;ndj;ndj=ndj.p)
-					if ndj.node_class!=N_SCOPE:continue
-					//take the outer-most scope if we can't find a correct one
-					nd_target=ndj
-					nd_parent=ndj.p
-					if nd_parent:break
-					if ndj==nd_entry:break
-					auto role=nd_parent.GetCFGRole()
-					if (parent_mode&JSCOPE_PARENT_DECL)&&role==CFG_DECL:break
-					if (parent_mode&JSCOPE_PARENT_LOOP)&&role==CFG_LOOP:break
-					if (parent_mode&JSCOPE_PARENT_SWITCH)&&nd_parent.node_class==N_SCOPED_STATEMENT&&nd_parent.data=='switch':
-						break
-			if !nd_target:
-				//assume nop-jump
-				nd_target=ndi
-			jump_targets[ndi]=nd_target
+			ngctx.QueryJumpTarget(ndi)
 	//propagate TMPF_CFG_MATTERS_FOR_INTEREST to JUMPs crossing them: common ancestor test
 	for(;;)
 		jump_mattered=0
-		for nd_target,nd_source in jump_targets
+		for nd_target,nd_source in ngctx.jump_targets
 			auto nd_jump_range=nd_source.CommonAncestor(nd_target)
 			if nd_entry.isAncestorOf(nd_jump_range)&&(nd_jump_range.tmp_flags&TMPF_CFG_MATTERS_FOR_INTEREST):
 				//we got a cross-interest jump, mark both side's parents as to-expand
@@ -312,7 +401,27 @@ ExecRange! ExecSession::CreateNodeGraph(Node* nd_entry,int cached){
 		if !jump_mattered:break
 	//create graph for the expanded nodes
 	//we only expand CFG nodes if they have TMPF_CFG_MATTERS_FOR_INTEREST: merely using an interest in the condition is no different than a basic block
-	return this.dfsCreateNodeGraph(ndi,nd_entry,cached)
+	ExecRange! rg=this.dfsCreateNodeGraph(&ngctx,ndi)
+	//jump edges have to be filled after we populate the cache
+	for ed in ngctx.jump_jobs
+		nd_jump=ed.nd
+		nd_target=ngctx.QueryJumpTarget(nd)
+		if nd_jump.data=='goto'&&nd_jump.c&&nd_jump.c.node_class!=N_REF:
+			//the whole addressed_labels for computed goto
+			for nd_addressed_label in ngctx.addressed_labels
+				rgi=this.canonicals[nd_addressed_label].rg_canon
+				if rgi.entry:
+					this.AddEdge(ed,rgi.entry)
+		else if nd_target:
+			if nd_jump.data=='goto':
+				rgi=this.canonicals[nd_addressed_label].rg_canon
+				if rgi.entry:
+					this.AddEdge(ed,rgi.entry)
+			else
+				auto ed_after=this.canonicals[nd_addressed_label].ed_after
+				if ed_after:
+					this.AddEdge(ed,ed_after)
+	return <<copy(rg)
 }
 
-//TODO: expand call, expand loop, diversify (expand phi)
+//TODO: expand call, expand loop, diversify (expand phi), add entry point
