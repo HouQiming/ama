@@ -21,6 +21,8 @@ namespace ama {
 	//only one next gets executed for ENODE_BRANCH, branches always converge into ENODE_PHI
 	const uint8_t! ENODE_BRANCH = 4;
 	const uint8_t! ENODE_PHI = 5;
+	const uint8_t! ENODE_JUMP = 6;
+	const uint8_t! ENODE_LOOP = 7;
 	const uint16_t! ENODEF_FOLDED_CFG = 1;
 	//contexts are implicitly defined by nodes: what each node changes in each context
 	class ExecNodeExtraLink {
@@ -83,16 +85,6 @@ namespace ama {
 	//const uint32_t! UNCERTAIN_JUMP_TARGET = 1;
 	//const uint32_t! UNCERTAIN_FIELD_RESOLUTION = 2;
 	//const uint32_t! UNCERTAIN_FUNCTION_RESOLUTION = 4;
-	//for internal use only
-	class NodeGraphContext {
-		ama::Node*+! nd_entry = NULL;
-		int! labels_collected = 0;
-		Map<char[|], ama::Node*+>! labels = new Map<char[|], ama::Node*+>!();
-		ama::Node*+[+]! addressed_labels = new ama::Node*+[+]!();
-		Map<ama::Node*+, ama::Node*+>! jump_targets = new Map<ama::Node*+, ama::Node*+>!();
-		ama::ExecNode*+[+]! jump_jobs = new ama::ExecNode*+[+]!();
-		ama::Node*+! QueryJumpTarget(ama::NodeGraphContext*+! this, ama::Node*+! ndi);
-	};
 	class ExecSession {
 		ama::TMemoryPool! pool;
 		ExecNode*+[+]! entries;
@@ -124,10 +116,10 @@ namespace ama {
 		void! AddLinkTo(ama::ExecSession*+! this, ama::ExecNodeLinks*+! plinks, ama::ExecNode*+! ed_target);
 		void! AddEdge(ama::ExecSession*+! this, ama::ExecNode*+! ed0, ama::ExecNode*+! ed1);
 		void! ReplaceNode(ama::ExecNode*+! ed_old, ama::ExecRange! rg_new);
-		ama::ExecRange! dfsCreateNodeGraph(ama::ExecSession*+! this, ama::NodeGraphContext*+! ngctx, ama::Node*+! nd);
 		int! CheckInterest(ama::ExecSession*+! this, ama::Node*+! ndi, ama::Node*+! nd_entry);
 		ama::ExecRange! CreateNodeGraph(ama::ExecSession*+! this, ama::Node*+! nd_entry);
 		ama::ExecRange! LocateNode(ama::ExecSession*+! this, ama::Node*+! nd);
+		char[+]! DumpGraphviz(ama::ExecSession*+! this);
 	};
 	ama::ExecSession! CreateSession(ama::Node*+! nd_entry, ama::Node*+[...]! interests);
 };
