@@ -22,7 +22,6 @@ int! main(int! argc, char**! argv) {
 	ama::ExecRange! rg = sess.LocateNode(nd_last_use);
 	rg.entry.flags |= ama::ENODEF_DUMP_ACTIVE;
 	//TODO: search backward... for declaration: N_TYPED_VAR
-	//TODO: effect resolution
 	fs.writeFileSync('/tmp/dump.dot', sess.DumpGraphviz());
 	system("dot -Tpdf /tmp/dump.dot > /tmp/dump.pdf");
 	return 0;
