@@ -8,7 +8,6 @@
 #include './gen.jch'
 
 namespace ama {
-	private const uint32_t[+]! g_identifier = ama::CharSet('0-9A-Za-z_#-');
 	void! ama::CodeGenerator::GenerateSpaceBefore(ama::CodeGenerator*+! this, ama::Node*+! nd_next) {
 		if( this.auto_space && !(nd_next.comments_before.length && uint8_t(nd_next.comments_before[0]) <= uint8_t(' ')) ) {
 			this->code.push_back(' ');

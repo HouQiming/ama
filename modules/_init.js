@@ -179,7 +179,11 @@ __global.c_include_paths=['/usr/include','/usr/local/include']
 __global.default_options={
 	enable_hash_comment:0,
 	symbols:'!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->*',
-	identifier_characters:'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$#',
+	identifier_charset:'0-9A-Za-z_$#',
+	number_charset:'0-9bouUlLfFn.eE',
+	hex_number_charset:'0-9A-Fa-fx.pPuUlLn',
+	exponent_charset:'0-9f',
+	regexp_flags_charset:'A-Za-z',
 	enable_unicode_identifiers:1,
 	///////////
 	parse_operators:1,

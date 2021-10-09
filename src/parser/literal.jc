@@ -5,7 +5,7 @@
 
 namespace ama {
 	private const char[|]! g_hex = '0123456789abcdef';
-	private const uint32_t[+]! g_hex_charset = ama::CharSet('0-9A-Fa-f');
+	private const uint32_t[8]! g_hex_charset = ama::CreateCharSet('0-9A-Fa-f');
 	char[+]! escapeJSString(char[...]! s) {
 		const char[+]! ret = new char[+]!();
 		ret.push('\'');

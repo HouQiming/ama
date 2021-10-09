@@ -17,18 +17,8 @@ private const int! CHAR_TYPE_ZERO = 7;
 private const int! CHAR_TYPE_BACKSLASH = 8;
 private const int! CHAR_TYPE_OPENING = 9;
 private const int! CHAR_TYPE_CLOSING = 10;
-private const uint32_t[8]! g_spaces = ama::CharSet(' \t\r');
-//p and P are for C++ hex float, u and L are for C/C++ integers, n is for JS BigInt
-//b and o are for 0b and 0o
-private const uint32_t[8]! g_number = ama::CharSet('0-9bouUlLfFn.eE');
-private const uint32_t[8]! g_hex_number = ama::CharSet('0-9A-Fa-fx.pPuUlLn');
-private const uint32_t[8]! g_e = ama::CharSet('eE');
-private const uint32_t[8]! g_p = ama::CharSet('pP');
-private const uint32_t[8]! g_exponent = ama::CharSet('0-9f');
-//private const uint32_t[8]! g_identifier = ama::CharSet('0-9A-Za-z_#-');
-//private const uint32_t[8]! g_c_identifier = ama::CharSet('0-9A-Za-z_');
-private const uint32_t[8]! g_not_newline = ama::CharSet('^\n');
-private const uint32_t[8]! g_letter = ama::CharSet('A-Za-z');
+private uint32_t[8]! g_spaces = ama::CreateCharSet(' \t\r');
+private uint32_t[8]! g_not_newline = ama::CreateCharSet('^\n');
 
 private class ParserState {
 	ama::Node*+! nd_parent;
@@ -149,9 +139,11 @@ namespace ama {
 		//create char LUT
 		uint8_t[256]! char_lut;
 		memset(char_lut.data(), CHAR_TYPE_SYMBOL, char_lut.size());
-		char[|]! s_idchars = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, 'identifier_characters'));
-		for(char&! ch : s_idchars) {
-			char_lut[uintptr_t(uint8_t(ch))] = CHAR_TYPE_IDENTIFIER;
+		uint32_t[8]! identifier_charset = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, 'identifier_charset')));
+		for(int! ch = 0; ch <= 255; ch += 1) {
+			if( identifier_charset[ch >> 5] & 1u << (ch & 31) ) {
+				char_lut[ch] = CHAR_TYPE_IDENTIFIER;
+			}
 		}
 		//
 		char_lut[0] = CHAR_TYPE_ZERO;
@@ -187,6 +179,13 @@ namespace ama {
 				cset_identifier[i >> 5] |= 1u << (i & 31);
 			}
 		}
+		//////////////////
+		//p and P are for C++ hex float, u and L are for C/C++ integers, n is for JS BigInt
+		//b and o are for 0b and 0o
+		uint32_t[8]! cset_number = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, 'number_charset')));
+		uint32_t[8]! cset_hex_number = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, 'hex_number_charset')));
+		uint32_t[8]! cset_exponent = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, 'exponent_charset')));
+		uint32_t[8]! cset_regexp_flags = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, 'regexp_flags_charset')));
 		//UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, ''),0)
 		ama::Node*+! nd_root = ama::CreateNode(ama::N_RAW, NULL);
 		ParserState[+]! state_stack = new ParserState[+] {
@@ -265,7 +264,7 @@ namespace ama {
 							}
 						}
 						//search flags
-						char*! feed_end = ama::SkipChars(feed + lg, g_letter);
+						char*! feed_end = ama::SkipChars(feed + lg, cset_regexp_flags);
 						nd = ama::CreateNode(ama::N_JS_REGEXP, NULL);
 						nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 						nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
@@ -395,16 +394,16 @@ namespace ama {
 					char*! feed0 = feed;
 					int! has_exponent = 0;
 					if( feed[0L] == '0' && feed[1L] == 'x' ) {
-						feed = ama::SkipChars(feed, g_hex_number);
-						has_exponent = ama::isInCharSet(g_p, uint32_t(feed[-1L]));
+						feed = ama::SkipChars(feed, cset_hex_number);
+						has_exponent = feed[-1L] == 'p' || feed[-1L] == 'P';
 					} else {
-						feed = ama::SkipChars(feed, g_number);
-						has_exponent = ama::isInCharSet(g_e, uint32_t(feed[-1L]));
+						feed = ama::SkipChars(feed, cset_number);
+						has_exponent = feed[-1L] == 'e' || feed[-1L] == 'E';
 					}
 					if( (feed[0L] == '+' || feed[0L] == '-') && has_exponent ) {
 						//0.000e+00
 						feed += 1L;
-						feed = ama::SkipChars(feed, g_exponent);
+						feed = ama::SkipChars(feed, cset_exponent);
 					}
 					nd = ama::CreateNode(ama::N_NUMBER, NULL);
 					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);

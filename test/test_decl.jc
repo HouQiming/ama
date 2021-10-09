@@ -29,5 +29,5 @@ int main(int argc,char** argv){
 		console.log('do-while');
 	}while(0);
 	console.log('after do-while');
-	return 0;
+	return 0xabcd;
 }
