@@ -5,6 +5,10 @@
 #include '../src/exec/engine.jch'
 #include '../src/script/jsapi.jch'
 
+int! isWritten(ama::ExecSession*+! sess, ama::ExecNode*+! ed, ama::ExecEffect*+! eff) {
+	return !eff || (eff.nd_alleged_ref.node_class == ama::N_REF && (eff.nd_alleged_ref.flags & ama::REF_WRITTEN));
+}
+
 int! main(int! argc, char**! argv) {
 	char*! home_dir = getenv("HOME");
 	if( !home_dir ) {
@@ -21,8 +25,8 @@ int! main(int! argc, char**! argv) {
 	ama::Node*+! nd_last_use = xs.back();
 	ama::ExecRange! rg = sess.LocateNode(nd_last_use);
 	rg.entry.flags |= ama::ENODEF_DUMP_ACTIVE;
-	//TODO: search backward... for declaration: N_TYPED_VAR
-	fs.writeFileSync('/tmp/dump.dot', sess.DumpGraphviz());
+	ama::ExecNode*+! value_graph = sess.CreateValueGraphBackward(rg.entry, 0, isWritten);
+	fs.writeFileSync('/tmp/dump.dot', sess.DumpGraphviz(value_graph));
 	system("dot -Tpdf /tmp/dump.dot > /tmp/dump.pdf");
 	return 0;
 }

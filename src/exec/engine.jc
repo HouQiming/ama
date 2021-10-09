@@ -20,7 +20,7 @@ namespace ama {
 	}
 };
 
-ama::ExecNode*+[+]! ama::ExecSession::ComputeReachableSet(ama::ExecNode*+[...]! entries) {
+ama::ExecNode*+[+]! ama::ExecSession::ComputeReachableSet(ama::ExecNode*+[...]! entries, int32_t! dir) {
 	ama::ExecNode*+[+]! Q = new ama::ExecNode*+[+]!();
 	Map<ama::ExecNode*+, intptr_t>! inQ = new Map<ama::ExecNode*+, intptr_t>!();
 	for(ama::ExecNode*&+! ed : entries) {
@@ -28,38 +28,29 @@ ama::ExecNode*+[+]! ama::ExecSession::ComputeReachableSet(ama::ExecNode*+[...]! 
 		inQ[ed] = 1;
 	}
 	for(int! qi = 0; qi < Q.length; qi += 1) {
-		for(ama::ExecNodeExtraLink*+! link = Q[qi].next.more; link; link = link.x) {
-			ama::ExecNode*+! edi = link.target;
-			if( !inQ[edi] ) {
-				Q.push(edi);
-				inQ[edi] = 1;
+		if( dir & ama::REACH_FORWARD ) {
+			for(ama::ExecNodeExtraLink*+! link = Q[qi].next.more; link; link = link.x) {
+				ama::ExecNode*+! edi = link.target;
+				if( !inQ[edi] ) {
+					Q.push(edi);
+					inQ[edi] = 1;
+				}
+			}
+		}
+		if( dir & ama::REACH_BACKWARD ) {
+			for(ama::ExecNodeExtraLink*+! link = Q[qi].prev.more; link; link = link.x) {
+				ama::ExecNode*+! edi = link.target;
+				if( !inQ[edi] ) {
+					Q.push(edi);
+					inQ[edi] = 1;
+				}
 			}
 		}
 	}
 	return <<Q;
 }
 
-///the full-statement range of an ENODE_PHI or ENODE_AFTER
-ama::ExecNode*+[+]! ama::ExecSession::ComputeStatementRangeBackward(ama::ExecNode*+! ed_exit) {
-	ama::ExecNode*+[+]! Q = new ama::ExecNode*+[+]!();
-	Map<ama::ExecNode*+, intptr_t>! inQ = new Map<ama::ExecNode*+, intptr_t>!();
-	Q.push_back(ed_exit);
-	inQ[ed_exit] = 1;
-	for(int! qi = 0; qi < Q.length; qi += 1) {
-		//stop at the statement start
-		if( qi > 0 && Q[qi].nd == ed_exit.nd ) { continue; }
-		for(ama::ExecNodeExtraLink*+! link = Q[qi].prev.more; link; link = link.x) {
-			ama::ExecNode*+! edi = link.target;
-			if( !inQ[edi] ) {
-				Q.push(edi);
-				inQ[edi] = 1;
-			}
-		}
-	}
-	return <<Q;
-}
-
-void! ama::ExecSession::AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_interest) {
+intptr_t! ama::ExecSession::AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_interest) {
 	uint8_t! kind = ama::N_REF;
 	char[|]! name = nd_interest.GetName();
 	if( nd_interest.node_class == ama::N_FUNCTION ) {
@@ -94,7 +85,7 @@ void! ama::ExecSession::AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_in
 	//	changed|=this.CheckInterest(ndi)
 	//if !changed:return
 	////////////
-	for(ama::ExecNode*+! ed : this.ComputeReachableSet(this.entries)) {
+	for(ama::ExecNode*+! ed : this.ComputeReachableSet(this.entries, ama::REACH_FORWARD)) {
 		if( ed.flags & ama::ENODEF_FOLDED_CFG ) {
 			ama::ExecRange! rg_new = this.CreateNodeGraph(ed.nd);
 			if( !(rg_new.entry.flags & ama::ENODEF_FOLDED_CFG) ) {
@@ -102,6 +93,7 @@ void! ama::ExecSession::AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_in
 			}
 		}
 	}
+	return this.interests.length - 1;
 }
 
 private void! CollectLabels(Map<char[|], ama::Node*+>&+! labels, ama::Node*+! nd_entry) {
@@ -291,7 +283,7 @@ ama::ExecRange! NodeGraphContext::dfsCreateNodeGraph(NodeGraphContext*+! this, a
 				//get into nd_entry no matter what
 				ama::Node*+! nd_scope = nd.Find(ama::N_SCOPE, NULL);
 				if( nd_scope ) {
-					ama::ExecNode*+! ed_enter = this->sess.CreateExecNode(ama::ENODE_NORMAL, nd);
+					ama::ExecNode*+! ed_enter = this->sess.CreateExecNode(ama::ENODE_DECL_ENTRY, nd);
 					ama::ExecNode*+! ed_after = NULL;
 					ama::ExecNodeCanonicals*+! p_canon = &this->sess.canonicals[nd];
 					ed_after = p_canon.ed_after;
@@ -728,7 +720,7 @@ ama::ExecEffect*+! ama::ExecSession::QueryEffects(ama::ExecSession*+! this, ama:
 				}
 				break;
 			}
-			case ama::ENODE_JUMP: case ama::ENODE_JOIN: {
+			case ama::ENODE_DECL_ENTRY: case ama::ENODE_JUMP: case ama::ENODE_JOIN: {
 				//nothing to do
 				break;
 			}
@@ -738,17 +730,101 @@ ama::ExecEffect*+! ama::ExecSession::QueryEffects(ama::ExecSession*+! this, ama:
 	return pef.first;
 }
 
+ama::ExecNode*+! ama::ExecSession::CloneExecNode(ama::ExecSession*+! this, ama::ExecNode*+! edi) {
+	ama::ExecNode*+! ret = this.CreateExecNode(edi.kind, edi.nd);
+	ret.flags = edi.flags;
+	return ret;
+}
+
+ama::ExecNode*+! ama::ExecSession::CreateValueGraphBackward(
+	ama::ExecSession*+! this,
+	ama::ExecNode*+! ed_exit, intptr_t! interest_id,
+	FValueFilter! filter
+) {
+	//when filter fails, we need to if-converge or propagate the whole set backward
+	//let the filter check convergence even when it doesn't have an interesting effect?
+	//convergence could be arbitrary... and there isn't a well-defined order for set backward
+	//compute edges separately: per-starting-node reachability set
+	ama::ExecNode*+[+]! subgraph = new ama::ExecNode*+[+]!();
+	ama::ExecNode*+[+]! Q = new ama::ExecNode*+[+]!();
+	Map<ama::ExecNode*+, ama::ExecNode*+>! to_cloned = new Map<ama::ExecNode*+, ama::ExecNode*+>!();
+	ama::ExecNode*+! ed_cloned0 = this.CloneExecNode(ed_exit);
+	Q.push_back(ed_exit);
+	to_cloned[ed_exit] = ed_cloned0;
+	subgraph.push_back(ed_exit);
+	for(int! qi = 0; qi < Q.length; qi += 1) {
+		for(ama::ExecNodeExtraLink*+! link = Q[qi].prev.more; link; link = link.x) {
+			ama::ExecNode*+! edi = link.target;
+			ama::ExecNode*+! edi_cloned = to_cloned[edi];
+			if( !edi_cloned ) {
+				int! filter_passed = 0;
+				if( edi.kind == ama::ENODE_DECL_ENTRY ) {
+					if( !filter || filter(this, edi, NULL) ) {
+						filter_passed = 1;
+					}
+				}
+				if( !filter_passed ) {
+					for(ama::ExecEffect*+! eff = this.QueryEffects(edi); eff; eff = eff.x) {
+						if( interest_id < 0 || eff.interest_id == interest_id ) {
+							if( !filter || filter(this, edi, eff) ) {
+								filter_passed = 1;
+								break;
+							}
+						}
+					}
+				}
+				if( filter_passed ) {
+					edi_cloned = this.CloneExecNode(edi);
+					subgraph.push_back(edi);
+				} else {
+					edi_cloned = edi;
+				}
+				Q.push(edi);
+				to_cloned[edi] = edi_cloned;
+			}
+		}
+	}
+	Map<ama::ExecNode*+, intptr_t>! inQ = new Map<ama::ExecNode*+, intptr_t>!();
+	for(ama::ExecNode*&+! ed : subgraph) {
+		Q.clear();
+		inQ.clear();
+		Q.push_back(ed);
+		inQ[ed] = 1;
+		ama::ExecNode*+! ed_cloned = to_cloned[ed];
+		for(int! qi = 0; qi < Q.length; qi += 1) {
+			if( qi > 0 ) {
+				ama::ExecNode*+! edi_cloned = to_cloned[Q[qi]];
+				if( edi_cloned != Q[qi] ) {
+					//don't expand, but connect
+					this.AddEdge(edi_cloned, ed_cloned);
+					continue;
+				}
+			}
+			for(ama::ExecNodeExtraLink*+! link = Q[qi].prev.more; link; link = link.x) {
+				ama::ExecNode*+! edi = link.target;
+				if( !inQ[edi] ) {
+					Q.push(edi);
+					inQ[edi] = 1;
+				}
+			}
+		}
+	}
+	return ed_cloned0;
+}
+
 ////////////////////////////
 private char*![+]! g_superscript_digits = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"];
 private char*![+]! g_subscript_digits = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
 
 private class GraphvizDumpingContext {
 	ama::ExecSession*+! sess;
-	Map<ama::Node*+, intptr_t>! node_numbers;
+	Map<void*+, intptr_t>! node_numbers;
 	intptr_t! cur_num;
+	intptr_t! cur_ed_num;
 	ama::Node*+! nd_dumping;
 	Map<ama::Node*+, intptr_t>! node_interest_ids;
 	void! DumpNodeName(GraphvizDumpingContext*+! this, char[+]&+! code, ama::Node*+! nd, int! superscript);
+	void! DumpExecNodeName(GraphvizDumpingContext*+! this, char[+]&+! code, ama::ExecNode*+! ed);
 };
 
 void! GraphvizDumpingContext::DumpNodeName(GraphvizDumpingContext*+! this, char[+]&+! code, ama::Node*+! nd, int! superscript) {
@@ -765,6 +841,15 @@ void! GraphvizDumpingContext::DumpNodeName(GraphvizDumpingContext*+! this, char[
 	} else {
 		code.push(JSON.stringify(num));
 	}
+}
+
+void! GraphvizDumpingContext::DumpExecNodeName(GraphvizDumpingContext*+! this, char[+]&+! code, ama::ExecNode*+! ed) {
+	intptr_t! num = this.node_numbers[ed];
+	if( !num ) {
+		num = ++this.cur_ed_num;
+		this.node_numbers[ed] = num;
+	}
+	code.push(JSON.stringify(num));
 }
 
 private int! GraphvizGenerateNode(ama::CodeGenerator*+! gctx, ama::Node*+! nd) {
@@ -789,20 +874,27 @@ private int! GraphvizGenerateNode(ama::CodeGenerator*+! gctx, ama::Node*+! nd) {
 	return 1;
 }
 
-private char*![+]! g_enode_names = ['nd', 'after', 'fork', 'join', 'br', 'phi', 'jump', 'loop'];
-private char*![+]! g_enode_shapes = ['box', 'invtrapezium', 'triangle', 'invtriangle', 'diamond', 'invhouse', 'oval', 'parallelogram'];
+private char*![+]! g_enode_names = ['nd', 'after', 'fork', 'join', 'br', 'phi', 'jump', 'loop', 'entry'];
+private char*![+]! g_enode_shapes = ['box', 'invtrapezium', 'triangle', 'invtriangle', 'diamond', 'invhouse', 'oval', 'parallelogram', 'hexagon'];
 
-char[+]! ama::ExecSession::DumpGraphviz(ama::ExecSession*+! this) {
+char[+]! ama::ExecSession::DumpGraphviz(ama::ExecSession*+! this, ama::ExecNode*+! extra_graph) {
 	char[+]! ret = new char[+]!();
 	ret.push(
 		'digraph session {\n'
 	);
 	///////////////////
-	ama::ExecNode*+[+]! eds = this.ComputeReachableSet(this.entries);
+	if( extra_graph ) {
+		this.entries.push_back(extra_graph);
+	}
+	ama::ExecNode*+[+]! eds = this.ComputeReachableSet(this.entries, ama::REACH_FORWARD | ama::REACH_BACKWARD);
+	if( extra_graph ) {
+		this.entries.pop();
+	}
 	//////////////
 	GraphvizDumpingContext! dctx = new GraphvizDumpingContext!();
 	dctx.sess = this;
 	dctx.cur_num = 0;
+	dctx.cur_ed_num = 0;
 	dctx.nd_dumping = NULL;
 	ama::CodeGenerator! gctx = new ama::CodeGenerator!();
 	gctx.opaque = &dctx;
@@ -836,6 +928,8 @@ char[+]! ama::ExecSession::DumpGraphviz(ama::ExecSession*+! this) {
 		gctx.Generate(ed.nd);
 		ret.push(g_enode_names[ed.kind]);
 		dctx.DumpNodeName(ret, ed.nd, 0);
+		ret.push_back('_');
+		dctx.DumpExecNodeName(ret, ed);
 		ret.push(' [label=', JSON.stringify(gctx.code), ',shape=', g_enode_shapes[ed.kind]);
 		if( ed.flags & ama::ENODEF_FOLDED_CFG ) {
 			ret.push(',style=dashed');
@@ -846,18 +940,22 @@ char[+]! ama::ExecSession::DumpGraphviz(ama::ExecSession*+! this) {
 		ret.push(']\n');
 	}
 	//the edges
-	for(ama::ExecNode*&! ed : eds) {
+	for(ama::ExecNode*+! ed : eds) {
 		for(ama::ExecNodeExtraLink*+! link = ed.next.more; link; link = link.x) {
 			ama::ExecNode*+! edi = link.target;
 			ret.push(g_enode_names[ed.kind]);
 			dctx.DumpNodeName(ret, ed.nd, 0);
+			ret.push_back('_');
+			dctx.DumpExecNodeName(ret, ed);
 			ret.push(' -> ');
 			ret.push(g_enode_names[edi.kind]);
 			dctx.DumpNodeName(ret, edi.nd, 0);
+			ret.push_back('_');
+			dctx.DumpExecNodeName(ret, edi);
 			ret.push('\n');
 		}
 	}
 	ret.push('}\n');
 	return <<ret;
 }
-//TODO: expand call, expand loop, diversify (expand phi), add entry point
+//TODO: expand call (resolving / detecting target function relevance), expand loop, diversify (expand phi), add entry point

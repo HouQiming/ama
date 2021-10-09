@@ -23,6 +23,7 @@ namespace ama {
 	const uint8_t! ENODE_PHI = 5;
 	const uint8_t! ENODE_JUMP = 6;
 	const uint8_t! ENODE_LOOP = 7;
+	const uint8_t! ENODE_DECL_ENTRY = 8;
 	////////////
 	const uint16_t! ENODEF_FOLDED_CFG = 1;
 	const uint16_t! ENODEF_DUMP_ACTIVE = 128;
@@ -58,7 +59,8 @@ namespace ama {
 		//effects are queried from the activating node so we don't need to store it
 		intptr_t! interest_id;
 		ama::Node*+! nd_alleged_ref;
-	};////////////////////
+	};
+	////////////////////
 	class ExecInterest {
 		uint8_t! kind;
 		ama::Node*+! nd_interest;
@@ -84,6 +86,11 @@ namespace ama {
 	//const uint32_t! UNCERTAIN_JUMP_TARGET = 1;
 	//const uint32_t! UNCERTAIN_FIELD_RESOLUTION = 2;
 	//const uint32_t! UNCERTAIN_FUNCTION_RESOLUTION = 4;
+	`class ExecSession;`
+	//passed(*)(session, ed, effect)
+	`typedef int(*FValueFilter)(ama::ExecSession*,ama::ExecNode*,ama::ExecEffect*);`
+	const int32_t! REACH_FORWARD = 1;
+	const int32_t! REACH_BACKWARD = 2;
 	class ExecSession {
 		ama::TMemoryPool! pool;
 		ExecNode*+[+]! entries;
@@ -109,8 +116,8 @@ namespace ama {
 		void! __done__(ExecSession*! this) {
 			ama::poolRelease(&this->pool);
 		}
-		ama::ExecNode*+[+]! ComputeReachableSet(ama::ExecNode*+[...]! entries);
-		void! AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_interest);
+		ama::ExecNode*+[+]! ComputeReachableSet(ama::ExecNode*+[...]! entries, int32_t! dir);
+		intptr_t! AddInterest(ama::ExecSession*+! this, ama::Node*+! nd_interest);
 		ama::ExecNode*+! CreateExecNode(ama::ExecSession*+! this, uint8_t! kind, ama::Node*+! nd_exec);
 		void! AddLinkTo(ama::ExecSession*+! this, ama::ExecNodeLinks*+! plinks, ama::ExecNode*+! ed_target);
 		void! AddEdge(ama::ExecSession*+! this, ama::ExecNode*+! ed0, ama::ExecNode*+! ed1);
@@ -118,10 +125,16 @@ namespace ama {
 		int! CheckInterest(ama::ExecSession*+! this, ama::Node*+! ndi, ama::Node*+! nd_entry);
 		ama::ExecRange! CreateNodeGraph(ama::ExecSession*+! this, ama::Node*+! nd_entry);
 		ama::ExecRange! LocateNode(ama::ExecSession*+! this, ama::Node*+! nd);
-		char[+]! DumpGraphviz(ama::ExecSession*+! this);
-		ama::ExecNode*+[+]! ComputeStatementRangeBackward(ama::ExecNode*+! ed_exit);
+		char[+]! DumpGraphviz(ama::ExecSession*+! this, ama::ExecNode*+! extra_graph);
+		//ama::ExecNode*+[+]! ComputeStatementRangeBackward(ama::ExecNode*+! ed_exit);
 		int! MatchInterest(ama::ExecSession*! this, ama::Node*+! ndi, intptr_t! i);
 		ama::ExecEffect*+! QueryEffects(ama::ExecSession*+! this, ama::ExecNode*+! ed);
+		ama::ExecNode*+! CloneExecNode(ama::ExecSession*+! this, ama::ExecNode*+! edi);
+		ama::ExecNode*+! CreateValueGraphBackward(
+			ama::ExecSession*+! this,
+			ama::ExecNode*+! ed_exit, intptr_t! interest_id,
+			FValueFilter! filter
+		);
 	};
 	ama::ExecSession! CreateSession(ama::Node*+! nd_entry, ama::Node*+[...]! interests);
 };
