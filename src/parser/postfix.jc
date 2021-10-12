@@ -8,6 +8,92 @@ namespace ama {
 	private inline int! isCPPLambda(ama::Node*+! ndi) {
 		return ndi.node_class == ama::N_CALL && ndi.c.isRawNode('[', ']');
 	}
+	ama::Node*+! TranslatePostfixCall(ama::Node*+! ndi) {
+		ama::Node*+! nd_arglist = ndi.s;
+		uint8_t! call_class = ama::N_CALL;
+		if( nd_arglist.isRawNode('<', '>') ) {
+			call_class = ama::N_CALL_TEMPLATE;
+		} else if( nd_arglist.isRawNode('[', ']') ) {
+			call_class = ama::N_ITEM;
+		}
+		ndi.MergeCommentsAfter(nd_arglist);
+		//re-delimit everything completely
+		ama::Node*+[+]! new_children = new ama::Node*+[+]!();
+		new_children.push_back(ndi);
+		char[+]! pending_comments_before;
+		if( nd_arglist.c ) {
+			//console.error(nd_arglist.toSource());
+			ama::Node*+[+]! comma_group = new ama::Node*+[+]!();
+			for(ama::Node*+! ndj : nd_arglist) {
+				//strip trailing ','s
+				if( ndj.isRawNode(0, 0) ) {
+					if( comma_group.length ) {
+						comma_group[comma_group.length - 1].comments_after = new char[|]!(comma_group[comma_group.length - 1].comments_after + ndj.comments_before);
+					} else {
+						pending_comments_before.push(ndj.comments_before);
+					}
+					for(ama::Node*+! ndk = ndj.c; ndk; ndk = ndk.s) {
+						if( ndk.isSymbol(",") ) {
+							ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+							nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
+							nd_arg.comments_after = new char[|]!(nd_arg.comments_after + ndk.comments_before);
+							new_children.push_back(nd_arg);
+							pending_comments_before.clear();
+							pending_comments_before.push(ndk.comments_after);
+							comma_group.clear();
+						} else {
+							comma_group.push_back(ndk);
+						}
+					}
+					if( comma_group.length ) {
+						comma_group[comma_group.length - 1].comments_after = new char[|]!(comma_group[comma_group.length - 1].comments_after + ndj.comments_after);
+					} else {
+						pending_comments_before.push(ndj.comments_after);
+					}
+				} else if( ndj.isSymbol(",") ) {
+					ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+					nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
+					nd_arg.comments_after = new char[|]!(nd_arg.comments_after + ndj.comments_before);
+					new_children.push_back(nd_arg);
+					pending_comments_before.clear();
+					pending_comments_before.push(ndj.comments_after);
+					comma_group.clear();
+				} else {
+					comma_group.push_back(ndj);
+				}
+			}
+			//assert(comma_group.size() > 0);
+			//we could get comma_group.size() == 0 for a(foo,)
+			if( comma_group.size() > 0 || new_children.length > 0 ) {
+				ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+				nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
+				new_children.push_back(nd_arg);
+				pending_comments_before.clear();
+			}
+		}
+		//for(int! i = 2; i < new_children.length; i += 1) {
+		//	if( new_children[i].comments_before.startsWith(' ') ) {
+		//		new_children[i].comments_before = new char[|]!(new_children[i].comments_before.subarray(1));
+		//	}
+		//}
+		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+		ndi.ReplaceUpto(nd_arglist, nd_tmp);
+		//.setCommentsAfter(nd_arglist.comments_after)
+		ama::Node*+! nd_call = nd_tmp.ReplaceWith(ama::CreateNodeFromChildren(call_class, new_children));
+		if( pending_comments_before.length ) {
+			nd_call.comments_after = new char[|]!(pending_comments_before + nd_call.comments_after);
+			pending_comments_before.clear();
+		}
+		//console.log(JSON.stringify(ndi.toSource()), JSON.stringify(ndi.comments_after));
+		//ndi.indent_level = ndi_old.indent_level;
+		//ndi_old.indent_level=0;
+		//console.log('>>>', intptr_t(ndi_next_next), intptr_t(ndi_next_next.s));
+		//nd_raw.Insert(ama::POS_BACK, ama::cons(ndi, ndi_next_next));
+		//nd_arglist is also N_RAW so it can't be freed right now: but we shouldn't process it any more
+		ndi = nd_call;
+		nd_arglist.c = NULL;
+		return ndi;
+	}
 	ama::Node*+! ParsePostfix(ama::Node*+! nd_root, int! parse_air_object) {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
 		for(ama::Node*+! nd_raw : (new ama::Node*+![+] {nd_root}).concat(nd_root.FindAll(ama::N_SCOPE, NULL), nd_root.FindAll(ama::N_RAW, NULL)).reverse()) {
@@ -72,89 +158,7 @@ namespace ama {
 					continue;
 				} else if( ndi_next && (ndi_next.isRawNode('(', ')') || ndi_next.isRawNode('<', '>') || ndi_next.isRawNode('[', ']')) && !ndi_next.FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").length ) {
 					//call
-					ama::Node*+! nd_arglist = ndi.s;
-					uint8_t! call_class = ama::N_CALL;
-					if( nd_arglist.isRawNode('<', '>') ) {
-						call_class = ama::N_CALL_TEMPLATE;
-					} else if( nd_arglist.isRawNode('[', ']') ) {
-						call_class = ama::N_ITEM;
-					}
-					ndi.MergeCommentsAfter(nd_arglist);
-					//re-delimit everything completely
-					ama::Node*+[+]! new_children = new ama::Node*+[+]!();
-					new_children.push_back(ndi);
-					char[+]! pending_comments_before;
-					if( nd_arglist.c ) {
-						//console.error(nd_arglist.toSource());
-						ama::Node*+[+]! comma_group = new ama::Node*+[+]!();
-						for(ama::Node*+! ndj : nd_arglist) {
-							//strip trailing ','s
-							if( ndj.isRawNode(0, 0) ) {
-								if( comma_group.length ) {
-									comma_group[comma_group.length - 1].comments_after = new char[|]!(comma_group[comma_group.length - 1].comments_after + ndj.comments_before);
-								} else {
-									pending_comments_before.push(ndj.comments_before);
-								}
-								for(ama::Node*+! ndk = ndj.c; ndk; ndk = ndk.s) {
-									if( ndk.isSymbol(",") ) {
-										ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
-										nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
-										nd_arg.comments_after = new char[|]!(nd_arg.comments_after + ndk.comments_before);
-										new_children.push_back(nd_arg);
-										pending_comments_before.clear();
-										pending_comments_before.push(ndk.comments_after);
-										comma_group.clear();
-									} else {
-										comma_group.push_back(ndk);
-									}
-								}
-								if( comma_group.length ) {
-									comma_group[comma_group.length - 1].comments_after = new char[|]!(comma_group[comma_group.length - 1].comments_after + ndj.comments_after);
-								} else {
-									pending_comments_before.push(ndj.comments_after);
-								}
-							} else if( ndj.isSymbol(",") ) {
-								ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
-								nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
-								nd_arg.comments_after = new char[|]!(nd_arg.comments_after + ndj.comments_before);
-								new_children.push_back(nd_arg);
-								pending_comments_before.clear();
-								pending_comments_before.push(ndj.comments_after);
-								comma_group.clear();
-							} else {
-								comma_group.push_back(ndj);
-							}
-						}
-						//assert(comma_group.size() > 0);
-						//we could get comma_group.size() == 0 for a(foo,)
-						if( comma_group.size() > 0 || new_children.length > 0 ) {
-							ama::Node*+! nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
-							nd_arg.comments_before = new char[|]!(pending_comments_before + nd_arg.comments_before);
-							new_children.push_back(nd_arg);
-							pending_comments_before.clear();
-						}
-					}
-					//for(int! i = 2; i < new_children.length; i += 1) {
-					//	if( new_children[i].comments_before.startsWith(' ') ) {
-					//		new_children[i].comments_before = new char[|]!(new_children[i].comments_before.subarray(1));
-					//	}
-					//}
-					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-					ndi.ReplaceUpto(nd_arglist, nd_tmp);
-					//.setCommentsAfter(nd_arglist.comments_after)
-					ama::Node*+! nd_call = nd_tmp.ReplaceWith(ama::CreateNodeFromChildren(call_class, new_children));
-					if( pending_comments_before.length ) {
-						nd_call.comments_after = new char[|]!(pending_comments_before + nd_call.comments_after);
-						pending_comments_before.clear();
-					}
-					//console.log(JSON.stringify(ndi.toSource()), JSON.stringify(ndi.comments_after));
-					//ndi.indent_level = ndi_old.indent_level;
-					//ndi_old.indent_level=0;
-					//console.log('>>>', intptr_t(ndi_next_next), intptr_t(ndi_next_next.s));
-					//nd_raw.Insert(ama::POS_BACK, ama::cons(ndi, ndi_next_next));
-					//nd_arglist is also N_RAW so it can't be freed right now: but we shouldn't process it any more
-					ndi = nd_call;
-					nd_arglist.c = NULL;
+					ndi = TranslatePostfixCall(ndi);
 					continue;
 				}
 				ndi = ndi_next;

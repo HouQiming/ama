@@ -301,7 +301,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/operator.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/operator.jc
   MAIN_DEPENDENCY ../parser/operator.jc
-  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/operator.jch ${JC_LIB}/console.jch
+  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/operator.jch ../parser/postfix.jch ${JC_LIB}/console.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(

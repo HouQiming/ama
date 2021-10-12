@@ -114,6 +114,21 @@ Node.MatchAll=function(nd_pattern){
 	return this.FindAll(nd_pattern.node_class,null).map(nd=>nd.Match(nd_pattern)).filter(ret=>ret);
 }
 
+Node.Subst=function(match){
+	let nd_ret=this.Clone();
+	for(let ndi=nd_ret;ndi;ndi=ndi.PreorderNext(nd_ret)){
+		if(ndi.node_class===N_NODEOF){
+			let nd_name=ndi.c;
+			if(nd_name.node_class===N_CALL&&nd_name.c.s){nd_name=nd_name.c.s;}
+			let nd_subst=match[nd_name.GetName()];
+			if(nd_subst){
+				ndi=ndi.ReplaceWith(nd_subst);
+			}
+		}
+	}
+	return nd_ret;
+}
+
 Node.Save=function(options){
 	if(typeof(options)==='string'){
 		if(options.startsWith('.')){
@@ -136,7 +151,8 @@ Node.Save=function(options){
 	if(options.only_write_changed&&__existsSync(name)&&content===__buffer_toString.call(__readFileSync(name))){
 		 return 'no change found';
 	}
-	return __writeFileSync(name,content);
+	__writeFileSync(name,content);
+	return this;
 }
 
 Node.AutoSemicolon = function() {
@@ -172,6 +188,20 @@ Node.AutoSemicolon = function() {
 				}
 			}
 			nd.ReplaceWith(nScope.apply(null,new_children).c);
+		}
+	}
+	for(let nd of this.FindAll(N_SCOPE,null).concat([this])){
+		let ndi=nd.LastChild();
+		if(!ndi){continue;}
+		let nd_test=ndi;
+		while((nd_test.node_class===N_SCOPED_STATEMENT||nd_test.node_class===N_KEYWORD_STATEMENT||
+		nd_test.node_class===N_EXTENSION_CLAUSE)&&nd_test.c){
+			nd_test=nd_test.LastChild()
+		}
+		if(nd_test.node_class!==N_SCOPE&&(ndi.node_class===N_KEYWORD_STATEMENT||ndi.node_class===N_ASSIGNMENT||ndi.node_class===N_CALL)){
+			let nd_tmp=nAir();
+			ndi.ReplaceWith(nd_tmp);
+			nd_tmp.ReplaceWith(nSemicolon(ndi));
 		}
 	}
 	return this;

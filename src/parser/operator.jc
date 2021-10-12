@@ -3,6 +3,7 @@
 #include '../ast/node.jch'
 #include "../script/jsenv.jch"
 #include "./operator.jch"
+#include "./postfix.jch"
 #include <console.jch>
 
 namespace ama {
@@ -281,6 +282,36 @@ namespace ama {
 		for(ama::Node*&+! nd_ref : nd_root.FindAll(ama::N_SYMBOL, NULL)) {
 			if( named_ops[nd_ref.data] ) {
 				nd_ref.node_class = ama::N_REF;
+			}
+		}
+		return nd_root;
+	}
+	ama::Node*+! ParseTypePostfixOperators(ama::Node*+! nd_root, JSValueConst! options) {
+		Map<char[|], int>! is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		for(ama::Node*&! nd_tv : nd_root.FindAll(ama::N_TYPED_VAR, NULL)) {
+			ama::Node*+! @nojson nd_type = nd_tv.c;
+			if( nd_type.node_class != ama::N_RAW ) { continue; }
+			for(ama::Node*+! ndi = nd_type.c; ndi; ndi = ndi.s) {
+				`again:`
+				if( ndi.node_class == ama::N_BINOP && is_type_suffix[ndi.s.data] ) {
+					ndi = UnparseBinop(ndi);
+					`goto again;`
+				}
+				if( ndi.s && ndi.s.isRawNode('[', ']') ) {
+					ndi = ama::TranslatePostfixCall(ndi);
+					`goto again;`
+				}
+				if( ndi.s && ndi.s.node_class == ama::N_SYMBOL && is_type_suffix[ndi.s.data] ) {
+					ama::Node*+! nd_opr = ndi.s;
+					ndi.MergeCommentsAfter(nd_opr);
+					nd_opr.Delete();
+					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+					ndi.ReplaceWith(nd_tmp);
+					std::swap(ndi.comments_after, nd_tmp.comments_after);
+					ndi = nd_tmp.ReplaceWith(ama::nUnaryPostfix(ndi, nd_opr.data).setCommentsAfter(nd_opr.comments_after));
+					nd_opr.FreeASTStorage();
+					`goto again;`
+				}
 			}
 		}
 		return nd_root;

@@ -9,4 +9,5 @@ namespace ama {
 	ama::Node*+! ParseColons(ama::Node*+! nd_root, int! has_c_conditional);
 	ama::Node*+! UnparseLabel(ama::Node*+! nd_label);
 	ama::Node*+! UnparseUnary(ama::Node*+! nd_unary);
+	ama::Node*+! ParseTypePostfixOperators(ama::Node*+! nd_root, JSValueConst! options);
 };

@@ -382,6 +382,7 @@ namespace ama {
 		this.GenerateComment(1, this.scope_indent_level + (nd.s ? intptr_t(nd.s.indent_level) : 0L), nd.comments_after);
 		this.nd_current = bk;
 	}
+	//this is exposed to JS with a non-standard wrapper, so make it a non-method
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options) {
 		options = ama::InheritOptions(options);
 		ama::CodeGenerator! ctx = new ama::CodeGenerator!();

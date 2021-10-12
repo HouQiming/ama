@@ -4,4 +4,5 @@
 namespace ama {
 	ama::Node*+! ParsePostfix(ama::Node*+! nd_root, int! parse_air_object);
 	ama::Node*+! UnparseCall(ama::Node*+! nd);
+	ama::Node*+! TranslatePostfixCall(ama::Node*+! ndi);
 };
