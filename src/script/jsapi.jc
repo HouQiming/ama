@@ -19,6 +19,7 @@
 #include "../parser/decl.jch"
 #include "../parser/cleanup.jch"
 #include "../parser/findama.jch"
+#include "../exec/engine.jch"
 #include "./nodeof_to_ast.jch"
 #include "./jsenv.jch"
 #include "./jsapi.jch"
@@ -256,6 +257,7 @@ namespace ama {
 		return 1;
 	}
 	int! ProcessAmaFile(char*! fn, char[...]! extra_script) {
+		LazyInitScriptEnv();
 		char[+]^+! file_data = fs.readFileSync(fn);
 		if( file_data == NULL ) {
 			console.error('unable to load', fn);

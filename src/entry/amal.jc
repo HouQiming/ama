@@ -1,0 +1,8 @@
+// //// JC version: 3
+#include '../script/jsapi.jch'
+//private class AutoInitJSEnv {
+//	void! __init__() {
+//		ama::LazyInitScriptEnv();
+//	}
+//};
+//private AutoInitJSEnv! enabler;
