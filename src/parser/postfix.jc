@@ -132,6 +132,11 @@ namespace ama {
 					ndi.p = NULL; ndi.s = NULL; ndi.FreeASTStorage();
 					ndi = nd_dot;
 					continue;
+				} else if( ndi.isSymbol(".") && ndi_next && (ndi_next.isRawNode('(', ')') || ndi_next.isRawNode('{', '}') || ndi_next.node_class == ama::N_SCOPE) ) {
+					//nodeof
+					ndi_next.Delete();
+					ndi = ndi.ReplaceWith(ama::nNodeof(ndi_next));
+					continue;
 				} else if( ndi.node_class == ama::N_SYMBOL ) {
 					//do nothing
 				} else if( ndi_next && ndi_next.node_class == ama::N_SYMBOL && 

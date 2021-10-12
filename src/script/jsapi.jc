@@ -195,7 +195,7 @@ namespace ama {
 		}
 		//DumpASTAsJSON(nd_root);
 		ama::NodifySemicolonAndParenthesis(nd_root);
-		ama::ParseNodeof(nd_root);
+		//ama::ParseNodeof(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		return nd_root;

@@ -2,8 +2,8 @@
 //@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 let g_templates = {
 	array: {from: .(.(Node.MatchAny('TElement'))[]), to: .(std::vector<.(Node.MatchAny('TElement'))>)},
-	fixed_array: {from: .(.(Node.MatchAny('TElement'))[.(Node.MatchAny('size'))]), to: .(std::array<.(Node.MatchAny('TElement')), .(Node.MatchAny('size'))>)},
 	view: {from: .(.(Node.MatchAny('TElement'))[:]), to: .(JC::array_base<.(Node.MatchAny('TElement'))>)},
+	fixed_array: {from: .(.(Node.MatchAny('TElement'))[.(Node.MatchAny('size'))]), to: .(std::array<.(Node.MatchAny('TElement')), .(Node.MatchAny('size'))>)},
 	map: {from: .(Map<.(Node.MatchAny('TKey')), .(Node.MatchAny('TValue'))>), to: .(std::unordered_map<.(Node.MatchAny('TKey')), .(Node.MatchAny('TValue'))>)},
 }
 function TranslateTemplates(nd_root, alt_templates, is_forward) {
@@ -34,7 +34,7 @@ function TranslateTemplates(nd_root, alt_templates, is_forward) {
 				let match = ndi.Match(job.from);
 				if (match) {
 					for (let param in match) {
-						if (param != 'nd') {match[param].BreakSelf();}
+						if (param != 'nd' && match[param].s) {match[param].BreakSibling();}
 					}
 					ndi = ndi.ReplaceWith(job.to.Subst(match));
 					break;
