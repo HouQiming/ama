@@ -1,3 +1,5 @@
+//this module is automatically executed by ama::InitScriptEnv()
+//the `require` system isn't ready here so don't use it
 (function(){
 /////////////
 Node.setFlags=function(flags){
@@ -264,6 +266,15 @@ __global.process={
 	}),
 	platform:__platform
 };
+
+__global.__RequireNativeLibrary=function(exports,module,__filename,__dirname){
+	let handle=new NativeLibrary(__filename);
+	module.handle=handle;
+	let code=handle.run('AmaInit_'+JSON.parse(__path_parse(__filename)).name.toLowerCase(),module);
+	if(code!==0){
+		throw new Error(['native module ',JSON.stringify(__filename),' failed with code ',JSON.stringify(code)].join(''));
+	}
+}
 
 /////////////
 })();

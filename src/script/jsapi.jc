@@ -7,6 +7,13 @@
 #include <env.jch>
 #include <unicode.jch>
 #include <unicode/case.jch>
+#if defined(_WIN32)
+	#include <windows.h>
+	#pragma add('ldflags', 'kernel32.lib');
+#else
+	#include <dlfcn.h>
+	#pragma add('ldflags', '-ldl');
+#endif
 #include "./quickjs/src/quickjs.h"
 #include "../ast/node.jch"
 #include "../ast/nodegc.jch"
@@ -85,32 +92,46 @@ namespace ama {
 			const JSValueConst! obj_exports = JS_NewObject(ctx);
 			JS_SetPropertyStr(ctx, obj_module, 'exports', obj_exports);
 			JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), obj_module);
-			//char![+]! loader_key = path.extname(fn_final) + ' loader';
-			//JSValue! custom_loader = JS_GetPropertyStr(ctx, g_obj_compiler, loader_key.str());
+			JS_SetPropertyStr(ctx, obj_module, 'filename', ama::WrapString(fn_final));
+			//////////////
+			//char[+]! loader_key = path.extname(fn_final) + ' loader';
+			//JSValue! custom_loader = JS_GetPropertyStr(ctx, g_require_cache, loader_key.str());
+			char[+]! ext = path.extname(fn_final);
 			JSValueConst[4L]! module_args = new JSValueConst[4L]! {
 				obj_exports, //
 				obj_module, ama::WrapString(fn_final), ama::WrapString(path::dirname(fn_final))
 			};
-			const char[+]! s_fixed_code = GetScriptJSCode(fn_final);
-			if( !s_fixed_code.length ) {
-				JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
-				return JS_ThrowReferenceError(ctx, 'module `%s` not found', fn_required.str());
+			if( ext == '.so' || ext == '.dll' || ext == '.dylib' || ext == '.amaso' ) {
+				JSValue! js_fn_final = ama::WrapString(fn_final);
+				JSValueConst! ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__RequireNativeLibrary"), 4, module_args.data());
+				if( JS_IsException(ret) ) {
+					JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
+					return ret;
+				}
+				JS_FreeValue(ctx, ret);
+			} else {
+				//////////////
+				const char[+]! s_fixed_code = GetScriptJSCode(fn_final);
+				if( !s_fixed_code.length ) {
+					JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
+					return JS_ThrowReferenceError(ctx, 'module `%s` not found', fn_required.str());
+				}
+				JSValueConst! ret = JS_Eval(
+					ctx, (char*)(s_fixed_code.data()),
+					uint64_t(uintptr_t(s_fixed_code.length)), fn_final.str(), JS_EVAL_TYPE_GLOBAL
+				);
+				//console.log(fn_final,raw.JS_IsException(ret))
+				if( JS_IsException(ret) ) {
+					JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
+					return ret;
+				}
+				const JSValueConst! ret_module = JS_Call(ctx, JS_DupValue(ctx, ret), JS_GetGlobalObject(ctx), 4, module_args.data());
+				if( JS_IsException(ret_module) ) {
+					JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
+					return ret_module;
+				}
+				JS_FreeValue(ctx, ret);
 			}
-			JSValueConst! ret = JS_Eval(
-				ctx, (char*)(s_fixed_code.data()),
-				uint64_t(uintptr_t(s_fixed_code.length)), fn_final.str(), JS_EVAL_TYPE_GLOBAL
-			);
-			//console.log(fn_final,raw.JS_IsException(ret))
-			if( JS_IsException(ret) ) {
-				JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
-				return ret;
-			}
-			const JSValueConst! ret_module = JS_Call(ctx, JS_DupValue(ctx, ret), JS_GetGlobalObject(ctx), 4, module_args.data());
-			if( JS_IsException(ret_module) ) {
-				JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
-				return ret_module;
-			}
-			JS_FreeValue(ctx, ret);
 			//after SetPropertyStr obj_module may have gotten freed
 			//}
 			//set it in the end so that one can re-require a module after an exception
@@ -495,6 +516,52 @@ namespace ama {
 			ama::std_module_dir_global = '/usr/share/ama_modules';
 		#endif
 	}
+	private uint32_t! g_native_library_classid = 0u;
+	private JSValueConst! NativeLibraryConstructor(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a file name");
+		}
+		void*+! hmodule = NULL;
+		#if defined(_WIN32)
+			hmodule = (void*+)(LoadLibraryA(JS_ToCString(ctx, argv[0])));
+		#else
+			hmodule = dlopen(JS_ToCString(ctx, argv[0]), RTLD_NOW);
+		#endif
+		if( !hmodule ) {
+			return JS_ThrowReferenceError(ctx, "failed to load module %s", JS_ToCString(ctx, argv[0]));
+		}
+		JS_SetOpaque(this_val, hmodule);
+		return this_val;
+	}
+	private void! NativeLibraryFinalizer(JSRuntime*+! rt, JSValueConst! val) {
+		void*+! hmodule = JS_GetOpaque(val, g_native_library_classid);
+		if( hmodule ) {
+			JS_SetOpaque(val, NULL);
+			#if defined(_WIN32)
+				FreeLibrary(hmodule);
+			#else
+				dlclose(hmodule);
+			#endif
+		}
+	}
+	`typedef int32_t(*NativeLibraryFunction)(JSValue);`
+	private JSValueConst! NativeLibraryRun(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a symbol name and an optional argument");
+		}
+		void*+! hmodule = JS_GetOpaque(this_val, g_native_library_classid);
+		if( !hmodule ) {
+			return JS_ThrowReferenceError(ctx, "panic: module already unloaded");
+		}
+		void*+! addr = NULL;
+		#if defined(_WIN32)
+			addr = (void*+)(GetProcAddress(HMODULE(hmodule), JS_ToCString(ctx, argv[0])));
+		#else
+			addr = dlsym(hmodule, JS_ToCString(ctx, argv[0]));
+		#endif
+		int32_t! ret_code = NativeLibraryFunction(addr)(argc < 2 ? JS_UNDEFINED : argv[1]);
+		return JS_NewInt32(ctx, ret_code);
+	}
 	void! InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
@@ -675,7 +742,22 @@ namespace ama {
 			)
 		);
 		/////////////
-		//the QuickJS parser requires zero termination but doesn't tolerate the zero byte in the array
+		//setup the native extension system
+		JS_NewClassID(&ama::g_native_library_classid);
+		mutable JSClassDef! class_def_nl = new JSClassDef!();
+		class_def_nl.class_name = 'NativeLibrary';
+		class_def_nl.finalizer = NativeLibraryFinalizer;
+		JS_NewClass(ama::g_runtime_handle, ama::g_native_library_classid, &class_def_nl);
+		JSValue! native_library_proto = JS_NewObject(ama::jsctx);
+		JSValue! native_library_ctor = JS_NewCFunction2(
+			ama::jsctx, NativeLibraryConstructor,
+			'log', 1, JS_CFUNC_constructor, 0
+		);
+		JS_SetPropertyStr(ama::jsctx, global, 'NativeLibrary', native_library_ctor);
+		JS_SetPropertyStr(ama::jsctx, native_library_ctor, 'prototype', native_library_proto);
+		JS_SetPropertyStr(ama::jsctx, native_library_proto, 'run', JS_NewCFunction(ama::jsctx, NativeLibraryRun, 'run', 1));
+		/////////////
+		//run the JS part of the initialization
 		char[|]! fn_initjs = ama::FindCommonJSModuleByPath(path.join(ama::std_module_dir, '_init.js'));
 		if( fn_initjs == NULL ) {
 			fn_initjs = ama::FindCommonJSModuleByPath(path.join(ama::std_module_dir_global, '_init.js'));

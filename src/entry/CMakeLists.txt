@@ -364,7 +364,66 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_executable(ama ${JC_LIB}/dumpstack/linux_bt.cpp ${JC_LIB}/dumpstack/win_dbghelp.cpp ${JC_LIB}/dumpstack/enable_dump.cpp ${JC_LIB}/fix_win_console.cpp ama.jc.cpp ${JC_LIB}/console.jch.hpp ${JC_LIB}/dumpstack.jch.hpp)
-add_library(amal SHARED ../script/quickjs/src/quickjs.c ../script/quickjs/src/libregexp.c ../script/quickjs/src/libunicode.c ../script/quickjs/src/cutils.c ${JC_LIB}/json.cpp ${JC_LIB}/jc_unique_string.cpp ${JC_LIB}/fix_win_console.cpp ../parser/charset.jc.cpp ../util/mempool.jc.cpp ../parser/literal.jc.cpp ../script/jsgen.jc.cpp ../script/nodeof_to_ast.jc.cpp ../exec/engine.jc.cpp ../parser/findama.jc.cpp ../parser/cleanup.jc.cpp ../parser/decl.jc.cpp ../parser/operator.jc.cpp ../parser/postfix.jc.cpp ../parser/depends.jc.cpp ../parser/scoping.jc.cpp ../parser/simppair.jc.cpp ../codegen/gen.jc.cpp ../ast/nodegc.jc.cpp ${JC_LIB}/unicode/case.jc.cpp ${JC_LIB}/unicode.jc.cpp ${JC_LIB}/env.jc.cpp ${JC_LIB}/fs.jc.cpp ${JC_LIB}/path_posix.jc.cpp ${JC_LIB}/path_win32.jc.cpp ../script/jsenv.jc.cpp ../ast/node.jc.cpp ../script/jsapi.jc.cpp amal.jc.cpp ../ast/node.jch.hpp ../parser/charset.jch.hpp ../script/jsenv.jch.hpp ../util/mempool.jch.hpp ../parser/literal.jch.hpp ama.jc.cpp ${JC_LIB}/unicode.jch.hpp ../script/jsgen.jch.hpp ../script/nodeof_to_ast.jch.hpp ${JC_LIB}/json.jch.hpp ../exec/engine.jch.hpp ../parser/findama.jch.hpp ../parser/cleanup.jch.hpp ${JC_LIB}/console.jch.hpp ../parser/scoping.jch.hpp ../parser/operator.jch.hpp ../parser/decl.jch.hpp ../parser/postfix.jch.hpp ../parser/depends.jch.hpp ${JC_LIB}/fs.jch.hpp ${JC_LIB}/path.jch.hpp ../parser/simppair.jch.hpp ../codegen/gen.jch.hpp ${JC_LIB}/unicode/case.jch.hpp ${JC_LIB}/env.jch.hpp ../script/jsapi.jch.hpp ../ast/nodegc.jch.hpp ${JC_LIB}/dumpstack.jch.hpp)
+add_library(amal SHARED ../script/quickjs/src/quickjs.c
+  ../script/quickjs/src/libregexp.c
+  ../script/quickjs/src/libunicode.c
+  ../script/quickjs/src/cutils.c
+  ${JC_LIB}/json.cpp
+  ${JC_LIB}/jc_unique_string.cpp
+  ${JC_LIB}/fix_win_console.cpp
+  ../parser/charset.jc.cpp
+  ../util/mempool.jc.cpp
+  ../parser/literal.jc.cpp
+  ../script/jsgen.jc.cpp
+  ../script/nodeof_to_ast.jc.cpp
+  ../exec/engine.jc.cpp
+  ../parser/findama.jc.cpp
+  ../parser/cleanup.jc.cpp
+  ../parser/decl.jc.cpp
+  ../parser/operator.jc.cpp
+  ../parser/postfix.jc.cpp
+  ../parser/depends.jc.cpp
+  ../parser/scoping.jc.cpp
+  ../parser/simppair.jc.cpp
+  ../codegen/gen.jc.cpp
+  ../ast/nodegc.jc.cpp
+  ${JC_LIB}/unicode/case.jc.cpp
+  ${JC_LIB}/unicode.jc.cpp
+  ${JC_LIB}/env.jc.cpp
+  ${JC_LIB}/fs.jc.cpp
+  ${JC_LIB}/path_posix.jc.cpp
+  ${JC_LIB}/path_win32.jc.cpp
+  ../script/jsenv.jc.cpp
+  ../ast/node.jc.cpp
+  ../script/jsapi.jc.cpp
+  amal.jc.cpp
+  ../ast/node.jch.hpp
+  ../parser/charset.jch.hpp
+  ../script/jsenv.jch.hpp
+  ../util/mempool.jch.hpp
+  ../parser/literal.jch.hpp
+  ama.jc.cpp
+  ${JC_LIB}/unicode.jch.hpp
+  ../script/jsgen.jch.hpp
+  ../script/nodeof_to_ast.jch.hpp
+  ${JC_LIB}/json.jch.hpp
+  ../exec/engine.jch.hpp
+  ../parser/findama.jch.hpp
+  ../parser/cleanup.jch.hpp
+  ${JC_LIB}/console.jch.hpp
+  ../parser/scoping.jch.hpp
+  ../parser/operator.jch.hpp
+  ../parser/decl.jch.hpp
+  ../parser/postfix.jch.hpp
+  ../parser/depends.jch.hpp
+  ${JC_LIB}/fs.jch.hpp
+  ${JC_LIB}/path.jch.hpp
+  ../parser/simppair.jch.hpp
+  ../codegen/gen.jch.hpp
+  ${JC_LIB}/unicode/case.jch.hpp
+  ${JC_LIB}/env.jch.hpp
+  ../script/jsapi.jch.hpp
+  ../ast/nodegc.jch.hpp)
 set_property(
   TARGET ama
   APPEND PROPERTY LINK_LIBRARIES
@@ -390,6 +449,11 @@ if(COND__JC_OS_JC_OS_WINDOWS__1DB9171C)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funwind-tables")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
+set_property(
+  TARGET ama
+  APPEND PROPERTY LINK_LIBRARIES
+  -ldl
+)
 endif()
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../exec/engine.jch.hpp
@@ -405,3 +469,19 @@ add_custom_command(
   DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../codegen/gen.jch ../exec/engine.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
+check_cxx_source_compiles("#include <jc_platform.h>\n\n#include <json.jch.hpp>\n\n#include <path.jch.hpp>\n\n#include <fs.jch.hpp>\n\n#include <console.jch.hpp>\n\n#include <env.jch.hpp>\n\n#include <unicode.jch.hpp>\n\n#include <unicode/case.jch.hpp>\n\n#if !(!defined(_WIN32))\n#error a\n#endif\nint main(){return 0;}\n" COND__DEFINED_WIN32__A7217375)
+if(COND__DEFINED_WIN32__A7217375)
+set_property(
+  TARGET amal
+  APPEND PROPERTY LINK_LIBRARIES
+  -ldl
+)
+endif()
+check_cxx_source_compiles("#include <jc_platform.h>\n\n#include <json.jch.hpp>\n\n#include <path.jch.hpp>\n\n#include <fs.jch.hpp>\n\n#include <console.jch.hpp>\n\n#include <env.jch.hpp>\n\n#include <unicode.jch.hpp>\n\n#include <unicode/case.jch.hpp>\n\n#if !(defined(_WIN32))\n#error a\n#endif\nint main(){return 0;}\n" COND_DEFINED_WIN32__FD28C5A6)
+if(COND_DEFINED_WIN32__FD28C5A6)
+set_property(
+  TARGET amal
+  APPEND PROPERTY LINK_LIBRARIES
+  kernel32.lib
+)
+endif()

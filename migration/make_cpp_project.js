@@ -6,7 +6,7 @@ const assert=require('assert');
 const depends=require('depends');
 const cmake=require('cmake');
 
-function MigrateProject(fn){
+function MigrateProject(fn,patches){
 	fn=path.resolve(fn);
 	let exe_name=path.parse(fn).name;
 	let dir=path.dirname(fn);
@@ -124,13 +124,13 @@ function MigrateProject(fn){
 		for(let nd of nd_cmake.FindAll(N_CALL,'check_cxx_source_compiles').concat(nd_cmake.FindAll(N_CALL,'include'))){
 			nd.Delete();
 		}
-		for(let nd of nd_cmake.FindAll(N_REF,'COND_JC_OS_JC_OS_WINDOWS_614D399C')){
+		for(let nd of nd_cmake.FindAll(N_REF,'COND_JC_OS_JC_OS_WINDOWS_614D399C').concat(nd_cmake.FindAll(N_REF,'COND_DEFINED_WIN32__FD28C5A6'))){
 			nd.ReplaceWith(nRef('WIN32'));
 		}
-		for(let nd of nd_cmake.FindAll(N_REF,'COND__JC_OS_JC_OS_WINDOWS__1DB9171C')){
+		for(let nd of nd_cmake.FindAll(N_REF,'COND__JC_OS_JC_OS_WINDOWS__1DB9171C').concat(nd_cmake.FindAll(N_REF,'COND__DEFINED_WIN32__A7217375'))){
 			nd.ReplaceWith(nRaw(nRef('NOT'),nRef('WIN32').setCommentsBefore(' ')));
 		}
-		//set JC_LIBS to the local copy
+		//set JC_LIB to the local copy
 		nd_cmake.Find(N_CALL,'project').Insert(POS_AFTER,ParseCode(
 			'\nset(JC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/jc_lib")'
 		).Find(N_CALL,null));
@@ -175,14 +175,29 @@ function MigrateProject(fn){
 	}
 	fn_script='/tmp/migrate_'+prj_name+'_jc_lib.sh'
 	fs.writeFileSync(fn_script,script.join(''));
-	__system('sh '+fn_script)
+	__system('sh '+fn_script);
+	//patch it
+	for(let key in patches){
+		let patch=patches[key];
+		let fn=path.resolve(dir_target,key)
+		if(typeof(patch)==='string'){
+			fs.writeFileSync(fn,patch)
+		}else{
+			console.log('invalid patch for',key)
+		}
+	}
 }
 
 function main(){
 	let dir_jc_lib=path.resolve(__dirname,'../../jc3/lib');
 	depends.c_include_paths.push(dir_jc_lib);
-	MigrateProject(path.join(__dirname,'../src/entry/ama.jc'));
-	MigrateProject(path.join(__dirname,'../../laas/src/core/net0822.jc'))
+	MigrateProject(path.join(__dirname,'../src/entry/amal.jc'),{
+		'src/script/jsgen.ama.cpp':[
+			"//@ama require('../jsgen.js')('ama',ParseCurrentFile()).Save('.cpp');\n",
+			'#pragma begin_generated\n'
+		].join('')
+	});
+	MigrateProject(path.join(__dirname,'../../laas/src/core/net0822.jc'),{})
 }
 
 module.exports=main;

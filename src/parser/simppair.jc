@@ -405,6 +405,7 @@ namespace ama {
 						feed += 1L;
 						feed = ama::SkipChars(feed, cset_exponent);
 					}
+					assert(feed != feed0);
 					nd = ama::CreateNode(ama::N_NUMBER, NULL);
 					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
