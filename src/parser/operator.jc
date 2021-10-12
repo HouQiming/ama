@@ -289,11 +289,11 @@ namespace ama {
 	ama::Node*+! ParseTypePostfixOperators(ama::Node*+! nd_root, JSValueConst! options) {
 		Map<char[|], int>! is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
 		for(ama::Node*&! nd_tv : nd_root.FindAll(ama::N_TYPED_VAR, NULL)) {
-			ama::Node*+! @nojson nd_type = nd_tv.c;
+			ama::Node*+! nd_type = nd_tv.c;
 			if( nd_type.node_class != ama::N_RAW ) { continue; }
 			for(ama::Node*+! ndi = nd_type.c; ndi; ndi = ndi.s) {
 				`again:`
-				if( ndi.node_class == ama::N_BINOP && is_type_suffix[ndi.s.data] ) {
+				if( ndi.node_class == ama::N_BINOP && is_type_suffix[ndi.data] ) {
 					ndi = UnparseBinop(ndi);
 					`goto again;`
 				}
@@ -330,7 +330,7 @@ namespace ama {
 						for(int! j = 0; j < n_levels; j += 1) {
 							ama::Node*+! ndi0 = stack.pop();
 							ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-							ama::Node*+! @nojson ndi0_next = ndi0.s;
+							ama::Node*+! ndi0_next = ndi0.s;
 							if( ndi0_next == ndi ) {
 								ndi0_next = NULL;
 							}

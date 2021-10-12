@@ -225,6 +225,7 @@ __global.default_options={
 	parse_colon_statements:1,
 	parse_cpp11_lambda:1,
 	parse_variable_declarations:1,
+	parse_cpp_declaration_initialization:1,
 	parse_c_conditional:1,
 	parse_labels:1,
 	parse_air_object:1,

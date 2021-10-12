@@ -42,6 +42,7 @@ function MigrateProject(fn,patches){
 			}
 		}
 	}
+	let cpps_to_translate=[];
 	for(let fn of depends.ListAllDependency(nd_root,false)){
 		//copy .cpp or .hpp for jc, and replace file names
 		let fn_rel=path.relative(dir,fn);
@@ -56,7 +57,8 @@ function MigrateProject(fn,patches){
 			}
 			let fn_cpp=fn_rel+(ext==='.jc'?'.cpp':'.hpp');
 			let fn_just_cpp=(ext==='.jc'?fn_rel.substr(0,fn_rel.length-3)+'.cpp':fn_rel.substr(0,fn_rel.length-4)+'.hpp')
-			script.push("sed '/#line/d;s%\\.jc\\.cpp%.cpp%g;s%\\.jch\\.hpp%.hpp%g' ",JSON.stringify(path.join(dir,fn_cpp)),' > ',JSON.stringify(path.join(dir_target,fn_just_cpp)),'\n')
+			script.push("sed '/#line/d;s%\\.jc\\.cpp%.cpp%g;s%\\.jch\\.hpp%.hpp%g' ",JSON.stringify(path.join(dir,fn_cpp)),' > ',JSON.stringify(path.join(dir_target,fn_just_cpp)),'\n');
+			cpps_to_translate.push(path.join(dir_target,fn_just_cpp));
 		}
 	}
 	let fn_script='/tmp/migrate_'+prj_name+'.sh'
@@ -176,6 +178,12 @@ function MigrateProject(fn,patches){
 	fn_script='/tmp/migrate_'+prj_name+'_jc_lib.sh'
 	fs.writeFileSync(fn_script,script.join(''));
 	__system('sh '+fn_script);
+	//back-translate cpps to .ama.cpp
+	let inv_sane_types=require('cpp/sane_types').inverse;
+	for(let fn_cpp of cpps_to_translate){
+		let nd_root=depends.LoadFile(fn_cpp);
+		nd_root.then(inv_sane_types).Save('.ama'+path.extname(fn_cpp))
+	}
 	//patch it
 	for(let key in patches){
 		let patch=patches[key];
