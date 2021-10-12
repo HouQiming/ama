@@ -32,7 +32,7 @@ void f() {
 		  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 		);
 		nd_root
-			.then(require('jsism').EnableConsole)
+			.then(require('cpp/jsism').EnableConsole)
 			.InsertCommentBefore('//ama output\n')
 			.UpdateCMakeLists('./CMakeLists.txt')
 			+ 1 

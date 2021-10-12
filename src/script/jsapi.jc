@@ -91,14 +91,6 @@ namespace ama {
 				obj_exports, //
 				obj_module, ama::WrapString(fn_final), ama::WrapString(path::dirname(fn_final))
 			};
-			//if( !JS_IsUndefined(custom_loader) ) {
-			//	//use custom_loader
-			//	const JSValueConst! ret_module = JS_Call(ctx, JS_DupValue(ctx, custom_loader), JS_GetGlobalObject(ctx), 4, module_args.data());
-			//	if( JS_IsException(ret_module) ) {
-			//		JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
-			//		return ret_module;
-			//	}
-			//} else {
 			const char[+]! s_fixed_code = GetScriptJSCode(fn_final);
 			if( !s_fixed_code.length ) {
 				JS_SetPropertyStr(ctx, g_require_cache, fn_final.str(), JS_UNDEFINED);
