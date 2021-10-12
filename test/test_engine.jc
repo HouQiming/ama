@@ -10,12 +10,6 @@ int! isWritten(ama::ExecSession*+! sess, ama::ExecNode*+! ed, ama::ExecEffect*+!
 }
 
 int! main(int! argc, char**! argv) {
-	char*! home_dir = getenv("HOME");
-	if( !home_dir ) {
-		home_dir = "/";
-	}
-	ama::std_module_dir = <<path.join(home_dir, '.ama_modules');
-	ama::std_module_dir_global = '/usr/share/ama_modules';
 	ama::InitScriptEnv();
 	char[+]^+! data = fs.readFileSync('./engine_input.c');
 	ama::Node*+! nd_root = ama::ParseCode(data.c_str(), JS_UNDEFINED);

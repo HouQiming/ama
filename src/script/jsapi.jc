@@ -484,6 +484,23 @@ namespace ama {
 	private JSValueConst! JSNodeGC(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		return JS_NewInt64(ctx, ama::gc());
 	}
+	private void! SetupConfigDirs() {
+		///////////
+		char*! home_dir = getenv("HOME");
+		if( !home_dir ) {
+			home_dir = "/";
+		}
+		ama::std_module_dir = <<path.join(home_dir, '.ama_modules');
+		#if defined(_WIN32)
+			char*! program_files = getenv("ProgramFiles");
+			if( !program_files ) {
+				program_files = "\\";
+			}
+			ama::std_module_dir_global = <<path.join(program_files, 'ama\\ama_modules');
+		#else
+			ama::std_module_dir_global = '/usr/share/ama_modules';
+		#endif
+	}
 	void! InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
@@ -495,6 +512,7 @@ namespace ama {
 		JS_NewClass(ama::g_runtime_handle, ama::g_node_classid, &class_def);
 		ama::g_node_proto = JS_NewObject(ama::jsctx);
 		///////////
+		SetupConfigDirs();
 		ama::GeneratedJSBindings();
 		JSValueConst! global = JS_GetGlobalObject(ama::jsctx);
 		JS_SetPropertyStr(ama::jsctx, global, '__global', global);

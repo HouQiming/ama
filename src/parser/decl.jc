@@ -638,7 +638,7 @@ namespace ama {
 			}
 			if( nd_def.node_class == ama::N_REF ) {
 				nd_def.flags |= ama::REF_WRITTEN;
-				ama::Node*+! @nojson nd_asgn = nd_def.p;
+				ama::Node*+! nd_asgn = nd_def.p;
 				if( nd_asgn.node_class == ama::N_RAW ) { nd_asgn = nd_asgn.p; }
 				if( nd_asgn && nd_asgn.node_class == ama::N_ASSIGNMENT && nd_asgn.data != NULL ) {
 					nd_def.flags |= ama::REF_RW;

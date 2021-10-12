@@ -17,27 +17,7 @@ int! main(int! argc, char**! argv) {
 		console.log('usage: ama [-s script] [files]');
 		return 1;
 	}
-	///////////
-	char*! home_dir = NULL;
-	#if defined(_WIN32)
-		intptr_t! lg = GetEnvironmentVariableW(`L"USERPROFILE"`, NULL, 0);
-		if( lg != ERROR_ENVVAR_NOT_FOUND ) {
-			uint16_t[+]! buf = new uint16_t[+]!(lg);
-			lg = GetEnvironmentVariableW(`L"USERPROFILE"`, LPWSTR(buf.data()), lg);
-			buf.resize(lg);
-			//this leak should be OK
-			home_dir = strdup(unicode::UTF16ToUTF8(buf).c_str());
-		}
-	#else
-		home_dir = getenv("HOME");
-	#endif
-	if( !home_dir ) {
-		home_dir = "/";
-	}
-	ama::std_module_dir = <<path.join(home_dir, '.ama_modules');
-	ama::std_module_dir_global = '/usr/share/ama_modules';
-	///////////
-	ama::InitScriptEnv();
+	ama::LazyInitScriptEnv();
 	char[+]! extra_script;
 	int! has_file = 0;
 	for(int! i = 1; i < argc; i += 1) {

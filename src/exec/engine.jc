@@ -665,7 +665,7 @@ ama::ExecEffect*+! ama::ExecSession::QueryEffects(ama::ExecSession*+! this, ama:
 			case ama::ENODE_PHI: {
 				//this is nd-cached! we must avoid ed ops! scan the statement instead
 				//auto eds_stmt=this.ComputeStatementRangeBackward(ed)
-				uint8_t[+]! affected = new uint8_t[+]!(this.interests.length - pef.last_interest_checked);
+				//uint8_t[+]! affected = new uint8_t[+]!(this.interests.length - pef.last_interest_checked);
 				for(ama::Node*+! ndi = nd_activation; ndi; ndi = ndi.PreorderNext(nd_activation)) {
 					//we CANNOT skip already-cached, non-decl children here: they're exactly what we phi!
 					if( ndi != nd_activation && ndi.GetCFGRole() == ama::CFG_DECL ) {
@@ -679,22 +679,22 @@ ama::ExecEffect*+! ama::ExecSession::QueryEffects(ama::ExecSession*+! this, ama:
 						intptr_t! first = this.name_to_interest[ndi.data] - 1L;
 						for(intptr_t! i = first; i >= pef.last_interest_checked; i = this.interests[i].same_name_next) {
 							if( this.MatchInterest(ndi, i) ) {
-								affected[i - pef.last_interest_checked] = 1;
+								//affected[i - pef.last_interest_checked] = 1;
+								//include all possible effects to avoid interpretation
+								ama::ExecEffect*+! new_effect = (ama::ExecEffect*+)(ama::poolAlloc(&this.pool, sizeof(ama::ExecEffect), EXEC_BLOCK_SIZE));
+								new_effect.interest_id = pef.last_interest_checked + i;
+								new_effect.nd_alleged_ref = ndi;
+								new_effect.x = pef.first;
+								pef.first = new_effect;
 							}
 						}
 					}
 				}
 				//include each interest at most once
-				for(int! i = 0; i < affected.length; i += 1) {
-					if( affected[i] ) {
-						ama::ExecEffect*+! new_effect = (ama::ExecEffect*+)(ama::poolAlloc(&this.pool, sizeof(ama::ExecEffect), EXEC_BLOCK_SIZE));
-						new_effect.interest_id = pef.last_interest_checked + i;
-						//nd_alleged_ref is pointless for phi
-						new_effect.nd_alleged_ref = nd_activation;
-						new_effect.x = pef.first;
-						pef.first = new_effect;
-					}
-				}
+				//for(int! i = 0; i < affected.length; i += 1) {
+				//	if( affected[i] ) {
+				//	}
+				//}
 				break;
 			}
 			case ama::ENODE_AFTER: {
