@@ -154,9 +154,7 @@ namespace ama {
 	ama::Node*+! ParseCode(char*! code, JSValue! options) {
 		//for external code that calls ParseCode as an API
 		LazyInitScriptEnv();
-		if( JS_IsNull(options) || JS_IsUndefined(options) ) {
-			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
-		}
+		options = ama::InheritOptions(options);
 		ama::Node*+! nd_root = ama::ParseSimplePairing(code, options);
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_pointed_brackets'), 1) ) {
 			ama::ParsePointedBrackets(nd_root);
@@ -212,10 +210,8 @@ namespace ama {
 			JS_DupValue(ama::jsctx, options)
 		};
 		options = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__PrepareOptions"), 2, prepare_option_args.data());
+		options = ama::InheritOptions(options);
 		//JS_DupValue(ama::jsctx, func_data[1])
-		if( JS_IsNull(options) || JS_IsUndefined(options) ) {
-			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
-		}
 		char*! file_data = (char*)(JSON.parse<uintptr_t>(ama::UnwrapString(func_data[0])));
 		ama::Node*+! nd_root = ParseCode(file_data, options);
 		nd_root.data = ama::UnwrapString(func_data[1]);
@@ -397,9 +393,7 @@ namespace ama {
 	private JSValueConst! JSApplyNodeFilter(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic) {
 		if( g_filters[magic].fo ) {
 			JSValue! options = argc >= 1 ? argv[0] : JS_UNDEFINED;
-			if( JS_IsNull(options) || JS_IsUndefined(options) ) {
-				options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
-			}
+			options = ama::InheritOptions(options);
 			return ama::WrapNode(g_filters[magic].fo(ama::UnwrapNode(this_val), options));
 		} else {
 			return ama::WrapNode(g_filters[magic].f(ama::UnwrapNode(this_val)));

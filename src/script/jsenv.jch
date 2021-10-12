@@ -69,4 +69,5 @@ namespace ama {
 	extern char*[+]! g_node_class_names;
 	Map<char[|], int>! GetPrioritizedList(JSValueConst! options, char*! name);
 	extern char[+]! std_module_dir_global;
+	JSValue! InheritOptions(JSValueConst! options);
 };

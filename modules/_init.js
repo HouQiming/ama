@@ -258,6 +258,18 @@ __global.__PrepareOptions=function(filename,options){
 	return options;
 }
 
+function fake_options_ctor(){}
+fake_options_ctor.prototype=__global.default_options;
+
+__global.__InheritOptions=function(options){
+	if(!options){return __global.default_options;}
+	if(options===__global.default_options||options instanceof fake_options_ctor){
+		return options;
+	}else{
+		return Object.assign(Object.create(__global.default_options),options);
+	}
+}
+
 __global.process={
 	env:new Proxy({}, {
 		get:function(target,key){

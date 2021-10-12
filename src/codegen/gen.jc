@@ -383,9 +383,7 @@ namespace ama {
 		this.nd_current = bk;
 	}
 	char[+]! GenerateCode(ama::Node*+! nd, JSValueConst! options) {
-		if( JS_IsNull(options) || JS_IsUndefined(options) ) {
-			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
-		}
+		options = ama::InheritOptions(options);
 		ama::CodeGenerator! ctx = new ama::CodeGenerator!();
 		ctx.tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
 		ctx.auto_space = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'auto_space'), 1);

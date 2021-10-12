@@ -111,9 +111,6 @@ namespace ama {
 	ama::Node*+! ParseSimplePairing(char*! feed, JSValueConst! options) {
 		//for debugging
 		char*! feed_all_begin = feed;
-		if( JS_IsNull(options) || JS_IsUndefined(options) ) {
-			options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'default_options');
-		}
 		char[|]! s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, 'symbols'));
 		char[...][+]! symbol_array = new char[...][+]!();
 		for(char[...]&! s_symbol : s_symbols.split(' ')) {

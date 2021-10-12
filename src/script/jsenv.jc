@@ -116,4 +116,7 @@ namespace ama {
 		}
 		return <<ret;
 	}
+	JSValue! InheritOptions(JSValueConst! options) {
+		return JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__InheritOptions"), 1, &options);
+	}
 };

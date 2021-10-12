@@ -62,7 +62,7 @@ Node.TokenizeCMakeArgs = function() {
 			merge_group.length = 0;
 		} else {
 			let n0 = ret.length;
-			for (let str of merge_group.map(nd=>nd.toSource()).join('').trim().split(' ')) {
+			for (let str of merge_group.map(nd=>nd.toSource(cmake_options)).join('').trim().split(' ')) {
 				ret.push(nString(str).setCommentsBefore(' '))
 			}
 			merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nScope.apply(null, ret.slice(n0)).c)
