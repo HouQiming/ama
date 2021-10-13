@@ -17,7 +17,7 @@ namespace ama {
 	const uint8_t! N_SCOPE = 7;
 	const uint8_t! N_FUNCTION = 8;
 	const uint8_t! N_CLASS = 9;
-	const uint8_t! N_TYPED_VAR = 10;
+	const uint8_t! N_POSTFIX = 10;
 	const uint8_t! N_DOT = 11;
 	const uint8_t! N_ITEM = 12;
 	const uint8_t! N_CALL = 13;
@@ -25,7 +25,7 @@ namespace ama {
 	const uint8_t! N_CALL_CUDA_KERNEL = 15;
 	const uint8_t! N_DEPENDENCY = 16;
 	const uint8_t! N_BINOP = 17;
-	const uint8_t! N_UNARY = 18;
+	const uint8_t! N_PREFIX = 18;
 	const uint8_t! N_ASSIGNMENT = 19;
 	const uint8_t! N_SCOPED_STATEMENT = 20;
 	const uint8_t! N_EXTENSION_CLAUSE = 21;
@@ -48,12 +48,13 @@ namespace ama {
 	const uint32_t! REF_WRITTEN = 1u;
 	//REF_RW is only set for REF_WRITTEN nodes: non-written nodes are trivially read 
 	const uint32_t! REF_RW = 2u;
-	const uint32_t! CALL_IS_UNARY_OPERATOR = 1u;
+	//function / class names are declared but not written
+	const uint32_t! REF_DECLARED = 4u;
+	//const uint32_t! CALL_IS_UNARY_OPERATOR = 1u;
 	const uint32_t! LITERAL_PARSED = 1u;
 	const uint32_t! STRING_SINGLE_QUOTED = 2u;
 	const uint32_t! DOT_PTR = 1u;
 	const uint32_t! DOT_CLASS = 2u;
-	const uint32_t! UNARY_POSTFIX = 1u;
 	const uint32_t! DEP_C_INCLUDE = 0u;
 	const uint32_t! DEP_JS_REQUIRE = 1u;
 	const uint32_t! DEP_TYPE_MASK = 31u;
@@ -235,16 +236,16 @@ namespace ama {
 		nd.s = NULL;
 		return ama::CreateNode(N_NODEOF, nd);
 	}
-	inline ama::Node*+! nUnary(char[|]! s, Node*+! nd) {
+	inline ama::Node*+! nPrefix(char[|]! s, Node*+! nd) {
 		nd.s = NULL;
-		return ama::CreateNode(N_UNARY, nd).setData(s);
+		return ama::CreateNode(N_PREFIX, nd).setData(s);
 	}
-	inline ama::Node*+! nUnaryPostfix(Node*+! nd, char[|]! s) {
+	inline ama::Node*+! nPostfix(Node*+! nd, char[|]! s) {
 		nd.s = NULL;
-		return ama::CreateNode(N_UNARY, nd).setData(s).setFlags(UNARY_POSTFIX);
+		return ama::CreateNode(N_POSTFIX, nd).setData(s);
 	}
 	inline ama::Node*+! nAssignment(Node*+! nd_def, Node*+! nd_value) {
-		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, NULL)));
+		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, NULL))).setData("");
 	}
 	inline ama::Node*+! nUpdate(Node*+! nd_def, char[|]! op, Node*+! nd_value) {
 		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, NULL))).setData(op);
@@ -255,9 +256,9 @@ namespace ama {
 	inline ama::Node*+! nExtensionClause(char[|]! keyword, Node*+! nd_arg, Node*+! nd_scope) {
 		return ama::CreateNode(N_EXTENSION_CLAUSE, cons(nd_arg, nd_scope)).setData(keyword);
 	}
-	inline ama::Node*+! nTypedVar(Node*+! nd_type, Node*+! nd_def) {
-		return ama::CreateNode(N_TYPED_VAR, cons(nd_type, cons(nd_def, NULL)));
-	}
+	//inline ama::Node*+! nTypedVar(Node*+! nd_type, Node*+! nd_def) {
+	//	return ama::CreateNode(N_TYPED_VAR, cons(nd_type, cons(nd_def, NULL)));
+	//}
 	//the namespace in `::foo`, the initial value in `int bar;`
 	inline ama::Node*+! nAir() {
 		return ama::CreateNode(N_AIR, NULL);

@@ -1,10 +1,7 @@
 // //// JC version: 3
-//#include <console.jch>
 #include '../ast/node.jch'
 #include "../script/jsenv.jch"
 #include "./operator.jch"
-#include "./postfix.jch"
-#include <console.jch>
 
 namespace ama {
 	private class ColonStackItem {
@@ -139,7 +136,8 @@ namespace ama {
 					nd_raw.ReplaceWith(nd_tmp);
 					//ndi.s = NULL;
 					ama::Node*+! nd_asgn = nd_tmp.ReplaceWith(ama::nAssignment(nd_raw, nd_value));
-					if( ndi.node_class == ama::N_SYMBOL && binop_priority[ndi.data] && ndi != nd_raw.c ) {
+					//always allow :=
+					if( ndi.node_class == ama::N_SYMBOL && (binop_priority[ndi.data] || ndi.data == ":") && ndi != nd_raw.c ) {
 						//updating assignment
 						ndi.Delete();
 						nd_asgn.data = ndi.DestroyForSymbol();
@@ -178,14 +176,35 @@ namespace ama {
 		}
 		return changed;
 	}
+	private ama::Node*+! FoldPostfix(ama::Node*+! nd_operand, ama::Node*+! nd_operator) {
+		ama::Node*+! nd_prefix_core = nd_operand;
+		while( nd_prefix_core.node_class == ama::N_PREFIX ) {
+			nd_prefix_core = nd_prefix_core.c;
+		}
+		ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+		if( nd_prefix_core != nd_operand ) {
+			nd_prefix_core.ReplaceWith(nd_tmp);
+		}
+		ama::Node*+! nd_unary = ama::nPostfix(nd_prefix_core.MergeCommentsAfter(nd_operator), nd_operator.data).setCommentsAfter(nd_operator.comments_after);
+		nd_operator.p = NULL;
+		nd_operator.FreeASTStorage();
+		if( nd_prefix_core != nd_operand ) {
+			nd_tmp.ReplaceWith(nd_unary);
+		} else {
+			nd_operand = nd_unary;
+		}
+		return nd_operand;
+	}
 	ama::Node*+! ParseOperators(ama::Node*+! nd_root, JSValueConst! options) {
 		Map<char[|], int>! binop_priority = ama::GetPrioritizedList(options, 'binary_operators');
 		Map<char[|], int>! prefix_ops = ama::GetPrioritizedList(options, 'prefix_operators');
 		Map<char[|], int>! postfix_ops = ama::GetPrioritizedList(options, 'postfix_operators');
 		Map<char[|], int>! named_ops = ama::GetPrioritizedList(options, 'named_operators');
+		Map<char[|], int>! c_type_prefix_operators = ama::GetPrioritizedList(options, 'c_type_prefix_operators');
+		Map<char[|], int>! is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
 		//named operators: convert refs to symbols
-		for(ama::Node*&+! nd_ref : nd_root.FindAll(ama::N_REF, NULL)) {
-			if( named_ops[nd_ref.data] ) {
+		for(ama::Node*+! nd_ref : nd_root.FindAll(ama::N_REF, NULL)) {
+			if( named_ops[nd_ref.data] || (c_type_prefix_operators[nd_ref.data] && nd_ref.s && nd_ref.s.node_class == ama::N_REF && nd_ref.p && nd_ref.p.node_class == ama::N_RAW) ) {
 				nd_ref.node_class = ama::N_SYMBOL;
 			}
 		}
@@ -201,26 +220,20 @@ namespace ama {
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
 				if( ndi.node_class == ama::N_SYMBOL ) {
+					if( ndi.data != "=" ) {
+						//fold ambiguous_type_suffix as postfix if we got another symbol that isn't =
+						if( stack.length > 0 && stack.back().node_class == ama::N_SYMBOL && is_type_suffix[stack.back().data] ) {
+							ama::Node*+! nd_operator = stack.pop();
+							ama::Node*+! nd_operand = stack.pop();
+							nd_operand = FoldPostfix(nd_operand, nd_operator);
+							stack.push_back(nd_operand);
+						}
+					}
 					int! pr = 0x7fffffff;
 					if( postfix_ops[ndi.data] && stack.length > 0 && stack.back().node_class != ama::N_SYMBOL ) {
 						//precedence problem - need to replace the prefix-core instead
 						ama::Node*+! nd_operand = stack.pop();
-						ama::Node*+! nd_prefix_core = nd_operand;
-						while( nd_prefix_core.node_class == ama::N_UNARY && !(nd_prefix_core.flags & ama::UNARY_POSTFIX) ) {
-							nd_prefix_core = nd_prefix_core.c;
-						}
-						ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-						if( nd_prefix_core != nd_operand ) {
-							nd_prefix_core.ReplaceWith(nd_tmp);
-						}
-						ama::Node*+! nd_unary = ama::nUnaryPostfix(nd_prefix_core.MergeCommentsAfter(ndi), ndi.data);
-						ndi.p = NULL;
-						ndi.FreeASTStorage();
-						if( nd_prefix_core != nd_operand ) {
-							nd_tmp.ReplaceWith(nd_unary);
-						} else {
-							nd_operand = nd_unary;
-						}
+						nd_operand = FoldPostfix(nd_operand, ndi);
 						stack.push_back(nd_operand);
 						ndi = ndi_next;
 						changed = 1;
@@ -243,7 +256,7 @@ namespace ama {
 							break;
 						}
 						ama::Node*+! nd_prefix_operator = stack.pop();
-						ndi = ama::nUnary(nd_prefix_operator.data, ndi);
+						ndi = ama::nPrefix(nd_prefix_operator.data, ndi);
 						nd_prefix_operator.p = NULL;
 						nd_prefix_operator.FreeASTStorage();
 						changed = 1;
@@ -251,6 +264,13 @@ namespace ama {
 				}
 				stack.push_back(ndi);
 				ndi = ndi_next;
+			}
+			//fold any leftover ambiguous_type_suffix as postfix at the end
+			if( stack.length > 0 && stack.back().node_class == ama::N_SYMBOL && is_type_suffix[stack.back().data] ) {
+				ama::Node*+! nd_operator = stack.pop();
+				ama::Node*+! nd_operand = stack.pop();
+				nd_operand = FoldPostfix(nd_operand, nd_operator);
+				stack.push_back(nd_operand);
 			}
 			//fold remaining binops
 			changed |= FoldBinop(binop_priority, stack, 1);
@@ -267,51 +287,21 @@ namespace ama {
 				}
 			}
 		}
-		//convert named unary ops to call
-		for(ama::Node*&+! nd_unary : nd_root.FindAll(ama::N_UNARY, NULL)) {
-			if( named_ops[nd_unary.data] && !(nd_unary.flags & ama::UNARY_POSTFIX) ) {
-				//if( nd_unary.c && nd_unary.c.comments_before == " " ) {
-				//	nd_unary.c.comments_before = '';
-				//}
-				nd_unary.ReplaceWith(ama::CreateNode(ama::N_CALL, ama::cons(ama::nRef(nd_unary.data), nd_unary.c)).setFlags(ama::CALL_IS_UNARY_OPERATOR));
-				nd_unary.c = NULL;
-				nd_unary.FreeASTStorage();
-			}
-		}
+		//unify named unary ops to call: `sizeof(T)` could have been mistakenly parsed as N_CALL
+		//for(ama::Node*&+! nd_unary : nd_root.FindAll(ama::N_PREFIX, NULL)) {
+		//	if( named_ops[nd_unary.data] ) {
+		//		//if( nd_unary.c && nd_unary.c.comments_before == " " ) {
+		//		//	nd_unary.c.comments_before = '';
+		//		//}
+		//		nd_unary.ReplaceWith(ama::CreateNode(ama::N_CALL, ama::cons(ama::nRef(nd_unary.data), nd_unary.c)).setFlags(ama::CALL_IS_UNARY_OPERATOR));
+		//		nd_unary.c = NULL;
+		//		nd_unary.FreeASTStorage();
+		//	}
+		//}
 		//convert failed-to-fold named ops back
-		for(ama::Node*&+! nd_ref : nd_root.FindAll(ama::N_SYMBOL, NULL)) {
-			if( named_ops[nd_ref.data] ) {
+		for(ama::Node*+! nd_ref : nd_root.FindAll(ama::N_SYMBOL, NULL)) {
+			if( named_ops[nd_ref.data] || c_type_prefix_operators[nd_ref.data] ) {
 				nd_ref.node_class = ama::N_REF;
-			}
-		}
-		return nd_root;
-	}
-	ama::Node*+! ParseTypePostfixOperators(ama::Node*+! nd_root, JSValueConst! options) {
-		Map<char[|], int>! is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
-		for(ama::Node*&! nd_tv : nd_root.FindAll(ama::N_TYPED_VAR, NULL)) {
-			ama::Node*+! nd_type = nd_tv.c;
-			if( nd_type.node_class != ama::N_RAW ) { continue; }
-			for(ama::Node*+! ndi = nd_type.c; ndi; ndi = ndi.s) {
-				`again:`
-				if( ndi.node_class == ama::N_BINOP && is_type_suffix[ndi.data] ) {
-					ndi = UnparseBinop(ndi);
-					`goto again;`
-				}
-				if( ndi.s && ndi.s.isRawNode('[', ']') ) {
-					ndi = ama::TranslatePostfixCall(ndi);
-					`goto again;`
-				}
-				if( ndi.s && ndi.s.node_class == ama::N_SYMBOL && is_type_suffix[ndi.s.data] ) {
-					ama::Node*+! nd_opr = ndi.s;
-					ndi.MergeCommentsAfter(nd_opr);
-					nd_opr.Delete();
-					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-					ndi.ReplaceWith(nd_tmp);
-					std::swap(ndi.comments_after, nd_tmp.comments_after);
-					ndi = nd_tmp.ReplaceWith(ama::nUnaryPostfix(ndi, nd_opr.data).setCommentsAfter(nd_opr.comments_after));
-					nd_opr.FreeASTStorage();
-					`goto again;`
-				}
 			}
 		}
 		return nd_root;

@@ -224,7 +224,7 @@ __global.default_options={
 	parse_keyword_statements:1,
 	parse_colon_statements:1,
 	parse_cpp11_lambda:1,
-	parse_variable_declarations:1,
+	parse_declarations:1,
 	parse_cpp_declaration_initialization:1,
 	parse_c_conditional:1,
 	parse_labels:1,
@@ -235,10 +235,12 @@ __global.default_options={
 	parse_js_regexp:1,
 	///////////
 	binary_operators:'||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
-	prefix_operators:'++ -- ! ~ + - * && & typeof void delete sizeof await co_await new',
-	postfix_operators:'++ --',
+	prefix_operators:'++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile',
+	postfix_operators:'const volatile ++ --',
 	//void is too common in C/C++ to be treated as an operator by default
-	named_operators:'typeof delete sizeof await co_await new in instanceof as',
+	named_operators:'typeof delete sizeof await co_await new in instanceof as const volatile',
+	//unlike general named_operators, c_type_prefix_operators only make sense when used before another identifier
+	c_type_prefix_operators:'unsigned signed long short',
 	ambiguous_type_suffix:'* ** ^ & &&',
 	///////////
 	keywords_class:'class struct union namespace interface impl trait',

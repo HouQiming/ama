@@ -28,42 +28,6 @@ namespace ama {
 		}
 		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params).setIndent(nd_raw.indent_level).setCommentsBefore(nd_raw.comments_before).setCommentsAfter(nd_raw.comments_after);
 	}
-	private char[|]! GetFunctionName(int! is_keyworded, ama::Node*+! nd_func) {
-		char[|]! name = '';
-		ama::Node*+! nd_before = nd_func.c;
-		if( is_keyworded ) {
-			//just take the last identifier
-			//if nd_before is a single node, it must be the keyword
-			if( nd_before.node_class == ama::N_RAW ) {
-				//the first child is the keyword
-				for(ama::Node*+! ndi = nd_before.c.s; ndi; ndi = ndi.s) {
-					if( ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT ) {
-						name = ndi.data;
-					}
-				}
-			}
-		} else {
-			//try to find a name
-			int! found = 0;
-			for(ama::Node*+! ndi = nd_before.c; ndi; ndi = ndi.s) {
-				if( ndi.node_class == ama::N_REF || ndi.node_class == ama::N_DOT ) {
-					name = ndi.data;
-					found = 1;
-				}
-			}
-			if( !found ) {
-				//test for old C macro FOO_DECL(int,foo)(int bar){}
-				ama::Node*+! nd_maybe_c_macro = nd_before.node_class == ama::N_RAW ? nd_before : nd_before.LastChild();
-				if( nd_maybe_c_macro && (nd_maybe_c_macro.node_class == ama::N_CALL || nd_maybe_c_macro.isRawNode('(', ')')) ) {
-					ama::Node*+! nd_maybe_name = nd_maybe_c_macro.LastChild();
-					if( nd_maybe_name.node_class == ama::N_REF ) {
-						name = nd_maybe_name.data;
-					}
-				}
-			}
-		}
-		return name;
-	}
 	//detects: N_FUNCTION and N_CLASS
 	//also parses if / else / ...
 	//after ParseAssignment	
@@ -147,7 +111,7 @@ namespace ama {
 		ama::Node*+! nd_after = ama::toSingleNode(nd_proto.BreakSibling());
 		ama::Node*+! nd_before = ama::toSingleNode(nd_raw.BreakChild());
 		ama::Node*+! nd_func = ama::nFunction(nd_before, ConvertToParameterList(nd_proto), nd_after, ama::nAir());
-		nd_func.data = GetFunctionName(0, nd_func);
+		//nd_func.data = GetFunctionName(0, nd_func);
 		nd_raw.ReplaceWith(nd_func);
 		nd_raw.FreeASTStorage();
 		return nd_func;
@@ -169,50 +133,6 @@ namespace ama {
 		Map<char[|], int>! keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
 		Map<char[|], int>! keywords_not_a_function = ama::GetPrioritizedList(options, "keywords_not_a_function");
 		int32_t! parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_forward_declarations'), 1);
-		//obsoleting: ParseColons is now after this
-		/*
-		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_colon_statements'), 1) ) {
-			//use reverse() to facilitate recursive unparsing of if foo:{}else:{}
-			for(ama::Node*+! nd_labeled : nd_root.FindAll(ama::N_LABELED, NULL).reverse()) {
-				if( nd_labeled.c.node_class == ama::N_RAW && nd_labeled.c.c && (nd_labeled.c.c.node_class == ama::N_REF || nd_labeled.c.c.node_class == ama::N_CALL) ) {
-					char[|]! name = nd_labeled.c.c.GetName();
-					if( keywords_scoped_statement[name] || keywords_extension_clause[name] ) {
-						ama::UnparseLabel(nd_labeled);
-					}
-				} else if( nd_labeled.c.node_class == ama::N_REF || nd_labeled.c.node_class == ama::N_CALL ) {
-					char[|]! name = nd_labeled.c.GetName();
-					if( keywords_scoped_statement[name] || keywords_extension_clause[name] ) {
-						ama::UnparseLabel(nd_labeled);
-					}
-				} else if( (nd_labeled.c.s.node_class == ama::N_SCOPE && nd_labeled.c.node_class == ama::N_RAW) || nd_labeled.c.node_class == ama::N_CALL ) {
-					if( nd_labeled.c.node_class == ama::N_CALL ) {
-						ama::Node*+! nd_call = nd_labeled.c;
-						ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-						nd_call.ReplaceWith(nd_tmp);
-						nd_tmp.ReplaceWith(ama::CreateNode(ama::N_RAW, nd_call));
-					}
-					ama::Node*+! nd_maybe_call = nd_labeled.c.LastChild();
-					if( nd_maybe_call.node_class == ama::N_CALL ) {
-						//foo():{bar}, treat as function
-						ama::Node*+! nd_body = nd_labeled.c.s;
-						ama::Node*+! nd_paramlist = ama::UnparseCall(nd_maybe_call).s;
-						ama::Node*+! nd_before = nd_labeled.c.c;
-						ama::Node*+! nd_after = nd_paramlist.s;
-						nd_paramlist.Delete();
-						//before, paramlist, after, body
-						ama::Node*+! nd_func = ama::CreateNode(ama::N_FUNCTION, ama::cons(
-							ama::toSingleNode(nd_before), ama::cons(
-								ConvertToParameterList(nd_paramlist),
-								ama::cons(ama::toSingleNode(nd_after), nd_body)
-							)
-						));
-						nd_func.data = GetFunctionName(1, nd_func);
-						nd_labeled.ReplaceWith(nd_func);
-					}
-				}
-			}
-		}
-		*/
 		int32_t! parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp11_lambda'), 1);
 		int32_t! struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'struct_can_be_type_prefix'), 1);
 		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
@@ -473,7 +393,7 @@ namespace ama {
 							nd_after = ama::toSingleNode(nd_after);
 							ama::ConvertToScope(ndi);
 							nd_func.Insert(ama::POS_FRONT, ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, ndi))));
-							nd_func.data = GetFunctionName(kw_mode == KW_FUNC, nd_func);
+							//nd_func.data = GetFunctionName(kw_mode == KW_FUNC, nd_func);
 							ndi = nd_func;
 							nd_prototype_start = ndi.s;
 							ndi_next = ndi.s;
@@ -550,6 +470,19 @@ namespace ama {
 		}
 		/////////
 		//don't set REF_WRITTEN for function / class names: it's not profitable to treat them as "written" in our current AST formulation
+		//turn params into N_ASSIGNMENT
+		for(ama::Node*+! nd_paramlist : nd_root.FindAll(ama::N_PARAMETER_LIST, NULL).concat(nd_root.FindAll(ama::N_CALL_TEMPLATE, 'template'))) {
+			for(ama::Node*+! nd_param = nd_paramlist.node_class == ama::N_CALL_TEMPLATE ? nd_paramlist.c.s : nd_paramlist.c; nd_param; nd_param = nd_param.s) {
+				if( nd_param.node_class == ama::N_ASSIGNMENT ) { continue; }
+				if( nd_param.node_class == ama::N_SYMBOL || (nd_param.node_class == ama::N_RAW && nd_param.c && nd_param.c.node_class == ama::N_SYMBOL) ) {
+					//rest args
+					continue;
+				}
+				ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+				nd_param.ReplaceWith(nd_tmp);
+				nd_param = nd_tmp.ReplaceWith(ama::nAssignment(nd_param, ama::nAir()));
+			}
+		}
 		return nd_root;
 	}
 	ama::Node*+! ParseKeywordStatements(ama::Node*+! nd_root, JSValue! options) {
@@ -583,96 +516,168 @@ namespace ama {
 		}
 		return nd_root;
 	}
+	private void! FixTypeSuffixFromInnerRef(Map<char[|], int>&! ambiguous_type_suffix, ama::Node*+! nd_ref) {
+		while( (nd_ref.p.node_class == ama::N_ITEM || nd_ref.p.node_class == ama::N_CALL) && nd_ref == nd_ref.p.c ) {
+			nd_ref = nd_ref.p;
+		}
+		if( nd_ref.p.node_class == ama::N_BINOP && nd_ref.p.c.s == nd_ref && ambiguous_type_suffix[nd_ref.p.data] ) {
+			ama::UnparseBinop(nd_ref.p);
+		}
+		while( nd_ref.Prev() && nd_ref.Prev().node_class == ama::N_SYMBOL && ambiguous_type_suffix[nd_ref.Prev().data] && nd_ref.Prev().Prev() ) {
+			ama::Node*+! nd_opr = nd_ref.Prev();
+			ama::Node*+! ndi = nd_opr.Prev();
+			ndi.MergeCommentsAfter(nd_opr);
+			nd_opr.Delete();
+			ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+			ndi.ReplaceWith(nd_tmp);
+			std::swap(ndi.comments_after, nd_tmp.comments_after);
+			ndi = nd_tmp.ReplaceWith(ama::nPostfix(ndi, nd_opr.data).setCommentsAfter(nd_opr.comments_after));
+			nd_opr.FreeASTStorage();
+		}
+	}
 	//detects N_TYPED_VAR
 	//also sets REF_WRITTEN and REF_RW
 	//after ParseAssignment
-	ama::Node*+! ParseVariableDeclarations(ama::Node*+! nd_root, JSValue! options) {
+	ama::Node*+! ParseDeclarations(ama::Node*+! nd_root, JSValue! options) {
+		//find declaratives and set REF_DECLARED
+		//also find writes and set REF_WRITTEN
 		Map<char[|], int>! ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		Map<char[|], int>! keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		int32_t! parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp_declaration_initialization'), 1);
-		//if templates weren't parsed, we won't get N_CALL_TEMPLATE anyway
-		//turn params into N_ASSIGNMENT
-		for(ama::Node*+! nd_paramlist : nd_root.FindAll(ama::N_PARAMETER_LIST, NULL).concat(nd_root.FindAll(ama::N_CALL_TEMPLATE, 'template'))) {
-			for(ama::Node*+! nd_param = nd_paramlist.node_class == ama::N_CALL_TEMPLATE ? nd_paramlist.c.s : nd_paramlist.c; nd_param; nd_param = nd_param.s) {
-				if( nd_param.node_class == ama::N_ASSIGNMENT ) { continue; }
-				if( nd_param.node_class == ama::N_SYMBOL || (nd_param.node_class == ama::N_RAW && nd_param.c && nd_param.c.node_class == ama::N_SYMBOL) ) {
-					//rest args
-					continue;
-				}
-				ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-				nd_param.ReplaceWith(nd_tmp);
-				nd_param = nd_tmp.ReplaceWith(ama::nAssignment(nd_param, ama::nAir()));
-			}
-		}
-		ama::Node*+[+]! potential_defs = new ama::Node*+[+]!();
-		ama::Node*+[+]! raws_to_test = new ama::Node*+[+]!();
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
-			if( !nd_raw.isRawNode(0, 0) ) { continue; }
-			//nd_raw.p.node_class==N_FUNCTION&&nd_raw==nd_raw.p.c: function return type
-			if( !(nd_raw.p && 
-			(nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_FILE || 
-			(nd_raw.p.node_class == ama::N_FUNCTION && nd_raw == nd_raw.p.c))) ) {
+		for(ama::Node*+! nd_ref : nd_root.FindAll(ama::N_REF, NULL)) {
+			ama::Node*+! nd_stmt = nd_ref.ParentStatement();
+			if( nd_ref.p.node_class == ama::N_CLASS && nd_ref.p.c.s == nd_ref ) {
+				//class, just declared and nothing else
+				nd_ref.flags |= ama::REF_DECLARED;
 				continue;
 			}
-			raws_to_test.push_back(nd_raw);
-		}
-		for(ama::Node*+! nd_asgn : nd_root.FindAll(ama::N_ASSIGNMENT, NULL).concat(nd_root.FindAll(ama::N_FUNCTION, NULL))) {
-			ama::Node*+! nd_def = nd_asgn.c;
-			if( nd_def.node_class == ama::N_RAW ) {
-				raws_to_test.push_back(nd_def);
-				continue;
-			}
-			potential_defs.push(nd_def);
-		}
-		for(ama::Node*+! nd_raw : raws_to_test) {
-			ama::Node*+! nd_def = nd_raw.LastChild();
-			if( nd_def ) { potential_defs.push(nd_def); }
-		}
-		for(ama::Node*+! nd_def : potential_defs) {
-			//if( parse_cpp_declaration_initialization && nd_def && nd_def != nd_raw.c ) {
-			//	//check for C++ {} / () initializer
-			//	if( nd_def.node_class == ama::N_SCOPE || nd_def.isRawNode('{', '}') ) {
-			//		nd_def = nd_def.Prev();
-			//		//TODO: initializer node
-			//	} else if( nd_def.node_class == ama::N_CALL ) {
-			//		nd_def = ama::UnparseCall(nd_def);
-			//		//TODO: initializer node
-			//	}
-			//}
-			if( nd_def.node_class == ama::N_BINOP && ambiguous_type_suffix[nd_def.data] ) {
-				//type-binop ambiguity: foo*[3]*b=bar*[3]*b
-				//a sane method to resolve such ambiguity: LHS of assignment, in a function prototype... and it's C-specific
-				//makes sense to put in a separate pass! and maybe unify the situations to "LHS of assignment" first
-				nd_def = ama::UnparseBinop(nd_def);
-				assert(nd_def.s.node_class == ama::N_SYMBOL);
-				//avoid space before type suffix
-				//nd_def.s.comments_before = "";
-				while( nd_def.s ) {
-					nd_def = nd_def.s;
+			//TODO: {} nd_destructuring is only detectible outside
+			if( nd_stmt.node_class == ama::N_ASSIGNMENT && nd_stmt.c.isAncestorOf(nd_ref) ) {
+				//Go := operator or general assignment
+				//TODO: could be type / N_ITEM / N_DOT, not necessarily written
+				nd_ref.flags |= ama::REF_WRITTEN;
+				if( nd_stmt.data == ":" || nd_stmt.data == "" ) {
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
+					if( nd_stmt.data == ":" ) {
+						//Go := operator
+						nd_ref.flags |= ama::REF_DECLARED;
+					} else {
+						//destructuring case: `type {...,foo,...}=...; {"bar":foo}=...; [foo]=...`
+						ama::Node*+! nd_destructuring = nd_ref;
+						int! destructured = 0;
+						while( nd_destructuring != nd_stmt ) {
+							if( nd_destructuring.node_class == ama::N_SCOPE || nd_destructuring.isRawNode('[', ']') || nd_destructuring.isRawNode('{', '}') || nd_destructuring.isRawNode('(', ')') ) {
+								destructured = 1;
+								break;
+							}
+							if( nd_destructuring.p && nd_destructuring.p.node_class == ama::N_LABELED && nd_destructuring == nd_destructuring.p.c ) {
+								//used as a label in JS destructuring, drop it
+								destructured = 0;
+								break;
+							}
+							nd_destructuring = nd_destructuring.p;
+						}
+						if( destructured ) {
+							nd_ref.flags |= ama::REF_DECLARED;
+						}
+					}
+					//could be a C initialized declaration, defer for now
+				} else {
+					//updating assignment
+					nd_ref.flags |= ama::REF_RW;
 				}
 			}
-			while( nd_def.node_class == ama::N_UNARY && !(nd_def.flags & ama::UNARY_POSTFIX) && ambiguous_type_suffix[nd_def.data] ) {
-				nd_def = ama::UnparseUnary(nd_def);
-				while( nd_def.s ) {
-					nd_def = nd_def.s;
+			//Rust / JS / Go var / let keyword
+			//C/C++ type foo
+			//C/C++ type foo, *bar[baz]
+			//C++/JS LHS {} destructuring
+			ama::Node*+! nd_cdecl = nd_ref;
+			while( nd_cdecl && nd_cdecl != nd_stmt ) {
+				if( nd_cdecl.p.node_class == ama::N_RAW ) {
+					ama::Node*+! nd_core = nd_cdecl;
+					nd_cdecl = nd_cdecl.p;
+					if( !nd_core.s || nd_core.s.isSymbol(",") || nd_core.s.isSymbol(";") || 
+					(parse_cpp_declaration_initialization && (nd_core.s.node_class == ama::N_SCOPE || nd_core.s.isRawNode('{', '}'))) ) {
+						//it could be a declarative raw
+					} else {
+						//don't go to that raw
+						nd_cdecl = nd_core;
+					}
+					break;
 				}
+				if( ((nd_cdecl.p.node_class == ama::N_ITEM || nd_cdecl.p.node_class == ama::N_CALL) && nd_cdecl == nd_cdecl.p.c) || 
+				(nd_cdecl.p.node_class == ama::N_BINOP && ambiguous_type_suffix[nd_cdecl.p.data] && nd_cdecl == nd_cdecl.p.c.s) || 
+				nd_cdecl.p.node_class == ama::N_PREFIX ) {
+					//it's OK
+				} else {
+					break;
+				}
+				nd_cdecl = nd_cdecl.p;
 			}
-			//TODO: DOT case
-			if( nd_def.node_class == ama::N_REF ) {
-				nd_def.flags |= ama::REF_WRITTEN;
-				ama::Node*+! nd_asgn = nd_def.p;
-				if( nd_asgn.node_class == ama::N_RAW ) { nd_asgn = nd_asgn.p; }
-				if( nd_asgn && nd_asgn.node_class == ama::N_ASSIGNMENT && nd_asgn.data != NULL ) {
-					nd_def.flags |= ama::REF_RW;
+			if( nd_cdecl != nd_ref ) {
+				//we found at least one feasible declaration-ish
+				//check parent
+				int! is_ok = 0;
+				if( nd_cdecl.p && nd_cdecl.p.node_class == ama::N_LABELED && nd_cdecl.p.c == nd_cdecl && nd_stmt.node_class == ama::N_SCOPED_STATEMENT && nd_stmt.c.isAncestorOf(nd_cdecl) ) {
+					//foo in `for(foo:bar)`
+					is_ok = 1;
+				} else if( nd_cdecl == nd_stmt ) {
+					//foo in `type foo;` or `type bar,*foo[8];`
+					is_ok = 1;
+				} else if( nd_cdecl.p && nd_cdecl.p.node_class == ama::N_ASSIGNMENT && nd_cdecl.p.c == nd_cdecl ) {
+					//foo in `type foo=bar;` or `type bar,*foo[8],baz=...;`
+					is_ok = 1;
+				} else if( nd_cdecl.p && nd_cdecl.p.node_class == ama::N_FUNCTION && nd_cdecl.p.c == nd_cdecl ) {
+					//non-dotted function declaration, handle it here, also name the function
+					is_ok = 1;
+					if( nd_cdecl.p.data == NULL ) {
+						nd_cdecl.p.data = nd_ref.data;
+					}
 				}
-				if( nd_def.p && nd_def.p.node_class == ama::N_RAW && !nd_def.s && nd_def != nd_def.p.c ) {
-					ama::Node*+! nd_raw = nd_def.p;
-					nd_def.Delete();
-					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
-					nd_raw.ReplaceWith(nd_tmp);
-					nd_tmp.ReplaceWith(ama::nTypedVar(nd_raw, nd_def));
+				if( is_ok ) {
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
+					nd_ref.flags |= ama::REF_DECLARED;
 				}
 			}
 		}
+		//detect type before dotted function name
+		//non-dotted non-C-macro functions should have been handled above
+		for(ama::Node*+! nd_func : nd_root.FindAll(ama::N_FUNCTION, NULL)) {
+			if( nd_func.data != NULL ) { continue; }
+			//C++ dotted declaration: `type foo::bar(){}`
+			//common C macro style: `FOO_DECL(int,foo)(int bar){}`
+			nd_func.data = '';
+			ama::Node*+! nd_before = nd_func.c;
+			//try to find a name
+			int! found = 0;
+			for(ama::Node*+! ndi = nd_before.c; ndi; ndi = ndi.s) {
+				//we could have mistaken it for binop due to type shenanigans
+				ama::Node*+! ndj = ndi;
+				while( ndj.node_class == ama::N_BINOP && ambiguous_type_suffix[ndj.data] ) {
+					ndj = ndj.c.s;
+				}
+				if( ndj.node_class == ama::N_REF || ndj.node_class == ama::N_DOT ) {
+					//the starting keyword doesn't count
+					//if it appears after a non-key word, we are likely in the wrong language so take the name
+					if( !found && keywords_function[ndj.data] ) { continue; }
+					nd_func.data = ndj.data;
+					found = 1;
+				}
+			}
+			if( !found ) {
+				//test for old C macro style `FOO_DECL(int,foo)(int bar){}`
+				ama::Node*+! nd_maybe_c_macro = nd_before.node_class == ama::N_RAW ? nd_before : nd_before.LastChild();
+				if( nd_maybe_c_macro && (nd_maybe_c_macro.node_class == ama::N_CALL || nd_maybe_c_macro.isRawNode('(', ')')) ) {
+					ama::Node*+! nd_maybe_name = nd_maybe_c_macro.LastChild();
+					if( nd_maybe_name.node_class == ama::N_REF ) {
+						//C macros won't have dotted name / mistaken-N_BINOP here
+						nd_func.data = nd_maybe_name.data;
+					}
+				}
+			}
+		}
+		//we can't possibly have types-mistaken-as-binop in casts for standard C/C++
+		//TODO: support querying declared types after the flagging
 		return nd_root;
 	}
 };

@@ -22,14 +22,26 @@ function TranslateTemplates(nd_root, alt_templates, is_forward) {
 		for (let key in templates) {
 			match_jobs.push(templates[key]);
 		}
+		for (let nd_tv of nd_root.FindAll(N_TYPED_VAR, null)) {
+			let nd_type = nd_tv.c;
+			for (let ndi = nd_type; ndi; ndi = ndi.PreorderNext(nd_tv.c)) {
+				for (let job of match_jobs) {
+					let match = ndi.Match(job.from);
+					if (match) {
+						for (let param in match) {
+							if (param != 'nd' && match[param].s) {match[param].BreakSibling();}
+						}
+						ndi = ndi.ReplaceWith(job.to.Subst(match));
+						break;
+					}
+				}
+			}
+		}
 	} else {
 		for (let key in templates) {
 			match_jobs.push({from: templates[key].to,to: templates[key].from});
 		}
-	}
-	for (let nd_tv of nd_root.FindAll(N_TYPED_VAR)) {
-		let nd_type = nd_tv.c;
-		for (let ndi = nd_type; ndi; ndi = ndi.PreorderNext(nd_tv.c)) {
+		for (let ndi = nd_root; ndi; ndi = ndi.PreorderNext(nd_root)) {
 			for (let job of match_jobs) {
 				let match = ndi.Match(job.from);
 				if (match) {

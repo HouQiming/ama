@@ -115,7 +115,7 @@ private void! CollectComputedLabels(ama::Node*+[+]&+! addressed_labels, Map<char
 			ndi = ndi.PreorderLastInside();
 			continue;
 		}
-		if( ndi.node_class == ama::N_UNARY && !(ndi.flags & ama::UNARY_POSTFIX) && ndi.data == '&&' && ndi.c.node_class == ama::N_REF ) {
+		if( ndi.node_class == ama::N_PREFIX && ndi.data == '&&' && ndi.c.node_class == ama::N_REF ) {
 			ama::Node*+! nd_target = labels[ndi.c.data];
 			if( nd_target ) {
 				addressed_labels.push_back(nd_target);

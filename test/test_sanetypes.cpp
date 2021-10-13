@@ -17,27 +17,27 @@ int[] test(char[:] a,uint32_t[]*[:]& b){
 	return 0;
 }
 
-std::vector<ama::ExecNode*> ama::ExecSession::ComputeReachableSet(JC::array_base<ama::ExecNode*> entries, int32_t dir) {
-	std::vector<ama::ExecNode*> Q{};
-	std::unordered_map<ama::ExecNode*, intptr_t> inQ{};
-	for( ama::ExecNode*& ed: entries ) {
+ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries, int32_t dir) {
+	ama::ExecNode*[] Q{};
+	Map<ama::ExecNode*, intptr_t> inQ{};
+	for ( ama::ExecNode * & ed: entries ) {
 		Q.push_back(ed);
 		JC::map_set(inQ, ed, 1);
 	}
-	for(int qi = 0; qi < Q.size(); qi += 1) {
-		if( dir & ama::REACH_FORWARD ) {
-			for(ama::ExecNodeExtraLink* link = Q[qi]->next.more; link; link = link->x) {
+	for (int qi = 0; qi < Q.size(); qi += 1) {
+		if ( dir & ama::REACH_FORWARD ) {
+			for (ama::ExecNodeExtraLink* link = Q[qi]->next.more; link; link = link->x) {
 				ama::ExecNode* edi = link->target;
-				if( !JC::map_get(inQ, edi) ) {
+				if ( !JC::map_get(inQ, edi) ) {
 					JC::push(Q, edi);
 					JC::map_set(inQ, edi, 1);
 				}
 			}
 		}
-		if( dir & ama::REACH_BACKWARD ) {
-			for(ama::ExecNodeExtraLink* link = Q[qi]->prev.more; link; link = link->x) {
+		if ( dir & ama::REACH_BACKWARD ) {
+			for (ama::ExecNodeExtraLink* link = Q[qi]->prev.more; link; link = link->x) {
 				ama::ExecNode* edi = link->target;
-				if( !JC::map_get(inQ, edi) ) {
+				if ( !JC::map_get(inQ, edi) ) {
 					JC::push(Q, edi);
 					JC::map_set(inQ, edi, 1);
 				}

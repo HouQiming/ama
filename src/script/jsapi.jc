@@ -185,17 +185,12 @@ namespace ama {
 		//nd_root.Validate();
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
 			ama::ParseOperators(nd_root, options);
-			//ama::StripBinaryOperatorSpaces(nd_root);
 		}
-		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_variable_declarations'), 1) ) {
-			ama::ParseVariableDeclarations(nd_root, options);
-			if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
-				ama::ParseTypePostfixOperators(nd_root, options);
-			}
+		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_declarations'), 1) ) {
+			ama::ParseDeclarations(nd_root, options);
 		}
 		//DumpASTAsJSON(nd_root);
 		ama::NodifySemicolonAndParenthesis(nd_root);
-		//ama::ParseNodeof(nd_root);
 		nd_root = ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		return nd_root;

@@ -610,7 +610,7 @@ char[|]! ama::Node::GetName(ama::Node*! this) {
 		}
 	} else if( this.node_class == ama::N_ASSIGNMENT || this.node_class == ama::N_DEPENDENCY ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
 		return this.c.GetName();
-	} else if( this.node_class == ama::N_CLASS || this.node_class == ama::N_TYPED_VAR ) {
+	} else if( this.node_class == ama::N_CLASS ) {
 		return this.c.s.GetName();
 	} else if( this.node_class == ama::N_STRING ) {
 		ama::Node*+! nd_hack = (ama::Node*+)(this);
