@@ -63,6 +63,10 @@ Node.MatchAny=function(node_class,name){
 	}
 }
 
+Node.MatchDot=function(nd_object,name){
+	return nNodeof(nd_object.dot(name));
+}
+
 Node.dfsMatch=function(ret,nd_pattern){
 	if(nd_pattern.node_class===N_NODEOF){
 		let nd_save=nd_pattern.c;
@@ -75,8 +79,12 @@ Node.dfsMatch=function(ret,nd_pattern){
 				return false;
 			}
 			ret[nd_save.c.s.GetName()]=this;
-		}else if(nd_save.node_class===N_SCOPE&&nd_save.c.node_class===N_REF){
-			ret[nd_save.c.data]=this
+		}else if(nd_save.node_class===N_DOT){
+			if(this.node_class!==N_DOT){return false;}
+			if(!ndi.dfsMatch(this.c,nd_save.c)){
+				return false;
+			}
+			ret[nd_save.GetName()]=nRef(this.data);
 		}else{
 			throw new Error('invalid pattern: '+nd_pattern.dump())
 		}
@@ -119,10 +127,15 @@ Node.Subst=function(match){
 	for(let ndi=nd_ret;ndi;ndi=ndi.PreorderNext(nd_ret)){
 		if(ndi.node_class===N_NODEOF){
 			let nd_name=ndi.c;
-			if(nd_name.node_class===N_CALL&&nd_name.c.s){nd_name=nd_name.c.s;}
-			let nd_subst=match[nd_name.GetName()];
-			if(nd_subst){
+			if(nd_name.node_class===N_DOT){
+				let nd_subst=nd_name.c.Subst(match).dot(match[nd_name.GetName()].GetName()||'');
 				ndi=ndi.ReplaceWith(nd_subst);
+			}else{
+				if(nd_name.node_class===N_CALL&&nd_name.c.s){nd_name=nd_name.c.s;}
+				let nd_subst=match[nd_name.GetName()];
+				if(nd_subst){
+					ndi=ndi.ReplaceWith(nd_subst);
+				}
 			}
 		}
 	}
@@ -205,6 +218,26 @@ Node.AutoSemicolon = function() {
 		}
 	}
 	return this;
+}
+
+Node.TranslateTemplates=function(match_jobs, is_forward){
+	let nd_root=this;
+	for (let ndi = nd_root; ndi; ndi = ndi.PreorderNext(nd_root)) {
+		for (let job of match_jobs) {
+			let match = ndi.Match(is_forward?job.from:job.to);
+			if (match) {
+				for (let param in match) {
+					if (param !== 'nd' && match[param].s) {match[param].BreakSibling();}
+				}
+				ndi = ndi.ReplaceWith((is_forward?job.to:job.from).Subst(match));
+				if(match.nd===nd_root){
+					nd_root=ndi;
+				}
+				break;
+			}
+		}
+	}
+	return nd_root;
 }
 
 __global.c_include_paths=['/usr/include','/usr/local/include']

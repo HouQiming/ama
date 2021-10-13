@@ -39,19 +39,7 @@ function TranslateTemplates(nd_root, alt_templates, is_forward) {
 			match_jobs.push({from: templates[key].to,to: templates[key].from});
 		}
 	}
-	for (let ndi = nd_root; ndi; ndi = ndi.PreorderNext(nd_root)) {
-		for (let job of match_jobs) {
-			let match = ndi.Match(job.from);
-			if (match) {
-				for (let param in match) {
-					if (param != 'nd' && match[param].s) {match[param].BreakSibling();}
-				}
-				ndi = ndi.ReplaceWith(job.to.Subst(match));
-				break;
-			}
-		}
-	}
-	return nd_root;
+	return nd_root.TranslateTemplates(match_jobs, 1);
 };
 
 function TranslateSaneTypeNames(nd_root, alt_templates) {

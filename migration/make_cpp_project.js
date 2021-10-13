@@ -180,9 +180,10 @@ function MigrateProject(fn,patches){
 	__system('sh '+fn_script);
 	//back-translate cpps to .ama.cpp
 	let inv_sane_types=require('cpp/sane_types').inverse;
+	let inv_sane_init=require('cpp/sane_init').inverse;
 	for(let fn_cpp of cpps_to_translate){
 		let nd_root=depends.LoadFile(fn_cpp);
-		nd_root.then(inv_sane_types).Save('.ama'+path.extname(fn_cpp))
+		nd_root.then(inv_sane_init).then(inv_sane_types).Save('.ama'+path.extname(fn_cpp))
 	}
 	//patch it
 	for(let key in patches){
