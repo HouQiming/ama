@@ -2,6 +2,7 @@
 
 /*
 @ama
+default_options.postfix_operators='! '+default_options.postfix_operators;
 let nd_root=ParseCurrentFile()
 	.then(require('cpp/sane_types'))
 	.Save('.audit.cpp');
@@ -12,7 +13,7 @@ nd_root.then(require('cpp/sane_types').inverse)
 
 int[] test(char[:] a,uint32_t[]*[:]& b){
 	int[] a;
-	float[9] b;
+	float[9]! b;
 	Map<char[],double> c;
 	return 0;
 }
@@ -20,7 +21,7 @@ int[] test(char[:] a,uint32_t[]*[:]& b){
 ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries, int32_t dir) {
 	ama::ExecNode*[] Q{};
 	Map<ama::ExecNode*, intptr_t> inQ{};
-	for ( ama::ExecNode * & ed: entries ) {
+	for ( ama::ExecNode*& ed: entries ) {
 		Q.push_back(ed);
 		JC::map_set(inQ, ed, 1);
 	}

@@ -651,10 +651,14 @@ namespace ama {
 				//we found at least one feasible declaration-ish
 				//check parent
 				int! is_ok = 0;
-				if( nd_cdecl.p && nd_cdecl.p.node_class == ama::N_LABELED && nd_cdecl.p.c == nd_cdecl && nd_stmt.node_class == ama::N_SCOPED_STATEMENT && nd_stmt.c.isAncestorOf(nd_cdecl) ) {
-					//foo in `for(foo:bar)`
-					is_ok = 1;
-				} else if( nd_cdecl == nd_stmt ) {
+				if( nd_cdecl.p && nd_cdecl.p.node_class == ama::N_LABELED && nd_cdecl.p.c == nd_cdecl ) {
+					ama::Node*+! nd_loop = nd_cdecl.Owning(ama::N_SCOPED_STATEMENT);
+					if( nd_loop && nd_stmt.isAncestorOf(nd_loop) && nd_loop.c.isAncestorOf(nd_cdecl) ) {
+						//foo in `for(foo:bar)`
+						is_ok = 1;
+					}
+				}
+				if( nd_cdecl == nd_stmt ) {
 					//foo in `type foo;` or `type bar,*foo[8];`
 					is_ok = 1;
 				} else if( nd_cdecl.p && nd_cdecl.p.node_class == ama::N_ASSIGNMENT && nd_cdecl.p.c == nd_cdecl ) {
@@ -710,7 +714,6 @@ namespace ama {
 			}
 		}
 		//we can't possibly have types-mistaken-as-binop in casts for standard C/C++
-		//TODO: support querying declared types after the flagging
 		return nd_root;
 	}
 };

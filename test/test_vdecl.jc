@@ -33,5 +33,11 @@ int main(int argc,char** argv,volatile char*const* envp){
 	g=9;
 	h:=g;
 	auto {a:b,c}=Destructured();
+	for(int i:a){
+		uint8_t j;
+		for(j=0;j<b;j++){
+			///
+		}
+	}
 	return u;
 }
