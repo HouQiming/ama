@@ -140,8 +140,8 @@ namespace ama {
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+! nd_prototype_start = ndi;
 			ama::Node*+! nd_last_scoped_stmt = NULL;
-			int! kw_mode = KW_NONE;
 			ama::Node*+! nd_keyword = NULL;
+			int! kw_mode = KW_NONE;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
 				if( !nd_keyword && (ndi.node_class == ama::N_REF || ndi.node_class == ama::N_CALL) ) {
@@ -183,7 +183,7 @@ namespace ama {
 							continue;
 						}
 					}
-				} else if( ndi.node_class == ama::N_SYMBOL && ndi.data == ";" ) {
+				} else if( ndi.isSymbol(";") ) {
 					//we can't delimit at ",": C++ constructor parameter list
 					//ndi.data == ","
 					if( ndi.data == ";" && nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
@@ -447,7 +447,7 @@ namespace ama {
 				//console.log('>>>', nd_owner.node_class, nd_raw.toSource());
 				for(ama::Node*+! ndi = nd_raw.c; ndi; ndi = ndi.s) {
 					//console.log(ndi.node_class)
-					if( ndi.node_class == ama::N_REF && keywords_not_a_function[ndi.data] ) {
+					if( (ndi.node_class == ama::N_REF && keywords_not_a_function[ndi.data]) || ndi.isSymbol("=") ) {
 						nd_proto = NULL;
 						break;
 					}

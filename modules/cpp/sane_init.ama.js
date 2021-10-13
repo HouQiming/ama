@@ -1,5 +1,7 @@
 'use strict';
 //@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
+require('class');
+/////////////
 function isTypeLike(nd_type) {
 	return nd_type.node_class == N_REF || nd_type.node_class == N_DOT || nd_type.node_class == N_CALL_TEMPLATE;
 }
@@ -25,13 +27,35 @@ function BidirTransform(nd_root, is_forward) {
 		if (nd_scope.Find(N_SEMICOLON, null)) {continue;}
 		if (!is_forward) {
 			//console.log(nd_scope.toSource());
-			//TODO: query the type / declared type
+			let nd_class = nd_scope.Prev();
+			let all_properties = undefined;
+			//name the unnamed initializers
+			let current_field_id = 0;
 			for (let ndi = nd_scope.c; ndi; ndi = ndi.s) {
+				if (ndi.isSymbol(',')) {continue;}
 				if (ndi.node_class != N_ASSIGNMENT) {
 					//name it
-					//TODO
+					if (!all_properties) {
+						let classes = undefined;
+						if (nd_class.node_class == N_REF && (nd_class.flags & REF_DECLARED)) {
+							classes = nd_class.LookupVariableClass();
+						} else {
+							classes = nd_class.LookupClass();
+						}
+						if (classes.length > 0 && current_field_id < classes[0].properties.length) {
+							all_properties = classes[0].properties.filter(ppt=>ppt.enumerable);
+						} else {
+							all_properties = [];
+						}
+					}
+					if (current_field_id < all_properties.length) {
+						let name = all_properties[current_field_id++].name;
+						//console.log(current_field_id,name)
+						let nd_tmp = Node.GetPlaceHolder();
+						ndi.ReplaceWith(nd_tmp);
+						ndi = nd_tmp.ReplaceWith(nLabeled(nRef(name), ndi));
+					}
 				}
-				//TODO: name the unnamed initializers
 			}
 		}
 		nd_scope.TranslateTemplates([g_obj_init_transform], is_forward);

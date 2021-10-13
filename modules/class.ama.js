@@ -1,11 +1,12 @@
 //@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 'use strict';
+const assert = require('assert');
 const depends = require('depends');
 //this is a language support module, we mainly extend Node
 let classes = module.exports;
 
-let g_not_class = new Set(['static','final','const','public','private','protected','extends','implements']);
-let g_protections = ['public','private','protected'];
+let g_not_class = new Set(['static', 'final', 'const', 'public', 'private', 'protected', 'extends', 'implements']);
+let g_protections = ['public', 'private', 'protected'];
 
 function ListOwnProperties(properties, nd_class) {
 	let nd_scope = nd_class.LastChild();
@@ -27,7 +28,7 @@ function ListOwnProperties(properties, nd_class) {
 				break;
 			}
 		}
-		if (ndi.node_class == N_REF && (ndi.flags & REF_WRITTEN)) {
+		if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
 			let is_static = last_appearance['static'] && last_appearance['static'].isAncestorOf(ndi);
 			properties.push({
 				enumerable: !is_static | 0,
@@ -39,7 +40,7 @@ function ListOwnProperties(properties, nd_class) {
 				protection: protection,
 				node: ndi,
 				name: ndi.data
-			})
+			});
 		} else if(ndi.node_class == N_FUNCTION) {
 			if (ndi.data) {
 				properties.push({
@@ -57,7 +58,7 @@ function ListOwnProperties(properties, nd_class) {
 			ndi = ndi.PreorderSkipChildren(nd_class);
 			continue;
 		}
-		ndi = ndi.PreorderNext(nd_scope)
+		ndi = ndi.PreorderNext(nd_scope);
 	}
 }
 
@@ -79,7 +80,7 @@ Node.ParseClass = function() {
 	}
 	let base_class_set = new Set();
 	for (let ndi = nd_after; ndi; ndi = PreorderNextSkipping(ndi, nd_after)) {
-		if ((ndi.node_class == N_REF || ndi.node_class == N_DOT) && !g_not_class.has(ndi.data)) {
+		if ((ndi.node_class == N_REF || ndi.node_class == N_DOT) &&!g_not_class.has(ndi.data)) {
 			for (let nd_class of ndi.LookupClass()) {
 				base_class_set.add(nd_class);
 			}
@@ -108,6 +109,7 @@ Node.ParseClass = function() {
 		shadows.add(properties[i].name);
 	}
 	return {
+		nd: this,
 		base_classes: base_classes,
 		properties: properties,
 	}
@@ -131,5 +133,25 @@ Node.LookupClass = function() {
 		let nd_root = depends.LoadFile(fn);
 		LookupClassInFile(ret, nd_root, this);
 	}
-	return ret;
+	return ret.map(nd=>nd.ParseClass()).filter(desc=>desc.properties.length > 0);
 }
+
+///we return the core class and ignore other modifiers
+Node.LookupVariableClass = function() {
+	assert(this.node_class == N_REF && (this.flags & REF_DECLARED));
+	let nd_def = this;
+	let nd_stmt = this.ParentStatement();
+	for (let ndi = nd_stmt; ndi; ndi = ndi.PreorderNext(nd_stmt)) {
+		if (ndi == nd_def) {break;}
+		if (ndi.node_class == N_DOT || ndi.node_class == N_REF) {
+			let ret = ndi.LookupClass();
+			if (ret.length) {
+				return ret;
+			}
+			//skip the entire dot
+			ndi = ndi.PreorderLastInside(ndi);
+			continue;
+		}
+	}
+	return [];
+};

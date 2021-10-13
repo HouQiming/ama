@@ -20,6 +20,8 @@ class TestClass:Base{
 			baz
 		}
 	}
+	intptr_t scope_indent_level = intptr_t(0L);
+	intptr_t p_last_indent = intptr_t(0L);
 	int fwdMethod(void)const;
 };
 
