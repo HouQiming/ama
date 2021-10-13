@@ -73,14 +73,14 @@ function MigrateProject(fn,patches){
 		let deleted_targets=new Set();
 		let nd_cmake=cmake.LoadCMakeFile(fn);
 		for(let nd of nd_cmake.FindAll(N_CALL,'add_custom_command')){
-			nd.Delete();
+			nd.Unlink();
 		}
 		let keep_cmakelists=0;
 		for(let nd_exe of nd_cmake.FindAll(N_CALL,'add_executable')){
 			let args=nd_exe.TokenizeCMakeArgs();
 			if(!args[0].isRef(exe_name)){
 				deleted_targets.add(args[0].GetName())
-				nd_exe.Delete();
+				nd_exe.Unlink();
 				continue;
 			}
 			keep_cmakelists=1;
@@ -113,18 +113,18 @@ function MigrateProject(fn,patches){
 				}
 			}
 			if(!keep){
-				nd_property.Delete();
+				nd_property.Unlink();
 			}
 		}
 		//drop the JC-specific shenanigans
 		for(let nd_if of nd_cmake.FindAll(N_CALL,'if')){
 			if(nd_if.p.node_class!==N_RAW){continue;}
 			if(nd_if.Find(N_REF,'NOT')){
-				nd_if.p.Delete();
+				nd_if.p.Unlink();
 			}
 		}
 		for(let nd of nd_cmake.FindAll(N_CALL,'check_cxx_source_compiles').concat(nd_cmake.FindAll(N_CALL,'include'))){
-			nd.Delete();
+			nd.Unlink();
 		}
 		for(let nd of nd_cmake.FindAll(N_REF,'COND_JC_OS_JC_OS_WINDOWS_614D399C').concat(nd_cmake.FindAll(N_REF,'COND_DEFINED_WIN32__FD28C5A6'))){
 			nd.ReplaceWith(nRef('WIN32'));

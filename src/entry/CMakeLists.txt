@@ -93,7 +93,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsapi.jc
   MAIN_DEPENDENCY ../script/jsapi.jc
-  DEPENDS ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/env.jch ${JC_LIB}/unicode.jch ${JC_LIB}/unicode/case.jch ../ast/node.jch ../ast/nodegc.jch ../codegen/gen.jch ../parser/simppair.jch ../parser/scoping.jch ../parser/depends.jch ../parser/postfix.jch ../parser/operator.jch ../parser/decl.jch ../parser/cleanup.jch ../parser/findama.jch ../exec/engine.jch ../script/nodeof_to_ast.jch ../script/jsenv.jch ../script/jsapi.jch ../script/jsgen.jch
+  DEPENDS ${JC_LIB}/json.jch ${JC_LIB}/path.jch ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/env.jch ${JC_LIB}/unicode.jch ${JC_LIB}/unicode/case.jch ../ast/node.jch ../ast/nodegc.jch ../codegen/gen.jch ../parser/simppair.jch ../parser/scoping.jch ../parser/depends.jch ../parser/postfix.jch ../parser/operator.jch ../parser/decl.jch ../parser/cleanup.jch ../parser/findama.jch ../exec/engine.jch ../script/nodeof_to_ast.jch ../script/jsenv.jch ../script/jsapi.jch ../script/jsgen.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -176,14 +176,14 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../ast/node.jc
   MAIN_DEPENDENCY ../ast/node.jc
-  DEPENDS ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../parser/literal.jch ../util/mempool.jch ../ast/node.jch
+  DEPENDS ${JC_LIB}/fs.jch ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../parser/literal.jch ../util/mempool.jch ../ast/node.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/simppair.jc
   MAIN_DEPENDENCY ../parser/simppair.jc
-  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/charset.jch ../parser/simppair.jch ${JC_LIB}/console.jch ${JC_LIB}/json.jch
+  DEPENDS ../ast/node.jch ../script/jsenv.jch ../parser/charset.jch ../parser/simppair.jch ${JC_LIB}/console.jch ${JC_LIB}/json.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -223,7 +223,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../codegen/gen.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../codegen/gen.jc
   MAIN_DEPENDENCY ../codegen/gen.jc
-  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../parser/literal.jch ../parser/charset.jch ../codegen/gen.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../parser/literal.jch ../parser/charset.jch ../codegen/gen.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -236,7 +236,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/scoping.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/scoping.jc
   MAIN_DEPENDENCY ../parser/scoping.jc
-  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../parser/scoping.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../parser/scoping.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -249,7 +249,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/postfix.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/postfix.jc
   MAIN_DEPENDENCY ../parser/postfix.jc
-  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/postfix.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/postfix.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -275,7 +275,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/cleanup.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/cleanup.jc
   MAIN_DEPENDENCY ../parser/cleanup.jc
-  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/cleanup.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../parser/cleanup.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -314,7 +314,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../parser/decl.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../parser/decl.jc
   MAIN_DEPENDENCY ../parser/decl.jc
-  DEPENDS ${JC_LIB}/console.jch ../ast/node.jch ../script/jsenv.jch ../parser/postfix.jch ../parser/decl.jch ../parser/operator.jch ../parser/scoping.jch
+  DEPENDS ${JC_LIB}/console.jch ../ast/node.jch ../script/jsenv.jch ../parser/postfix.jch ../parser/decl.jch ../parser/operator.jch ../parser/scoping.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 add_custom_command(
@@ -466,7 +466,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../exec/engine.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../exec/engine.jc
   MAIN_DEPENDENCY ../exec/engine.jc
-  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../codegen/gen.jch ../exec/engine.jch
+  DEPENDS ${JC_LIB}/console.jch ${JC_LIB}/json.jch ../ast/node.jch ../script/jsenv.jch ../codegen/gen.jch ../exec/engine.jch ${JC_LIB}/printf.js
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 check_cxx_source_compiles("#include <jc_platform.h>\n\n#include <json.jch.hpp>\n\n#include <path.jch.hpp>\n\n#include <fs.jch.hpp>\n\n#include <console.jch.hpp>\n\n#include <env.jch.hpp>\n\n#include <unicode.jch.hpp>\n\n#include <unicode/case.jch.hpp>\n\n#if !(!defined(_WIN32))\n#error a\n#endif\nint main(){return 0;}\n" COND__DEFINED_WIN32__A7217375)

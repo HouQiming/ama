@@ -126,7 +126,7 @@ namespace ama {
 					ama::Node*+! ndi_next_next = ndi_next.BreakSibling();
 					//move the comments
 					ndi.MergeCommentsAfter(ndi_next);
-					ndi_next.Delete();
+					ndi_next.Unlink();
 					ama::Node*+! nd_value = ama::toSingleNode(ndi_next_next);
 					nd_value.comments_before = ndi_next_next.comments_before;
 					ndi_next_next.comments_before = '';
@@ -139,7 +139,7 @@ namespace ama {
 					//always allow :=
 					if( ndi.node_class == ama::N_SYMBOL && (binop_priority[ndi.data] || ndi.data == ":") && ndi != nd_raw.c ) {
 						//updating assignment
-						ndi.Delete();
+						ndi.Unlink();
 						nd_asgn.data = ndi.DestroyForSymbol();
 					}
 					if( ndi_next_next.s ) {
@@ -190,7 +190,7 @@ namespace ama {
 		}
 		ama::Node*+! nd_unary = ama::nPostfix(nd_prefix_core.MergeCommentsAfter(nd_operator), nd_operator.data).setCommentsAfter(nd_operator.comments_after);
 		//nd_operator is in the stack and its p / c / s could be BS
-		//nd_operator.Delete();
+		//nd_operator.Unlink();
 		nd_operator.p = NULL;
 		nd_operator.FreeASTStorage();
 		if( nd_prefix_core != nd_operand ) {
@@ -378,7 +378,7 @@ namespace ama {
 		nd_binop.FreeASTStorage();
 		return ret;
 	}
-	ama::Node*+! UnparseUnary(ama::Node*+! nd_unary) {
+	ama::Node*+! UnparsePrefix(ama::Node*+! nd_unary) {
 		ama::Node*+! nd_parent = nd_unary.p;
 		if( !nd_parent || nd_parent.node_class != ama::N_RAW ) {
 			nd_parent = nd_unary.ReplaceWith(ama::CreateNode(ama::N_RAW, NULL));

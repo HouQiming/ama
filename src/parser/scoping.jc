@@ -90,7 +90,7 @@ namespace ama {
 				//move out trailing ;
 				ama::Node*+! nd_last = nd_raw.LastChild();
 				if( nd_last && nd_last.isSymbol(";") && nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_RAW) ) {
-					nd_last.Delete();
+					nd_last.Unlink();
 					nd_raw.Insert(ama::POS_AFTER, nd_last);
 				}
 				continue;
@@ -119,7 +119,7 @@ namespace ama {
 						continue;
 					}
 					//after_cpp_macro=0
-					changed = ';';
+					if( !changed ) { changed = ','; }
 					ndi.BreakSibling();
 					if( ndi_next ) {
 						new_children.push_back(ndi_next);
@@ -143,20 +143,29 @@ namespace ama {
 				//COULDDO: case:, default:
 				ndi = ndi_next;
 			}
-			if( !changed ) {
-				ndi = nd_raw.c;
-				while( ndi ) {
-					ama::Node*+! ndi_next = ndi.s;
-					if( ndi.node_class == ama::N_SYMBOL && ndi.data == "," ) {
-						//after_cpp_macro=0
-						changed = ',';
-						ndi.BreakSibling();
-						if( ndi_next ) {
-							new_children.push_back(ndi_next);
+			if( changed != ';' ) {
+				ama::Node*+[+]! comma_children = new ama::Node*+[+]!();
+				for(ama::Node*&+! ndj : new_children) {
+					ndi = ndj;
+					comma_children.push_back(ndi);
+					while( ndi ) {
+						ama::Node*+! ndi_next = ndi.s;
+						if( ndi.isSymbol(",") ) {
+							//after_cpp_macro=0
+							changed = ',';
+							ndi.BreakSibling();
+							ndi.BreakSelf();
+							if( ndi != comma_children.back() ) {
+								comma_children.push_back(ndi);
+							}
+							if( ndi_next ) {
+								comma_children.push_back(ndi_next);
+							}
 						}
+						ndi = ndi_next;
 					}
-					ndi = ndi_next;
 				}
+				std::swap(new_children, comma_children);
 			}
 			if( changed || (!nd_raw.isRawNode('{', '}') && nd_raw.c && nd_raw.c.s) ) {
 				for(int! i = 0; i < new_children.length; i += 1) {
@@ -168,7 +177,7 @@ namespace ama {
 				nd_raw.Insert(ama::POS_FRONT, ama::InsertMany(new_children));
 			}
 			//if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
-			if( nd_raw.isRawNode('{', '}') && changed != ',' ) {
+			if( nd_raw.isRawNode('{', '}') && changed ) {
 				ConvertToScope(nd_raw);
 			}
 		}

@@ -14,7 +14,7 @@ function BidirTransform(nd_root, is_forward) {
 		if (is_forward) {
 			if (!nd_ref.s) {nd_ref.Insert(POS_AFTER, nScope());}
 		} else {
-			if (nd_ref.s && nd_ref.s.node_class == N_SCOPE&&!nd_ref.s.c) {nd_ref.s.Delete();}
+			if (nd_ref.s && nd_ref.s.node_class == N_SCOPE&&!nd_ref.s.c) {nd_ref.s.Unlink();}
 		}
 	}
 	for (let nd_scope of nd_root.FindAll(N_SCOPE, null)) {
@@ -24,15 +24,18 @@ function BidirTransform(nd_root, is_forward) {
 		//no ;
 		if (nd_scope.Find(N_SEMICOLON, null)) {continue;}
 		if (!is_forward) {
-			console.log(nd_scope.toSource());
+			//console.log(nd_scope.toSource());
+			//TODO: query the type / declared type
 			for (let ndi = nd_scope.c; ndi; ndi = ndi.s) {
-				console.log(JSON.stringify(ndi));
+				if (ndi.node_class != N_ASSIGNMENT) {
+					//name it
+					//TODO
+				}
 				//TODO: name the unnamed initializers
 			}
 		}
 		nd_scope.TranslateTemplates([g_obj_init_transform], is_forward);
 	}
-	
 }
 
 function Translate(nd_root) {

@@ -15,7 +15,7 @@ namespace ama {
 			if( ndi.isSymbol(",") ) { continue; }
 			if( ndi.isRawNode(0, 0) && ndi.c && ndi.c.s && ndi.LastChild().isSymbol(",") ) {
 				ama::Node*+! nd_comma = ndi.LastChild();
-				nd_comma.Delete();
+				nd_comma.Unlink();
 				ama::Node*+! nd_arg_last = ndi.LastChild();
 				nd_arg_last.MergeCommentsAndIndentAfter(nd_comma);
 				ndi.comments_after = new char[|]!(ndi.comments_after + nd_comma.comments_after);
@@ -199,7 +199,7 @@ namespace ama {
 						}
 						if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 							nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
-							nd_stmt.Delete();
+							nd_stmt.Unlink();
 							nd_last_scoped_stmt.Insert(ama::POS_BACK, nd_stmt);
 							ndi = nd_last_scoped_stmt;
 							//assert(ndi.s == NULL);
@@ -414,7 +414,7 @@ namespace ama {
 				if( nd_raw.s && nd_raw.s.isSymbol(";") ) {
 					//pull in the misclassified ";"
 					ama::Node*+! nd_semicolon = nd_raw.s;
-					nd_semicolon.Delete();
+					nd_semicolon.Unlink();
 					nd_raw.Insert(ama::POS_BACK, nd_semicolon);
 				}
 				ama::Node*+! ndi = nd_raw.LastChild();
@@ -426,7 +426,7 @@ namespace ama {
 				}
 				if( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 					nd_stmt.node_class = ama::N_EXTENSION_CLAUSE;
-					nd_stmt.Delete();
+					nd_stmt.Unlink();
 					nd_last_scoped_stmt.Insert(ama::POS_BACK, nd_stmt);
 				}
 			} else if( kw_mode == KW_FUNC && nd_keyword && parse_c_forward_declarations && 
@@ -527,7 +527,7 @@ namespace ama {
 			ama::Node*+! nd_opr = nd_ref.Prev();
 			ama::Node*+! ndi = nd_opr.Prev();
 			ndi.MergeCommentsAfter(nd_opr);
-			nd_opr.Delete();
+			nd_opr.Unlink();
 			ama::Node*+! nd_tmp = ama::GetPlaceHolder();
 			ndi.ReplaceWith(nd_tmp);
 			std::swap(ndi.comments_after, nd_tmp.comments_after);

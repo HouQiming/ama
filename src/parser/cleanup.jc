@@ -10,7 +10,7 @@ namespace ama {
 		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( (nd_raw.flags & 0xffff) != 0 || nd_raw == nd_root ) { continue; }
 			if( !nd_raw.c && nd_raw.p && nd_raw.p.node_class == ama::N_RAW ) {
-				nd_raw.Delete();
+				nd_raw.Unlink();
 			} else if( nd_raw.c && !nd_raw.c.s ) {
 				//nd_raw.ReplaceWith(nd_raw.c);
 				ama::UnparseRaw(nd_raw);
@@ -105,7 +105,7 @@ namespace ama {
 			for(ama::Node*+! ndi = nd_scope.c; ndi; ndi = ndi.s) {
 				while( ndi.s && ndi.s.isSymbol(";") ) {
 					ama::Node*+! nd_semicolon = ndi.s;
-					ndi.Delete();
+					ndi.Unlink();
 					nd_semicolon.node_class = ama::N_SEMICOLON;
 					nd_semicolon.data = NULL;
 					nd_semicolon.indent_level = ndi.indent_level;
@@ -121,7 +121,7 @@ namespace ama {
 				nd_raw.node_class = ama::N_PAREN;
 				nd_raw.flags = 0;
 			} else if( nd_raw.isRawNode(0, 0) && nd_raw.c && nd_raw.LastChild().isSymbol(";") ) {
-				nd_raw.LastChild().Delete();
+				nd_raw.LastChild().Unlink();
 				nd_raw.ReplaceWith(ama::CreateNode(ama::N_SEMICOLON, ama::toSingleNode(nd_raw.c)));
 			}
 		}

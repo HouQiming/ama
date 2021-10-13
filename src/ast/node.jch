@@ -146,13 +146,15 @@ namespace ama {
 		ama::Node*+! Clone(ama::Node*! this);
 		//auto ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new);
 		ama::Node*+! ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new);
-		auto Delete(ama::Node*+! this);
+		ama::Node*+! Unlink(ama::Node*+! this);
 		ama::Node*+! Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new);
 		ama::Node*+! Root(ama::Node*! this);
 		ama::Node*+! RootStatement(ama::Node*! this);
 		int! isAncestorOf(ama::Node*! this, ama::Node*! nd);
 		ama::Node*+! Owning(ama::Node*! this, int! nc);
 		ama::Node*+! Owner(ama::Node*! this);
+		//LastChildSP is for internal use only in simppair.jc (SP stands for simppair)
+		ama::Node*+! LastChildSP(ama::Node*! this);
 		ama::Node*+! LastChild(ama::Node*! this);
 		ama::Node*+! CommonAncestor(ama::Node*! this, ama::Node*! b);
 		char[|]! GetStringValue(ama::Node*! this);
@@ -171,14 +173,17 @@ namespace ama {
 		ama::Node*+! InsertDependency(ama::Node*+! this, uint32_t! flags, char[|]! name);
 		ama::Node*+! InsertCommentBefore(ama::Node*+! this, char[...]! s);
 		//ama::Node*! Save(ama::Node*! this, char[|]! change_ext);
-		ama::Node*+! MergeCommentsAfter(ama::Node*+! this, ama::Node*+! nd_after);
 		ama::Node*+! MergeCommentsBefore(ama::Node*+! this, ama::Node*+! nd_before);
+		ama::Node*+! MergeCommentsAfter(ama::Node*+! this, ama::Node*+! nd_after);
+		ama::Node*+! MergeCommentsAndIndentAfter(ama::Node*+! this, ama::Node*+! nd_after);
 		char[|]! DestroyForSymbol(ama::Node*+! this);
 		//expr is ill-defined once detached from a base language
 		//NeedTrailingSemicolon is more practical
 		//int! isExpr(ama::Node*! this);
 		int! isSymbol(ama::Node*! this, char[...]! name);
+		int! isRef(ama::Node*! this, char[...]! name);
 		void! Validate(ama::Node*+! this);
+		intptr_t! ValidateEx(ama::Node*+! this, intptr_t! max_depth, int! quiet);
 		int! NeedTrailingSemicolon(ama::Node*! this);
 		int8_t! GetCommentedIndentLevel(ama::Node*! this, int32_t! tab_width);
 		ama::Node*+! ParentStatement(ama::Node*+! this);
@@ -186,19 +191,16 @@ namespace ama {
 		ama::Node*+! BreakSibling(ama::Node*+! this);
 		ama::Node*+! BreakChild(ama::Node*+! this);
 		ama::Node*+! BreakSelf(ama::Node*+! this);
-		ama::Node*+! LastChildSP(ama::Node*! this);
 		ama::Node*+! ReplaceUpto(ama::Node*+! this, ama::Node*+! nd_upto, ama::Node*+! nd_new);
 		int! ValidateChildCount(ama::Node*+! this, int! n_children);
 		void! AdjustIndentLevel(ama::Node*+! this, intptr_t! delta);
 		ama::Node*+! PreorderNext(ama::Node*+! this, ama::Node*+! nd_root);
 		ama::Node*+! PreorderSkipChildren(ama::Node*+! this, ama::Node*+! nd_root);
+		ama::Node*+! PreorderLastInside(ama::Node*+! this);
 		ama::Node*+! PostorderFirst(ama::Node*+! this);
 		ama::Node*+! PostorderNext(ama::Node*+! this, ama::Node*+! nd_root);
-		intptr_t! ValidateEx(ama::Node*+! this, intptr_t! max_depth, int! quiet);
-		ama::Node*+! MergeCommentsAndIndentAfter(ama::Node*+! this, ama::Node*+! nd_after);
 		ama::Node*+! toSingleNode(ama::Node*+! this);
-		int! isRef(ama::Node*! this, char[...]! name);
-		ama::Node*+! PreorderLastInside(ama::Node*+! this);
+		ama::Node*+! Unparse(ama::Node*+! this);
 		uint8_t! GetCFGRole(ama::Node*! this);
 		int! isChildCFGDependent(ama::Node*! this, ama::Node*! nd_child);
 	};

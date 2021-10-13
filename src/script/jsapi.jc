@@ -32,6 +32,29 @@
 #include "./jsapi.jch"
 #include "./jsgen.jch"
 
+ama::Node*+! ama::Node::Unparse(ama::Node*+! this) {
+	switch( this.node_class ) {
+		default: {
+			return this;
+		}
+		case ama::N_RAW: {
+			return ama::UnparseRaw(this);
+		}
+		case ama::N_BINOP: {
+			return ama::UnparseBinop(this);
+		}
+		case ama::N_CALL: {
+			return ama::UnparseCall(this);
+		}
+		case ama::N_LABELED: {
+			return ama::UnparseLabel(this);
+		}
+		case ama::N_PREFIX: {
+			return ama::UnparsePrefix(this);
+		}
+	}
+}
+
 namespace ama {
 	private JSValueConst! g_require_cache = JS_NULL;
 	private char[+]! GetScriptJSCode(char[...]! fn) {
@@ -772,4 +795,5 @@ namespace ama {
 		if( ama::g_runtime_handle ) { return; }
 		InitScriptEnv();
 	}
+	ama::Node*+! Unparse(ama::Node*+! this);
 };

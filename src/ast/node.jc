@@ -267,7 +267,7 @@ ama::Node*+! ama::Node::Clone(ama::Node*! this) {
 //}
 ama::Node*+! ama::Node::ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new) {
 	if( !nd_new ) {
-		this->Delete();
+		this->Unlink();
 		return NULL;
 	} else {
 		this->Insert(ama::POS_REPLACE, nd_new);
@@ -275,7 +275,7 @@ ama::Node*+! ama::Node::ReplaceWith(ama::Node*+! this, ama::Node*+! nd_new) {
 	}
 }
 
-auto ama::Node::Delete(ama::Node*+! this) {
+ama::Node*+! ama::Node::Unlink(ama::Node*+! this) {
 	if( this.s ) {
 		//this.s.v=this.v should work whether this.v is a tail pointer or not
 		//this.s.MergeCommentsBefore(this);
@@ -303,6 +303,7 @@ auto ama::Node::Delete(ama::Node*+! this) {
 	this.p = NULL;
 	this.s = NULL;
 	this.v = NULL;
+	return this;
 }
 
 ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new) {
