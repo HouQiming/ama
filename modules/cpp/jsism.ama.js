@@ -52,7 +52,7 @@ jsism.EnableConsole = function(nd_root, options) {
 	function ReplaceWithStdFormat(nd_call) {
 		let format_parts = [];
 		let options = console_method_to_options[nd_call.c.data];
-		let args = [nRef('std').dot('format').setFlags(DOT_CLASS),/*filled later*/null];
+		let args = [nRef('std').dot('format').setFlags(DOT_CLASS), /*filled later*/null];
 		for (let ndi = nd_call.c.s; ndi; ndi = ndi.s) {
 			if (format_parts.length && options.separator) {
 				format_parts.push(options.separator);
@@ -62,28 +62,28 @@ jsism.EnableConsole = function(nd_root, options) {
 			if (nd_value.node_class == N_STRING) {
 				format_parts.push(nd_value.GetStringValue())
 				continue
-			}
+			;}
 			if (nd_value.isMethodCall('padStart') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				fmt = ':>' + nd_value.c.s.data;
 				nd_value = nd_value.c.c;
-				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
+				if (nd_value.isMethodCall('toString') &&!nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
 			} else if(nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				fmt = ':<' + nd_value.c.s.data;
 				nd_value = nd_value.c.c;
-				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
+				if (nd_value.isMethodCall('toString') &&!nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
 			}
-			if (nd_value.isMethodCall('toExponential') && !nd_value.c.s) {
+			if (nd_value.isMethodCall('toExponential') &&!nd_value.c.s) {
 				if (!fmt) {fmt = ':';}
 				fmt = fmt + 'e';
-				nd_value = nd_value.c.c
+				nd_value = nd_value.c.c;
 			} else if(nd_value.isMethodCall('toFixed') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				if (!fmt) {fmt = ':';}
 				fmt = fmt + '.' + nd_value.c.s.data + 'f';
-				nd_value = nd_value.c.c
+				nd_value = nd_value.c.c;
 			}
 			format_parts.push('{' + fmt + '}')
 			args.push(nd_value);
@@ -95,13 +95,13 @@ jsism.EnableConsole = function(nd_root, options) {
 		let nd_format = nCall.apply(null, args);
 		if (!options.just_format) {
 			if (options.std_stream == 'stdout') {
-				nd_format=nCall(nRef('printf'), nString('%s'), nCall(nd_format.dot('c_str')))  
+				nd_format=nCall(nRef('printf'), nString('%s'), nCall(nd_format.dot('c_str')));  
 			} else {
-				nd_format=nCall(nRef('fprintf'), nRef(options.std_stream), nString('%s'), nCall(nd_format.dot('c_str')))  
+				nd_format=nCall(nRef('fprintf'), nRef(options.std_stream), nString('%s'), nCall(nd_format.dot('c_str')));  
 			}
 		}
 		nd_format.comments_before = nd_call.c.c.comments_before
-		nd_call.ReplaceWith(nd_format)
+		nd_call.ReplaceWith(nd_format);
 	}
 	function ReplaceWithIOStream(nd_call) {
 		let options = console_method_to_options[nd_call.c.data];
@@ -112,7 +112,7 @@ jsism.EnableConsole = function(nd_root, options) {
 			if (is_first) {
 				is_first = 0;
 			} else if(options.separator) {
-				nd_stream=nBinop(nd_stream, '<<', nString(options.separator))  
+				nd_stream=nBinop(nd_stream, '<<', nString(options.separator));  
 			}
 			let nd_value = ndi
 			if (nd_value.isMethodCall('padStart') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
@@ -120,7 +120,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('right').setFlags(DOT_CLASS))  ;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s))  
 				nd_value = nd_value.c.c;
-				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
+				if (nd_value.isMethodCall('toString') &&!nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
 			} else if(nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
@@ -128,11 +128,11 @@ jsism.EnableConsole = function(nd_root, options) {
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('left').setFlags(DOT_CLASS))  ;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s))  
 				nd_value = nd_value.c.c;
-				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
+				if (nd_value.isMethodCall('toString') &&!nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
 			}
-			if (nd_value.isMethodCall('toExponential') && !nd_value.c.s) {
+			if (nd_value.isMethodCall('toExponential') &&!nd_value.c.s) {
 				need_iomanip = 1;
 				need_ios = 1
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('scientific').setFlags(DOT_CLASS))  
@@ -140,7 +140,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				nd_stream = nBinop(nd_stream, '<<', nd_value);
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('defaultfloat').setFlags(DOT_CLASS))  ;
 				ndi = ndi_next;
-				continue
+				continue;
 			} else if(nd_value.isMethodCall('toFixed') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				need_iomanip = 1;
 				need_ios = 1;
@@ -150,13 +150,13 @@ jsism.EnableConsole = function(nd_root, options) {
 				nd_stream = nBinop(nd_stream, '<<', nd_value);
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('defaultfloat').setFlags(DOT_CLASS))  ;
 				ndi = ndi_next;
-				continue
+				continue;
 			}
 			nd_stream = nBinop(nd_stream, '<<', nd_value);
-			ndi = ndi_next
+			ndi = ndi_next;
 		}
 		if (options.tail) {
-			nd_stream=nBinop(nd_stream, '<<', options.tail == '\n' ? nRef('std').dot('endl').setFlags(DOT_CLASS) : nString(options.tail))  
+			nd_stream=nBinop(nd_stream, '<<', options.tail == '\n' ? nRef('std').dot('endl').setFlags(DOT_CLASS) : nString(options.tail));  
 		}
 		if (options.just_format) {
 			need_sstream = 1;
@@ -167,11 +167,12 @@ jsism.EnableConsole = function(nd_root, options) {
 	}
 	for (let nd_call of console_uses) {
 		if (backend == 'std::format') {
-			ReplaceWithStdFormat(nd_call)
+			ReplaceWithStdFormat(nd_call);
 		} else if(backend == 'iostream') {
-			ReplaceWithIOStream(nd_call)
+			ReplaceWithIOStream(nd_call);
 		} else {
-			throw new Error('unknown backend ' + backend)
+		throw new Error('unknown backend ' + backend)
+		;
 		}
 	}
 	if (backend == 'std::format') {
@@ -190,3 +191,28 @@ jsism.EnableConsole = function(nd_root, options) {
 		nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<iostream>');
 	}
 }
+
+jsism.EnableJSLambdaSyntax = function(nd_root) {
+	//()=>{} <=> [&](){}
+	for (let nd_func of nd_root.FindAll(N_FUNCTION, null)) {
+		let nd_before = nd_func.c;
+		let nd_after = nd_func.c.s.s;
+		if (nd_after.isSymbol('=>')) {
+			nd_after.ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
+			nd_before.ReplaceWith(.([&]));
+		}
+	}
+}
+
+jsism.EnableJSLambdaSyntax.inverse = function(nd_root) {
+	//()=>{} <=> [&](){}
+	let nd_template = .([&]);
+	for (let nd_func of nd_root.FindAll(N_FUNCTION, null)) {
+		let nd_before = nd_func.c;
+		let nd_after = nd_func.c.s.s;
+		if (nd_before.Match(nd_template)) {
+			nd_after.ReplaceWith(nSymbol('=>')).setCommentsBefore(' ');
+			nd_before.ReplaceWith(nAir());
+		}
+	}
+};

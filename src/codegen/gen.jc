@@ -229,11 +229,19 @@ namespace ama {
 				//N_CLASS: before, name, after, body
 				//N_FUNCTION: before, paramlist, after, body
 				//N_SCOPED_STATEMENT, N_EXTENSION_CLAUSE: arg, body
+				ama::Node*+! ndi_last = NULL;
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 					if( ndi.node_class == ama::N_EXTENSION_CLAUSE || ndi.node_class == ama::N_SCOPE ) {
-						this.GenerateSpaceBefore(ndi);
+						if( ndi_last ) {
+							this.GenerateSpaceBetween(ndi_last, ndi);
+						} else {
+							this.GenerateSpaceBefore(ndi);
+						}
 					}
 					this->Generate(ndi);
+					if( ndi.node_class != ama::N_AIR ) {
+						ndi_last = ndi;
+					}
 				}
 				break;
 			}

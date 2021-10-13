@@ -3,7 +3,7 @@
 default_options.postfix_operators = '! ' + default_options.postfix_operators;
 let g_templates = {
 	array: {from: .(.(Node.MatchAny('TElement'))[]), to: .(std::vector<.(Node.MatchAny('TElement'))>)},
-	view: {from: .(.(Node.MatchAny('TElement'))[:]), to: .(JC::array_base<.(Node.MatchAny('TElement'))>)},
+	view: {from: .(.(Node.MatchAny('TElement'))[:]), to: .(std::span<.(Node.MatchAny('TElement'))>)},
 	fixed_array: {from: nPostfix(.(.(Node.MatchAny('TElement'))[.(Node.MatchAny('size'))]), '!'), to: .(std::array<.(Node.MatchAny('TElement')), .(Node.MatchAny('size'))>)},
 	map: {from: .(Map<.(Node.MatchAny('TKey')), .(Node.MatchAny('TValue'))>), to: .(std::unordered_map<.(Node.MatchAny('TKey')), .(Node.MatchAny('TValue'))>)},
 }

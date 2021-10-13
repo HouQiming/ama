@@ -133,6 +133,7 @@ namespace ama {
 		int32_t! tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
 		int32_t! tab_indent = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_indent'), 2);
 		int32_t! parse_js_regexp = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_js_regexp'), 1);
+		int32_t! finish_incomplete_code = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'finish_incomplete_code'), 0);
 		//create char LUT
 		uint8_t[256]! char_lut;
 		memset(char_lut.data(), CHAR_TYPE_SYMBOL, char_lut.size());
@@ -230,9 +231,11 @@ namespace ama {
 						int! backslash_counter = 0;
 						int! bracket_counter = 0;
 						int! in_charset = 0;
+						int! premature_close = 0;
 						for(;;) {
 							uint8_t! ch_i = feed[lg];
 							if( ch_i == 0 ) {
+								premature_close = 1;
 								break;
 							}
 							lg += 1L;
@@ -265,7 +268,24 @@ namespace ama {
 						nd = ama::CreateNode(ama::N_JS_REGEXP, NULL);
 						nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 						nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
-						nd.data = new char[|]!(feed, feed_end - feed);
+						if( premature_close && finish_incomplete_code ) {
+							char[+]! tmp_buffer = new char[+]!(feed, feed_end - feed);
+							if( backslash_counter ) {
+								tmp_buffer.push_back('n');
+								backslash_counter = 0;
+							}
+							if( in_charset ) {
+								tmp_buffer.push_back(']');
+							}
+							while( bracket_counter > 0 ) {
+								tmp_buffer.push_back(')');
+								bracket_counter -= 1;
+							}
+							tmp_buffer.push_back(char(ch_closing));
+							nd.data = new char[|]!(tmp_buffer);
+						} else {
+							nd.data = new char[|]!(feed, feed_end - feed);
+						}
 						*state_stack.back().p_nd_next = nd;
 						state_stack.back().p_nd_next = &nd.s;
 						feed = feed_end;
@@ -354,7 +374,9 @@ namespace ama {
 						comment_indent_level = current_indent_level;
 						comment_begin = feed;
 						comment_end = feed;
-					} else { `goto handle_symbol;` }
+					} else {
+						`goto handle_symbol;`
+					}
 					break;
 				}
 				case CHAR_TYPE_BACKSLASH: {
@@ -418,9 +440,11 @@ namespace ama {
 					uint32_t! ch_closing = ch;
 					intptr_t! lg = 1L;
 					int! backslash_counter = 0;
+					int! premature_close = 0;
 					for(;;) {
 						uint8_t! ch_i = feed[lg];
 						if( ch_i == uint8_t(0) ) {
+							premature_close = 1;
 							break;
 						}
 						lg += 1L;
@@ -436,7 +460,17 @@ namespace ama {
 					nd = ama::CreateNode(ama::N_STRING, NULL);
 					nd.comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 					nd.indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
-					nd.data = new char[|]!(feed, lg);
+					if( premature_close && finish_incomplete_code ) {
+						char[+]! tmp_buffer = new char[+]!(feed, lg);
+						if( backslash_counter ) {
+							tmp_buffer.push_back('n');
+							backslash_counter = 0;
+						}
+						tmp_buffer.push_back(char(ch_closing));
+						nd.data = new char[|]!(tmp_buffer);
+					} else {
+						nd.data = new char[|]!(feed, lg);
+					}
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd.s;
 					feed += lg;
@@ -470,6 +504,21 @@ namespace ama {
 					break;
 				}
 				case CHAR_TYPE_ZERO: {
+					if( finish_incomplete_code ) {
+						while( state_stack.length > 1L ) {
+							ama::Node*+! nd = state_stack.back().nd_parent;
+							uint32_t! ch = nd.flags & 0xffu;
+							if( ch == '(' ) {
+								ch = ')';
+							} else if( ch == '[' ) {
+								ch = ']';
+							} else if( ch == '{' ) {
+								ch = '}';
+							}
+							nd.flags |= ch << 8;
+							state_stack.pop_back();
+						}
+					}
 					ama::FillParents(NULL, nd_root);
 					nd_root.comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 					if( tab_indent == 2 ) {

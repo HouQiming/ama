@@ -1,5 +1,7 @@
 'use strict';
 //@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
+
+//COULDDO: auto-move last ref
 default_options.prefix_operators = '<< ' + default_options.prefix_operators;
 
 function BidirTransform(nd_root, is_forward) {

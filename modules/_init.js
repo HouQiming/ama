@@ -250,6 +250,7 @@ __global.default_options={
 	exponent_charset:'0-9f',
 	regexp_flags_charset:'A-Za-z',
 	enable_unicode_identifiers:1,
+	finish_incomplete_code:0,
 	///////////
 	parse_operators:1,
 	parse_pointed_brackets:1,
