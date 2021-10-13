@@ -10,7 +10,7 @@ namespace ama {
 		nd_raw.node_class = ama::N_SCOPE;
 		nd_raw.flags = 0;
 	}
-	private ama::Node*+![+]! MergeScopesIntoStatements(Map<char[|], int>&! keywords_extension_clause, ama::Node*+[...]! lines_out) {
+	private ama::Node*+[+]! MergeScopesIntoStatements(Map<char[|], int>&! keywords_extension_clause, ama::Node*+[...]! lines_out) {
 		ama::Node*+[+]! line_group = new ama::Node*+[+]!();
 		ama::Node*+[+]! line_out_final = new ama::Node*+[+]!();
 		for(int! i0 = 0; i0 < lines_out.length;) {
@@ -114,7 +114,7 @@ namespace ama {
 						new_children.push_back(ndi_next);
 					}
 				} else if( ndi.isRawNode('{', '}') || ndi.node_class == ama::N_SCOPE ) {
-					if( ndi.s && ndi.s.node_class == ama::N_REF && keywords_extension_clause[ndi.s.data] ) {
+					if( ndi.s && ((ndi.s.node_class == ama::N_REF && keywords_extension_clause[ndi.s.data]) || ndi.s.isSymbol("=")) ) {
 						ndi = ndi_next;
 						continue;
 					}
@@ -243,7 +243,7 @@ namespace ama {
 				istk.pop();
 			}
 			//merge scopes into surrounding raws
-			ama::Node*+[+]! line_out_final = new ama::Node*+![+]!(MergeScopesIntoStatements(keywords_extension_clause, lines_out));
+			ama::Node*+[+]! line_out_final = MergeScopesIntoStatements(keywords_extension_clause, lines_out);
 			//replace old children
 			for(ama::Node*+! ndi : line_out_final) {
 				ndi.p = nd_scope;

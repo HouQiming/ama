@@ -127,7 +127,7 @@ namespace ama {
 					//move the comments
 					ndi.MergeCommentsAfter(ndi_next);
 					ndi_next.Delete();
-					ama::Node*+! nd_value = ndi_next_next.s ? ama::CreateNode(ama::N_RAW, ndi_next_next) : ndi_next_next;
+					ama::Node*+! nd_value = ama::toSingleNode(ndi_next_next);
 					nd_value.comments_before = ndi_next_next.comments_before;
 					ndi_next_next.comments_before = '';
 					nd_value.MergeCommentsBefore(ndi_next);
@@ -135,7 +135,7 @@ namespace ama {
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
 					nd_raw.ReplaceWith(nd_tmp);
 					//ndi.s = NULL;
-					ama::Node*+! nd_asgn = nd_tmp.ReplaceWith(ama::nAssignment(nd_raw, nd_value));
+					ama::Node*+! nd_asgn = nd_tmp.ReplaceWith(ama::nAssignment(nd_raw.c && !nd_raw.c.s ? ama::UnparseRaw(nd_raw) : nd_raw, nd_value));
 					//always allow :=
 					if( ndi.node_class == ama::N_SYMBOL && (binop_priority[ndi.data] || ndi.data == ":") && ndi != nd_raw.c ) {
 						//updating assignment

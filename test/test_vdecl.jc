@@ -1,0 +1,37 @@
+#if 0
+	@ama
+	let nd_root=ParseCurrentFile();
+	nd_root.Validate();
+	for(let nd_ref of nd_root.FindAll(N_REF,null)){
+		if(nd_ref.flags){
+			nd_ref.comments_before='/*'+(nd_ref.flags&REF_DECLARED?'D':'')+(nd_ref.flags&REF_WRITTEN?'W':'')+'*/';
+		}
+	}
+	console.log(JSON.stringify(nd_root,null,1))
+	console.log(nd_root.toSource())
+#endif
+
+template<>
+class TestClass:Base{
+	union TestUnion extends Base{
+		enum foo{
+			bar=3,
+			foo=bar,
+			baz
+		}
+	}
+	int fwdMethod(void)const;
+};
+
+int g;
+
+int main(int argc,char** argv,volatile char*const* envp){
+	unsigned int u,v,*w=NULL,*x[9],y[9];
+	long uu,*ww,*xx[9],yy[9],vv;
+	char* s("test");
+	int x[7]={};
+	g=9;
+	h:=g;
+	auto {a:b,c}=Destructured();
+	return u;
+}
