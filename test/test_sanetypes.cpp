@@ -2,15 +2,19 @@
 
 /*
 @ama
-default_options.postfix_operators='! '+default_options.postfix_operators;
+const sane_types=require('cpp/sane_types');
+const sane_init=require('cpp/sane_init');
+const move_operator=require('cpp/move_operator');
 let nd_root=ParseCurrentFile()
-	.then(require('cpp/sane_types'))
-	.then(require('cpp/sane_init'))
+	.then(sane_types)
+	.then(sane_init)
+	.then(move_operator)
 	.Save('.audit.cpp');
 //console.log(JSON.stringify(nd_root,null,1));
 nd_root
-	.then(require('cpp/sane_init').inverse)
-	.then(require('cpp/sane_types').inverse)
+	.then(move_operator.inverse)
+	.then(sane_init.inverse)
+	.then(sane_types.inverse)
 	.Save('.aba.audit.cpp')
 */
 
@@ -76,5 +80,5 @@ ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries
 		}
 	}
 	ama::CodeGenerator gctx{{}, nullptr, nullptr, nullptr, nullptr, intptr_t(0L), intptr_t(0L), 4, 1};
-	return std::move(Q);
+	return <<Q;
 }

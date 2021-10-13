@@ -60,6 +60,7 @@ function BidirTransform(nd_root, is_forward) {
 		}
 		nd_scope.TranslateTemplates([g_obj_init_transform], is_forward);
 	}
+	return nd_root;
 }
 
 function Translate(nd_root) {
