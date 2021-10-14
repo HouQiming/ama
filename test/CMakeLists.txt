@@ -117,6 +117,11 @@ check_cxx_source_compiles("#include \"jc_platform.h\"\n\n#if !(!(JC_OS == JC_OS_
 if(COND__JC_OS_JC_OS_WINDOWS__1DB9171C)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funwind-tables")
+set_property(
+  TARGET test_engine
+  APPEND PROPERTY LINK_LIBRARIES
+  -ldl
+)
 endif()
 set_property(
   TARGET test_engine

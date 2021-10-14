@@ -90,6 +90,8 @@ namespace ama {
 				//move out trailing ;
 				ama::Node*+! nd_last = nd_raw.LastChild();
 				if( nd_last && nd_last.isSymbol(";") && nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_RAW) ) {
+					nd_last.comments_after = new char[|]!(nd_last.comments_after + nd_raw.comments_after);
+					nd_raw.comments_after = "";
 					nd_last.Unlink();
 					nd_raw.Insert(ama::POS_AFTER, nd_last);
 				}
@@ -264,6 +266,9 @@ namespace ama {
 			nd_scope.c = NULL;
 			nd_scope.Insert(ama::POS_FRONT, ama::InsertMany(line_out_final));
 		}
+		//flag the root as a scope to prevent DelimitCLikeStatements from merging its children like it were a raw statement
+		//the flag will be reset when converting to N_FILE
+		nd_root.flags = uint32_t('{') | uint32_t('}') << 8;
 		return nd_root;
 	}
 };

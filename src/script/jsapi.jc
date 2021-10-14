@@ -189,6 +189,8 @@ namespace ama {
 		//from here on, N_RAW no longer includes the root scope
 		nd_root = ama::CleanupDummyRaws(nd_root);
 		nd_root.node_class = ama::N_FILE;
+		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
+		nd_root.flags = 0;
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root, ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_air_object'), 1));
 		ama::SanitizeCommentPlacement(nd_root);

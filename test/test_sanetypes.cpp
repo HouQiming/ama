@@ -7,7 +7,10 @@ const sane_init=require('cpp/sane_init');
 const move_operator=require('cpp/move_operator');
 const jsism=require('cpp/jsism');
 const autodecl=require('cpp/autodecl');
-let nd_root=ParseCurrentFile()
+let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
+	.Save('.indent.audit.cpp')
+	.AutoSemicolon()
+	.Save('.mid.audit.cpp')
 	.then(sane_types,{view:{to:.(JC::array_base<.(Node.MatchAny('TElement'))>)}})
 	.then(sane_init)
 	.then(move_operator)
@@ -63,28 +66,25 @@ ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries
 	ama::ExecNode*[] Q{};
 	Map<ama::ExecNode*, intptr_t> inQ{};
 	for ( ama::ExecNode*& ed: entries ) {
-		Q.push_back(ed);
-		JC::map_set(inQ, ed, 1);
+		Q.push_back(ed)
+		JC::map_set(inQ, ed, 1)
 	}
 	for (int qi = 0; qi < Q.size(); qi += 1) {
 		if ( dir & ama::REACH_FORWARD ) {
 			for (ama::ExecNodeExtraLink* link = Q[qi]->next.more; link; link = link->x) {
 				ama::ExecNode* edi = link->target;
 				if ( !JC::map_get(inQ, edi) ) {
-					JC::push(Q, edi);
+					JC::push(Q, edi)
 					JC::map_set(inQ, edi, 1);
 				}
 			}
 		}
-		if ( dir & ama::REACH_BACKWARD ) {
-			for (ama::ExecNodeExtraLink* link = Q[qi]->prev.more; link; link = link->x) {
+		if ( dir & ama::REACH_BACKWARD )
+			for (ama::ExecNodeExtraLink* link = Q[qi]->prev.more; link; link = link->x)
 				ama::ExecNode* edi = link->target;
-				if ( !JC::map_get(inQ, edi) ) {
+				if ( !JC::map_get(inQ, edi) )
 					JC::push(Q, edi);
 					JC::map_set(inQ, edi, 1);
-				}
-			}
-		}
 	}
 	ama::CodeGenerator gctx{{}, nullptr, nullptr, nullptr, nullptr, intptr_t(0L), intptr_t(0L), 4, 1};
 	JC::sortby(addressed_labels, (auto nd) => { return intptr_t(nd); });

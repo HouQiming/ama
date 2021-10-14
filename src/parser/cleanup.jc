@@ -113,7 +113,6 @@ namespace ama {
 					ndi.MergeCommentsAfter(nd_semicolon);
 					ndi = nd_semicolon;
 				}
-				ama::Node*+! @nojson*+! link = &ndi.s;
 			}
 		}
 		for(ama::Node*&+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {

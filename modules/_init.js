@@ -182,8 +182,12 @@ Node.AutoSemicolon = function() {
 		}
 		if(new_children.length>1){
 			//we have multiple statements
-			for(let ndi of new_children){
-				ndi.BreakSelf();
+			for(let i=new_children.length-1;i>=0;i--){
+				if(i>0){
+					new_children[i].Prev().BreakSibling();
+				}else if(new_children[i].p){
+					new_children[i].p.BreakChild();
+				}
 			}
 			for(let i=0;i<new_children.length;i++){
 				let ndi=new_children[i];
@@ -204,17 +208,19 @@ Node.AutoSemicolon = function() {
 		}
 	}
 	for(let nd of this.FindAll(N_SCOPE,null).concat([this])){
-		let ndi=nd.LastChild();
-		if(!ndi){continue;}
-		let nd_test=ndi;
-		while((nd_test.node_class===N_SCOPED_STATEMENT||nd_test.node_class===N_KEYWORD_STATEMENT||
-		nd_test.node_class===N_EXTENSION_CLAUSE)&&nd_test.c){
-			nd_test=nd_test.LastChild()
-		}
-		if(nd_test.node_class!==N_SCOPE&&(ndi.node_class===N_KEYWORD_STATEMENT||ndi.node_class===N_ASSIGNMENT||ndi.node_class===N_CALL)){
-			let nd_tmp=nAir();
-			ndi.ReplaceWith(nd_tmp);
-			nd_tmp.ReplaceWith(nSemicolon(ndi));
+		//let ndi=nd.LastChild();
+		//if(!ndi){continue;}
+		for(let ndi=nd.c;ndi;ndi=ndi.s){
+			let nd_test=ndi;
+			while((nd_test.node_class===N_SCOPED_STATEMENT||nd_test.node_class===N_KEYWORD_STATEMENT||
+			nd_test.node_class===N_EXTENSION_CLAUSE)&&nd_test.c){
+				nd_test=nd_test.LastChild()
+			}
+			if(nd_test.node_class!==N_SCOPE&&(ndi.node_class===N_KEYWORD_STATEMENT||ndi.node_class===N_ASSIGNMENT||ndi.node_class===N_CALL)){
+				let nd_tmp=Node.GetPlaceHolder();
+				ndi.ReplaceWith(nd_tmp);
+				ndi=nd_tmp.ReplaceWith(nSemicolon(ndi));
+			}
 		}
 	}
 	return this;
