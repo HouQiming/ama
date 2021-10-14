@@ -85,13 +85,14 @@ function Transform(nd_root, options) {
 		if (defs && defs.length == 1) {
 			//resolve it
 			let names = [];
-			for (let ndi = defs[0]; ndi; ndi = ndi.p) {
-				if (ndi.node_class == N_CLASS || ndi.node_class == N_REF) {
+			let nd_def = defs[0];
+			for (let ndi = nd_def; ndi; ndi = ndi.p) {
+				if (ndi.node_class == N_CLASS && nd_def != ndi.c.s || ndi.node_class == N_REF) {
 					names.push(ndi.GetName());
 				}
 			}
 			let nd_ret = nRef(names.pop());
-			while (names.length) {
+			while (names.length > 0) {
 				nd_ret = nd_ret.dot(names.pop()).setFlags(DOT_CLASS);
 			};
 			nd_ref.ReplaceWith(nd_ret);
