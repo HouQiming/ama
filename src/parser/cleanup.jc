@@ -77,27 +77,58 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	private void! dfsAutoFormat(ama::Node*+! nd) {
-		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
-			dfsAutoFormat(ndi);
-			if( nd.node_class == ama::N_SCOPE || nd.node_class == ama::N_FILE ) {
-				if( !ndi.indent_level && nd.node_class == ama::N_SCOPE ) {
-					ndi.AdjustIndentLevel(4);
+	ama::Node*+! AutoFormat(ama::Node*+! nd_root) {
+		for(ama::Node*+! ndi = nd_root.PostorderFirst(); ndi; ndi = ndi.PostorderNext(nd_root)) {
+			ama::Node*+! nd = ndi.p;
+			if( ndi != nd_root ) {
+				if( nd.node_class == ama::N_SCOPE || nd.node_class == ama::N_FILE ) {
+					if( !ndi.indent_level && nd.node_class == ama::N_SCOPE ) {
+						ndi.AdjustIndentLevel(4);
+					}
+					if( !ndi.comments_before.length ) {
+						ndi.comments_before = "\n";
+					}
+					if( !ndi.s && !ndi.comments_after.length ) {
+						ndi.comments_after = "\n";
+					}
 				}
-				if( !ndi.comments_before.length ) {
-					ndi.comments_before = "\n";
+				if( nd.node_class == ama::N_CLASS && ndi == nd.c.s && ndi.comments_before == "" ) {
+					ndi.comments_before = " ";
 				}
-				if( !ndi.s && !ndi.comments_after.length ) {
-					ndi.comments_after = "\n";
+			}
+			if( ndi.node_class == ama::N_SCOPE && ndi.c ) {
+				if( !ndi.LastChild().comments_after.length ) { ndi.LastChild().comments_after = "\n"; }
+			}
+		}
+		if( nd_root.p ) {
+			//sane new line before / after
+			int! is_one_liner = 1;
+			int! has_other_child = 0;
+			for(ama::Node*+! ndi = nd_root.p.c; ndi; ndi = ndi.s) {
+				if( ndi != nd_root ) {
+					if( !has_other_child && !nd_root.indent_level ) {
+						nd_root.AdjustIndentLevel(ndi.indent_level);
+					}
+					has_other_child = 1;
+					if( ndi.comments_before.endsWith('\n') || ndi.comments_after.endsWith('\n') ) {
+						is_one_liner = 0;
+						break;
+					}
+				}
+			}
+			if( !(is_one_liner && has_other_child) ) {
+				//we need newlines
+				if( nd_root.comments_before == "" ) {
+					ama::Node*+! nd_prev = nd_root.Prev();
+					if( !(nd_prev && nd_prev.comments_after.endsWith('\n')) ) {
+						nd_root.comments_before = "\n";
+					}
+				}
+				if( !nd_root.s && nd_root.comments_after == "" ) {
+					nd_root.comments_after = "\n";
 				}
 			}
 		}
-		if( nd.node_class == ama::N_SCOPE && nd.c ) {
-			if( !nd.LastChild().comments_after.length ) { nd.LastChild().comments_after = "\n"; }
-		}
-	}
-	ama::Node*+! AutoFormat(ama::Node*+! nd_root) {
-		dfsAutoFormat(nd_root);
 		return nd_root;
 	}
 	ama::Node*+! NodifySemicolonAndParenthesis(ama::Node*+! nd_root) {

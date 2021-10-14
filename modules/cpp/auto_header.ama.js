@@ -59,12 +59,22 @@ function Transform(nd_root, options) {
 	//load the header
 	let nd_header = undefined;
 	if (!fs.existsSync(header_file)) {
-		nd_header = ParseCode('');
+		let header_name = path.parse(header_file).name;
+		nd_header = ParseCode([
+			'#ifndef __', header_name, '_HEADER\n',
+			'#define __', header_name, '_HEADER\n',
+			'#endif\n'
+		].join(''));
 		nd_header.data = header_file;
 	} else {
 		nd_header = depends.LoadFile(header_file);
 	}
 	//sync to header
+	let endifs = nd_header.FindAll(N_REF, '#endif');
+	let nd_endif = undefined;
+	if (endifs.length) {
+		nd_endif = endifs.pop();
+	}
 	let changed = 0;
 	for (let nd_func of to_sync) {
 		let nd_name = GetFunctionNameNode(nd_func);
@@ -94,26 +104,31 @@ function Transform(nd_root, options) {
 			continue;
 		}
 		//assume all ::-s along the way are namespaces
+		//TODO: make sure we insert before the last #endif
 		changed = 1;
+		let nd_insertion_root = undefined;
 		for (let i = failed; i > 0; i--) {
-			let nd_namespace = nClass('namespace', nAir(), nRef(names[i]).setCommentsBefore(' '), nAir(), nScope()).setCommentsAfter('\n');
-			if (!nd_scope.c || !nd_scope.LastChild().comments_after.endsWith('\n')) {
-				nd_namespace.setCommentsBefore('\n');
-				nd_namespace.indent_level = 4;
-			} else {
-				nd_namespace.indent_level = nd_scope.c.indent_level;
+			let nd_namespace = nClass('namespace', nAir(), nRef(names[i]), nAir(), nScope());
+			if (!nd_insertion_root) {
+				nd_insertion_root = nd_namespace;
 			}
 			nd_scope.Insert(POS_BACK, nd_namespace);
 			nd_scope = nd_namespace.LastChild();
 		}
 		let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
 		GetFunctionNameNode(nd_forward).ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
-		nd_forward.LastChild().ReplaceWith(nAir());
+		nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
 		nd_forward = nSemicolon(nd_forward);
-		if (!nd_scope.c || !nd_scope.LastChild().comments_after.endsWith('\n')) {nd_forward.setCommentsBefore('\n');}
-		nd_scope.Insert(POS_BACK, nd_forward.setCommentsAfter('\n'));
+		if (!nd_insertion_root) {
+			nd_insertion_root = nd_forward;
+		}
+		nd_scope.Insert(POS_BACK, nd_forward);
+		nd_insertion_root.AutoFormat();
 	}
 	if (changed) {
+		//place #endif to EOF again
+		nd_endif.Unlink();
+		nd_header.Insert(POS_BACK, nd_endif);
 		if (options.audit) {
 			nd_header.Save({name: options.audit});
 		} else {
