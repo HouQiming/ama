@@ -146,7 +146,7 @@ add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsenv.jc.cpp
   COMMAND ${JCC} --cmakelist ${CMAKE_CURRENT_LIST_FILE} -c ${CMAKE_CURRENT_SOURCE_DIR}/../script/jsenv.jc
   MAIN_DEPENDENCY ../script/jsenv.jc
-  DEPENDS ${JC_LIB}/fs.jch ${JC_LIB}/path.jch ${JC_LIB}/json.jch ../script/jsenv.jch
+  DEPENDS ${JC_LIB}/fs.jch ${JC_LIB}/path.jch ${JC_LIB}/json.jch ${JC_LIB}/console.jch ../script/jsenv.jch
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 if(DEFINED JC_LIB)

@@ -3,6 +3,7 @@
 #include <fs.jch>
 #include <path.jch>
 #include <json.jch>
+#include <console.jch>
 #include "./jsenv.jch"
 
 namespace ama {
@@ -50,6 +51,19 @@ namespace ama {
 		}
 		if( fs::existsSync(fn + '.json') ) {
 			return new char[|]!(fn + '.json');
+		}
+		//put native options last to minimize the hijacking risk
+		char[|]! fn_native;
+		#if defined(_WIN32)
+			fn_native = new char[|]!(fn + '.dll');
+		#elif defined(__APPLE__)
+			fn_native = new char[|]!(path.dirname(fn) + '/lib' + path.basename(fn) + '.dylib');
+		#else
+			fn_native = new char[|]!(path.dirname(fn) + '/lib' + path.basename(fn) + '.so');
+		#endif
+		//console.log(fn_native);
+		if( fs::existsSync(fn_native) ) {
+			return fn_native;
 		}
 		return NULL;
 	}

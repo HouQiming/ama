@@ -347,9 +347,11 @@ __global.process={
 };
 
 __global.__RequireNativeLibrary=function(exports,module,__filename,__dirname){
-	let handle=new NativeLibrary(__filename);
+	let handle=NativeLibrary.load(__filename);
 	module.handle=handle;
-	let code=handle.run('AmaInit_'+JSON.parse(__path_parse(__filename)).name.toLowerCase(),module);
+	let name=JSON.parse(__path_parse(__filename)).name.toLowerCase();
+	if(__platform!=='win32'&&name.startsWith('lib')){name=name.substr(3);}
+	let code=handle.run('AmaInit_'+name,module);
 	if(code!==0){
 		throw new Error(['native module ',JSON.stringify(__filename),' failed with code ',JSON.stringify(code)].join(''));
 	}

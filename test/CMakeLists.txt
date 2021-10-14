@@ -136,3 +136,4 @@ set_property(
   APPEND PROPERTY LINK_DIRECTORIES
   ~/.local/lib
 )
+add_library(native_module SHARED native_module.cpp)

@@ -538,7 +538,8 @@ namespace ama {
 		#endif
 	}
 	private uint32_t! g_native_library_classid = 0u;
-	private JSValueConst! NativeLibraryConstructor(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+	private JSValue! g_native_library_proto = JS_UNDEFINED;
+	private JSValueConst! JSLoadNativeLibrary(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		if( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a file name");
 		}
@@ -551,8 +552,9 @@ namespace ama {
 		if( !hmodule ) {
 			return JS_ThrowReferenceError(ctx, "failed to load module %s", JS_ToCString(ctx, argv[0]));
 		}
-		JS_SetOpaque(this_val, hmodule);
-		return this_val;
+		JSValue! ret = JS_NewObjectProtoClass(ama::jsctx, g_native_library_proto, g_native_library_classid);
+		JS_SetOpaque(ret, hmodule);
+		return ret;
 	}
 	private void! NativeLibraryFinalizer(JSRuntime*+! rt, JSValueConst! val) {
 		void*+! hmodule = JS_GetOpaque(val, g_native_library_classid);
@@ -580,6 +582,9 @@ namespace ama {
 		#else
 			addr = dlsym(hmodule, JS_ToCString(ctx, argv[0]));
 		#endif
+		if( !addr ) {
+			return JS_ThrowReferenceError(ctx, "failed to find the symbol '%s'", JS_ToCString(ctx, argv[0]));
+		}
 		int32_t! ret_code = NativeLibraryFunction(addr)(argc < 2 ? JS_UNDEFINED : argv[1]);
 		return JS_NewInt32(ctx, ret_code);
 	}
@@ -769,14 +774,10 @@ namespace ama {
 		class_def_nl.class_name = 'NativeLibrary';
 		class_def_nl.finalizer = NativeLibraryFinalizer;
 		JS_NewClass(ama::g_runtime_handle, ama::g_native_library_classid, &class_def_nl);
-		JSValue! native_library_proto = JS_NewObject(ama::jsctx);
-		JSValue! native_library_ctor = JS_NewCFunction2(
-			ama::jsctx, NativeLibraryConstructor,
-			'log', 1, JS_CFUNC_constructor, 0
-		);
-		JS_SetPropertyStr(ama::jsctx, global, 'NativeLibrary', native_library_ctor);
-		JS_SetPropertyStr(ama::jsctx, native_library_ctor, 'prototype', native_library_proto);
-		JS_SetPropertyStr(ama::jsctx, native_library_proto, 'run', JS_NewCFunction(ama::jsctx, NativeLibraryRun, 'run', 1));
+		g_native_library_proto = JS_NewObject(ama::jsctx);
+		JS_SetPropertyStr(ama::jsctx, global, 'NativeLibrary', g_native_library_proto);
+		JS_SetPropertyStr(ama::jsctx, g_native_library_proto, 'run', JS_NewCFunction(ama::jsctx, NativeLibraryRun, 'run', 1));
+		JS_SetPropertyStr(ama::jsctx, g_native_library_proto, 'load', JS_NewCFunction(ama::jsctx, JSLoadNativeLibrary, 'load', 1));
 		/////////////
 		//run the JS part of the initialization
 		char[|]! fn_initjs = ama::FindCommonJSModuleByPath(path.join(ama::std_module_dir, '_init.js'));
