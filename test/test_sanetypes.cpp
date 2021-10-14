@@ -6,7 +6,6 @@ const sane_types=require('cpp/sane_types');
 const sane_init=require('cpp/sane_init');
 const move_operator=require('cpp/move_operator');
 const jsism=require('cpp/jsism');
-const autodecl=require('cpp/autodecl');
 let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.Save('.indent.audit.cpp')
 	.AutoSemicolon()
@@ -15,8 +14,8 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.then(sane_init)
 	.then(move_operator)
 	.then(jsism.EnableJSLambdaSyntax)
-	.then(autodecl)
-	.then(require('cpp/autoparen'))
+	.then(require('cpp/auto_decl'))
+	.then(require('cpp/auto_paren'))
 	.Save('.audit.cpp');
 //console.log(JSON.stringify(nd_root,null,1));
 nd_root

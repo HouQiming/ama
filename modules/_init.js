@@ -7,6 +7,13 @@ Node.setFlags=function(flags){
 	return this;
 }
 
+Node._isRawNode=Node.isRawNode;
+Node.isRawNode=function(s0,s1){
+	if(typeof(s0)==='string'){s0=s0.charCodeAt(0);}
+	if(typeof(s1)==='string'){s1=s1.charCodeAt(0);}
+	return this._isRawNode(s0,s1);
+}
+
 Node.setData=function(data){
 	this.data=data;
 	return this;

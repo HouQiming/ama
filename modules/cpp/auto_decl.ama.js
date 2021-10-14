@@ -15,7 +15,7 @@ function Transform(nd_root, options) {
 		}
 		let ctx = scope_to_context.get(nd_scope);
 		if (!ctx) {
-			ctx = {defs: new Set()}
+			ctx = {defs: new Set()};
 			scope_to_context.set(nd_scope, ctx);
 		}
 		ctx.defs.add(nd_def.data);
@@ -47,7 +47,7 @@ function Transform(nd_root, options) {
 			let nd_owner = nd_ref.Owner();
 			let ctx = owner_to_context.get(nd_owner);
 			if (!ctx) {
-				ctx = {writtens: new Set()}
+				ctx = {writtens: new Set()};
 				owner_to_context.set(nd_owner, ctx);
 			}
 			ctx.writtens.add(nd_ref.data);
@@ -93,10 +93,10 @@ function Transform(nd_root, options) {
 			let nd_ret = nRef(names.pop());
 			while (names.length) {
 				nd_ret = nd_ret.dot(names.pop()).setFlags(DOT_CLASS);
-			}
+			};
 			nd_ref.ReplaceWith(nd_ret);
 		}
 	}
 };
 
-module.exports = Transform;
+module.exports = Transform;; ; ;
