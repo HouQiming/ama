@@ -228,6 +228,23 @@ Node.AutoSemicolon = function() {
 				let nd_tmp=Node.GetPlaceHolder();
 				ndi.ReplaceWith(nd_tmp);
 				ndi=nd_tmp.ReplaceWith(nSemicolon(ndi));
+				//shove trailing comments after the ;
+				let all_comments=[];
+				for(let ndj=ndi;;ndj=ndj.LastChild()){
+					if(ndj.comments_after){
+						all_comments.push(ndj.comments_after);
+					}
+					if(!ndj.c){break;}
+				}
+				if(all_comments.length>0){
+					for(let ndj=ndi;;ndj=ndj.LastChild()){
+						if(ndj.comments_after){
+							ndj.comments_after='';
+						}
+						if(!ndj.c){break;}
+					}
+					ndi.comments_after=all_comments.reverse().join('');
+				}
 			}
 		}
 	}
