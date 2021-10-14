@@ -207,6 +207,7 @@ namespace ama {
 		Map<char[|], int>! named_ops = ama::GetPrioritizedList(options, 'named_operators');
 		Map<char[|], int>! c_type_prefix_operators = ama::GetPrioritizedList(options, 'c_type_prefix_operators');
 		Map<char[|], int>! is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		Map<char[|], int>! cv_qualifiers = ama::GetPrioritizedList(options, "cv_qualifiers");
 		//named operators: convert refs to symbols
 		for(ama::Node*+! nd_ref : nd_root.FindAll(ama::N_REF, NULL)) {
 			if( named_ops[nd_ref.data] || (c_type_prefix_operators[nd_ref.data] && nd_ref.s && nd_ref.s.node_class == ama::N_REF && nd_ref.p && nd_ref.p.node_class == ama::N_RAW) ) {
@@ -227,7 +228,8 @@ namespace ama {
 				if( ndi.node_class == ama::N_SYMBOL ) {
 					if( ndi.data != "=" ) {
 						//fold ambiguous_type_suffix as postfix if we got another symbol that isn't =
-						if( stack.length >= 2 && stack.back().node_class == ama::N_SYMBOL && is_type_suffix[stack.back().data] && stack[stack.length - 2].node_class != ama::N_SYMBOL ) {
+						if( stack.length >= 2 && stack.back().node_class == ama::N_SYMBOL && is_type_suffix[stack.back().data] && 
+						stack[stack.length - 2].node_class != ama::N_SYMBOL && (!prefix_ops[ndi.data] || cv_qualifiers[ndi.data]) ) {
 							ama::Node*+! nd_operator = stack.pop();
 							ama::Node*+! nd_operand = stack.pop();
 							nd_operand = FoldPostfix(nd_operand, nd_operator);

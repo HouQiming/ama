@@ -3,7 +3,7 @@
 
 function Transform(nd_root) {
 	for (let ndi of nd_root.FindAll(N_SCOPED_STATEMENT, null)) {
-		if (ndi.c.node_class != N_PAREN &&!ndi.c.isRawNode('(', ')')) {
+		if (ndi.c.node_class != N_PAREN && !ndi.c.isRawNode('(', ')')) {
 			let nd_arg = ndi.c;
 			let nd_tmp = Node.GetPlaceHolder()
 			nd_arg.ReplaceWith(nd_tmp);
@@ -13,6 +13,6 @@ function Transform(nd_root) {
 			nd_tmp.ReplaceWith(nParen(nd_arg));
 		}
 	}
-};
+}
 
-module.exports = Transform;; ; ;
+module.exports = Transform;

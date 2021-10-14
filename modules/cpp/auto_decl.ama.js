@@ -97,6 +97,6 @@ function Transform(nd_root, options) {
 			nd_ref.ReplaceWith(nd_ret);
 		}
 	}
-};
+}
 
-module.exports = Transform;; ; ;
+module.exports = Transform;

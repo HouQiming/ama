@@ -218,6 +218,7 @@ Node.AutoSemicolon = function() {
 		//let ndi=nd.LastChild();
 		//if(!ndi){continue;}
 		for(let ndi=nd.c;ndi;ndi=ndi.s){
+			if(ndi.s&&(ndi.s.isSymbol(',')||ndi.s.isSymbol(';'))){continue;}
 			let nd_test=ndi;
 			while((nd_test.node_class===N_SCOPED_STATEMENT||nd_test.node_class===N_KEYWORD_STATEMENT||
 			nd_test.node_class===N_EXTENSION_CLAUSE)&&nd_test.c){
@@ -284,6 +285,7 @@ __global.default_options={
 	binary_operators:'||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
 	prefix_operators:'++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
 	postfix_operators:'const volatile ++ --',
+	cv_qualifiers:'const volatile',
 	//void is too common in C/C++ to be treated as an operator by default
 	named_operators:'typeof delete sizeof await co_await new in instanceof as const volatile',
 	//unlike general named_operators, c_type_prefix_operators only make sense when used before another identifier
