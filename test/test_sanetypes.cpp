@@ -13,6 +13,7 @@ let nd_root=ParseCurrentFile()
 	.then(move_operator)
 	.then(jsism.EnableJSLambdaSyntax)
 	.then(autodecl)
+	.then(require('cpp/autoparen'))
 	.Save('.audit.cpp');
 //console.log(JSON.stringify(nd_root,null,1));
 nd_root
@@ -88,7 +89,7 @@ ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries
 	ama::CodeGenerator gctx{{}, nullptr, nullptr, nullptr, nullptr, intptr_t(0L), intptr_t(0L), 4, 1};
 	JC::sortby(addressed_labels, (auto nd) => { return intptr_t(nd); });
 	console.log(REACH_FORWARD);
-	if(1){
+	if (1)+(true):{
 		new_var=3;
 		console.log(new_var);
 	}else{
