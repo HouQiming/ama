@@ -49,6 +49,18 @@ namespace ama {
 		} else if( nd_body && nd_body.isRawNode('(', ')') ) {
 			nd_arg = nd_body;
 			nd_body = nd_body.BreakSibling();
+		} else {
+			//Python-like : separation handling
+			ama::Node*+! nd_last_colon = NULL;
+			for(ama::Node*+! ndi = nd_body; ndi; ndi = ndi.s) {
+				if( ndi.isSymbol(":") ) {
+					nd_last_colon = ndi;
+				}
+			}
+			if( nd_last_colon ) {
+				nd_arg = nd_body;
+				nd_body = nd_last_colon.BreakSibling();
+			}
 		}
 		ama::Node*+! nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level);
 		nd_body = ama::toSingleNode(nd_body);
