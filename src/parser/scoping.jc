@@ -78,6 +78,12 @@ namespace ama {
 			//MergeCommentsAfter(nd_nextline);
 			//console.log(JSON.stringify(nd_new_scope.comments_after))
 		} else {
+			if( nd_new_scope.c ) {
+				ama::Node*+! nd_last = nd_new_scope.LastChild();
+				if( nd_last.comments_after.indexOf('\n') < 0L ) {
+					nd_last.comments_after = new char[|]!(nd_last.comments_after + "\n");
+				}
+			}
 			nd_new_scope.comments_after = "\n";
 		}
 		lines_out.resize(lineno);

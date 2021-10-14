@@ -506,7 +506,7 @@ namespace ama {
 					nd_stmt.comments_after = new char[|]!(nd_keyword.comments_after + nd_stmt.comments_after);
 				}
 				nd_stmt.data = nd_keyword.DestroyForSymbol();
-				if( !nd_raw.c ) {
+				if( !nd_raw.c && nd_raw.isRawNode(0, 0) ) {
 					nd_raw.ReplaceWith(nd_stmt);
 					nd_raw.c = NULL; nd_raw.FreeASTStorage();
 				} else {
@@ -559,7 +559,6 @@ namespace ama {
 			}
 			if( nd_stmt.node_class == ama::N_ASSIGNMENT && nd_stmt.c.isAncestorOf(nd_ref) ) {
 				//Go := operator or general assignment
-				//TODO: could be type / N_ITEM / N_DOT, not necessarily written
 				if( nd_stmt.data == ":" || nd_stmt.data == "" ) {
 					if( nd_ref == nd_stmt.c ) {
 						if( nd_stmt.p && nd_stmt.p.node_class == ama::N_SCOPE && nd_stmt.p.p && nd_stmt.p.p.node_class == ama::N_SCOPED_STATEMENT && nd_stmt.p.p.data == 'enum' ) {

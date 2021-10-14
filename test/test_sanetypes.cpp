@@ -83,3 +83,4 @@ int ama::NewAMAFunction()
 
 void NewNamespace::NewThing(Node* nd_name,int x)
 	//nothing
+	x++
