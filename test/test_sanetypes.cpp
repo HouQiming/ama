@@ -6,11 +6,13 @@ const sane_types=require('cpp/sane_types');
 const sane_init=require('cpp/sane_init');
 const move_operator=require('cpp/move_operator');
 const jsism=require('cpp/jsism');
+const autodecl=require('cpp/autodecl');
 let nd_root=ParseCurrentFile()
 	.then(sane_types,{view:{to:.(JC::array_base<.(Node.MatchAny('TElement'))>)}})
 	.then(sane_init)
 	.then(move_operator)
 	.then(jsism.EnableJSLambdaSyntax)
+	.then(autodecl)
 	.Save('.audit.cpp');
 //console.log(JSON.stringify(nd_root,null,1));
 nd_root
@@ -24,6 +26,7 @@ nd_root
 namespace ama {
 	typedef int(*FGeneratorHook)(ama::CodeGenerator*,ama::Node*);
 	typedef int(*FGeneratorHookComment)(ama::CodeGenerator*,const char*,intptr_t,int,intptr_t);
+	static const int REACH_FORWARD=0;
 	struct CodeGenerator {
 		//ignore offsets for now
 		//COULDDO: provide a separate service to convert some (unicode) tag into cite-like comments
@@ -84,5 +87,13 @@ ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries
 	}
 	ama::CodeGenerator gctx{{}, nullptr, nullptr, nullptr, nullptr, intptr_t(0L), intptr_t(0L), 4, 1};
 	JC::sortby(addressed_labels, (auto nd) => { return intptr_t(nd); });
+	console.log(REACH_FORWARD);
+	if(1){
+		new_var=3;
+		console.log(new_var);
+	}else{
+		new_var+=4;
+		console.log(new_var);
+	}
 	return <<Q;
 }
