@@ -6,6 +6,7 @@
 const path=require('path');
 const sane_types=require('cpp/sane_types');
 const sane_init=require('cpp/sane_init');
+const sane_export=require('cpp/sane_export');
 const move_operator=require('cpp/move_operator');
 const jsism=require('cpp/jsism');
 let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
@@ -14,6 +15,7 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.Save('.mid.audit.cpp')
 	.then(sane_types,{view:{to:.(JC::array_base<.(Node.MatchAny('TElement'))>)}})
 	.then(sane_init)
+	.then(sane_export)
 	.then(move_operator)
 	.then(jsism.EnableJSLambdaSyntax)
 	.then(require('cpp/auto_decl'))
@@ -24,6 +26,7 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 nd_root
 	.then(jsism.EnableJSLambdaSyntax.inverse)
 	.then(move_operator.inverse)
+	.then(sane_export.inverse)
 	.then(sane_init.inverse)
 	.then(sane_types.inverse,{view:{to:.(JC::array_base<.(Node.MatchAny('TElement'))>)}})
 	.Save('.aba.audit.cpp')
@@ -73,14 +76,14 @@ ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries
 	return <<Q;
 }
 
-void CodeGenerator::NewMethod(Node* nd_name)
+public void CodeGenerator::NewMethod(Node* nd_name)
 	if nd_name && nd_name.node_class != N_REF && nd_name.node_class != N_DOT: {
 		return undefined
 	}
 
-int ama::NewAMAFunction()
+public int ama::NewAMAFunction()
 	return 0
 
-void NewNamespace::NewThing(Node* nd_name,int x)
+public void NewNamespace::NewThing(Node* nd_name,int x)
 	//nothing
 	x++
