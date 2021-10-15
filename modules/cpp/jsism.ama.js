@@ -66,17 +66,17 @@ jsism.EnableConsole = function(nd_root, options) {
 			if (nd_value.isMethodCall('padStart') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				fmt = ':>' + nd_value.c.s.data;
 				nd_value = nd_value.c.c;
-				if (nd_value.isMethodCall('toString') &&!nd_value.c.s) {
+				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
 			} else if(nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				fmt = ':<' + nd_value.c.s.data;
 				nd_value = nd_value.c.c;
-				if (nd_value.isMethodCall('toString') &&!nd_value.c.s) {
+				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
 			}
-			if (nd_value.isMethodCall('toExponential') &&!nd_value.c.s) {
+			if (nd_value.isMethodCall('toExponential') && !nd_value.c.s) {
 				if (!fmt) {fmt = ':';}
 				fmt = fmt + 'e';
 				nd_value = nd_value.c.c;
@@ -95,9 +95,9 @@ jsism.EnableConsole = function(nd_root, options) {
 		let nd_format = nCall.apply(null, args);
 		if (!options.just_format) {
 			if (options.std_stream == 'stdout') {
-				nd_format=nCall(nRef('printf'), nString('%s'), nCall(nd_format.dot('c_str')));  
+				nd_format = nCall(nRef('printf'), nString('%s'), nCall(nd_format.dot('c_str')));  
 			} else {
-				nd_format=nCall(nRef('fprintf'), nRef(options.std_stream), nString('%s'), nCall(nd_format.dot('c_str')));  
+				nd_format = nCall(nRef('fprintf'), nRef(options.std_stream), nString('%s'), nCall(nd_format.dot('c_str')));  
 			}
 		}
 		nd_format.comments_before = nd_call.c.c.comments_before
@@ -112,7 +112,7 @@ jsism.EnableConsole = function(nd_root, options) {
 			if (is_first) {
 				is_first = 0;
 			} else if(options.separator) {
-				nd_stream=nBinop(nd_stream, '<<', nString(options.separator));  
+				nd_stream = nBinop(nd_stream, '<<', nString(options.separator));  
 			}
 			let nd_value = ndi
 			if (nd_value.isMethodCall('padStart') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
@@ -120,7 +120,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('right').setFlags(DOT_CLASS))  ;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s))  
 				nd_value = nd_value.c.c;
-				if (nd_value.isMethodCall('toString') &&!nd_value.c.s) {
+				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
 			} else if(nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
@@ -128,11 +128,11 @@ jsism.EnableConsole = function(nd_root, options) {
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('left').setFlags(DOT_CLASS))  ;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s))  
 				nd_value = nd_value.c.c;
-				if (nd_value.isMethodCall('toString') &&!nd_value.c.s) {
-					nd_value = nd_value.c.c;
-				}
-			}
-			if (nd_value.isMethodCall('toExponential') &&!nd_value.c.s) {
+				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
+					nd_value = nd_value.c.c;}};
+			
+			
+			if (nd_value.isMethodCall('toExponential') && !nd_value.c.s) {
 				need_iomanip = 1;
 				need_ios = 1
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('scientific').setFlags(DOT_CLASS))  
@@ -156,7 +156,7 @@ jsism.EnableConsole = function(nd_root, options) {
 			ndi = ndi_next;
 		}
 		if (options.tail) {
-			nd_stream=nBinop(nd_stream, '<<', options.tail == '\n' ? nRef('std').dot('endl').setFlags(DOT_CLASS) : nString(options.tail));  
+			nd_stream = nBinop(nd_stream, '<<', options.tail == '\n' ? nRef('std').dot('endl').setFlags(DOT_CLASS) : nString(options.tail));  
 		}
 		if (options.just_format) {
 			need_sstream = 1;
@@ -188,9 +188,17 @@ jsism.EnableConsole = function(nd_root, options) {
 		if (need_sstream) {
 			nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<sstream>');
 		}
-		nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<iostream>');
-	}
-}
+		nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<iostream>');}};
+
+
+
+jsism.EnableJSON = function(nd_root) {};
+	//TODO: stringify / parse callback generation
+	//how to differentiate on-call vs persistent?
+	//on-call generation needs type system
+	//for persistent, we want StringifyToImpl in header: #pragma inside the class
+	//#pragma for impl for now?
+
 
 jsism.EnableJSLambdaSyntax = function(nd_root) {
 	//()=>{} <=> [&](){}
@@ -199,10 +207,10 @@ jsism.EnableJSLambdaSyntax = function(nd_root) {
 		let nd_after = nd_func.c.s.s;
 		if (nd_after.isSymbol('=>')) {
 			nd_after.ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
-			nd_before.ReplaceWith(.([&]));
-		}
-	}
-}
+			nd_before.ReplaceWith(.([&]));}}};
+
+
+
 
 jsism.EnableJSLambdaSyntax.inverse = function(nd_root) {
 	//()=>{} <=> [&](){}

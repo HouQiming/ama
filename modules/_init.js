@@ -234,7 +234,7 @@ Node.AutoSemicolon = function() {
 					if(ndj.comments_after){
 						all_comments.push(ndj.comments_after);
 					}
-					if(!ndj.c){break;}
+					if(ndj.node_class==N_SCOPE||ndj.node_class==N_CALL||ndj.node_class==N_CALL_TEMPLATE||ndj.node_class==N_SCOPED_STATEMENT||!ndj.c){break;}
 				}
 				if(all_comments.length>0){
 					for(let ndj=ndi;;ndj=ndj.LastChild()){

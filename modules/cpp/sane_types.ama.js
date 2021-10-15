@@ -6,7 +6,7 @@ let g_templates = {
 	view: {from: .(.(Node.MatchAny('TElement'))[:]), to: .(std::span<.(Node.MatchAny('TElement'))>)},
 	fixed_array: {from: nPostfix(.(.(Node.MatchAny('TElement'))[.(Node.MatchAny('size'))]), '!'), to: .(std::array<.(Node.MatchAny('TElement')), .(Node.MatchAny('size'))>)},
 	map: {from: .(Map<.(Node.MatchAny('TKey')), .(Node.MatchAny('TValue'))>), to: .(std::unordered_map<.(Node.MatchAny('TKey')), .(Node.MatchAny('TValue'))>)},
-}
+};
 function TranslateTemplates(nd_root, alt_templates, is_forward) {
 	let templates = g_templates;
 	if (alt_templates) {
@@ -25,7 +25,7 @@ function TranslateTemplates(nd_root, alt_templates, is_forward) {
 		}
 		for (let nd_mul of nd_root.FindAll(N_BINOP, '*')) {
 			//[]
-			if (nd_mul.c.s.isRawNode(0x5b, 0x5d)) {
+			if (nd_mul.c.s.isRawNode('[', ']')) {
 				//console.log(nd_mul.toSource())
 				let nd_subscripts = nd_mul.c.s.c;
 				let nd_item = nItem(nPostfix(nd_mul.c, '*'));
