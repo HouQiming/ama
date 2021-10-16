@@ -9,6 +9,7 @@ const sane_init=require('cpp/sane_init');
 const sane_export=require('cpp/sane_export');
 const move_operator=require('cpp/move_operator');
 const jsism=require('cpp/jsism');
+const unified_null=require('cpp/unified_null');
 let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.Save('.indent.audit.cpp')
 	.AutoSemicolon()
@@ -19,6 +20,7 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.then(sane_init)
 	.then(sane_export)
 	.then(move_operator)
+	.then(unified_null)
 	.then(jsism.EnableJSLambdaSyntax)
 	.then(require('cpp/auto_decl'))
 	.then(require('cpp/auto_paren'))
@@ -27,6 +29,7 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 //console.log(JSON.stringify(nd_root,null,1));
 nd_root
 	.then(jsism.EnableJSLambdaSyntax.inverse)
+	.then(unified_null.inverse)
 	.then(move_operator.inverse)
 	.then(sane_export.inverse)
 	.then(sane_init.inverse)
@@ -38,6 +41,10 @@ int[] test(char[:] a,uint32_t[]*[:]& b){
 	int[] a;
 	float[9]! b;
 	Map<char[],double> c;
+	return 0;
+}
+
+public int[] exported(){
 	return 0;
 }
 
@@ -82,14 +89,14 @@ ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries
 	return <<Q;
 }
 
-public void CodeGenerator::NewMethod(Node* nd_name)
+void CodeGenerator::NewMethod(Node* nd_name)
 	if nd_name && nd_name.node_class != N_REF && nd_name.node_class != N_DOT: {
 		return undefined
 	}
 
-public int ama::NewAMAFunction()
+int ama::NewAMAFunction()
 	return 0
 
-public void NewNamespace::NewThing(Node* nd_name,int x)
+void NewNamespace::NewThing(Node* nd_name,int x)
 	//nothing
 	x++

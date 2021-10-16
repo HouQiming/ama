@@ -10,6 +10,10 @@ function BidirTransform(nd_root, is_forward) {
 		if (!(nd_owner.node_class == N_CLASS || nd_owner.node_class == N_FILE)) {
 			continue;
 		}
+		if (!(nd_func.c.node_class == N_RAW && nd_func.c.c && nd_func.c.LastChild().node_class == N_REF)) {
+			//don't do the static magic on method implementations
+			continue;
+		}
 		let nd_kw = nd_func.c.Find(N_REF, from);
 		if (nd_kw) {
 			let nd_next = nd_kw.s;

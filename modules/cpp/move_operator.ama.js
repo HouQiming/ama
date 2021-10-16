@@ -7,7 +7,7 @@ default_options.prefix_operators = '<< ' + default_options.prefix_operators;
 function BidirTransform(nd_root, is_forward) {
 	if (is_forward) {
 		for (let nd of nd_root.FindAll(N_PREFIX, '<<')) {
-			nd.ReplaceWith(.(std::move(.(nd.c))));
+			nd.ReplaceWith(.(std::move(.(nd.c.node_class==N_PAREN?nd.c.c:nd.c))));
 		}
 	} else {
 		for (let match of nd_root.MatchAll(.(std::move(.(Node.MatchAny('opr')))))) {
