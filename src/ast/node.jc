@@ -995,7 +995,7 @@ ama::Node*+! ama::Node::BreakSibling(ama::Node*+! this) {
 ama::Node*+! ama::Node::BreakChild(ama::Node*+! this) {
 	ama::Node*+! ret = this.c;
 	this.c = NULL;
-	if( ret ) { ret.p = NULL; }
+	if( ret ) { ret.p = NULL; ret.v = NULL; }
 	return ret;
 }
 

@@ -191,6 +191,7 @@ namespace ama {
 		ama::Node*+! BreakSibling(ama::Node*+! this);
 		ama::Node*+! BreakChild(ama::Node*+! this);
 		ama::Node*+! BreakSelf(ama::Node*+! this);
+		///nd_upto is inclusive
 		ama::Node*+! ReplaceUpto(ama::Node*+! this, ama::Node*+! nd_upto, ama::Node*+! nd_new);
 		int! ValidateChildCount(ama::Node*+! this, int! n_children);
 		void! AdjustIndentLevel(ama::Node*+! this, intptr_t! delta);

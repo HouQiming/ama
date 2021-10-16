@@ -19,6 +19,7 @@ namespace ama {
 		//if( nd_next ) { nd_next.BreakSelf(); }
 		ama::Node*+! nd_colon = cstk.back().nd_colon.BreakSelf();
 		ama::Node*+! nd_ret = NULL;
+		if( nd_head == nd_colon ) { nd_head = ama::nAir(); }
 		if( cstk.back().nd_qmark ) {
 			//N_CONDITIONAL
 			ama::Node*+! nd_qmark = cstk.back().nd_qmark.BreakSelf();
@@ -34,12 +35,17 @@ namespace ama {
 			nd_colon.p = NULL; nd_colon.FreeASTStorage();
 		} else {
 			//N_LABELED
-			ama::Node*+! nd_label = ama::toSingleNode(nd_head);
-			ama::Node*+! nd_value = ama::toSingleNode(nd_colon.BreakSibling());
-			nd_label.MergeCommentsAfter(nd_colon);
-			nd_value.MergeCommentsBefore(nd_colon);
-			nd_ret = ama::nLabeled(nd_label, nd_value);
-			nd_colon.p = NULL; nd_colon.FreeASTStorage();
+			if( nd_head.node_class == ama::N_AIR && !nd_colon.s ) {
+				//standalone ':', do nothing
+				nd_ret = nd_colon;
+			} else {
+				ama::Node*+! nd_label = ama::toSingleNode(nd_head);
+				ama::Node*+! nd_value = ama::toSingleNode(nd_colon.BreakSibling());
+				nd_label.MergeCommentsAfter(nd_colon);
+				nd_value.MergeCommentsBefore(nd_colon);
+				nd_ret = ama::nLabeled(nd_label, nd_value);
+				nd_colon.p = NULL; nd_colon.FreeASTStorage();
+			}
 		}
 		nd_tmp.ReplaceWith(nd_ret);
 		//if( nd_next ) { nd_ret.Insert(ama::POS_AFTER, nd_next); }
@@ -97,7 +103,7 @@ namespace ama {
 					//conditional -- foo?bar:
 					//label -- bar:
 					//both only involves setting pcolon
-					if( cstk.back().nd_head != ndi ) {
+					if( !cstk.back().nd_qmark || cstk.back().nd_head != ndi ) {
 						assert(cstk.back().nd_qmark != ndi);
 						cstk.back().nd_colon = ndi;
 					}

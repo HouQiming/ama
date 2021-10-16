@@ -314,6 +314,23 @@ namespace ama {
 							nd_keyword.s = NULL;
 							nd_keyword.FreeASTStorage();
 							////////
+							//a=b;while(foo){} case - we could have mistaken the statement as an extension clause and didn't delimit at the previous ; / {}
+							//delimit it
+							ama::Node*+! nd_prev = ndi.Prev();
+							if( nd_prev && (nd_prev.node_class == ama::N_SCOPE || nd_prev.node_class == ama::N_SCOPED_STATEMENT || nd_prev.node_class == ama::N_KEYWORD_STATEMENT || 
+							nd_prev.isSymbol(";") || nd_prev.isSymbol(",")) ) {
+								ama::Node*+! nd_last_stmt_head = nd_raw.c;
+								nd_last_stmt_head.ReplaceUpto(nd_prev, NULL);
+								nd_last_stmt_head = nd_last_stmt_head.toSingleNode();
+								std::swap(nd_last_stmt_head.comments_before, nd_raw.comments_before);
+								nd_raw.Insert(ama::POS_BEFORE, nd_last_stmt_head);
+								if( nd_prev.isSymbol(";") || (nd_prev.isSymbol(",") && nd_last_stmt_head != nd_prev) ) {
+									nd_prev.Unlink();
+									nd_prev.indent_level = nd_last_stmt_head.indent_level;
+									nd_raw.Insert(ama::POS_BEFORE, nd_prev);
+								}
+							}
+							////////
 							nd_last_scoped_stmt = nd_stmt;
 							ndi = ndi.s;
 							kw_mode = KW_NONE;

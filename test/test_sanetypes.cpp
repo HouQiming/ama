@@ -13,6 +13,8 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.Save('.indent.audit.cpp')
 	.AutoSemicolon()
 	.Save('.mid.audit.cpp')
+	.then(sane_types.FixArrayTypes)
+	.then(require('cpp/typing').DeduceAuto)
 	.then(sane_types,{view:{to:.(JC::array_base<.(Node.MatchAny('TElement'))>)}})
 	.then(sane_init)
 	.then(sane_export)
@@ -73,6 +75,10 @@ ama::ExecNode*[] ama::ExecSession::ComputeReachableSet(ama::ExecNode*[:] entries
 		new_var+=4;
 		console.log(new_var);
 	}
+	auto aa=test(foo,bar)[3];
+	float* q=NULL;
+	auto* pp=NULL;
+	pp=q;
 	return <<Q;
 }
 

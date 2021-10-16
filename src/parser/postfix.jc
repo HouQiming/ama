@@ -111,9 +111,11 @@ namespace ama {
 				//	}
 				//	dedup[ndj] = 1;
 				//}
+				//(!isCPPLambda(ndi) && ndi.data == "->")
+				//air -> doesn't make sense and it complicates C++ lambda return type parsing
 				ama::Node*+! ndi_next = ndi.s;
 				if( parse_air_object && 
-				ndi.node_class == ama::N_SYMBOL && (ndi.data == "." || (!isCPPLambda(ndi) && ndi.data == "->") || ndi.data == "::") && 
+				ndi.node_class == ama::N_SYMBOL && (ndi.data == "." || ndi.data == "::") && 
 				ndi.s && ndi.s.node_class == ama::N_REF ) {
 					//dot
 					int! dot_flags = 0;
