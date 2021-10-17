@@ -324,11 +324,20 @@ namespace ama {
 				data = ama::UnwrapString(argv[i]);
 				continue;
 			}
-			const ama::Node*+! ndi = ama::UnwrapNode(argv[intptr_t(i)]);
+			ama::Node*+! ndi = ama::UnwrapNode(argv[intptr_t(i)]);
 			if( !ndi ) {
 				return JS_ThrowTypeError(ctx, 'child %d is not a node', i);
 			}
-			c = ama::cons(ndi, c);
+			if( ndi.s ) {
+				ama::Node*+! ndj = ndi;
+				while( ndj.s ) {
+					ndj = ndj.s;
+				}
+				ama::cons(ndj, c);
+				c = ndi;
+			} else {
+				c = ama::cons(ndi, c);
+			}
 		}
 		ama::Node*+! nd = ama::CreateNode(magic, c).setData(data);
 		if( magic == ama::N_STRING ) {

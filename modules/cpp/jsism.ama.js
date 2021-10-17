@@ -273,9 +273,17 @@ jsism.EnableJSON = function(nd_root) {
 			if (nd_stmt.comments_before.indexOf('nojson') >= 0 || nd_stmt.comments_after.indexOf('nojson') >= 0) {
 				continue;
 			}
-			if (body.length) {body.push(.(buf.push_back(',');));}
-			body.push(.(buf.append(.(nString(JSON.stringify(ppt.name) + ':')));));
-			body.push(.(JSON::stringifyTo(buf, .(nRef('a').dot(ppt.name)));));
+			if (body.length) {
+				body.push(.(
+					buf.push_back(',');
+				));
+			}
+			body.push(.(
+				buf.append(.(nString(JSON.stringify(ppt.name) + ':')));
+			));
+			body.push(.(
+				JSON::stringifyTo(buf, .(nRef('a').dot(ppt.name)));
+			));
 		}
 		nd_generated.Find(N_REF, '__INSERT_HERE').ParentStatement().ReplaceWith(nScope.apply(null, body).c);
 		gentag.UpdateGenTagContent(match.gentag, nd_generated);
@@ -376,17 +384,15 @@ jsism.EnableJSON = function(nd_root) {
 			let nd_switch = undefined;
 			if (properties.length == 1) {
 				nd_switch = .(
-					{
-						ctx.SkipColon();
-						if ( ctx.error ) {
-							return std::move(ret);
-						}
-						.(nRef('ret').dot(properties[0].name)) = JSON::parseFrom(ctx, (.(typing.AccessTypeAt(properties[0].type, match.gentag))**)(NULL));
-						if ( ctx.error ) {
-							return std::move(ret);
-						}
-						goto done;
+					ctx.SkipColon();
+					if ( ctx.error ) {
+						return std::move(ret);
 					}
+					.(nRef('ret').dot(properties[0].name)) = JSON::parseFrom(ctx, (.(typing.AccessTypeAt(properties[0].type, match.gentag))**)(NULL));
+					if ( ctx.error ) {
+						return std::move(ret);
+					}
+					goto done;
 				);
 			} else {
 				//there cannot be a directly-return case: quotes should ensure that for us
@@ -438,7 +444,7 @@ jsism.EnableJSON = function(nd_root) {
 				}
 			}
 			if (nd_prefix) {
-				nd_prefix.Find(N_REF, '__SWITCH').ParentStatement().ReplaceWith(nd_switch.node_class == N_SCOPE ? nd_switch.c : nd_switch);
+				nd_prefix.Find(N_REF, '__SWITCH').ParentStatement().ReplaceWith(nd_switch);
 				nd_switch = nd_prefix.setCommentsBefore('');
 			}
 			return nd_switch;
