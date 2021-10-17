@@ -19,6 +19,11 @@ Node.setData=function(data){
 	return this;
 }
 
+Node.setIndent=function(indent_level){
+	this.indent_level=indent_level;
+	return this;
+}
+
 Node.setCommentsBefore=function(comments_before){
 	this.comments_before=comments_before;
 	return this;

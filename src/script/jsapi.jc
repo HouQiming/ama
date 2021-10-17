@@ -413,12 +413,12 @@ namespace ama {
 		new NodeFilterDesc!{
 			name: 'AutoFormat',
 			f: ama::AutoFormat
-		},
-		new NodeFilterDesc!{
-			name: 'StripBinaryOperatorSpaces',
-			f: ama::StripBinaryOperatorSpaces
 		}
 	};
+	//new NodeFilterDesc!{
+	//	name: 'StripBinaryOperatorSpaces',
+	//	f: ama::StripBinaryOperatorSpaces
+	//}
 	private JSValueConst! JSApplyNodeFilter(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv, int! magic) {
 		if( g_filters[magic].fo ) {
 			JSValue! options = argc >= 1 ? argv[0] : JS_UNDEFINED;
@@ -547,7 +547,7 @@ namespace ama {
 		char*! s = JS_ToCStringLen(ctx, &len, argv[0]);
 		int32_t! index = ama::UnwrapInt32(argv[1], -1);
 		int32_t! length = argc < 3 ? (len - index) : ama::UnwrapInt32(argv[2], -1);
-		if( !s || size_t(index) >= len || size_t(index + length) >= len || size_t(index) > size_t(index + length) ) {
+		if( !s || size_t(index) > len || size_t(index + length) > len || size_t(index) > size_t(index + length) ) {
 			return JS_UNDEFINED;
 		}
 		return JS_NewStringLen(ctx, s + index, length);
@@ -775,9 +775,9 @@ namespace ama {
 			)
 		);
 		JS_SetPropertyStr(
-			ama::jsctx, global, '__cons', JS_NewCFunction(
+			ama::jsctx, global, 'cons', JS_NewCFunction(
 				ama::jsctx, JSCons,
-				'__cons', 2
+				'cons', 2
 			)
 		);
 		JS_SetPropertyStr(

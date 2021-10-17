@@ -147,7 +147,7 @@ namespace ama {
 		int32_t! parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_c_forward_declarations'), 1);
 		int32_t! parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp11_lambda'), 1);
 		int32_t! struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'struct_can_be_type_prefix'), 1);
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( !nd_raw.p ) { continue; }
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+! nd_prototype_start = ndi;
@@ -467,7 +467,7 @@ namespace ama {
 		}
 		//C forward declaration
 		if( parse_c_forward_declarations ) {
-			for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+			for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 				//have to rely on context? we can do Owner tests here 
 				ama::Node*+! nd_owner = nd_raw.Owner();
 				if( !(nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_FILE)) || nd_owner.node_class == ama::N_FUNCTION ) { continue; }
@@ -500,7 +500,7 @@ namespace ama {
 		/////////
 		//don't set REF_WRITTEN for function / class names: it's not profitable to treat them as "written" in our current AST formulation
 		//turn params into N_ASSIGNMENT
-		for(ama::Node*+! nd_paramlist : nd_root.FindAll(ama::N_PARAMETER_LIST, NULL).concat(nd_root.FindAll(ama::N_CALL_TEMPLATE, 'template'))) {
+		for(ama::Node*+! nd_paramlist : nd_root.FindAllWithin(0, ama::N_PARAMETER_LIST, NULL).concat(nd_root.FindAllWithin(0, ama::N_CALL_TEMPLATE, 'template'))) {
 			for(ama::Node*+! nd_param = nd_paramlist.node_class == ama::N_CALL_TEMPLATE ? nd_paramlist.c.s : nd_paramlist.c; nd_param; nd_param = nd_param.s) {
 				if( nd_param.node_class == ama::N_ASSIGNMENT ) { continue; }
 				if( nd_param.node_class == ama::N_SYMBOL || (nd_param.node_class == ama::N_RAW && nd_param.c && nd_param.c.node_class == ama::N_SYMBOL) ) {
@@ -516,7 +516,7 @@ namespace ama {
 	}
 	ama::Node*+! ParseKeywordStatements(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
-		for(ama::Node*+! nd_keyword : nd_root.FindAll(ama::N_REF, NULL)) {
+		for(ama::Node*+! nd_keyword : nd_root.FindAllWithin(0, ama::N_REF, NULL)) {
 			if( !keywords_statement[nd_keyword.data] ) { continue; }
 			ama::Node*+! nd_parent = nd_keyword.p;
 			if( !nd_parent ) { continue; }
@@ -573,7 +573,7 @@ namespace ama {
 		Map<char[|], int>! ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
 		Map<char[|], int>! keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		int32_t! parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_cpp_declaration_initialization'), 1);
-		for(ama::Node*+! nd_ref : nd_root.FindAll(ama::N_REF, NULL)) {
+		for(ama::Node*+! nd_ref : nd_root.FindAllWithin(0, ama::N_REF, NULL)) {
 			if( nd_ref.p.node_class == ama::N_CLASS && nd_ref.p.c.s == nd_ref ) {
 				//class, just declared and nothing else
 				nd_ref.flags |= ama::REF_DECLARED;
@@ -707,7 +707,7 @@ namespace ama {
 		}
 		//detect type before dotted function name
 		//non-dotted non-C-macro functions should have been handled above
-		for(ama::Node*+! nd_func : nd_root.FindAll(ama::N_FUNCTION, NULL)) {
+		for(ama::Node*+! nd_func : nd_root.FindAllWithin(0, ama::N_FUNCTION, NULL)) {
 			if( nd_func.data != NULL ) { continue; }
 			//C++ dotted declaration: `type foo::bar(){}`
 			//common C macro style: `FOO_DECL(int,foo)(int bar){}`

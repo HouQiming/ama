@@ -19,7 +19,7 @@ namespace ama {
 			}
 		}
 		char[+]! dir_base = new char[+]!(nd_root.data != NULL ? path.dirname(nd_root.data) : ".");
-		for(ama::Node*&+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+		for(ama::Node*&+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( (nd_raw.flags & 0xffff) != 0 ) { continue; }
 			if( !(nd_raw.c && nd_raw.c.node_class == ama::N_REF && nd_raw.c.data == '#include') ) { continue; }
 			uint32_t! flags = ama::DEP_C_INCLUDE;
@@ -64,7 +64,7 @@ namespace ama {
 			nd_raw.FreeASTStorage();
 		}
 		//re-check all nDependency and fill .data
-		for(ama::Node*&+! nd_dep : nd_root.FindAll(ama::N_DEPENDENCY, NULL)) {
+		for(ama::Node*&+! nd_dep : nd_root.FindAllWithin(0, ama::N_DEPENDENCY, NULL)) {
 			if( (nd_dep.flags & ama::DEP_TYPE_MASK) == ama::DEP_C_INCLUDE && nd_dep.data == NULL ) {
 				char[|]! fn_included = nd_dep.GetName();
 				if( fn_included == NULL ) { continue; }
@@ -104,14 +104,14 @@ namespace ama {
 			}
 		}
 		char[+]! dir_base = new char[+]!(nd_root.data != NULL ? path.dirname(nd_root.data) : ".");
-		for(ama::Node*&+! nd_require : nd_root.FindAll(ama::N_CALL, 'require')) {
+		for(ama::Node*&+! nd_require : nd_root.FindAllWithin(0, ama::N_CALL, 'require')) {
 			if( !nd_require.c.s || nd_require.c.s.node_class != ama::N_STRING || nd_require.c.s.s ) { continue; }
 			char[|]! fn_required = nd_require.c.s.GetStringValue();
 			nd_require.ReplaceWith(ama::nDependency(nd_require.c.BreakSibling()).setFlags(ama::DEP_JS_REQUIRE));
 			nd_require.FreeASTStorage();
 		}
 		//re-check all nDependency and fill .data
-		for(ama::Node*&+! nd_dep : nd_root.FindAll(ama::N_DEPENDENCY, NULL)) {
+		for(ama::Node*&+! nd_dep : nd_root.FindAllWithin(0, ama::N_DEPENDENCY, NULL)) {
 			if( (nd_dep.flags & ama::DEP_TYPE_MASK) == ama::DEP_JS_REQUIRE && nd_dep.data == NULL ) {
 				char[|]! fn_required = nd_dep.GetName();
 				if( fn_required == NULL ) { continue; }

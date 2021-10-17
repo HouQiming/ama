@@ -329,6 +329,9 @@ ama::Node*+! ama::Node::Insert(ama::Node*+! this, int! pos, ama::Node*+! nd_new)
 			this.comments_after = '';
 		}
 		nd_new.indent_level = this.indent_level;
+		//if( nd_new.indent_level != this.indent_level ) {
+		//	nd_new.AdjustIndentLevel(this.indent_level - this->indent_level);
+		//}
 	}
 	//if( nd_new_parent ) {
 	//	nd_new_parent.tmp_flags &= ~SYSF_NONJC_UNTOUCHED;

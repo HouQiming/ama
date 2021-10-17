@@ -1,5 +1,6 @@
 'use strict'
 //@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
+const assert = require('assert');
 let jsism = module.exports;
 
 let console_method_to_options = {
@@ -218,7 +219,8 @@ jsism.EnableJSON = function(nd_root) {
 			//#pragma gen_end(JSON.stringify<foo>)
 			//dedicated finder for generator tags? replacement / inverse? make generating passes use those tags?
 			//how do we differentiate request from result? replace gen with gen_begin and gen_end
-			let nd_tag = .(JSON.stringify<.(typing.AccessTypeAt(type, nd_root))>);
+			let nd_tag = .(JSON.foo<.(typing.AccessTypeAt(type, nd_root))>);
+			nd_tag.Find(N_DOT, 'foo').data = nd_parent.data;
 			let match_gentag = gentag.FindGenTag(nd_root, nd_tag);
 			if (!match_gentag) {
 				match_gentag = gentag.FindGenTag(type.Root(), nd_tag);;
@@ -239,19 +241,19 @@ jsism.EnableJSON = function(nd_root) {
 		nd_parent.flags = DOT_CLASS;
 	}
 	//generate code for the gentags
-	for (let match of gentag.FindAllGenTags(.(JSON.stringify<.(Node.MatchAny('type'))>))) {
+	for (let match of gentag.FindAllGenTags(nd_root, .(JSON.stringify<.(Node.MatchAny('type'))>))) {
 		let type = typing.ComputeType(match.type);
 		if (type.node_class != N_CLASS) {continue;}
 		//generate and replace
 		let desc = type.ParseClass();
 		let nd_generated = .(
-			namespace JSON{
+			namespace JSON {
 				template<>
-				struct StringifyToImpl<.(typing.AccessTypeAt(type, match.nd))>{
+				struct StringifyToImpl<.(typing.AccessTypeAt(type, match.gentag))> {
 					//`type` is only used for SFINAE
 					typedef void type;
-					template<typename T=.(typing.AccessTypeAt(type, match.nd))>
-					void stringifyTo(std::string& buf, .(typing.AccessTypeAt(type, match.nd)) const& a){
+					template<typename T = .(typing.AccessTypeAt(type, match.gentag))>
+					void stringifyTo(std::string& buf, .(typing.AccessTypeAt(type, match.gentag)) const& a) {
 						buf.push_back('{');
 						__INSERT_HERE;
 						buf.push_back('}');
@@ -267,50 +269,50 @@ jsism.EnableJSON = function(nd_root) {
 			if (nd_stmt.comments_before.indexOf('nojson') >= 0 || nd_stmt.comments_after.indexOf('nojson') >= 0) {
 				continue;
 			}
-			body.push(.(buf.append(.(nString(JSON.stringify(ppt.name)+':')));));
+			body.push(.(buf.append(.(nString(JSON.stringify(ppt.name) + ':')));));
 			body.push(.(JSON::stringifyTo(buf, .(nRef('a').dot(ppt.name)));));
 		}
 		nd_generated.Find(N_REF, '__INSERT_HERE').ParentStatement().ReplaceWith(nScope.apply(null, body).c);
-		gentag.UpdateGenTagContent(match.nd, nd_generated);
+		gentag.UpdateGenTagContent(match.gentag, nd_generated);
 	}
-	for (let match of gentag.FindAllGenTags(.(JSON.parse<.(Node.MatchAny('type'))>))) {
+	for (let match of gentag.FindAllGenTags(nd_root, .(JSON.parse<.(Node.MatchAny('type'))>))) {
 		let type = typing.ComputeType(match.type);
 		if (type.node_class != N_CLASS) {continue;}
 		//generate and replace
 		let desc = type.ParseClass();
 		let nd_generated = .(
-			namespace JSON{
+			namespace JSON {
 				template<>
-				struct ParseFromImpl<.(typing.AccessTypeAt(type, match.nd))>{
+				struct ParseFromImpl<.(typing.AccessTypeAt(type, match.gentag))> {
 					//`type` is only used for SFINAE
 					typedef void type;
-					template<typename T=.(typing.AccessTypeAt(type, match.nd))>
-					.(typing.AccessTypeAt(type, match.nd)) parseFrom(JSONParserContext& ctx, .(typing.AccessTypeAt(type, match.nd))**){
+					template<typename T = .(typing.AccessTypeAt(type, match.gentag))>
+					.(typing.AccessTypeAt(type, match.gentag)) parseFrom(JSONParserContext& ctx, .(typing.AccessTypeAt(type, match.gentag))**) {
 						T ret{};
-						if( ctx.begin == ctx.end ) {
+						if ( ctx.begin == ctx.end ) {
 							return std::move(ret);
 						}
 						ctx.SkipSpace();
-						if( *ctx.begin != '{' ) {
+						if ( *ctx.begin != '{' ) {
 							ctx.error = "'{' expected";
 							ctx.error_location = ctx.begin;
 							return std::move(ret);
 						}
 						ctx.begin += 1;
 						ctx.SkipSpace();
-						while( ctx.begin != ctx.end && ctx.begin[0] != '}' ) {
+						while ( ctx.begin != ctx.end && ctx.begin[0] != '}' ) {
 							ctx.SkipSpace();
 							__PARSE_FIELD_HERE;
 							skip:
 							ctx.SkipStringBody();
 							ctx.SkipField();
 							done:
-							if( ctx.error ) {
+							if ( ctx.error ) {
 								return std::move(ret);
 							}
 							ctx.SkipSpace();
-							if( ctx.begin != ctx.end && (*ctx.begin == ',' || *ctx.begin == '}') ) {
-								if( *ctx.begin == ',' ) {
+							if ( ctx.begin != ctx.end && (*ctx.begin == ',' || *ctx.begin == '}') ) {
+								if ( *ctx.begin == ',' ) {
 									ctx.begin += 1;
 								}
 							} else {
@@ -319,7 +321,7 @@ jsism.EnableJSON = function(nd_root) {
 								return std::move(ret);
 							}
 						}
-						if( ctx.begin != ctx.end ) {
+						if ( ctx.begin != ctx.end ) {
 							ctx.begin += 1;
 						}
 						return std::move(ret);
@@ -357,7 +359,7 @@ jsism.EnableJSON = function(nd_root) {
 			let nd_prefix = undefined;
 			if (lg_prefix > 0) {
 				nd_prefix = .(
-					if( !ctx.TrySkipName(.(nString(__byte_substr(name0, lg_eaten, lg_prefix)))) ) {
+					if ( !ctx.TrySkipName(.(nString(__byte_substr(name0, lg_eaten, lg_prefix)))) ) {
 						goto skip;
 					}
 				);
@@ -369,11 +371,11 @@ jsism.EnableJSON = function(nd_root) {
 				nd_switch = .(
 					{
 						ctx.SkipColon();
-						if( ctx.error ) {
+						if ( ctx.error ) {
 							return std::move(ret);
 						}
-						.(nRef('ret').dot(properties[0].name)) = JSON::parseFrom(ctx, (.(typing.AccessTypeAt(properties[0].type, nd_root))**)(NULL));
-						if( ctx.error ) {
+						.(nRef('ret').dot(properties[0].name)) = JSON::parseFrom(ctx, (.(typing.AccessTypeAt(properties[0].type, match.gentag))**)(NULL));
+						if ( ctx.error ) {
 							return std::move(ret);
 						}
 						goto done;
@@ -408,29 +410,29 @@ jsism.EnableJSON = function(nd_root) {
 					});
 				}
 				nd_switch = .(
-					switch(*ctx.begin){
+					switch (*ctx.begin) {
 					}
 				);
 				let nd_body = nd_switch.Find(N_SCOPE, null)
 				for (let i = 0; i < cases.length; i++) {
 					let nd_char = undefined;
 					if (cases[i].indicator >= 32 && cases[i].indicator < 127) {
-						nd_char = nString(String.fromCharCode(cases[i].indicator)).setFlags(STRING_SINGLE_QUOTED);
+						nd_char = nString(String.fromCharCode(cases[i].indicator)).setFlags(STRING_SINGLE_QUOTED | LITERAL_PARSED);
 					} else {
 						nd_char = nNumber(cases[i].indicator.toString());
 					}
 					nd_body.Insert(POS_BACK, .(
-						case .(nd_char):{
-							.(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten+1));
+						case .(nd_char): {
+							.(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten + 1));
 							break;}));};
 			}
 			if (nd_prefix) {
-				nd_switch = __cons(nd_prefix, nd_switch);
+				nd_switch = cons(nd_prefix, nd_switch);
 			}
 			return nd_switch;
 		}
 		nd_generated.Find(N_REF, '__PARSE_FIELD_HERE').ParentStatement().ReplaceWith(GenerateParseField(properties, 0));
-		gentag.UpdateGenTagContent(match.nd, nd_generated);
+		gentag.UpdateGenTagContent(match.gentag, nd_generated);
 	}
 };
 

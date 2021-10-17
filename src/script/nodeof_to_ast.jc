@@ -25,29 +25,31 @@ namespace ama {
 				dfsTranslateList(ret2, nd_nodeof.c.c);
 				nd_nodeof.ReplaceWith(ParseCode(ret2.c_str(), JS_NULL));
 			}
+			ret.push('(');
 			for(ama::Node*+! ndi : nd.c) {
 				ret.push(ndi.toSource());
 			}
-			return;
-		}
-		ret.push(ama::g_builder_names[nd.node_class], '(');
-		if( nd.data != NULL ) {
-			if( nd.node_class == ama::N_STRING ) {
-				//parse it
-				nd.GetStringValue();
+			ret.push(')');
+		} else {
+			ret.push(ama::g_builder_names[nd.node_class], '(');
+			if( nd.data != NULL ) {
+				if( nd.node_class == ama::N_STRING ) {
+					//parse it
+					nd.GetStringValue();
+				}
+				ret.push(JSON.stringify(nd.data));
+				if( nd.c ) {
+					ret.push(', ');
+				}
 			}
-			ret.push(JSON.stringify(nd.data));
-			if( nd.c ) {
-				ret.push(', ');
+			for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
+				dfsTranslate(ret, ndi);
+				if( ndi.s ) {
+					ret.push(', ');
+				}
 			}
+			ret.push(')');
 		}
-		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
-			dfsTranslate(ret, ndi);
-			if( ndi.s ) {
-				ret.push(', ');
-			}
-		}
-		ret.push(')');
 		if( nd.flags && nd.node_class != ama::N_STRING ) {
 			ret.push('.setFlags(', JSON.stringify(nd.flags), ')');
 		}
@@ -62,10 +64,33 @@ namespace ama {
 		}
 	}
 	ama::Node*+! NodeofToASTExpression(ama::Node*+! nd_root) {
-		for(ama::Node*&+! nd_nodeof : nd_root.FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF, NULL)) {
+		for(ama::Node*+! nd_nodeof : nd_root.FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF, NULL)) {
 			char[+]! ret;
-			dfsTranslateList(ret, nd_nodeof.c.c);
-			nd_nodeof.ReplaceWith(ParseCode(ret.c_str(), JS_NULL));
+			ama::Node*+! nd_tmp = nd_nodeof.c.c;
+			int8_t! bk_ind = nd_tmp.indent_level;
+			char[|]! bk_cmta = nd_tmp.comments_after;
+			nd_tmp.comments_after = "";
+			//nd_tmp.AdjustIndentLevel(-bk_ind);
+			nd_tmp.indent_level = 0;
+			dfsTranslateList(ret, nd_tmp);
+			//nd_tmp.AdjustIndentLevel(bk_ind);
+			nd_tmp.indent_level = bk_ind;
+			nd_tmp.comments_after = bk_cmta;
+			//preserve line numbers
+			int! comment_pushed = 0;
+			for(char&! ch : nd_nodeof.toSource()) {
+				if( ch == '\n' ) {
+					if( !comment_pushed ) {
+						comment_pushed = 1;
+						ret.push('/*');
+					}
+					ret.push('\n*');
+				}
+			}
+			if( comment_pushed ) {
+				ret.push('/');
+			}
+			nd_nodeof.ReplaceWith(ParseCode(ret.c_str(), JS_NULL).setIndent(nd_nodeof.indent_level));
 		}
 		return nd_root;
 	}

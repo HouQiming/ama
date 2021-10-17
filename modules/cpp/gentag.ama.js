@@ -49,6 +49,7 @@ gentag.UpdateGenTagContent = function(nd_gentag, nd_new) {
 		}
 		if (nd_end) {
 			nd_gentag.s.ReplaceUpto(nd_end.Prev(), nd_new);
+			nd_new.AutoFormat();
 			return;
 		}
 		//if we can't find an ending tag, assume it's broken and treat as non-begin 'gen'
@@ -61,4 +62,5 @@ gentag.UpdateGenTagContent = function(nd_gentag, nd_new) {
 	}
 	nd_gentag.Insert(POS_AFTER, nd_end);
 	nd_gentag.Insert(POS_AFTER, nd_new);
+	nd_new.AutoFormat();
 };

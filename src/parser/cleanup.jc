@@ -64,19 +64,19 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	ama::Node*+! StripBinaryOperatorSpaces(ama::Node*+! nd_root) {
-		for(ama::Node*! nd : nd_root.FindAll(ama::N_BINOP, NULL)) {
-			ama::Node*+! nd_a = nd.c;
-			if( nd_a.comments_after.endsWith(' ') ) {
-				nd_a.comments_after = new char[|]!(nd_a.comments_after.subarray(0, nd_a.comments_after.length - 1));
-			}
-			ama::Node*+! nd_b = nd.c.s;
-			if( nd_b.comments_before.startsWith(' ') ) {
-				nd_b.comments_before = new char[|]!(nd_b.comments_before.subarray(1));
-			}
-		}
-		return nd_root;
-	}
+	//ama::Node*+! StripBinaryOperatorSpaces(ama::Node*+! nd_root) {
+	//	for(ama::Node*! nd : nd_root.FindAllWithin(0,ama::N_BINOP, NULL)) {
+	//		ama::Node*+! nd_a = nd.c;
+	//		if( nd_a.comments_after.endsWith(' ') ) {
+	//			nd_a.comments_after = new char[|]!(nd_a.comments_after.subarray(0, nd_a.comments_after.length - 1));
+	//		}
+	//		ama::Node*+! nd_b = nd.c.s;
+	//		if( nd_b.comments_before.startsWith(' ') ) {
+	//			nd_b.comments_before = new char[|]!(nd_b.comments_before.subarray(1));
+	//		}
+	//	}
+	//	return nd_root;
+	//}
 	ama::Node*+! AutoFormat(ama::Node*+! nd_root) {
 		for(ama::Node*+! ndi = nd_root.PostorderFirst(); ndi; ndi = ndi.PostorderNext(nd_root)) {
 			ama::Node*+! nd = ndi.p;
@@ -132,7 +132,12 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node*+! NodifySemicolonAndParenthesis(ama::Node*+! nd_root) {
-		for(ama::Node*+! nd_scope : nd_root.FindAll(ama::N_SCOPE, NULL)) {
+		ama::Node*+[+]! scopes = nd_root.FindAllWithin(0, ama::N_SCOPE, NULL);
+		scopes.push(nd_root);
+		for(ama::Node*&! nd_nodeof : nd_root.FindAllWithin(0, ama::N_NODEOF, NULL)) {
+			if( nd_nodeof.c ) { scopes.push(nd_nodeof.c); }
+		}
+		for(ama::Node*+! nd_scope : scopes) {
 			for(ama::Node*+! ndi = nd_scope.c; ndi; ndi = ndi.s) {
 				while( ndi.s && ndi.s.isSymbol(";") ) {
 					ama::Node*+! nd_semicolon = ndi.s;
@@ -146,7 +151,7 @@ namespace ama {
 				}
 			}
 		}
-		for(ama::Node*&+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( nd_raw.isRawNode('(', ')') && nd_raw.c && !nd_raw.c.s ) {
 				nd_raw.node_class = ama::N_PAREN;
 				nd_raw.flags = 0;

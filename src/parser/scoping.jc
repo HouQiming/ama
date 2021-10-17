@@ -91,7 +91,7 @@ namespace ama {
 	}
 	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( !(nd_raw.flags & 0xffff) && nd_raw.p ) {
 				//move out trailing ;
 				ama::Node*+! nd_last = nd_raw.LastChild();
@@ -198,8 +198,8 @@ namespace ama {
 	};
 	ama::Node*+! ConvertIndentToScope(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
-		ama::Node*+[+]! scopes = nd_root.FindAll(ama::N_SCOPE, NULL);
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+		ama::Node*+[+]! scopes = nd_root.FindAllWithin(0, ama::N_SCOPE, NULL);
+		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( nd_raw.isRawNode('{', '}') ) {
 				scopes.push(nd_raw);
 			}

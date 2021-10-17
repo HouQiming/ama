@@ -58,7 +58,7 @@ namespace ama {
 		return nd_next;
 	}
 	ama::Node*+! ParseColons(ama::Node*+! nd_root, int! has_c_conditional) {
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( !nd_raw.c ) { continue; }
 			//console.error('--------');
 			//console.error(nd_raw.toSource());
@@ -121,7 +121,7 @@ namespace ama {
 	}
 	ama::Node*+! ParseAssignment(ama::Node*+! nd_root, JSValueConst! options) {
 		Map<char[|], int>! binop_priority = ama::GetPrioritizedList(options, 'binary_operators');
-		ama::Node*+[+]! Q = nd_root.FindAll(ama::N_RAW, NULL);
+		ama::Node*+[+]! Q = nd_root.FindAllWithin(0, ama::N_RAW, NULL);
 		for(intptr_t! i = 0; i < Q.length; i++) {
 			ama::Node*+! nd_raw = Q[i];
 			ama::Node*+! ndi = nd_raw.c;
@@ -215,7 +215,7 @@ namespace ama {
 		Map<char[|], int>! is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
 		Map<char[|], int>! cv_qualifiers = ama::GetPrioritizedList(options, "cv_qualifiers");
 		//named operators: convert refs to symbols
-		for(ama::Node*+! nd_ref : nd_root.FindAll(ama::N_REF, NULL)) {
+		for(ama::Node*+! nd_ref : nd_root.FindAllWithin(0, ama::N_REF, NULL)) {
 			if( named_ops[nd_ref.data] || (c_type_prefix_operators[nd_ref.data] && nd_ref.s && nd_ref.s.node_class == ama::N_REF && nd_ref.p && nd_ref.p.node_class == ama::N_RAW) ) {
 				nd_ref.node_class = ama::N_SYMBOL;
 			}
@@ -223,7 +223,7 @@ namespace ama {
 		//sentenial operand
 		//we need to leave uninterpreted structures alone
 		//reverse() to fold smaller raws first
-		for(ama::Node*&+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL).reverse()) {
+		for(ama::Node*&+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL).reverse()) {
 			//binary and unary in one pass
 			ama::Node*+[+]! stack = new ama::Node*+[+]!();
 			//ama::Node*+! nd_raw = Q[i];
@@ -308,7 +308,7 @@ namespace ama {
 			}
 		}
 		//unify named unary ops to call: `sizeof(T)` could have been mistakenly parsed as N_CALL
-		//for(ama::Node*&+! nd_unary : nd_root.FindAll(ama::N_PREFIX, NULL)) {
+		//for(ama::Node*&+! nd_unary : nd_root.FindAllWithin(0,ama::N_PREFIX, NULL)) {
 		//	if( named_ops[nd_unary.data] ) {
 		//		//if( nd_unary.c && nd_unary.c.comments_before == " " ) {
 		//		//	nd_unary.c.comments_before = '';
@@ -319,7 +319,7 @@ namespace ama {
 		//	}
 		//}
 		//convert failed-to-fold named ops back
-		for(ama::Node*+! nd_ref : nd_root.FindAll(ama::N_SYMBOL, NULL)) {
+		for(ama::Node*+! nd_ref : nd_root.FindAllWithin(0, ama::N_SYMBOL, NULL)) {
 			if( named_ops[nd_ref.data] || c_type_prefix_operators[nd_ref.data] ) {
 				nd_ref.node_class = ama::N_REF;
 			}
@@ -327,7 +327,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node*+! ParsePointedBrackets(ama::Node*+! nd_root) {
-		for(ama::Node*+! nd_raw : nd_root.FindAll(ama::N_RAW, NULL)) {
+		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			//actually split it
 			ama::Node*+[+]! stack = new ama::Node*+[+]!();
 			int! was_ref = 0;

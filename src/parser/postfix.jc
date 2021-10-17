@@ -96,7 +96,7 @@ namespace ama {
 	}
 	ama::Node*+! ParsePostfix(ama::Node*+! nd_root, int! parse_air_object) {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
-		for(ama::Node*+! nd_raw : (new ama::Node*+![+] {nd_root}).concat(nd_root.FindAll(ama::N_SCOPE, NULL), nd_root.FindAll(ama::N_RAW, NULL)).reverse()) {
+		for(ama::Node*+! nd_raw : (new ama::Node*+![+] {nd_root}).concat(nd_root.FindAllWithin(0, ama::N_SCOPE, NULL), nd_root.FindAllWithin(0, ama::N_RAW, NULL)).reverse()) {
 			ama::Node*+! ndi = nd_raw.c;
 			const int! LAST_PROTOTYPE_NONE = 0;
 			const int! LAST_PROTOTYPE_CPP_LAMBDA = 1;
@@ -137,7 +137,7 @@ namespace ama {
 				} else if( ndi.isSymbol(".") && ndi_next && (ndi_next.isRawNode('(', ')') || ndi_next.isRawNode('{', '}') || ndi_next.node_class == ama::N_SCOPE) ) {
 					//nodeof
 					ndi_next.Unlink();
-					ndi = ndi.ReplaceWith(ama::nNodeof(ndi_next));
+					ndi = ndi.ReplaceWith(ama::nNodeof(ndi_next).setIndent(ndi.indent_level));
 					continue;
 				} else if( ndi.node_class == ama::N_SYMBOL ) {
 					//do nothing
