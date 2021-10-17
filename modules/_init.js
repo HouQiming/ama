@@ -180,6 +180,7 @@ Node.AutoSemicolon = function() {
 		if(nd.flags&0xffff){continue;}
 		if(!nd.p||(nd.p.node_class!==N_SCOPE&&nd.p.node_class!==N_FILE)){continue;}
 		if(!nd.c||!nd.c.s){continue;}
+		if(nd.Owning(N_NODEOF)){continue;}
 		//we are a N_RAW statement with at least 2 children
 		let new_children=[nd.c];
 		for(let ndi=nd.c.s;ndi;ndi=ndi.s){
@@ -215,6 +216,7 @@ Node.AutoSemicolon = function() {
 		}
 	}
 	for(let nd of this.FindAll(N_SCOPE,null).concat([this])){
+		if(nd.Owning(N_NODEOF)){continue;}
 		//let ndi=nd.LastChild();
 		//if(!ndi){continue;}
 		for(let ndi=nd.c;ndi;ndi=ndi.s){

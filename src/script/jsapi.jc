@@ -519,6 +519,45 @@ namespace ama {
 		}
 		return JS_NewInt32(ctx, system(JS_ToCString(ctx, argv[0])));
 	}
+	private JSValueConst! JSByteLength(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a string");
+		}
+		size_t len = 0;
+		JS_ToCStringLen(ctx, &len, argv[0]);
+		return JS_NewInt64(ctx, len);
+	}
+	private JSValueConst! JSByteAt(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 2 ) {
+			return JS_ThrowReferenceError(ctx, "need a string and a location");
+		}
+		size_t len = 0;
+		char*! s = JS_ToCStringLen(ctx, &len, argv[0]);
+		int32_t! index = ama::UnwrapInt32(argv[1], -1);
+		if( !s || size_t(index) >= len ) {
+			return JS_UNDEFINED;
+		}
+		return JS_NewInt32(ctx, int32_t(uint32_t(uint8_t(s[index]))));
+	}
+	private JSValueConst! JSByteSubstr(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 2 ) {
+			return JS_ThrowReferenceError(ctx, "need a string, a start, and maybe a length");
+		}
+		size_t len = 0;
+		char*! s = JS_ToCStringLen(ctx, &len, argv[0]);
+		int32_t! index = ama::UnwrapInt32(argv[1], -1);
+		int32_t! length = argc < 3 ? (len - index) : ama::UnwrapInt32(argv[2], -1);
+		if( !s || size_t(index) >= len || size_t(index + length) >= len || size_t(index) > size_t(index + length) ) {
+			return JS_UNDEFINED;
+		}
+		return JS_NewStringLen(ctx, s + index, length);
+	}
+	private JSValueConst! JSCons(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 2 ) {
+			return JS_ThrowReferenceError(ctx, "need two nodes");
+		}
+		return ama::WrapNode(ama::cons(ama::UnwrapNode(argv[0]), ama::UnwrapNode(argv[1])));
+	}
 	private JSValueConst! JSNodeGC(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		return JS_NewInt64(ctx, ama::gc());
 	}
@@ -715,6 +754,30 @@ namespace ama {
 			ama::jsctx, global, '__system', JS_NewCFunction(
 				ama::jsctx, JSSystem,
 				'__system', 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__byte_length', JS_NewCFunction(
+				ama::jsctx, JSByteLength,
+				'__byte_length', 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__byte_at', JS_NewCFunction(
+				ama::jsctx, JSByteAt,
+				'__byte_at', 2
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__byte_substr', JS_NewCFunction(
+				ama::jsctx, JSByteSubstr,
+				'__byte_substr', 3
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__cons', JS_NewCFunction(
+				ama::jsctx, JSCons,
+				'__cons', 2
 			)
 		);
 		JS_SetPropertyStr(
