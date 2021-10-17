@@ -366,6 +366,8 @@ jsism.EnableJSON = function(nd_root) {
 				nd_prefix = .(
 					if ( !ctx.TrySkipName(.(nString(__byte_substr(name0, lg_eaten, lg_prefix)))) ) {
 						goto skip;
+					} else {
+						__SWITCH;
 					}
 				);
 				lg_eaten += lg_prefix;
@@ -416,8 +418,7 @@ jsism.EnableJSON = function(nd_root) {
 				}
 				//the default clause breaks and skips
 				nd_switch = .(
-					switch (*ctx.begin) {
-					}
+					switch (*ctx.begin) {}
 				);
 				let nd_body = nd_switch.Find(N_SCOPE, null);
 				for (let i = 0; i < cases.length; i++) {
@@ -437,7 +438,8 @@ jsism.EnableJSON = function(nd_root) {
 				}
 			}
 			if (nd_prefix) {
-				nd_switch = nRaw(nd_prefix, nd_switch);
+				nd_prefix.Find(N_REF, '__SWITCH').ParentStatement().ReplaceWith(nd_switch.node_class == N_SCOPE ? nd_switch.c : nd_switch);
+				nd_switch = nd_prefix.setCommentsBefore('');
 			}
 			return nd_switch;
 		}

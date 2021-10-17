@@ -84,13 +84,15 @@ namespace ama {
 		}
 		return nd;
 	}
-	ama::Node*+! FillParents(ama::Node*+! nd_parent, ama::Node*+! nd) {
+	ama::Node*+! FixParents(ama::Node*+! nd_parent, ama::Node*+! nd) {
 		nd.p = nd_parent;
 		ama::Node*+! nd_last = NULL;
 		for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
 			if( ndi.s ) { ndi.s.v = ndi; }
 			nd_last = ndi;
-			FillParents(nd, ndi);
+			FixParents(nd, ndi);
+			//post-order subtraction
+			//ndi.indent_level -= nd.indent_level;
 		}
 		if( nd_last ) {
 			nd.c.v = ama::PackTailPointer(nd_last);
@@ -114,6 +116,9 @@ namespace ama {
 				ret.indent_level = nd_child.indent_level;
 				std::swap(ret.comments_before, nd_child.comments_before);
 				std::swap(ret.comments_after, ret.LastChild().comments_after);
+				for(ama::Node*+! ndi = nd_child; ndi; ndi = ndi.s) {
+					ndi.AdjustIndentLevel(-ret.indent_level);
+				}
 			}
 			return ret;
 		} else {
@@ -189,11 +194,11 @@ namespace ama {
 //basic tree operations
 void! ama::Node::AdjustIndentLevel(ama::Node*+! this, intptr_t! delta) {
 	this.indent_level = ama::ClampIndentLevel(this.indent_level + delta);
-	if( !(this.node_class == ama::N_RAW && (this.flags & 0xffff)) && this.node_class != ama::N_SCOPE ) {
-		for(ama::Node*+! ndi : this) {
-			ndi.AdjustIndentLevel(delta);
-		}
-	}
+	//if( !(this.node_class == ama::N_RAW && (this.flags & 0xffff)) && this.node_class != ama::N_SCOPE ) {
+	//	for(ama::Node*+! ndi : this) {
+	//		ndi.AdjustIndentLevel(delta);
+	//	}
+	//}
 }
 
 private ama::Node*+! dfsClone(std::unordered_map<ama::Node*, ama::Node*+>&+! mapping, ama::Node*! nd) {

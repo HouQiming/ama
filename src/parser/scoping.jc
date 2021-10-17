@@ -39,6 +39,7 @@ namespace ama {
 							ndj_last.comments_after = new char[|]!(ndj_last.comments_after + ndj.comments_after);
 						}
 						for(ama::Node*+! ndk : ndj) {
+							ndk.AdjustIndentLevel(ndj.indent_level);
 							line_group.push_back(ndk);
 						}
 					} else {
@@ -48,6 +49,9 @@ namespace ama {
 				assert(line_group.length > 1);
 				ama::Node*+! nd_raw = ama::CreateNodeFromChildren(ama::N_RAW, line_group);
 				nd_raw.indent_level = line_group[0].indent_level;
+				for(ama::Node*+! ndj : line_group) {
+					ndj.AdjustIndentLevel(-nd_raw.indent_level);
+				}
 				line_out_final.push_back(nd_raw);
 			}
 			i0 = i1;
@@ -179,7 +183,6 @@ namespace ama {
 				for(int! i = 0; i < new_children.length; i += 1) {
 					ama::Node*+! nd_inner = ama::toSingleNode(new_children[i]);
 					new_children[i] = nd_inner;
-					new_children[i].indent_level = nd_inner.indent_level;
 				}
 				nd_raw.c = NULL;
 				nd_raw.Insert(ama::POS_FRONT, ama::InsertMany(new_children));

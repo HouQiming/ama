@@ -76,10 +76,8 @@ namespace ama {
 			int8_t! bk_ind = nd_tmp.indent_level;
 			char[|]! bk_cmta = nd_tmp.comments_after;
 			nd_tmp.comments_after = "";
-			//nd_tmp.AdjustIndentLevel(-bk_ind);
 			nd_tmp.indent_level = 0;
 			dfsTranslateList(ret, nd_tmp);
-			//nd_tmp.AdjustIndentLevel(bk_ind);
 			nd_tmp.indent_level = bk_ind;
 			nd_tmp.comments_after = bk_cmta;
 			//preserve line numbers

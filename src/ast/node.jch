@@ -209,7 +209,7 @@ namespace ama {
 	extern ama::Node*+! g_placeholder;
 	int! isValidNodePointer(ama::Node*! nd_tentative);
 	ama::Node*+! CreateNode(uint8_t! node_class, ama::Node*+! child);
-	ama::Node*+! FillParents(ama::Node*+! nd_parent, ama::Node*+! nd);
+	ama::Node*+! FixParents(ama::Node*+! nd_parent, ama::Node*+! nd);
 	inline ama::Node*+! cons(ama::Node*+! a, ama::Node*+! b) {
 		assert(a != b);
 		a.s = b;

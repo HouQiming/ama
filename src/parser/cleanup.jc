@@ -149,6 +149,7 @@ namespace ama {
 					nd_semicolon.data = NULL;
 					nd_semicolon.indent_level = ndi.indent_level;
 					nd_semicolon.Insert(ama::POS_FRONT, ndi);
+					ndi.indent_level = 0;
 					ndi.MergeCommentsAfter(nd_semicolon);
 					ndi = nd_semicolon;
 				}
