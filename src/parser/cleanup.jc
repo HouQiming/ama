@@ -79,10 +79,13 @@ namespace ama {
 	//}
 	ama::Node*+! AutoFormat(ama::Node*+! nd_root) {
 		for(ama::Node*+! ndi = nd_root.PostorderFirst(); ndi; ndi = ndi.PostorderNext(nd_root)) {
+			ndi.indent_level = 0;
+		}
+		for(ama::Node*+! ndi = nd_root.PostorderFirst(); ndi; ndi = ndi.PostorderNext(nd_root)) {
 			ama::Node*+! nd = ndi.p;
 			if( ndi != nd_root ) {
 				if( nd.node_class == ama::N_SCOPE || nd.node_class == ama::N_FILE ) {
-					if( !ndi.indent_level && nd.node_class == ama::N_SCOPE ) {
+					if( nd.node_class == ama::N_SCOPE ) {
 						ndi.AdjustIndentLevel(4);
 					}
 					if( !ndi.comments_before.length ) {
@@ -106,7 +109,7 @@ namespace ama {
 			int! has_other_child = 0;
 			for(ama::Node*+! ndi = nd_root.p.c; ndi; ndi = ndi.s) {
 				if( ndi != nd_root ) {
-					if( !has_other_child && !nd_root.indent_level ) {
+					if( !has_other_child ) {
 						nd_root.AdjustIndentLevel(ndi.indent_level);
 					}
 					has_other_child = 1;

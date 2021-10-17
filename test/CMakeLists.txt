@@ -142,3 +142,4 @@ set_property(
   ~/.local/lib
 )
 add_library(native_module SHARED native_module.cpp)
+add_executable(test_json ../modules/cpp/json/json.cpp test_json.audit.cpp)

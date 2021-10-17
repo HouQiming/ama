@@ -381,6 +381,8 @@ typing.ComputeType = function(nd_expr) {
 				}
 			}
 		}
+		//assume self-representative when we fail to find the name
+		if (!type) {type = nd_expr;}
 		break;
 	}
 	case N_CALL: {

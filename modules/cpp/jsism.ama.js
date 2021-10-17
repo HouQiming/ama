@@ -229,11 +229,15 @@ jsism.EnableJSON = function(nd_root) {
 				//create a new gentag and insert it
 				//COULDDO: insert recursively
 				let nd_gentag = .(#pragma gen(.(nd_tag)));
-				let deps = nd_root.FindAll(N_DEPENDENCY, null);
-				if (deps.length) {
-					deps[deps.length - 1].Insert(POS_AFTER, nd_gentag.setCommentsBefore('\n'));
+				if (type.Root() == nd_root) {
+					type.ParentStatement().Insert(POS_AFTER, nd_gentag.setCommentsBefore('\n'));
 				} else {
-					nd_root.Insert(POS_FRONT, nd_gentag);
+					let deps = nd_root.FindAll(N_DEPENDENCY, null);
+					if (deps.length) {
+						deps[deps.length - 1].Insert(POS_AFTER, nd_gentag.setCommentsBefore('\n'));
+					} else {
+						nd_root.Insert(POS_FRONT, nd_gentag);
+					}
 				}
 			}
 		}
@@ -253,7 +257,7 @@ jsism.EnableJSON = function(nd_root) {
 					//`type` is only used for SFINAE
 					typedef void type;
 					template<typename T = .(typing.AccessTypeAt(type, match.gentag))>
-					void stringifyTo(std::string& buf, .(typing.AccessTypeAt(type, match.gentag)) const& a) {
+					static void stringifyTo(std::string& buf, .(typing.AccessTypeAt(type, match.gentag)) const& a) {
 						buf.push_back('{');
 						__INSERT_HERE;
 						buf.push_back('}');
@@ -269,6 +273,7 @@ jsism.EnableJSON = function(nd_root) {
 			if (nd_stmt.comments_before.indexOf('nojson') >= 0 || nd_stmt.comments_after.indexOf('nojson') >= 0) {
 				continue;
 			}
+			if (body.length) {body.push(.(buf.push_back(',');));}
 			body.push(.(buf.append(.(nString(JSON.stringify(ppt.name) + ':')));));
 			body.push(.(JSON::stringifyTo(buf, .(nRef('a').dot(ppt.name)));));
 		}
@@ -287,7 +292,7 @@ jsism.EnableJSON = function(nd_root) {
 					//`type` is only used for SFINAE
 					typedef void type;
 					template<typename T = .(typing.AccessTypeAt(type, match.gentag))>
-					.(typing.AccessTypeAt(type, match.gentag)) parseFrom(JSONParserContext& ctx, .(typing.AccessTypeAt(type, match.gentag))**) {
+					static .(typing.AccessTypeAt(type, match.gentag)) parseFrom(JSONParserContext& ctx, .(typing.AccessTypeAt(type, match.gentag))**) {
 						T ret{};
 						if ( ctx.begin == ctx.end ) {
 							return std::move(ret);
@@ -380,7 +385,7 @@ jsism.EnableJSON = function(nd_root) {
 						}
 						goto done;
 					}
-				).c;
+				);
 			} else {
 				//there cannot be a directly-return case: quotes should ensure that for us
 				//first-byte switch
@@ -409,11 +414,12 @@ jsism.EnableJSON = function(nd_root) {
 						indicator: byte_i0
 					});
 				}
+				//the default clause breaks and skips
 				nd_switch = .(
 					switch (*ctx.begin) {
 					}
 				);
-				let nd_body = nd_switch.Find(N_SCOPE, null)
+				let nd_body = nd_switch.Find(N_SCOPE, null);
 				for (let i = 0; i < cases.length; i++) {
 					let nd_char = undefined;
 					if (cases[i].indicator >= 32 && cases[i].indicator < 127) {
@@ -423,11 +429,15 @@ jsism.EnableJSON = function(nd_root) {
 					}
 					nd_body.Insert(POS_BACK, .(
 						case .(nd_char): {
+							ctx.begin += 1;
 							.(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten + 1));
-							break;}));};
+							break;
+						}
+					));
+				}
 			}
 			if (nd_prefix) {
-				nd_switch = cons(nd_prefix, nd_switch);
+				nd_switch = nRaw(nd_prefix, nd_switch);
 			}
 			return nd_switch;
 		}

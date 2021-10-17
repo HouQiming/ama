@@ -50,8 +50,14 @@ namespace ama {
 			}
 			ret.push(')');
 		}
-		if( nd.flags && nd.node_class != ama::N_STRING ) {
-			ret.push('.setFlags(', JSON.stringify(nd.flags), ')');
+		if( nd.node_class == ama::N_STRING ) {
+			if( nd.flags != ama::LITERAL_PARSED ) {
+				ret.push('.setFlags(', JSON.stringify(nd.flags), ')');
+			}
+		} else {
+			if( nd.flags ) {
+				ret.push('.setFlags(', JSON.stringify(nd.flags), ')');
+			}
 		}
 		if( nd.comments_before.length ) {
 			ret.push('.setCommentsBefore(', JSON.stringify(nd.comments_before), ')');
