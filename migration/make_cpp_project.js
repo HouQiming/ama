@@ -288,7 +288,7 @@ function MigrateProject(fn,patches){
 	jc_things.forEach(src=>{
 		console.log('TODO: untranslate',src)
 	});
-	default_options.is_migrating=1;
+	//default_options.is_migrating=1;
 	ProcessAmaFile(path.resolve(dir_target,'trans/sync.js'));
 }
 

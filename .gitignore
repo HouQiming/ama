@@ -22,3 +22,4 @@ modules/**/*.js
 /test/test_tmp.*
 /test/cmake/CMakeLists.txt
 /test/cmake/test_cmake.cpp
+/test/test_aba.cpp

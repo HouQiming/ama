@@ -252,7 +252,7 @@ function Generate(version,my_call) {
 			}
 		}
 		let nd_paramlist = method_i.paramlist;
-		let code_call = ['nd.', method_i.name, '('];
+		let code_call = ['nd->', method_i.name, '('];
 		//translate argv, skip the JC this
 		let i = 0;
 		for(let ndi = nd_paramlist.c; ndi; ndi = ndi.s) {
