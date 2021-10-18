@@ -258,6 +258,11 @@ namespace ama {
 	private JSValueConst! JSGenerateCode(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		return ama::WrapString(ama::GenerateCode(ama::UnwrapNode(this_val), argc > 0 ? argv[0] : JS_NULL));
 	}
+	private JSValueConst! JSConsoleFlush(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		fflush(stdout);
+		fflush(stderr);
+		return JS_UNDEFINED;
+	}
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data) {
 		//we must not hold any Node* here: the script could gc them and native-only pointers can get freed
 		LazyInitScriptEnv();
@@ -936,6 +941,12 @@ namespace ama {
 			ama::jsctx, obj_console, 'error', JS_NewCFunctionMagic(
 				ama::jsctx, JSConsoleWrite,
 				'error', 0, JS_CFUNC_generic_magic, 2
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, obj_console, 'flush', JS_NewCFunction(
+				ama::jsctx, JSConsoleFlush,
+				'flush', 0
 			)
 		);
 		/////////////

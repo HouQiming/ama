@@ -526,8 +526,13 @@ namespace ama {
 				nd_keyword.Insert(ama::POS_FRONT, ama::nAir());
 			} else if( nd_parent.node_class == ama::N_RAW ) {
 				ama::Node*+! nd_raw = nd_parent;
+				ama::Node*+! nd_tmp = ama::GetPlaceHolder();
+				ama::Node*+! nd_last = nd_keyword;
+				while( nd_last.s && !nd_last.s.isSymbol(";") && !nd_last.s.isSymbol(",") ) {
+					nd_last = nd_last.s;
+				}
+				nd_keyword.ReplaceUpto(nd_last, nd_tmp);
 				ama::Node*+! nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword.BreakSibling()));
-				nd_keyword.BreakSelf();
 				nd_stmt.indent_level = nd_keyword.indent_level;
 				nd_stmt.comments_before = nd_keyword.comments_before;
 				if( nd_stmt.c ) {
@@ -536,12 +541,13 @@ namespace ama {
 					nd_stmt.comments_after = new char[|]!(nd_keyword.comments_after + nd_stmt.comments_after);
 				}
 				nd_stmt.data = nd_keyword.DestroyForSymbol();
-				if( !nd_raw.c && nd_raw.isRawNode(0, 0) ) {
-					nd_raw.ReplaceWith(nd_stmt);
-					nd_raw.c = NULL; nd_raw.FreeASTStorage();
-				} else {
-					nd_raw.Insert(ama::POS_BACK, nd_stmt);
-				}
+				nd_tmp.ReplaceWith(nd_stmt);
+				//if( !nd_raw.c && nd_raw.isRawNode(0, 0) ) {
+				//	nd_raw.ReplaceWith(nd_stmt);
+				//	nd_raw.c = NULL; nd_raw.FreeASTStorage();
+				//} else {
+				//	nd_raw.Insert(ama::POS_BACK, nd_stmt);
+				//}
 			}
 		}
 		return nd_root;
