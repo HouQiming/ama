@@ -485,3 +485,19 @@ set_property(
   kernel32.lib
 )
 endif()
+check_cxx_source_compiles("#include <json.jch.hpp>\n\n#include <path.jch.hpp>\n\n#include <fs.jch.hpp>\n\n#include <console.jch.hpp>\n\n#include <env.jch.hpp>\n\n#include <unicode.jch.hpp>\n\n#include <unicode/case.jch.hpp>\n\n#if !(defined(_WIN32))\n#error a\n#endif\nint main(){return 0;}\n" COND_DEFINED_WIN32__A386370D)
+if(COND_DEFINED_WIN32__A386370D)
+set_property(
+  TARGET amal
+  APPEND PROPERTY LINK_LIBRARIES
+  kernel32.lib
+)
+endif()
+check_cxx_source_compiles("#include <json.jch.hpp>\n\n#include <path.jch.hpp>\n\n#include <fs.jch.hpp>\n\n#include <console.jch.hpp>\n\n#include <env.jch.hpp>\n\n#include <unicode.jch.hpp>\n\n#include <unicode/case.jch.hpp>\n\n#if !(!defined(_WIN32))\n#error a\n#endif\nint main(){return 0;}\n" COND__DEFINED_WIN32__36BC7958)
+if(COND__DEFINED_WIN32__36BC7958)
+set_property(
+  TARGET amal
+  APPEND PROPERTY LINK_LIBRARIES
+  -ldl
+)
+endif()

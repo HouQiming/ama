@@ -90,6 +90,7 @@ function MigrateProject(fn,patches){
 			for(let ndi of args){
 				if(ndi.node_class===N_STRING){
 					let fn_src=ndi.GetStringValue();
+					//TODO: hack the in-project files ${JC_LIB}/json.cpp and stuff
 					if(fn_src.startsWith('${JC_LIB}/')){
 						//we need the raw .jc.cpp / .jch.hpp names here
 						required_jc_libs.push(fn_src.substr(10));
@@ -172,7 +173,14 @@ function MigrateProject(fn,patches){
 		}
 	}
 	//create the JC_LIB local copy
+	let do_not_copy=new Set([
+		'jc_array.h',
+		'jc_string_search.h',
+		'jc_polyfill.h',
+		'jc_array_algorithm.h'
+	]);
 	for(let fn of required_jc_libs){
+		if(do_not_copy.has(path.basename(fn))){continue;}
 		let fn_target=path.join(dir_target,'jc_lib',fn.replace('.jc.','.').replace('.jch.','.'));
 		let dir_to_make=path.dirname(fn_target);
 		if(!made_dirs.has(dir_to_make)){
@@ -249,6 +257,7 @@ function MigrateProject(fn,patches){
 				nd_dep.c.ReplaceWith(nString(
 					path.relative(path.dirname(fn_cpp),path.join(dir_target,'modules/cpp/json/json.h'))
 				));
+				continue;
 			}
 			let fn=depends.Resolve(nd_dep);
 			if(fn&&fn.startsWith(dir_jc_lib+'/')){
@@ -259,10 +268,12 @@ function MigrateProject(fn,patches){
 				}
 				let fn_prj=base_to_prj.get(fn_base);
 				if(fn_prj){
-					console.log(fn_prj)
+					nd_dep.c.ReplaceWith(nString(
+						path.relative(path.dirname(fn_cpp),path.join(dir_target,fn_prj))
+					));
+					continue;
 				}
-				//TODO: find in current project
-				//console.log(fn_base);
+				console.log(fn_base,'not found');
 			}
 		}
 		nd_root.Save();

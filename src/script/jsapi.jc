@@ -1,5 +1,4 @@
 // //// JC version: 3
-#include <jc_platform.h>
 #include <json.jch>
 #include <path.jch>
 #include <fs.jch>
