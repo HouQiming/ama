@@ -253,7 +253,7 @@ __global.default_options = {
 	keywords_after_prototype: ': -> => throw const noexcept override',
 	keywords_not_a_function: 'switch case #define #if return',
 	//case is better treated as a part of a label
-	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef break continue',
+	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #else #endif break continue',
 	///////////
 	//codegen
 	tab_width: 4,

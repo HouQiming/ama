@@ -232,6 +232,106 @@ static inline void AppendArray(std::string a,std::span<char> b){
 	a.append(b.data(),b.size());
 }
 
+#ifdef _MSC_VER
+#define memmem fallback_memmem
+
+//two-way memmem fallback, use template hack to avoid code duplication
+//http://www-igm.univ-mlv.fr/~lecroq/string/node26.html#SECTION00260
+template<class T=void>
+size_t maxSuf(const char *x, size_t m, size_t *p, int32_t mask) {
+	size_t ms=0, j=0, k=0;
+	int32_t a=0, b=0;
+
+	ms = -1;
+	j = 0;
+	k = *p = 1;
+	while (j + k < m) {
+		a = (int32_t)(uint32_t)(uint8_t)x[j + k]^mask;
+		b = (int32_t)(uint32_t)(uint8_t)x[ms + k]^mask;
+		if (a < b) {
+			j += k;
+			k = 1;
+			*p = j - ms;
+		}
+		else
+			if (a == b)
+				 if (k != *p)
+					 ++k;
+				 else {
+					 j += *p;
+					 k = 1;
+				 }
+			else { /* a > b */
+				 ms = j;
+				 j = ms + 1;
+				 k = *p = 1;
+			}
+	}
+	return(ms);
+}
+
+static inline size_t max_iptr(size_t a,size_t b){return a>b?a:b;}
+
+template<class T=void>
+void* fallback_memmem(const char* haystack,size_t haystack_size, const char* needle,size_t needle_size){
+	size_t i=0, j=0, ell=0, memory=0, p=0, per=0, q=0;
+	/* Preprocessing */
+	i = maxSuf(needle, needle_size, &p, 0);
+	j = maxSuf(needle, needle_size, &q, -1);
+	if (i > j) {
+		ell = i;
+		per = p;
+	} else {
+		ell = j;
+		per = q;
+	}
+	/* Searching */
+	if (memcmp(needle, needle + per, ell + 1) == 0) {
+		j = 0;
+		memory = -1;
+		while (j <= haystack_size - needle_size) {
+			i = max_iptr(ell, memory) + 1;
+			while (i < needle_size && needle[i] == haystack[i + j])
+				++i;
+			if (i >= needle_size) {
+				i = ell;
+				while (i > memory && needle[i] == haystack[i + j])
+					--i;
+				if (i <= memory){
+					return (void*)(haystack+(j));
+				}
+				j += per;
+				memory = needle_size - per - 1;
+			}
+			else {
+				j += (i - ell);
+				memory = -1;
+			}
+		}
+	} else {
+		per = max_iptr(ell + 1, needle_size - ell - 1) + 1;
+		j = 0;
+		while (j <= haystack_size - needle_size) {
+			i = ell + 1;
+			while (i < needle_size && needle[i] == haystack[i + j])
+				++i;
+			if (i >= needle_size) {
+				i = ell;
+				while (i >= 0 && needle[i] == haystack[i + j])
+					--i;
+				if (i < 0){
+					return (void*)(haystack+(j));
+				}
+				j += per;
+			}
+			else
+				j += (i - ell);
+		}
+	}
+	return NULL;
+}
+#endif
+
 template<typename Base,typename T>
 class ArrayExtension:public Base{
 public:
@@ -265,7 +365,7 @@ public:
 	template<typename _Base=Base>
 	inline typename std::enable_if<
 		isResizable<_Base>::value&&std::is_move_constructible<T>::value,
-		T&
+		T
 	>::type pop(){
 		T ret=std::move(this->back());
 		this->pop_back();
@@ -279,33 +379,25 @@ public:
 		std::copy(src, src+std::min(size_tar, size_src), tar);
 		return *this;
 	}
-	template<typename _Base=Base>
-	inline typename std::enable_if<
-		std::is_same<_Base,std::string>::value,
-		int
-	>::type& startsWith(std::span<char> b)const{
+	inline int startsWith(std::span<T> b)const{
 		return this->size()>=b.size()&&memcmp(this->data(),b.data(),b.size())==0;
 	}
-	template<typename _Base=Base>
-	inline typename std::enable_if<
-		std::is_same<_Base,std::string>::value,
-		int
-	>::type& endsWith(std::span<char> a, std::span<char> b){
+	inline int endsWith(std::span<T> b)const{
 		return this->size()>=b.size()&&memcmp(this->data()+(this->size()-b.size()),b.data(),b.size())==0;
 	}
-	template<typename _Base=Base>
+	template<typename _T=T>
 	inline typename std::enable_if<
-		std::is_same<_Base,std::string>::value,
+		std::is_same<_T,char>::value,
 		int
-	>::type& startsWith(std::span<char> a, char b){
-		return this->size()>=1&&a[0]==b;
+	>::type startsWith(char b)const{
+		return this->size()>=1&&(*this)[0]==b;
 	}
-	template<typename _Base=Base>
+	template<typename _T=T>
 	inline typename std::enable_if<
-		std::is_same<_Base,std::string>::value,
+		std::is_same<_T,char>::value,
 		int
-	>::type& endsWith(std::span<char> a, char b){
-		return this->size()>=1&&a.back()==b;
+	>::type endsWith(char b)const{
+		return this->size()>=1&&(*this)[this->size()-1]==b;
 	}
 	template<typename U>
 	inline std::span<U> as(){
@@ -316,7 +408,7 @@ public:
 		std::fill(this->begin(),this->end(),std::forward<U>(value));
 	}
 	template<typename... Types>
-	inline std::vector<T> concat(Types&&... args){
+	inline std::vector<T> concat(Types&&... args)const{
 		std::vector<T> ret;
 		array_concat_copy_into(ret, *this, std::forward<Types>(args)...);
 		return std::move(ret);
@@ -330,7 +422,108 @@ public:
 		this->push(std::forward<T2>(second), std::forward<Types>(args)...);
 		return *this;
 	}
+	void sort(){
+		std::sort(this->begin(),this->end());
+	}
+	template<typename F>
+	void sort(F const &less){
+		std::sort(this->begin(),this->end(),less);
+	}
+	template<typename F>
+	void sortby(F const &toKey){
+		struct LessByKey{
+			F f;
+			inline int operator()(T const &s,T const &t){
+				return f(s)<f(t);
+			}
+		};
+		std::sort(this->begin(),this->end(),LessByKey{toKey});
+	}
+	void unique(){
+		auto new_end=std::unique(this->begin(),this->end());
+		this->resize(new_end-this->begin());
+	}
+	template<typename F>
+	void unique(F const &equal){
+		auto new_end=std::unique(this->begin(),this->end(),equal);
+		this->resize(new_end-this->begin());
+	}
+	template<typename F>
+	inline intptr_t bisect(F const &tooSmall){
+		intptr_t l=0L;
+		intptr_t r=(intptr_t)(this->size()-1);
+		while(l<=r){
+			intptr_t m=(l+r)>>1;
+			if(tooSmall((*this)[m])){
+				l=m+1;
+			}else{
+				r=m-1;
+			}
+		}
+		return l;
+	}
+	inline intptr_t indexOf(std::span<char> b){
+		void* p=memmem(this->data(),this->size(),b.data(),b.size());
+		if(p){
+			return (char*)p-this->data();
+		}else{
+			return (intptr_t)(-1);
+		}
+	}
+	#ifdef _MSC_VER
+		#undef memmem 
+	#endif
+	inline intptr_t indexOf(char b)const{
+		void* p=(void*)memchr(this->data(),b,this->size());
+		if(p){
+			return (char*)p-this->data();
+		}else{
+			return (intptr_t)(-1);
+		}
+	}
+	inline intptr_t lastIndexOf(char b)const{
+		#ifdef _MSC_VER
+			for(intptr_t i=(intptr_t)this->size()-1;i>=0;--i){
+				if(a[i]==b){return i;}
+			}
+			return -1L;
+		#else
+			void* p=(void*)memrchr(this->data(),b,this->size());
+			if(p){
+				return (char*)p-this->data();
+			}else{
+				return (intptr_t)(-1);
+			}
+		#endif
+	}
 };
+
+template<typename Key,typename Value>
+class MapExtension:public std::unordered_map<Key,Value>{
+public:
+	template<typename NewKey>
+	inline bool has(NewKey &&k){
+		return this->find(std::forward<NewKey>(k))!=this->end();
+	}
+	template<typename NewKey>
+	inline Value const &get(NewKey &&k, Value const& default_value = Value())const{
+		auto p_slot=this->find(std::forward<NewKey>(k));
+		if(p_slot==this->end()){
+			return default_value;
+		}else{
+			return p_slot->second;
+		}
+	}
+	template<typename NewKey,typename NewValue>
+	inline void set(NewKey &&k, NewValue&& v){
+		#if __cplusplus>=201703L
+			this->insert_or_assign(std::forward<NewKey>(k),std::forward<NewValue>(v));
+		#else
+			(*this)[std::forward<NewKey>(k)]=std::forward<NewValue>(v);
+		#endif
+	}
+};
+
 }
 
 //example: `std::string("foobar")--->startsWith("foo")`
@@ -341,7 +534,17 @@ JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>* operato
 }
 
 template<typename Array>
-JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>* operator--(Array const &a,int){
+JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>const* operator--(Array const &a,int){
 	return reinterpret_cast<JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>const*>(&a);
+}
+
+template<typename Key,typename Value>
+auto operator--(std::unordered_map<Key,Value> &a,int){
+	return reinterpret_cast<JC::MapExtension<Key,Value>*>(&a);
+}
+
+template<typename Key,typename Value>
+auto operator--(std::unordered_map<Key,Value> const&a,int){
+	return reinterpret_cast<JC::MapExtension<Key,Value>const*>(&a);
 }
 #endif
