@@ -288,7 +288,6 @@ namespace ama {
 		};
 		JSValueConst! ret_script = JS_Call(ama::jsctx, JS_DupValue(ama::jsctx, ret), JS_GetGlobalObject(ama::jsctx), 3, module_args.data());
 		if( JS_IsException(ret_script) ) {
-			console.log(s_fixed_code);
 			ama::DumpError(ama::jsctx);
 			return 0;
 		}

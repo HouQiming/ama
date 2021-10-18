@@ -25,6 +25,7 @@ function MigrateProject(fn,patches){
 	__system(['cd ',JSON.stringify(dir),' ; git ls-files > /tmp/files.txt'].join(''));
 	let made_dirs=new Set();
 	let cmakelists=[];
+	let base_to_prj=new Map();
 	for(let fn of fs.readFileSync('/tmp/files.txt').toString().split('\n')){
 		if(!fn){continue;}
 		let ext=path.extname(fn);
@@ -40,6 +41,7 @@ function MigrateProject(fn,patches){
 				cmakelists.push(path.join(dir_target,fn));
 			}
 		}
+		base_to_prj.set(path.basename(fn),fn);
 	}
 	let cpps_to_translate=[];
 	for(let fn of depends.ListAllDependency(nd_root,false)){
@@ -148,7 +150,7 @@ function MigrateProject(fn,patches){
 		}
 	}
 	//recursively expand required_jc_libs
-	let dir_jc_lib=path.join(__dirname,'../../jc3/lib');
+	let dir_jc_lib=path.resolve(__dirname,'../../jc3/lib');
 	//language-level dependencies
 	required_jc_libs.push('jc_string_search.h','jc_polyfill.h','jc_array_algorithm.h')
 	let required_jc_libs_set=new Set([required_jc_libs]);
@@ -209,9 +211,15 @@ function MigrateProject(fn,patches){
 		'subarray','sortby','fill','concat','unique',
 		'map_get','map_set'
 	]);
+	let obsolete_headers=new Set([
+		'jc_string_search.h',
+		'jc_polyfill.h',
+		'jc_array_algorithm.h'
+	]);
 	for(let fn_cpp of cpps_to_translate){
 		let nd_root=depends.LoadFile(fn_cpp);
 		if(!nd_root){continue;}
+		//replace JC::foo methods with the new ---> mechanism
 		for(let nd_dot of nd_root.FindAll(N_DOT,null)){
 			if(!nd_dot.c.isRef('JC')){continue;}
 			let name=nd_dot.data;
@@ -234,6 +242,28 @@ function MigrateProject(fn,patches){
 				continue;
 			}
 			jc_things.add(nd_dot.toSource().trim());
+		}
+		//replace JC_LIB files with in-project alternatives
+		for(let nd_dep of nd_root.FindAll(N_DEPENDENCY,null)){
+			if(nd_dep.c.GetStringValue()==='json.hpp'){
+				nd_dep.c.ReplaceWith(nString(
+					path.relative(path.dirname(fn_cpp),path.join(dir_target,'modules/cpp/json/json.h'))
+				));
+			}
+			let fn=depends.Resolve(nd_dep);
+			if(fn&&fn.startsWith(dir_jc_lib+'/')){
+				let fn_base=path.basename(fn);
+				if(obsolete_headers.has(fn_base)){
+					nd_dep.Unlink();
+					continue;
+				}
+				let fn_prj=base_to_prj.get(fn_base);
+				if(fn_prj){
+					console.log(fn_prj)
+				}
+				//TODO: find in current project
+				//console.log(fn_base);
+			}
 		}
 		nd_root.Save();
 	}
