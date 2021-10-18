@@ -17,8 +17,8 @@ module.exports = ParseCurrentFile=>{
 	.then(sane_types.inverse, {view: {to: .(JC::array_base<.(Node.MatchAny('TElement'))>)}})
 	.Save('.audit.cpp');
 	//////////////////////
-	console.log(JSON.stringify(nd_root, null, 1));
-	console.flush();
+	//console.log(JSON.stringify(nd_root, null, 1));
+	//console.flush();
 	//////////////////////
 	nd_root
 	.StripRedundantPrefixSpace()

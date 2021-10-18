@@ -81,10 +81,15 @@ function Transform(nd_root, options) {
 		let names = [];
 		while (nd_name.node_class == N_DOT) {
 			names.push(nd_name.data)
-					nd_name = nd_name.c;
+				nd_name = nd_name.c;
 		};
 		if (nd_name.node_class != N_AIR) {
 			names.push(nd_name.GetName());
+		}
+		for (let ndi = nd_name.p; ndi; ndi = ndi.p) {
+			if (ndi.node_class == N_CLASS) {
+				names.push(ndi.GetName());
+			}
 		}
 		if (!names.length) {continue;}
 		let nd_scope = nd_header;
@@ -103,8 +108,7 @@ function Transform(nd_root, options) {
 			//ignore overloading cases for now
 			continue;
 		}
-		//assume all ::-s along the way are namespaces
-		//TODO: make sure we insert before the last #endif
+		//assume all ::s along the way are namespaces
 		changed = 1;
 		let nd_insertion_root = undefined;
 		for (let i = failed; i > 0; i--) {
