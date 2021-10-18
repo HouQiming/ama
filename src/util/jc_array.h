@@ -317,9 +317,20 @@ public:
 		array_concat_copy_into(ret, *this, std::forward<Types>(args)...);
 		return std::move(ret);
 	}
+	!?
+	template<typename _Base=Base,typename T1,typename T2,typename... Types>
+	inline typename std::enable_if<
+		isResizable<_Base>::value,
+		ArrayExtension<Base,T>&
+	>::type push(T1&& first, T2&& second, Types&&... args){
+		this->push(std::forward<T1>(first));
+		this->push(std::forward<T2>(second), std::forward<Types>(args)...);
+		return *this;
+	}
 };
 }
 
+//example: `std::string("foobar")--->startsWith("foo")`
 //JC::GetArrayElementType serves as the SFINAE gimmick, so we can't `auto` the return type
 template<typename Array>
 JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>* operator--(Array &a,int){

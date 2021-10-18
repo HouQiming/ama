@@ -92,6 +92,7 @@ function MigrateProject(fn,patches){
 					let fn_src=ndi.GetStringValue();
 					//TODO: hack the in-project files ${JC_LIB}/json.cpp and stuff
 					if(fn_src.startsWith('${JC_LIB}/')){
+						console.log(fn_src);
 						//we need the raw .jc.cpp / .jch.hpp names here
 						required_jc_libs.push(fn_src.substr(10));
 					}else{
