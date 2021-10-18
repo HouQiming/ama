@@ -153,19 +153,32 @@ namespace ama {
 			ama::Node*+! nd_prototype_start = ndi;
 			ama::Node*+! nd_last_scoped_stmt = NULL;
 			ama::Node*+! nd_keyword = NULL;
+			ama::Node*+! nd_pending_else = NULL;
+			ama::Node*+! nd_if_of_pending_else = NULL;
 			int! kw_mode = KW_NONE;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
+				if( kw_mode == KW_EXT && nd_last_scoped_stmt && ndi == nd_keyword.s && 
+				(ndi.node_class == ama::N_REF || ndi.node_class == ama::N_CALL) && keywords_scoped_statement[ndi.GetName()] ) {
+					//`else if` case
+					nd_pending_else = nd_keyword;
+					nd_if_of_pending_else = nd_last_scoped_stmt;
+					nd_keyword = ndi;
+					kw_mode = KW_STMT;
+					continue;
+				}
 				if( !nd_keyword && (ndi.node_class == ama::N_REF || ndi.node_class == ama::N_CALL) ) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
 					char[|]! name = ndi.GetName();
 					if( name != NULL ) {
 						if( keywords_class[name] ) {
+							nd_pending_else = NULL;
 							nd_keyword = ndi;
 							kw_mode = KW_CLASS;
 							continue;
 						} else if( keywords_extension_clause[name] ) {
 							if( nd_last_scoped_stmt ) {
+								nd_pending_else = NULL;
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
 								continue;
@@ -174,6 +187,7 @@ namespace ama {
 								//ama::Node*+! nd_ext_keyword = ndi.BreakSelf();
 								ama::Node*+! nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi.Prev());
 								//nd_stmt.Insert(ama::POS_AFTER, nd_ext_keyword);
+								nd_last_scoped_stmt = nd_stmt;
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
 								continue;
@@ -186,10 +200,12 @@ namespace ama {
 							kw_mode = KW_STMT;
 							continue;
 						} else if( keywords_function[name] ) {
+							nd_pending_else = NULL;
 							nd_keyword = ndi;
 							kw_mode = KW_FUNC;
 							continue;
 						} else if( keywords_not_a_function[name] ) {
+							nd_pending_else = NULL;
 							nd_keyword = ndi;
 							kw_mode = KW_NOT_FUNC;
 							continue;
@@ -333,6 +349,23 @@ namespace ama {
 							}
 							////////
 							nd_last_scoped_stmt = nd_stmt;
+							////////
+							//`else if(){}` case: we just translated the if part, now do the else
+							if( nd_pending_else ) {
+								//do not wrap an additional scope: else {if(){}} is too ugly
+								nd_pending_else.Unlink();
+								nd_stmt.Unlink();
+								nd_if_of_pending_else.Insert(
+									ama::POS_BACK,
+									ama::nExtensionClause(
+										nd_pending_else.data, ama::nAir(), nd_stmt
+									).setCommentsBefore(nd_pending_else.comments_before).setIndent(nd_pending_else.indent_level)
+								);
+								ndi = nd_if_of_pending_else;
+								nd_pending_else = NULL;
+								nd_if_of_pending_else = NULL;
+							}
+							////////
 							ndi = ndi.s;
 							kw_mode = KW_NONE;
 							nd_keyword = NULL;
