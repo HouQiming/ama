@@ -30,7 +30,7 @@ namespace ama {
 	inline JSValueConst! WrapString(char[...]! s) {
 		return JS_NewStringLen(ama::jsctx, s.data(), s.length);
 	}
-	inline! JSValueConst! WrapStringNullable(any s) {
+	inline JSValueConst! WrapStringNullable(char[|]! s) {
 		return s == NULL ? JS_NULL : WrapString(s);
 	}
 	inline int32_t! UnwrapInt32(JSValueConst! val, int32_t! dflt) {

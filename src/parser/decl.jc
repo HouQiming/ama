@@ -214,7 +214,7 @@ namespace ama {
 				} else if( ndi.isSymbol(";") ) {
 					//we can't delimit at ",": C++ constructor parameter list
 					//ndi.data == ","
-					if( ndi.data == ";" && nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
+					if( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 						//unscoped statement
 						//ndi_next = ndi.BreakSibling();
 						//drop the ;
@@ -497,6 +497,19 @@ namespace ama {
 				//C forward declaration with extern
 				TranslateCForwardDeclaration(nd_raw);
 				//note that extern is not necessarily function... we may have extern "C"{}
+			} else if( nd_keyword && kw_mode == KW_CLASS ) {
+				//class forward declaration, treat as keyword statement
+				nd_keyword.BreakSelf();
+				ama::Node*+! nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword.BreakSibling()));
+				nd_stmt.indent_level = nd_keyword.indent_level;
+				nd_stmt.comments_before = nd_keyword.comments_before;
+				if( nd_stmt.c ) {
+					nd_stmt.c.MergeCommentsBefore(nd_keyword);
+				} else {
+					nd_stmt.comments_after = new char[|]!(nd_keyword.comments_after + nd_stmt.comments_after);
+				}
+				nd_stmt.data = nd_keyword.DestroyForSymbol();
+				ndi = nd_raw.Insert(ama::POS_BACK, nd_stmt);
 			}
 		}
 		//C forward declaration
@@ -669,7 +682,6 @@ namespace ama {
 			} else if( nd_stmt.p.node_class == ama::N_SCOPE && nd_owner && nd_asgn && nd_owner.isAncestorOf(nd_asgn) && nd_asgn.c.isAncestorOf(nd_stmt) ) {
 				//could be {} nd_destructuring, here nd_stmt is BS
 				//`type {...,foo,...}=...; {"bar":foo}=...;`
-				//TODO: why didn't we get here?
 				ama::Node*+! nd_destructuring = nd_ref;
 				int! destructured = 0;
 				while( nd_destructuring != nd_stmt ) {

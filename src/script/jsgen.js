@@ -19,11 +19,15 @@ function Generate(version,my_call) {
 	function ClassifyType(nd_type) {
 		let s_src = nd_type.toSource();
 		if( s_src.indexOf('Node') >= 0 ) {
-			if( s_src.indexOf('[') >= 0 ) {
+			if( s_src.indexOf('[') >= 0||s_src.indexOf('vector<') >= 0 ) {
 				return 'Node[]';
 			} else {
 				return 'Node';
 			}
+		} else if( s_src.indexOf('unique_string') >= 0 ) {
+			return 'string^';
+		} else if( s_src.indexOf('std::string') >= 0 || s_src.indexOf('std::span<char') >= 0 || s_src.indexOf('array_base<char') >= 0 ) {
+			return 'string';
 		} else if( s_src.indexOf('char[') >= 0 ) {
 			if( s_src.indexOf('^') >= 0 || s_src.indexOf('[|]') >= 0 ) {
 				return 'string^';
@@ -192,7 +196,7 @@ function Generate(version,my_call) {
 			unwrap_code.validation = [
 				'if(JS_IsNull(val)){',
 				(
-					'nd.' + ppt.name
+					'nd->' + ppt.name
 				),
 				'=NULL;',
 				'}else{',
@@ -203,7 +207,7 @@ function Generate(version,my_call) {
 		code_func.push(
 			'auto ', class_name, 'Get_', ppt.name, '(JSContext*+ jsctx, JSValueConst this_val){',
 			'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));',
-			'return ', WrapValue(nd_type, 'nd.' + ppt.name), ';',
+			'return ', WrapValue(nd_type, 'nd->' + ppt.name), ';',
 			'}',
 			'auto ', class_name, 'Set_', ppt.name, '(JSContext*+ jsctx, JSValueConst this_val, JSValueConst val){',
 			'auto nd=(', class_full_name, '*)(JS_GetOpaque(this_val, ', classid, '));',
@@ -211,11 +215,11 @@ function Generate(version,my_call) {
 		);
 		if( ppt.name === 'sys_flags' || ppt.name === 'node_class' ) {
 			code_func.push(
-				'nd.' + ppt.name, '=(', nd_type.toSource(), ')(', unwrap_code.jc_expr, ')', ';'
+				'nd->' + ppt.name, '=(', nd_type.toSource(), ')(', unwrap_code.jc_expr, ')', ';'
 			);
 		} else {
 			code_func.push(
-				'nd.' + ppt.name, '=', unwrap_code.jc_expr, ';'
+				'nd->' + ppt.name, '=', unwrap_code.jc_expr, ';'
 			);
 		}
 		code_func.push(
@@ -270,6 +274,9 @@ function Generate(version,my_call) {
 				const typing=require('cpp/typing');
 				nd_type=typing.ComputeType(nd_def);
 			}
+			//if(version!=='jc'){
+			//	console.log(ClassifyType(nd_type),nd_type.toSource(),nd_def.data);
+			//}
 			let unwrap_code = UnwrapValue(nd_type, '(' + i.toString() + '<argc?argv[' + i.toString() + 'L]:JS_UNDEFINED)');
 			if( ClassifyType(nd_type) !== 'int' && ClassifyType(nd_type) !== 'float' && unwrap_code.validation ) {
 				//it's nullable, hack the null case
@@ -278,7 +285,7 @@ function Generate(version,my_call) {
 					unwrap_code.validation,
 					'}'
 				);
-				unwrap_code.jc_expr = ['argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L])?', unwrap_code.jc_expr, ':NULL'].join('');
+				unwrap_code.jc_expr = ['argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L])?', unwrap_code.jc_expr, ':nullptr'].join('');
 			} else {
 				code_func.push(unwrap_code.validation);
 			}

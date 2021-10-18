@@ -33,6 +33,7 @@ typing.options = {
 		'__attribute__', '__declspec', '__cdecl', '__stdcall', '__fastcall',
 		'extern', 'function', 'inline', '__inline', 'def', 'fn'
 	]),
+	non_type_postfixes: new Set(['++', '--']),
 	nulls: new Set(['NULL', 'nullptr']),
 	ComputeNumberType: function(nd) {
 		let type = undefined;
@@ -44,7 +45,7 @@ typing.options = {
 			let ch = nd.data[i];
 			if ( ch == 'p' || ch == 'P' || ch == '.' ) {
 				is_int = 0;
-			} else if( ch == 'e' || ch == 'E' ) {
+			} else if ( ch == 'e' || ch == 'E' ) {
 				if ( !nd.data.startsWith('0x') ) {
 					is_int = 0;
 				}
@@ -59,12 +60,12 @@ typing.options = {
 		if ( is_int ) {
 			if ( n_L >= 2 ) {
 				type = n_u ? BasicType('uint64_t') : BasicType('int64_t');
-			} else if( n_L == 1 ) {
+			} else if ( n_L == 1 ) {
 				type = n_u ? BasicType('uintptr_t') : BasicType('intptr_t');
 			} else {
 				type = n_u ? BasicType('unsigned') : BasicType('int');
 			}
-		} else if( nd.data.endsWith("f") ) {
+		} else if ( nd.data.endsWith("f") ) {
 			type = BasicType('float');
 		} else {
 			type = BasicType('double');
@@ -175,14 +176,14 @@ typing.ComputeDeclaredType = function(nd_def) {
 	for (let ndi = nd_def.p; ndi; ndi = ndi.p) {
 		if (ndi.node_class == N_ITEM || ndi.node_class == N_PREFIX || ndi.node_class == N_POSTFIX) {
 			modifiers.push(ndi);
-		} else if(ndi.node_class == N_RAW) {
+		} else if (ndi.node_class == N_RAW) {
 			//just pick the last expr
 			for (let ndj = ndi.c; ndj; ndj = ndj.s) {
 				if (ndj.isAncestorOf(nd_def)) {break;}
 				type = typing.ComputeType(ndj);
 			}
 			break;
-		} else if(ndi.node_class == N_CLASS || ndi.node_class == N_FUNCTION) {
+		} else if (ndi.node_class == N_CLASS || ndi.node_class == N_FUNCTION) {
 			type = ndi;
 			break;
 		} else if(ndi.node_class == N_SEMICOLON || ndi.node_class == N_SCOPE) {
@@ -199,9 +200,9 @@ typing.ComputeDeclaredType = function(nd_def) {
 				let type_new = nd_modifier.Clone();
 				type_new.c.ReplaceWith(type);
 				type = type_new;
-			} else if(nd_modifier.node_class == N_PREFIX) {
+			} else if (nd_modifier.node_class == N_PREFIX) {
 				type = nPrefix(nd_modifier.data, type);
-			} else if(nd_modifier.node_class == N_POSTFIX) {
+			} else if (nd_modifier.node_class == N_POSTFIX) {
 				type = nPostfix(type, nd_modifier.data);
 			}
 		}
@@ -264,10 +265,10 @@ typing.ComputeReturnType = function(type_func) {
 	if (nd_after.node_class == N_LABELED && nd_after.c.node_class == N_AIR) {
 		//air :, a natural extension of the JS syntax, function():foo{}
 		type = typing.ComputeType(nd_after.c.s);
-	} else if(nd_after.node_class == N_RAW && nd_after.c && nd_after.c.isSymbol('->') && nd_after.c.s) {
+	} else if (nd_after.node_class == N_RAW && nd_after.c && nd_after.c.isSymbol('->') && nd_after.c.s) {
 		//air ->, C++ lambda return type
 		type = typing.ComputeType(nd_after.c.s);
-	} else if(nd_before.node_class == N_RAW) {
+	} else if (nd_before.node_class == N_RAW) {
 		//we could have `static __attribute__(foo) void __attribute__(bar) __cdecl f`
 		//go back to front and filter out the calling conventions
 		for (let ndi = nd_before.LastChild(); ndi; ndi = ndi.Prev()) {
@@ -340,7 +341,18 @@ typing.ComputeType = function(nd_expr) {
 		type = typing.options.ComputeNumberType(nd_expr);
 		break;
 	}
-	case N_POSTFIX:
+	case N_POSTFIX: {
+		if (typing.options.non_type_postfixes.has(nd_expr.data)) {
+			//COULDDO: try to find overloaded operators
+			//here we cheat and return the operand
+			type = typing.ComputeType(nd_expr.c);
+			break;
+		} else {
+			//we are self-representative
+			type = nd_expr;
+			break;
+		}
+	}
 	case N_PREFIX: {
 		//COULDDO: try to find overloaded operators
 		//here we cheat and return the operand
@@ -428,12 +440,12 @@ typing.ComputeType = function(nd_expr) {
 	}
 	case N_CALL_TEMPLATE: {
 		let type_template = typing.ComputeType(nd_expr.c);
-		if (type_template && type_template.node_class == N_CLASS) {
-			//we are self-representing
-			type = nd_expr;
-		} else {
+		if (type_template && type_template.node_class == N_FUNCTION) {
 			//we are just a function, let the outer call worry about the return type
 			type = type_template;
+		} else {
+			//we are self-representing
+			type = nd_expr;
 		}
 		break;
 	}
@@ -471,7 +483,7 @@ typing.AccessTypeAt = function(type, nd_site) {
 			ret = ret.dot(names.pop());
 		}
 		return ret;
-	} else if(type.node_class == N_CALL_TEMPLATE) {
+	} else if (type.node_class == N_CALL_TEMPLATE) {
 		let ret = type.Clone();
 		ret.c.ReplaceWith(typing.AccessTypeAt(ret.c, nd_site))
 		return ret;
