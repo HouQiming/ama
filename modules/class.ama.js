@@ -31,7 +31,7 @@ function ListOwnProperties(properties, nd_class) {
 		if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
 			let is_static = last_appearance['static'] && last_appearance['static'].isAncestorOf(ndi);
 			properties.push({
-				enumerable: !is_static | 0,
+				enumerable: (ndi.p.node_class != N_CLASS && !is_static) | 0,
 				writable: !(last_appearance['final'] && last_appearance['final'].isAncestorOf(ndi) || last_appearance['const'] && last_appearance['const'].isAncestorOf(ndi)) | 0,
 				method: 0,
 				own: 1,
@@ -80,7 +80,7 @@ Node.ParseClass = function() {
 	}
 	let base_class_set = new Set();
 	for (let ndi = nd_after; ndi; ndi = PreorderNextSkipping(ndi, nd_after)) {
-		if ((ndi.node_class == N_REF || ndi.node_class == N_DOT) &&!g_not_class.has(ndi.data)) {
+		if ((ndi.node_class == N_REF || ndi.node_class == N_DOT) && !g_not_class.has(ndi.data)) {
 			for (let nd_class of ndi.LookupClass()) {
 				base_class_set.add(nd_class);
 			}
@@ -113,7 +113,7 @@ Node.ParseClass = function() {
 		base_classes: base_classes,
 		properties: properties,
 	}
-}
+};
 
 function LookupClassInFile(ret, nd_root, nd_name) {
 	//COULDDO: match-ness scoring + high score picking, but conservative listing could work better
@@ -134,7 +134,7 @@ Node.LookupClass = function() {
 		LookupClassInFile(ret, nd_root, this);
 	}
 	return ret.map(nd=>nd.ParseClass()).filter(desc=>desc.properties.length > 0);
-}
+};
 
 ///we return the core class and ignore other modifiers
 Node.LookupVariableClass = function() {

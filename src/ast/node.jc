@@ -941,9 +941,13 @@ ama::Node*+! ama::Node::PreorderNext(ama::Node*+! this, ama::Node*+! nd_root) {
 }
 
 ama::Node*+! ama::Node::PreorderSkipChildren(ama::Node*+! this, ama::Node*+! nd_root) {
-	for(ama::Node*+! ndi = this; ndi != nd_root; ndi = ndi.p) {
+	ama::Node*+! ndi = NULL;
+	for(ndi = this; ndi && ndi != nd_root; ndi = ndi.p) {
 		if( ndi.s ) { return ndi.s; }
 	}
+	//if( nd_root && nd_root.p && !ndi ) {
+	//	console.log('warning: PreorderNext leaked for', nd_root.toSource());
+	//}
 	return NULL;
 }
 

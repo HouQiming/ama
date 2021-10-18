@@ -1,152 +1,153 @@
 //this module is automatically executed by ama::InitScriptEnv()
 //the `require` system isn't ready here so don't use it
-(function(){
+//@ama ParseCurrentFile().Save()
+(function() {
 /////////////
-Node.setFlags=function(flags){
-	this.flags=flags;
+Node.setFlags = function(flags) {
+	this.flags = flags;
 	return this;
 }
 
-Node._isRawNode=Node.isRawNode;
-Node.isRawNode=function(s0,s1){
-	if(typeof(s0)==='string'){s0=s0.charCodeAt(0);}
-	if(typeof(s1)==='string'){s1=s1.charCodeAt(0);}
-	return this._isRawNode(s0,s1);
+Node._isRawNode = Node.isRawNode;
+Node.isRawNode = function(s0, s1) {
+	if (typeof(s0) === 'string') {s0 = s0.charCodeAt(0);}
+	if (typeof(s1) === 'string') {s1 = s1.charCodeAt(0);}
+	return this._isRawNode(s0, s1);
 }
 
-Node.setData=function(data){
-	this.data=data;
+Node.setData = function(data) {
+	this.data = data;
 	return this;
 }
 
-Node.setIndent=function(indent_level){
-	this.indent_level=indent_level;
+Node.setIndent = function(indent_level) {
+	this.indent_level = indent_level;
 	return this;
 }
 
-Node.setCommentsBefore=function(comments_before){
-	this.comments_before=comments_before;
+Node.setCommentsBefore = function(comments_before) {
+	this.comments_before = comments_before;
 	return this;
 }
 
-Node.setCommentsAfter=function(comments_after){
-	this.comments_after=comments_after;
+Node.setCommentsAfter = function(comments_after) {
+	this.comments_after = comments_after;
 	return this;
 }
 
-Node.call=function(...args){
-	return nCall.apply(null,[this].concat(args));
+Node.call = function(...args) {
+	return nCall.apply(null, [this].concat(args));
 }
 
-Node.enclose=function(s_brackets){
-	return nRaw(this).setFlags((s_brackets.charCodeAt(0)&0xff)|(s_brackets.charCodeAt(1)&0xff)<<8)
+Node.enclose = function(s_brackets) {
+	return nRaw(this).setFlags((s_brackets.charCodeAt(0) & 0xff) | (s_brackets.charCodeAt(1) & 0xff) << 8);
 }
 
-Node.then=function(f,...args){
-	let ret=f.apply(null,[this].concat(args));
-	if(ret===undefined){
-		ret=this;
+Node.then = function(f, ...args) {
+	let ret = f.apply(null, [this].concat(args));
+	if (ret === undefined) {
+		ret = this;
 	}
 	return ret;
 }
 
-Node.toJSON=function(){
-	let children=[];
-	for(let ndi=this.c;ndi;ndi=ndi.s){
+Node.toJSON = function() {
+	let children = [];
+	for (let ndi = this.c; ndi; ndi = ndi.s) {
 		children.push(ndi);
 	}
 	return {
-		"[node_class]":__node_class_names[this.node_class],
-		data:this.data||undefined,
-		flags:this.flags||undefined,
-		indent_level:this.indent_level||undefined,
-		comments_before:this.comments_before||undefined,
-		comments_after:this.comments_after||undefined,
-		"[children]":children,
+		"[node_class]": __node_class_names[this.node_class],
+		data: this.data || undefined,
+		flags: this.flags || undefined,
+		indent_level: this.indent_level || undefined,
+		comments_before: this.comments_before || undefined,
+		comments_after: this.comments_after || undefined,
+		"[children]": children,
 	}
 }
 
-Node.MatchAny=function(node_class,name){
-	if(name===undefined){
+Node.MatchAny = function(node_class, name) {
+	if (name === undefined) {
 		//node_class is actually the name
-		return nNodeof(nRef(node_class))
-	}else{
-		return nNodeof(nCall(nRef(__node_class_names[node_class]),nRef(name)))
+		return nNodeof(nRef(node_class));
+	} else {
+		return nNodeof(nCall(nRef(__node_class_names[node_class]), nRef(name)));
 	}
 }
 
-Node.MatchDot=function(nd_object,name){
+Node.MatchDot = function(nd_object, name) {
 	return nNodeof(nd_object.dot(name));
 }
 
-Node.dfsMatch=function(ret,nd_pattern){
-	if(nd_pattern.node_class===N_NODEOF){
-		let nd_save=nd_pattern.c;
-		if(nd_save.node_class===N_REF){
+Node.dfsMatch = function(ret, nd_pattern) {
+	if (nd_pattern.node_class === N_NODEOF) {
+		let nd_save = nd_pattern.c;
+		if (nd_save.node_class === N_REF) {
 			//name
-			ret[nd_save.data]=this;
-		}else if(nd_save.node_class===N_CALL&&nd_save.c.s&&!nd_save.c.s.s){
+			ret[nd_save.data] = this;
+		} else if(nd_save.node_class === N_CALL && nd_save.c.s && !nd_save.c.s.s) {
 			//N_FOO(name)
-			if(this.node_class!==__global[nd_save.GetName()]){
+			if (this.node_class !== __global[nd_save.GetName()]) {
 				return false;
 			}
-			ret[nd_save.c.s.GetName()]=this;
-		}else if(nd_save.node_class===N_DOT){
-			if(this.node_class!==N_DOT){return false;}
-			if(!ndi.dfsMatch(this.c,nd_save.c)){
+			ret[nd_save.c.s.GetName()] = this;
+		} else if(nd_save.node_class === N_DOT) {
+			if (this.node_class !== N_DOT) {return false;}
+			if (!ndi.dfsMatch(this.c, nd_save.c)) {
 				return false;
 			}
-			ret[nd_save.GetName()]=nRef(this.data);
-		}else{
-			throw new Error('invalid pattern: '+nd_pattern.dump())
-		}
+			ret[nd_save.GetName()] = nRef(this.data);
+		} else {
+			throw new Error('invalid pattern: ' + nd_pattern.dump())
+			}
 		return true;
 	}
-	if(this.node_class!==nd_pattern.node_class||this.data!==nd_pattern.data){
+	if (this.node_class !== nd_pattern.node_class || this.data !== nd_pattern.data) {
 		return false;
 	}
-	let ndj=nd_pattern.c;
-	for(let ndi=this.c;ndi;ndi=ndi.s){
-		if(!ndj){
+	let ndj = nd_pattern.c;
+	for (let ndi = this.c; ndi; ndi = ndi.s) {
+		if (!ndj) {
 			return false;
 		}
-		if(!ndi.dfsMatch(ret,ndj)){
+		if (!ndi.dfsMatch(ret, ndj)) {
 			return false;
 		}
-		ndj=ndj.s;
+		ndj = ndj.s;
 	}
-	if(ndj){
+	if (ndj) {
 		return false;
 	}
 	return true;
 }
 
-Node.Match=function(nd_pattern){
-	let ret={nd:this};
-	if(this.dfsMatch(ret,nd_pattern)){
+Node.Match = function(nd_pattern) {
+	let ret = {nd: this};
+	if (this.dfsMatch(ret, nd_pattern)) {
 		return ret;
-	}else{
+	} else {
 		return undefined;
 	}
 }
 
-Node.MatchAll=function(nd_pattern){
-	return this.FindAll(nd_pattern.node_class,null).map(nd=>nd.Match(nd_pattern)).filter(ret=>ret);
+Node.MatchAll = function(nd_pattern) {
+	return this.FindAll(nd_pattern.node_class, null).map(nd=>nd.Match(nd_pattern)).filter(ret=>ret);
 }
 
-Node.Subst=function(match){
-	let nd_ret=this.Clone();
-	for(let ndi=nd_ret;ndi;ndi=ndi.PreorderNext(nd_ret)){
-		if(ndi.node_class===N_NODEOF){
-			let nd_name=ndi.c;
-			if(nd_name.node_class===N_DOT){
-				let nd_subst=nd_name.c.Subst(match).dot(match[nd_name.GetName()].GetName()||'');
-				ndi=ndi.ReplaceWith(nd_subst);
-			}else{
-				if(nd_name.node_class===N_CALL&&nd_name.c.s){nd_name=nd_name.c.s;}
-				let nd_subst=match[nd_name.GetName()];
-				if(nd_subst){
-					ndi=ndi.ReplaceWith(nd_subst);
+Node.Subst = function(match) {
+	let nd_ret = this.Clone();
+	for (let ndi = nd_ret; ndi; ndi = ndi.PreorderNext(nd_ret)) {
+		if (ndi.node_class === N_NODEOF) {
+			let nd_name = ndi.c;
+			if (nd_name.node_class === N_DOT) {
+				let nd_subst = nd_name.c.Subst(match).dot(match[nd_name.GetName()].GetName() || '');
+				ndi = ndi.ReplaceWith(nd_subst);
+			} else {
+				if (nd_name.node_class === N_CALL && nd_name.c.s) {nd_name = nd_name.c.s;}
+				let nd_subst = match[nd_name.GetName()];
+				if (nd_subst) {
+					ndi = ndi.ReplaceWith(nd_subst);
 				}
 			}
 		}
@@ -154,103 +155,115 @@ Node.Subst=function(match){
 	return nd_ret;
 }
 
-Node.Save=function(options){
-	if(typeof(options)==='string'){
-		if(options.startsWith('.')){
-			options={change_ext:options};
-		}else{
-			options={name:options};
+Node.Save = function(options) {
+	if (typeof(options) === 'string') {
+		if (options.startsWith('.')) {
+			options = {change_ext: options};
+		} else {
+			options = {name: options};
 		}
 	}
-	if(!options){
-		options=__global.default_options;
+	if (!options) {
+		options = __global.default_options;
 	}
-	if(options.change_ext){
+	if (options.change_ext) {
 		//we need to handle .ama.js => .js shenanigans, so remove everything after the *first* dot
-		let pdot=this.data.indexOf('.');
-		if(pdot<0){pdot=this.data.length;}
-		options.name=this.data.substr(0,pdot)+(options.change_ext.startsWith('.')?'':'.')+options.change_ext;
+		let pdot = this.data.indexOf('.');
+		if (pdot < 0) {pdot = this.data.length;}
+		options.name = this.data.substr(0, pdot) + (options.change_ext.startsWith('.') ? '' : '.') + options.change_ext;
 	}
-	let content=this.toSource(options);
-	let name=options.name||this.data;
-	if(options.only_write_changed&&__existsSync(name)&&content===__buffer_toString.call(__readFileSync(name))){
-		 return 'no change found';
+	let content = this.toSource(options);
+	let name = options.name || this.data;
+	if (options.only_write_changed && __existsSync(name) && content === __buffer_toString.call(__readFileSync(name))) {
+		 //'no change found'
+		 return this;
 	}
-	__writeFileSync(name,content);
+	__writeFileSync(name, content);
+	return this;
+}
+
+Node.StripRedundantPrefixSpace = function() {
+	for (let ndi = this; ndi; ndi = ndi.PreorderNext(this)) {
+		if (ndi.comments_before === ' ' && (ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || ndi.p.node_class === N_BINOP)) {
+			ndi.comments_before = '';
+		}
+	}
 	return this;
 }
 
 Node.AutoSemicolon = function() {
-	for(let nd of this.FindAll(N_RAW,null)){
-		if(nd.flags&0xffff){continue;}
-		if(!nd.p||(nd.p.node_class!==N_SCOPE&&nd.p.node_class!==N_FILE)){continue;}
-		if(!nd.c||!nd.c.s){continue;}
-		if(nd.Owning(N_NODEOF)){continue;}
+	for (let nd of this.FindAll(N_RAW, null)) {
+		if (nd.flags & 0xffff) {continue;}
+		if (!nd.p || (nd.p.node_class !== N_SCOPE && nd.p.node_class !== N_FILE)) {continue;}
+		if (!nd.c || !nd.c.s) {continue;}
+		if (nd.Owning(N_NODEOF)) {continue;}
 		//we are a N_RAW statement with at least 2 children
-		let new_children=[nd.c];
-		for(let ndi=nd.c.s;ndi;ndi=ndi.s){
-			if(ndi.comments_before.indexOf('\n')>=0&&ndi.node_class!==N_SCOPE&&ndi.indent_level===ndi.Prev().indent_level){
+		let new_children = [nd.c];
+		for (let ndi = nd.c.s; ndi; ndi = ndi.s) {
+			if (ndi.comments_before.indexOf('\n') >= 0 && ndi.node_class !== N_SCOPE && ndi.indent_level === ndi.Prev().indent_level) {
 				new_children.push(ndi);
 			}
 		}
-		if(new_children.length>1){
+		if (new_children.length > 1) {
 			//we have multiple statements
-			for(let i=new_children.length-1;i>=0;i--){
-				if(i>0){
+			for (let i = new_children.length - 1; i >= 0; i--) {
+				if (i > 0) {
 					new_children[i].Prev().BreakSibling();
-				}else if(new_children[i].p){
+				} else if(new_children[i].p) {
 					new_children[i].p.BreakChild();
 				}
 			}
-			for(let i=0;i<new_children.length;i++){
-				let ndi=new_children[i];
-				if(ndi.s){
-					new_children[i]=nSemicolon(ndi.toSingleNode());
-				}else{
-					let nd_test=ndi;
-					while((nd_test.node_class===N_SCOPED_STATEMENT||nd_test.node_class===N_KEYWORD_STATEMENT||
-					nd_test.node_class===N_EXTENSION_CLAUSE)&&nd_test.c){
-						nd_test=nd_test.LastChild()
-					}
-					if(nd_test.node_class!==N_SCOPE){
-						new_children[i]=nSemicolon(ndi)
-					}
+			for (let i = 0; i < new_children.length; i++) {
+				let ndi = new_children[i];
+				let nd_test = ndi;
+				while ((nd_test.node_class === N_SCOPED_STATEMENT || nd_test.node_class === N_KEYWORD_STATEMENT ||
+				nd_test.node_class === N_EXTENSION_CLAUSE) && nd_test.c) {
+					nd_test=nd_test.LastChild()
+				}
+				if (nd_test.node_class !== N_SCOPE && (ndi.node_class === N_KEYWORD_STATEMENT && !ndi.data.startsWith('#') || 
+					ndi.node_class === N_ASSIGNMENT || 
+					ndi.node_class === N_CALL
+				)) {
+					new_children[i] = nSemicolon(ndi.toSingleNode());
 				}
 			}
-			nd.ReplaceWith(nScope.apply(null,new_children).c);
+			nd.ReplaceWith(nScope.apply(null, new_children).c);
 		}
 	}
-	for(let nd of this.FindAll(N_SCOPE,null).concat([this])){
-		if(nd.Owning(N_NODEOF)){continue;}
+	for (let nd of this.FindAll(N_SCOPE, null).concat([this])) {
+		if (nd.Owning(N_NODEOF)) {continue;}
 		//let ndi=nd.LastChild();
 		//if(!ndi){continue;}
-		for(let ndi=nd.c;ndi;ndi=ndi.s){
-			if(ndi.s&&(ndi.s.isSymbol(',')||ndi.s.isSymbol(';'))){continue;}
-			let nd_test=ndi;
-			while((nd_test.node_class===N_SCOPED_STATEMENT||nd_test.node_class===N_KEYWORD_STATEMENT||
-			nd_test.node_class===N_EXTENSION_CLAUSE)&&nd_test.c){
+		for (let ndi = nd.c; ndi; ndi = ndi.s) {
+			if (ndi.s && (ndi.s.isSymbol(',') || ndi.s.isSymbol(';'))) {continue;}
+			let nd_test = ndi;
+			while ((nd_test.node_class === N_SCOPED_STATEMENT || nd_test.node_class === N_KEYWORD_STATEMENT ||
+			nd_test.node_class === N_EXTENSION_CLAUSE) && nd_test.c) {
 				nd_test=nd_test.LastChild()
 			}
-			if(nd_test.node_class!==N_SCOPE&&(ndi.node_class===N_KEYWORD_STATEMENT||ndi.node_class===N_ASSIGNMENT||ndi.node_class===N_CALL)){
-				let nd_tmp=Node.GetPlaceHolder();
+			if (nd_test.node_class !== N_SCOPE && (ndi.node_class === N_KEYWORD_STATEMENT && !ndi.data.startsWith('#') || 
+				ndi.node_class === N_ASSIGNMENT || 
+				ndi.node_class === N_CALL
+			)) {
+				let nd_tmp = Node.GetPlaceHolder();
 				ndi.ReplaceWith(nd_tmp);
-				ndi=nd_tmp.ReplaceWith(nSemicolon(ndi));
+				ndi = nd_tmp.ReplaceWith(nSemicolon(ndi));
 				//shove trailing comments after the ;
-				let all_comments=[];
-				for(let ndj=ndi;;ndj=ndj.LastChild()){
-					if(ndj.comments_after){
+				let all_comments = [];
+				for (let ndj = ndi; ; ndj = ndj.LastChild()) {
+					if (ndj.comments_after) {
 						all_comments.push(ndj.comments_after);
 					}
-					if(ndj.node_class==N_SCOPE||ndj.node_class==N_CALL||ndj.node_class==N_CALL_TEMPLATE||ndj.node_class==N_SCOPED_STATEMENT||!ndj.c){break;}
+					if (ndj.node_class == N_SCOPE || ndj.node_class == N_CALL || ndj.node_class == N_CALL_TEMPLATE || ndj.node_class == N_SCOPED_STATEMENT || !ndj.c) {break;}
 				}
-				if(all_comments.length>0){
-					for(let ndj=ndi;;ndj=ndj.LastChild()){
-						if(ndj.comments_after){
-							ndj.comments_after='';
+				if (all_comments.length > 0) {
+					for (let ndj = ndi; ; ndj = ndj.LastChild()) {
+						if (ndj.comments_after) {
+							ndj.comments_after = '';
 						}
-						if(!ndj.c){break;}
+						if (!ndj.c) {break;}
 					}
-					ndi.comments_after=all_comments.reverse().join('');
+					ndi.comments_after = all_comments.reverse().join('');
 				}
 			}
 		}
@@ -258,18 +271,18 @@ Node.AutoSemicolon = function() {
 	return this;
 }
 
-Node.TranslateTemplates=function(match_jobs, is_forward){
-	let nd_root=this;
+Node.TranslateTemplates = function(match_jobs, is_forward) {
+	let nd_root = this;
 	for (let ndi = nd_root; ndi; ndi = ndi.PreorderNext(nd_root)) {
 		for (let job of match_jobs) {
-			let match = ndi.Match(is_forward?job.from:job.to);
+			let match = ndi.Match(is_forward ? job.from : job.to);
 			if (match) {
 				for (let param in match) {
 					if (param !== 'nd' && match[param].s) {match[param].BreakSibling();}
 				}
-				ndi = ndi.ReplaceWith((is_forward?job.to:job.from).Subst(match));
-				if(match.nd===nd_root){
-					nd_root=ndi;
+				ndi = ndi.ReplaceWith((is_forward ? job.to : job.from).Subst(match));
+				if (match.nd === nd_root) {
+					nd_root = ndi;
 				}
 				break;
 			}
@@ -279,52 +292,52 @@ Node.TranslateTemplates=function(match_jobs, is_forward){
 }
 
 //__global.c_include_paths=['/usr/include','/usr/local/include']
-__global.default_options={
-	enable_hash_comment:0,
-	symbols:'!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->*',
-	identifier_charset:'0-9A-Za-z_$#',
-	number_charset:'0-9bouUlLfFn.eE',
-	hex_number_charset:'0-9A-Fa-fx.pPuUlLn',
-	exponent_charset:'0-9f',
-	regexp_flags_charset:'A-Za-z',
-	enable_unicode_identifiers:1,
-	finish_incomplete_code:0,
+__global.default_options = {
+	enable_hash_comment: 0,
+	symbols: '!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->*',
+	identifier_charset: '0-9A-Za-z_$#',
+	number_charset: '0-9bouUlLfFn.eE',
+	hex_number_charset: '0-9A-Fa-fx.pPuUlLn',
+	exponent_charset: '0-9f',
+	regexp_flags_charset: 'A-Za-z',
+	enable_unicode_identifiers: 1,
+	finish_incomplete_code: 0,
 	///////////
-	parse_operators:1,
-	parse_pointed_brackets:1,
-	parse_scoped_statements:1,
-	parse_keyword_statements:1,
-	parse_colon_statements:1,
-	parse_cpp11_lambda:1,
-	parse_declarations:1,
-	parse_cpp_declaration_initialization:1,
-	parse_c_conditional:1,
-	parse_labels:1,
-	parse_air_object:1,
-	parse_indent_as_scope:0,
-	parse_c_forward_declarations:1,
-	struct_can_be_type_prefix:1,
-	parse_js_regexp:1,
+	parse_operators: 1,
+	parse_pointed_brackets: 1,
+	parse_scoped_statements: 1,
+	parse_keyword_statements: 1,
+	parse_colon_statements: 1,
+	parse_cpp11_lambda: 1,
+	parse_declarations: 1,
+	parse_cpp_declaration_initialization: 1,
+	parse_c_conditional: 1,
+	parse_labels: 1,
+	parse_air_object: 1,
+	parse_indent_as_scope: 0,
+	parse_c_forward_declarations: 1,
+	struct_can_be_type_prefix: 1,
+	parse_js_regexp: 1,
 	///////////
-	binary_operators:'||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
-	prefix_operators:'++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
-	postfix_operators:'const volatile ++ --',
-	cv_qualifiers:'const volatile',
+	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
+	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
+	postfix_operators: 'const volatile ++ --',
+	cv_qualifiers: 'const volatile',
 	//void is too common in C/C++ to be treated as an operator by default
-	named_operators:'typeof delete sizeof await co_await new in instanceof as const volatile',
+	named_operators: 'typeof delete sizeof await co_await new in instanceof as const volatile',
 	//unlike general named_operators, c_type_prefix_operators only make sense when used before another identifier
-	c_type_prefix_operators:'unsigned signed long short',
-	ambiguous_type_suffix:'* ** ^ & &&',
+	c_type_prefix_operators: 'unsigned signed long short',
+	ambiguous_type_suffix: '* ** ^ & &&',
 	///////////
-	keywords_class:'class struct union namespace interface impl trait',
-	keywords_scoped_statement:'enum if for while do try switch',
-	keywords_extension_clause:'until else elif except catch finally while #elif #else',
-	keywords_function:'extern function fn def inline',
-	keywords_after_class_name:': extends implements for where',
-	keywords_after_prototype:': -> => throw const noexcept override',
-	keywords_not_a_function:'#define #if return',
+	keywords_class: 'class struct union namespace interface impl trait',
+	keywords_scoped_statement: 'enum if for while do try switch',
+	keywords_extension_clause: 'until else elif except catch finally while #elif #else',
+	keywords_function: 'extern function fn def inline',
+	keywords_after_class_name: ': extends implements for where',
+	keywords_after_prototype: ': -> => throw const noexcept override',
+	keywords_not_a_function: '#define #if return',
 	//case is better treated as a part of a label
-	keywords_statement:'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef break continue',
+	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef break continue',
 	///////////
 	//codegen
 	tab_width: 4,
@@ -335,28 +348,28 @@ __global.default_options={
 	only_write_changed: 1,
 };
 
-let g_jc_options=Object.assign(Object.create(__global.default_options),{
-	ambiguous_type_suffix:'* ** ^ & && ! +',
-	parse_js_regexp:0
+let g_jc_options = Object.assign(Object.create(__global.default_options), {
+	ambiguous_type_suffix: '* ** ^ & && ! +',
+	parse_js_regexp: 0
 });
-__global.extension_specific_options={
-	'.py':Object.assign(Object.create(__global.default_options),{
-		enable_hash_comment:1,
-		parse_indent_as_scope:1,
-		parse_js_regexp:0
+__global.extension_specific_options = {
+	'.py': Object.assign(Object.create(__global.default_options), {
+		enable_hash_comment: 1,
+		parse_indent_as_scope: 1,
+		parse_js_regexp: 0
 	}),
-	'.jc':g_jc_options,
-	'.jch':g_jc_options
+	'.jc': g_jc_options,
+	'.jch': g_jc_options
 }
 
-__global.__PrepareOptions=function(filename,options){
-	let pdot=filename.lastIndexOf('.');
-	let proto=__global.extension_specific_options[filename.substr(pdot).toLowerCase()];
-	if(proto){
-		let ret=Object.create(proto);
-		if(options){
-			for(let key in options){
-				ret[key]=options[key];
+__global.__PrepareOptions = function(filename, options) {
+	let pdot = filename.lastIndexOf('.');
+	let proto = __global.extension_specific_options[filename.substr(pdot).toLowerCase()];
+	if (proto) {
+		let ret = Object.create(proto);
+		if (options) {
+			for (let key in options) {
+				ret[key] = options[key];
 			}
 		}
 		return ret;
@@ -364,36 +377,36 @@ __global.__PrepareOptions=function(filename,options){
 	return options;
 }
 
-function fake_options_ctor(){}
-fake_options_ctor.prototype=__global.default_options;
+function fake_options_ctor() {}
+fake_options_ctor.prototype = __global.default_options;
 
-__global.__InheritOptions=function(options){
-	if(!options){return __global.default_options;}
-	if(options===__global.default_options||options instanceof fake_options_ctor){
+__global.__InheritOptions = function(options) {
+	if (!options || options === __global.default_options) {return Object.create(__global.default_options);}
+	if (options instanceof fake_options_ctor) {
 		return options;
-	}else{
-		return Object.assign(Object.create(__global.default_options),options);
+	} else {
+		return Object.assign(Object.create(__global.default_options), options);
 	}
 }
 
-__global.process={
-	env:new Proxy({}, {
-		get:function(target,key){
+__global.process = {
+	env: new Proxy({}, {
+		get: function(target, key) {
 			return __getenv(key);
 		}
 	}),
-	platform:__platform,
-	chdir:__chdir
+	platform: __platform,
+	chdir: __chdir
 };
 
-__global.__RequireNativeLibrary=function(exports,module,__filename,__dirname){
-	let handle=NativeLibrary.load(__filename);
-	module.handle=handle;
-	let name=JSON.parse(__path_parse(__filename)).name.toLowerCase();
-	if(__platform!=='win32'&&name.startsWith('lib')){name=name.substr(3);}
-	let code=handle.run('AmaInit_'+name,module);
-	if(code!==0){
-		throw new Error(['native module ',JSON.stringify(__filename),' failed with code ',JSON.stringify(code)].join(''));
+__global.__RequireNativeLibrary = function(exports, module, __filename, __dirname) {
+	let handle = NativeLibrary.load(__filename);
+	module.handle = handle;
+	let name = JSON.parse(__path_parse(__filename)).name.toLowerCase();
+	if (__platform !== 'win32' && name.startsWith('lib')) {name = name.substr(3);}
+	let code = handle.run('AmaInit_' + name, module);
+	if (code !== 0) {
+		throw new Error(['native module ', JSON.stringify(__filename), ' failed with code ', JSON.stringify(code)].join(''));
 	}
 }
 

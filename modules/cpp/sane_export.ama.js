@@ -4,7 +4,7 @@ const path = require('path');
 require('class');
 
 function BidirTransform(nd_root, is_forward) {
-	if (path.extname(nd_root.data).startsWith('h')) {return nd_root;}
+	if (path.extname(nd_root.data).startsWith('.h')) {return nd_root;}
 	let from = is_forward ? 'public' : 'static';
 	let to = is_forward ? 'static' : 'public';
 	for (let nd_func of nd_root.FindAll(N_FUNCTION, null)) {

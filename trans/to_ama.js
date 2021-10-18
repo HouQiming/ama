@@ -6,6 +6,7 @@ const sane_export=require('cpp/sane_export');
 const move_operator=require('cpp/move_operator');
 const unified_null=require('cpp/unified_null');
 ParseCurrentFile()
+	.StripRedundantPrefixSpace()
 	.then(jsism.EnableJSLambdaSyntax.inverse)
 	.then(unified_null.inverse)
 	.then(move_operator.inverse)

@@ -81,7 +81,7 @@ function Transform(nd_root, options) {
 		let names = [];
 		while (nd_name.node_class == N_DOT) {
 			names.push(nd_name.data)
-			nd_name = nd_name.c;
+				nd_name = nd_name.c;
 		};
 		if (nd_name.node_class != N_AIR) {
 			names.push(nd_name.GetName());
@@ -129,7 +129,7 @@ function Transform(nd_root, options) {
 		//place #endif to EOF again
 		nd_endif.Unlink();
 		nd_header.Insert(POS_BACK, nd_endif);
-		if (options.audit) {
+		if (options && options.audit) {
 			nd_header.Save({name: options.audit});
 		} else {
 			nd_header.Save();

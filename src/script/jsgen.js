@@ -9,7 +9,7 @@ function Generate(version,my_call) {
 		nd_node_jch=compiler.Load(path.resolve(__dirname, '../ast/node.jch'));
 	}else{
 		require('class');
-		nd_node_jch=require('depends').LoadFile(path.resolve(__dirname, '../ast/node.jch'));
+		nd_node_jch=require('depends').LoadFile(path.resolve(__dirname, '../ast/node.hpp'));
 		code_func.push('namespace ama{\n');
 	}
 	let class_name = 'Node';
@@ -159,37 +159,25 @@ function Generate(version,my_call) {
 		});
 	}else{
 		//console.log(JSON.stringify(nd_node_jch,null,1))
+		const typing=require('cpp/typing');
 		let class_desc = nd_node_jch.Find(N_CLASS,'Node').ParseClass();
 		for(let ppt of class_desc.properties){
 			if(ppt.enumerable){
 				let nd_ref=ppt.node;
-				let nd_typed_var=nd_ref.p;
-				if(nd_typed_var.node_class===N_TYPED_VAR){
-					properties.push({
-						name:nd_ref.data,
-						type:nd_typed_var.c
-					})
-				}else{
-					console.log(nd_typed_var);
-					throw new Error('bad nd_typed_var')
-				}
+				properties.push({
+					name:nd_ref.data,
+					type:typing.ComputeType(nd_ref)
+				})
 			}
 			if(ppt.method){
 				if( ppt.name === 'CloneEx' || ppt.name === 'CloneCB' || ppt.name === 'forEach' ) {
 					continue;
 				}
 				let nd_func=ppt.node;
-				let nd_type=nd_func.c;
-				if(nd_type.node_class===N_TYPED_VAR){
-					nd_type=nd_type.c;
-				}else{
-					console.log(nd_type);
-					throw new Error('bad nd_before')
-				}
 				methods.push({
 					name:nd_func.data,
 					paramlist:nd_func.c.s,
-					return_type:nd_type
+					return_type:typing.ComputeReturnType(nd_func)
 				});
 			}
 		}
@@ -269,6 +257,9 @@ function Generate(version,my_call) {
 		let i = 0;
 		for(let ndi = nd_paramlist.c; ndi; ndi = ndi.s) {
 			let nd_def = ndi.c;
+			if(version==='ama'){
+				nd_def=nd_def.FindAll(N_REF,null).filter(nd=>nd.flags&REF_DECLARED)[0];
+			}
 			if( nd_def.GetName() === 'this' ) {
 				continue;
 			}
@@ -276,13 +267,8 @@ function Generate(version,my_call) {
 			if(version==='jc'){
 				nd_type=nd_def.c;
 			}else{
-				if(nd_def.node_class==N_TYPED_VAR){
-					nd_type=nd_def.c;
-					nd_def=nd_def.c.s;
-				}else{
-					console.log(nd_def);
-					throw new Error('bad param node')
-				}
+				const typing=require('cpp/typing');
+				nd_type=typing.ComputeType(nd_def);
 			}
 			let unwrap_code = UnwrapValue(nd_type, '(' + i.toString() + '<argc?argv[' + i.toString() + 'L]:JS_UNDEFINED)');
 			if( ClassifyType(nd_type) !== 'int' && ClassifyType(nd_type) !== 'float' && unwrap_code.validation ) {
@@ -335,9 +321,13 @@ function Generate(version,my_call) {
 		let class_desc = nd_node_jch.Find(N_CLASS, 'ama').ParseClass();
 		for(let ppt of class_desc.properties){
 			if(ppt.enumerable){
+				let nd_asgn = ppt.node.Owning(N_ASSIGNMENT);
+				if(!nd_asgn){
+					continue;
+				}
 				node_constants.push({
 					nd_def:ppt.node,
-					nd_value:ppt.node.Owning(N_ASSIGNMENT).c.s
+					nd_value:nd_asgn.c.s
 				});
 			}
 		}

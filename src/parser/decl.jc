@@ -396,19 +396,19 @@ namespace ama {
 								`goto not_declaration;`
 							}
 							if( nd_paramlist.node_class == ama::N_CALL ) {
-								int! keyword_was_paramlist = nd_keyword == nd_paramlist;
+								int! keyword_was_paramlist = nd_prototype_start == nd_paramlist;
 								nd_paramlist = ama::UnparseCall(nd_paramlist).s;
 								if( keyword_was_paramlist ) {
-									nd_keyword = nd_paramlist;
+									nd_prototype_start = nd_paramlist;
 								}
 							}
 							//keyworded function shouldn't have any junk before... but C++ function has both junk before and junk after
 							//before (C++ return type plus junk plus name, or just a name), paramlist, after, body, figure out return type separately
 							ama::Node*+! nd_func = ama::ReplaceChildRange(
-								nd_keyword, ndi,
+								nd_prototype_start, ndi,
 								ama::CreateNode(ama::N_FUNCTION, NULL)
 							);
-							ama::Node*+! nd_before = nd_keyword;
+							ama::Node*+! nd_before = nd_prototype_start;
 							if( nd_before == nd_paramlist ) {
 								nd_before = ama::nAir();
 							}

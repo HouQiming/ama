@@ -257,6 +257,35 @@ typing.MatchTemplateType = function(type_in, type_template, names) {
 	return type_in.Match(nd_pattern);
 };
 
+typing.ComputeReturnType = function(type_func) {
+	let type = undefined;
+	let nd_after = type_func.c.s.s;
+	let nd_before = type_func.c;
+	if (nd_after.node_class == N_LABELED && nd_after.c.node_class == N_AIR) {
+		//air :, a natural extension of the JS syntax, function():foo{}
+		type = typing.ComputeType(nd_after.c.s);
+	} else if(nd_after.node_class == N_RAW && nd_after.c && nd_after.c.isSymbol('->') && nd_after.c.s) {
+		//air ->, C++ lambda return type
+		type = typing.ComputeType(nd_after.c.s);
+	} else if(nd_before.node_class == N_RAW) {
+		//we could have `static __attribute__(foo) void __attribute__(bar) __cdecl f`
+		//go back to front and filter out the calling conventions
+		for (let ndi = nd_before.LastChild(); ndi; ndi = ndi.Prev()) {
+			if (ndi.node_class == N_REF && typing.options.non_type_function_keywords.has(ndi.data)) {
+				if (type) {break;} else {continue;}
+			}
+			if (ndi.node_class == N_CALL && ndi.c.node_class == N_REF && ndi.node_class == N_CALL && ndi.c.node_class == N_REF && typing.options.non_type_function_keywords.has(ndi.c.data)) {
+				if (type) {break;} else {continue;}
+			}
+			type = ndi;
+			if (type.node_class != N_REF) {
+				break;
+			}
+		}
+	}
+	return type;
+};
+
 typing.ComputeType = function(nd_expr) {
 	let type = typing.type_cache.get(nd_expr);
 	if (type) {return type;}
@@ -393,30 +422,7 @@ typing.ComputeType = function(nd_expr) {
 			type_func = typing.ComputeType(type_func.c);
 		}
 		if (type_func && type_func.node_class == N_FUNCTION) {
-			let nd_after = type_func.c.s.s;
-			let nd_before = type_func.c;
-			if (nd_after.node_class == N_LABELED && nd_after.c.node_class == N_AIR) {
-				//air :, a natural extension of the JS syntax, function():foo{}
-				type = typing.ComputeType(nd_after.c.s);
-			} else if(nd_after.node_class == N_RAW && nd_after.c && nd_after.c.isSymbol('->') && nd_after.c.s) {
-				//air ->, C++ lambda return type
-				type = typing.ComputeType(nd_after.c.s);
-			} else if(nd_before.node_class == N_RAW) {
-				//we could have `static __attribute__(foo) void __attribute__(bar) __cdecl f`
-				//go back to front and filter out the calling conventions
-				for (let ndi = nd_before.LastChild(); ndi; ndi = ndi.Prev()) {
-					if (ndi.node_class == N_REF && typing.options.non_type_function_keywords.has(ndi.data)) {
-						if (type) {break;} else {continue;}
-					}
-					if (ndi.node_class == N_CALL && ndi.c.node_class == N_REF && ndi.node_class == N_CALL && ndi.c.node_class == N_REF && typing.options.non_type_function_keywords.has(ndi.c.data)) {
-						if (type) {break;} else {continue;}
-					}
-					type = ndi;
-					if (type.node_class != N_REF) {
-						break;
-					}
-				}
-			}
+			type = typing.ComputeReturnType(type_func);
 		}
 		break;
 	}

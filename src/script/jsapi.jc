@@ -267,6 +267,7 @@ namespace ama {
 			s_fixed_code.length, file_name, JS_EVAL_TYPE_GLOBAL
 		);
 		if( JS_IsException(ret) ) {
+			//console.log(s_fixed_code);
 			ama::DumpError(ama::jsctx);
 			return 0;
 		}
@@ -286,6 +287,7 @@ namespace ama {
 		};
 		JSValueConst! ret_script = JS_Call(ama::jsctx, JS_DupValue(ama::jsctx, ret), JS_GetGlobalObject(ama::jsctx), 3, module_args.data());
 		if( JS_IsException(ret_script) ) {
+			console.log(s_fixed_code);
 			ama::DumpError(ama::jsctx);
 			return 0;
 		}
@@ -295,7 +297,7 @@ namespace ama {
 		LazyInitScriptEnv();
 		char[+]^+! file_data = fs.readFileSync(fn);
 		if( file_data == NULL ) {
-			console.error('unable to load', fn);
+			//console.error('unable to load', fn);
 			return ama::PROCESS_AMA_NOT_FOUND;
 		}
 		char![+]! script_i = ama::FindAma(file_data);

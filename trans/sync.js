@@ -32,6 +32,10 @@ function main(){
 		if(t_ama<t_cpp){
 			//cpp to ama
 			ProcessAmaFile(fn_cpp,script_cpp2ama);
+			if(default_options.is_migrating){
+				//ABA test for migration
+				ProcessAmaFile(fn_ama_cpp,script_ama2cpp);
+			}
 			pipe.run(['touch -r ',JSON.stringify(fn_cpp),' ',JSON.stringify(fn_ama_cpp)].join(''));
 			//console.log('updated',fn_ama_cpp);
 		}else if(t_cpp<t_ama){

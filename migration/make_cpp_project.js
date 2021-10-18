@@ -6,7 +6,7 @@ const assert=require('assert');
 const depends=require('depends');
 const cmake=require('cmake');
 
-function MigrateProject(fn,exe_name,patches){
+function MigrateProject(fn,patches){
 	fn=path.resolve(fn);
 	let dir=path.dirname(fn);
 	while(!fs.existsSync(path.join(dir,'.git'))){
@@ -60,7 +60,9 @@ function MigrateProject(fn,exe_name,patches){
 			cpps_to_translate.push(path.join(dir_target,fn_just_cpp));
 		}
 	}
-	let fn_script='/tmp/migrate_'+prj_name+'.sh'
+	script.push("sed '/#line/d;s%\\.jc\\.cpp%.cpp%g;s%\\.jch\\.hpp%.hpp%g' ",JSON.stringify(path.join(dir,'src/entry/ama.jc.cpp')),' > ',JSON.stringify(path.join(dir_target,'src/entry/ama.cpp')),'\n');
+	cpps_to_translate.push(path.join(dir_target,'src/entry/ama.cpp'));
+	let fn_script='/tmp/migrate_'+prj_name+'.sh';
 	fs.writeFileSync(fn_script,script.join(''));
 	__system('sh '+fn_script)
 	////////
@@ -77,7 +79,7 @@ function MigrateProject(fn,exe_name,patches){
 		let keep_cmakelists=0;
 		for(let nd_exe of nd_cmake.FindAll(N_CALL,'add_executable').concat(nd_cmake.FindAll(N_CALL,'add_library'))){
 			let args=nd_exe.TokenizeCMakeArgs();
-			if(!args[0].isRef(exe_name)){
+			if(!args[0].isRef('amal')&&!args[0].isRef('ama')){
 				deleted_targets.add(args[0].GetName())
 				nd_exe.Unlink();
 				continue;
@@ -106,7 +108,7 @@ function MigrateProject(fn,exe_name,patches){
 		for(let nd_property of nd_cmake.FindAll(N_CALL,'set_property').concat(nd_cmake.FindAll(N_CALL,'add_custom_target'))){
 			let keep=0;
 			for(let nd_tgt of nd_property.FindAll(N_REF,null)){
-				if(nd_tgt.data===exe_name){
+				if(nd_tgt.data==='amal'||nd_tgt.data==='ama'){
 					keep=1;
 					break;
 				}
@@ -187,6 +189,8 @@ function MigrateProject(fn,exe_name,patches){
 			fs.writeFileSync(fn,fs.readFileSync(fn).toString()+('\n'+patch.append));
 		}else if(typeof(patch)==='object'&&patch.from){
 			script.push('mv ',JSON.stringify(path.resolve(dir_target,patch.from)),' ',JSON.stringify(fn),'\n')
+		}else if(typeof(patch)==='object'&&patch.rm){
+			script.push('rm ',JSON.stringify(fn),'\n');
 		}else{
 			console.log('invalid patch for',key)
 		}
@@ -207,6 +211,7 @@ function MigrateProject(fn,exe_name,patches){
 	]);
 	for(let fn_cpp of cpps_to_translate){
 		let nd_root=depends.LoadFile(fn_cpp);
+		if(!nd_root){continue;}
 		for(let nd_dot of nd_root.FindAll(N_DOT,null)){
 			if(!nd_dot.c.isRef('JC')){continue;}
 			let name=nd_dot.data;
@@ -226,36 +231,28 @@ function MigrateProject(fn,exe_name,patches){
 					nd_parent_call.ReplaceWith(nd_new_call.BreakSelf());
 					nd_new_call.Insert(POS_BACK,nd_parent_call.c.s);
 				}
-				//console.log(nd_new_call.toSource());
 				continue;
 			}
 			jc_things.add(nd_dot.toSource().trim());
 		}
+		nd_root.Save();
 	}
 	jc_things.forEach(src=>{
 		console.log('TODO: untranslate',src)
 	});
+	default_options.is_migrating=1;
 	ProcessAmaFile(path.resolve(dir_target,'trans/sync.js'));
 }
 
 function main(){
 	let dir_jc_lib=path.resolve(__dirname,'../../jc3/lib');
 	depends.c_include_paths.push(dir_jc_lib);
-	MigrateProject(path.join(__dirname,'../src/entry/amal.jc'),'amal',{
+	MigrateProject(path.join(__dirname,'../src/entry/amal.jc'),{
 		'src/script/jsgen.ama.cpp':[
 			"//@ama require('./jsgen.js')('ama',ParseCurrentFile()).Save('.cpp');\n",
 			'#pragma gen_begin(js_bindings)\n'
 		].join(''),
-		'src/entry/CMakeLists.txt':{append:[
-			'add_executable(ama ${JC_LIB}/dumpstack/linux_bt.cpp ${JC_LIB}/dumpstack/win_dbghelp.cpp ${JC_LIB}/dumpstack/enable_dump.cpp ${JC_LIB}/fix_win_console.cpp src/entry/ama.cpp)\n',
-			'set_property(TARGET ama APPEND PROPERTY LINK_LIBRARIES amal)\n',
-			'if(WIN32)\n',
-			'set_property(TARGET ama APPEND PROPERTY LINK_LIBRARIES DbgHelp.lib kernel32.lib user32.lib)\n',
-			'endif()\n',
-			'if(NOT WIN32)\n',
-			'set_property(TARGET ama APPEND PROPERTY LINK_LIBRARIES -ldl)\n',
-			'endif()\n'
-		].join('')}
+		'src/script/jsgen.cpp':{rm:1}
 	});
 	//MigrateProject(path.join(__dirname,'../../laas/src/core/net0822.jc'),{})
 }
