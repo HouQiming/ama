@@ -390,6 +390,7 @@ function Generate(version,my_call) {
 			'}'
 		);
 		my_call.Insert(POS_BACK,ParseCode(code_func.join('').replace(/\*\+/g,'*')).AutoFormat().c.setCommentsAfter(''));
+		my_call.Insert(POS_BACK,ParseCode('#pragma gen_end(js_bindings)').setCommentsBefore('\n'));
 		return my_call;
 	}
 };

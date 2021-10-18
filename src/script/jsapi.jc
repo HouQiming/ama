@@ -11,6 +11,9 @@
 	#include <windows.h>
 	#pragma add('ldflags', 'kernel32.lib');
 #else
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <unistd.h>
 	#include <dlfcn.h>
 	#pragma add('ldflags', '-ldl');
 #endif
@@ -258,7 +261,7 @@ namespace ama {
 	int! RunScriptOnFile(char[...]! script, char*! file_name, char*! file_data) {
 		//we must not hold any Node* here: the script could gc them and native-only pointers can get freed
 		LazyInitScriptEnv();
-		char![+]! s_fixed_code = '(function(__filename,__dirname,ParseCurrentFile){let require=__require.bind(null,__filename);' + script + '\n})\n';
+		char![+]! s_fixed_code = '(function(__filename,__dirname,ParseCurrentFile){"use strict";let require=__require.bind(null,__filename);' + script + '\n})\n';
 		JSValueConst! ret = JS_Eval(
 			ama::jsctx, s_fixed_code.data(),
 			s_fixed_code.length, file_name, JS_EVAL_TYPE_GLOBAL
@@ -324,6 +327,7 @@ namespace ama {
 				data = ama::UnwrapString(argv[i]);
 				continue;
 			}
+			if( JS_IsNull(argv[i]) || JS_IsUndefined(argv[i]) ) { continue; }
 			ama::Node*+! ndi = ama::UnwrapNode(argv[intptr_t(i)]);
 			if( !ndi ) {
 				return JS_ThrowTypeError(ctx, 'child %d is not a node', i);
@@ -462,6 +466,80 @@ namespace ama {
 		}
 		return JS_NewBool(ctx, fs.existsSync(ama::UnwrapString(argv[0])));
 	}
+	#if defined(_WIN32)
+		private inline double! toUnixTimestamp(FILETIME! a) {
+			return double(uint64_t(uint32_t(a.dwLowDateTime)) + (uint64_t(uint32_t(a.dwHighDateTime)) << 32)) * 1.0e-4 + -11644473600000.0;
+		}
+	#endif
+	private JSValueConst! JSStatSync(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		char[|]! fn = ama::UnwrapString(argv[0L]);
+		#if defined(_WIN32)
+			uint16_t[+]! fnw = fs::PathToWindows(fn);
+			WIN32_FIND_DATAW! find_data = new WIN32_FIND_DATAW!();
+			HANDLE! hfind = FindFirstFileW(LPCWSTR(fnw.data()), &find_data);
+			if( hfind && hfind != INVALID_HANDLE_VALUE ) {
+				FindClose(hfind);
+				const JSValueConst! ret = JS_NewObject(ctx);
+				JS_SetPropertyStr(ctx, ret, 'size', JS_NewInt64(ctx, uint64_t(find_data.nFileSizeLow) + (uint64_t(find_data.nFileSizeHigh) << 32)));
+				JS_SetPropertyStr(
+					ctx, ret, 'atimeMs',
+					JS_NewFloat64(ctx, toUnixTimestamp(find_data.ftLastAccessTime) * 1000.0)
+				);
+				JS_SetPropertyStr(
+					ctx, ret, 'mtimeMs',
+					JS_NewFloat64(ctx, toUnixTimestamp(find_data.ftLastWriteTime) * 1000.0)
+				);
+				JS_SetPropertyStr(
+					ctx, ret, 'ctimeMs',
+					JS_NewFloat64(ctx, toUnixTimestamp(find_data.ftCreationTime) * 1000.0)
+				);
+				JS_SetPropertyStr(
+					ctx, ret, 'is_file',
+					JS_NewInt32(ctx, 1)
+				);
+				JS_SetPropertyStr(
+					ctx, ret, 'is_dir',
+					JS_NewInt32(ctx, (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 1 : 0)
+				);
+				return ret;
+			} else {
+				return JS_ThrowReferenceError(ctx, 'failed to stat "%s"', fn.str());
+			}
+		#else
+			`struct stat`! sb;
+			if( stat(fn.str(), &sb) != 0 ) {
+				return JS_ThrowReferenceError(ctx, 'failed to stat "%s"', fn.str());
+			}
+			const JSValueConst! ret = JS_NewObject(ctx);
+			JS_SetPropertyStr(ctx, ret, 'dev', JS_NewInt64(ctx, int64_t(sb.st_dev)));
+			JS_SetPropertyStr(ctx, ret, 'mode', JS_NewInt64(ctx, int64_t(sb.st_mode)));
+			JS_SetPropertyStr(ctx, ret, 'nlink', JS_NewInt64(ctx, int64_t(sb.st_nlink)));
+			JS_SetPropertyStr(ctx, ret, 'uid', JS_NewInt64(ctx, int64_t(sb.st_uid)));
+			JS_SetPropertyStr(ctx, ret, 'gid', JS_NewInt64(ctx, int64_t(sb.st_gid)));
+			JS_SetPropertyStr(ctx, ret, 'rdev', JS_NewInt64(ctx, int64_t(sb.st_rdev)));
+			JS_SetPropertyStr(ctx, ret, 'ino', JS_NewInt64(ctx, int64_t(sb.st_ino)));
+			JS_SetPropertyStr(ctx, ret, 'size', JS_NewInt64(ctx, int64_t(sb.st_size)));
+			JS_SetPropertyStr(ctx, ret, 'blksize', JS_NewInt64(ctx, int64_t(sb.st_blksize)));
+			JS_SetPropertyStr(ctx, ret, 'blocks', JS_NewInt64(ctx, int64_t(sb.st_blocks)));
+			JS_SetPropertyStr(ctx, ret, 'is_file', JS_NewInt32(ctx, 1));
+			JS_SetPropertyStr(ctx, ret, 'is_dir', JS_NewInt32(ctx, S_ISDIR(sb.st_mode) ? 1 : 0));
+			//JS_SetPropertyStr(ctx, ret, 'flags', JS_NewInt64(ctx, i64(sb.st_flags)));
+			//JS_SetPropertyStr(ctx, ret, 'gen', JS_NewInt64(ctx, i64(sb.st_gen)));
+			JS_SetPropertyStr(
+				ctx, ret, 'atimeMs',
+				JS_NewFloat64(ctx, double(sb.st_atim.tv_sec) * 1000.0)
+			);
+			JS_SetPropertyStr(
+				ctx, ret, 'mtimeMs',
+				JS_NewFloat64(ctx, double(sb.st_mtim.tv_sec) * 1000.0)
+			);
+			JS_SetPropertyStr(
+				ctx, ret, 'ctimeMs',
+				JS_NewFloat64(ctx, double(sb.st_ctim.tv_sec) * 1000.0)
+			);
+			return ret;
+		#endif
+	}
 	private JSValueConst! JSPathNormalize(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		if( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a path");
@@ -527,6 +605,12 @@ namespace ama {
 			return JS_ThrowReferenceError(ctx, "need a command");
 		}
 		return JS_NewInt32(ctx, system(JS_ToCString(ctx, argv[0])));
+	}
+	private JSValueConst! JSChdir(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
+		if( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a command");
+		}
+		return JS_NewInt32(ctx, fs.chdir(JS_ToCString(ctx, argv[0])));
 	}
 	private JSValueConst! JSByteLength(JSContext*+! ctx, JSValueConst! this_val, int! argc, JSValue*+! argv) {
 		if( argc < 1 ) {
@@ -724,6 +808,12 @@ namespace ama {
 			)
 		);
 		JS_SetPropertyStr(
+			ama::jsctx, global, '__statSync', JS_NewCFunction(
+				ama::jsctx, JSStatSync,
+				'statSync', 1
+			)
+		);
+		JS_SetPropertyStr(
 			ama::jsctx, global, '__path_normalize', JS_NewCFunction(
 				ama::jsctx, JSPathNormalize,
 				'normalize', 1
@@ -763,6 +853,12 @@ namespace ama {
 			ama::jsctx, global, '__system', JS_NewCFunction(
 				ama::jsctx, JSSystem,
 				'__system', 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, '__chdir', JS_NewCFunction(
+				ama::jsctx, JSChdir,
+				'__chdir', 1
 			)
 		);
 		JS_SetPropertyStr(

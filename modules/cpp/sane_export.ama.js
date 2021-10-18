@@ -1,17 +1,23 @@
 'use strict';
 //@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
+const path = require('path');
 require('class');
 
 function BidirTransform(nd_root, is_forward) {
+	if (path.extname(nd_root.data).startsWith('h')) {return nd_root;}
 	let from = is_forward ? 'public' : 'static';
 	let to = is_forward ? 'static' : 'public';
 	for (let nd_func of nd_root.FindAll(N_FUNCTION, null)) {
 		let nd_owner = nd_func.Owner();
-		if (!(nd_owner.node_class == N_CLASS || nd_owner.node_class == N_FILE)) {
+		if (!(nd_owner.node_class == N_CLASS && nd_owner.data == 'namespace' || nd_owner.node_class == N_FILE)) {
 			continue;
 		}
 		if (!(nd_func.c.node_class == N_RAW && nd_func.c.c && nd_func.c.LastChild().node_class == N_REF)) {
 			//don't do the static magic on method implementations
+			continue;
+		}
+		if (nd_func.LastChild().node_class != N_SCOPE) {
+			//don't do it on forward declarations
 			continue;
 		}
 		let nd_kw = nd_func.c.Find(N_REF, from);

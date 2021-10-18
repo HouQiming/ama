@@ -278,7 +278,7 @@ Node.TranslateTemplates=function(match_jobs, is_forward){
 	return nd_root;
 }
 
-__global.c_include_paths=['/usr/include','/usr/local/include']
+//__global.c_include_paths=['/usr/include','/usr/local/include']
 __global.default_options={
 	enable_hash_comment:0,
 	symbols:'!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->*',
@@ -382,7 +382,8 @@ __global.process={
 			return __getenv(key);
 		}
 	}),
-	platform:__platform
+	platform:__platform,
+	chdir:__chdir
 };
 
 __global.__RequireNativeLibrary=function(exports,module,__filename,__dirname){

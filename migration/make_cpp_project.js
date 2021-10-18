@@ -6,9 +6,8 @@ const assert=require('assert');
 const depends=require('depends');
 const cmake=require('cmake');
 
-function MigrateProject(fn,patches){
+function MigrateProject(fn,exe_name,patches){
 	fn=path.resolve(fn);
-	let exe_name=path.parse(fn).name;
 	let dir=path.dirname(fn);
 	while(!fs.existsSync(path.join(dir,'.git'))){
 		let dir_upper=path.dirname(dir);
@@ -76,7 +75,7 @@ function MigrateProject(fn,patches){
 			nd.Unlink();
 		}
 		let keep_cmakelists=0;
-		for(let nd_exe of nd_cmake.FindAll(N_CALL,'add_executable')){
+		for(let nd_exe of nd_cmake.FindAll(N_CALL,'add_executable').concat(nd_cmake.FindAll(N_CALL,'add_library'))){
 			let args=nd_exe.TokenizeCMakeArgs();
 			if(!args[0].isRef(exe_name)){
 				deleted_targets.add(args[0].GetName())
@@ -111,6 +110,9 @@ function MigrateProject(fn,patches){
 					keep=1;
 					break;
 				}
+				if(nd_tgt.data==='APPEND'){
+					break;
+				}
 			}
 			if(!keep){
 				nd_property.Unlink();
@@ -136,7 +138,7 @@ function MigrateProject(fn,patches){
 		nd_cmake.Find(N_CALL,'project').Insert(POS_AFTER,ParseCode(
 			'\nset(JC_LIB "${CMAKE_CURRENT_SOURCE_DIR}/jc_lib")'
 		).Find(N_CALL,null));
-		nd_cmake.Save();
+		nd_cmake.Save(cmake.options);
 		if(keep_cmakelists){
 			script.push('mv ',JSON.stringify(fn),' ',JSON.stringify(path.join(dir_target,'CMakeLists.txt')),'\n');
 		}else{
@@ -175,38 +177,87 @@ function MigrateProject(fn,patches){
 		}
 		script.push("sed '/#line/d;s%\\.jc\\.cpp%.cpp%g;s%\\.jch\\.hpp%.hpp%g' ",JSON.stringify(path.join(dir_jc_lib,fn)),' > ',JSON.stringify(fn_target),'\n')
 	}
-	fn_script='/tmp/migrate_'+prj_name+'_jc_lib.sh'
+	//patch it
+	for(let key in patches){
+		let patch=patches[key];
+		let fn=path.resolve(dir_target,key);
+		if(typeof(patch)==='string'){
+			fs.writeFileSync(fn,patch);
+		}else if(typeof(patch)==='object'&&patch.append){
+			fs.writeFileSync(fn,fs.readFileSync(fn).toString()+('\n'+patch.append));
+		}else if(typeof(patch)==='object'&&patch.from){
+			script.push('mv ',JSON.stringify(path.resolve(dir_target,patch.from)),' ',JSON.stringify(fn),'\n')
+		}else{
+			console.log('invalid patch for',key)
+		}
+	}
+	//run script
+	fn_script='/tmp/migrate_'+prj_name+'_jc_lib.sh';
 	fs.writeFileSync(fn_script,script.join(''));
 	__system('sh '+fn_script);
 	//back-translate cpps to .ama.cpp
 	let inv_sane_types=require('cpp/sane_types').inverse;
 	let inv_sane_init=require('cpp/sane_init').inverse;
+	let jc_things=new Set();
+	let mmdots=new Set([
+		'data','push','pop',
+		'startsWith','endsWith','indexOf','lastIndexOf',
+		'subarray','sortby','fill','concat','unique',
+		'map_get','map_set'
+	]);
 	for(let fn_cpp of cpps_to_translate){
 		let nd_root=depends.LoadFile(fn_cpp);
-		nd_root.then(inv_sane_init).then(inv_sane_types).Save('.ama'+path.extname(fn_cpp))
-	}
-	//patch it
-	for(let key in patches){
-		let patch=patches[key];
-		let fn=path.resolve(dir_target,key)
-		if(typeof(patch)==='string'){
-			fs.writeFileSync(fn,patch)
-		}else{
-			console.log('invalid patch for',key)
+		for(let nd_dot of nd_root.FindAll(N_DOT,null)){
+			if(!nd_dot.c.isRef('JC')){continue;}
+			let name=nd_dot.data;
+			if(mmdots.has(name)&&nd_dot.p.node_class===N_CALL&&nd_dot.p.c===nd_dot&&nd_dot.s){
+				let nd_call=nd_dot.p;
+				let nd_obj=nd_call.c.s;
+				let nd_args=nd_obj.BreakSibling();
+				nd_obj.BreakSelf();
+				if(!(nd_obj.node_class===N_CALL&&nd_obj.GetName()==='push')&&name!=='data'){
+					nd_obj=nPostfix(nd_obj,'--');
+				}
+				if(name.startsWith('map')){name=name.substr(4);}
+				if(nd_args){nd_args.setCommentsBefore('');}
+				let nd_new_call=nd_call.ReplaceWith(nd_obj.dot(name).setFlags(name==='data'?0:DOT_PTR).call(nd_args));
+				if(name==='push'&&nd_new_call.p.node_class===N_DOT&&nd_new_call.p.p.node_class===N_CALL&&nd_new_call.p.p.GetName()==='push'){
+					let nd_parent_call=nd_new_call.p.p;
+					nd_parent_call.ReplaceWith(nd_new_call.BreakSelf());
+					nd_new_call.Insert(POS_BACK,nd_parent_call.c.s);
+				}
+				//console.log(nd_new_call.toSource());
+				continue;
+			}
+			jc_things.add(nd_dot.toSource().trim());
 		}
 	}
+	jc_things.forEach(src=>{
+		console.log('TODO: untranslate',src)
+	});
+	ProcessAmaFile(path.resolve(dir_target,'trans/sync.js'));
 }
 
 function main(){
 	let dir_jc_lib=path.resolve(__dirname,'../../jc3/lib');
 	depends.c_include_paths.push(dir_jc_lib);
-	MigrateProject(path.join(__dirname,'../src/entry/amal.jc'),{
+	MigrateProject(path.join(__dirname,'../src/entry/amal.jc'),'amal',{
 		'src/script/jsgen.ama.cpp':[
-			"//@ama require('../jsgen.js')('ama',ParseCurrentFile()).Save('.cpp');\n",
-			'#pragma begin_generated\n'
-		].join('')
+			"//@ama require('./jsgen.js')('ama',ParseCurrentFile()).Save('.cpp');\n",
+			'#pragma gen_begin(js_bindings)\n'
+		].join(''),
+		'src/entry/CMakeLists.txt':{append:[
+			'add_executable(ama ${JC_LIB}/dumpstack/linux_bt.cpp ${JC_LIB}/dumpstack/win_dbghelp.cpp ${JC_LIB}/dumpstack/enable_dump.cpp ${JC_LIB}/fix_win_console.cpp src/entry/ama.cpp)\n',
+			'set_property(TARGET ama APPEND PROPERTY LINK_LIBRARIES amal)\n',
+			'if(WIN32)\n',
+			'set_property(TARGET ama APPEND PROPERTY LINK_LIBRARIES DbgHelp.lib kernel32.lib user32.lib)\n',
+			'endif()\n',
+			'if(NOT WIN32)\n',
+			'set_property(TARGET ama APPEND PROPERTY LINK_LIBRARIES -ldl)\n',
+			'endif()\n'
+		].join('')}
 	});
-	MigrateProject(path.join(__dirname,'../../laas/src/core/net0822.jc'),{})
+	//MigrateProject(path.join(__dirname,'../../laas/src/core/net0822.jc'),{})
 }
 
 module.exports=main;

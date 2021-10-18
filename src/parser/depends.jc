@@ -8,16 +8,6 @@
 namespace ama {
 	//requires DelimitCLikeStatements, preferrably before ParsePostfix
 	void! ParseCInclude(ama::Node*+! nd_root) {
-		char[|][+]! c_include_paths;
-		JSValue! js_c_include_paths = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), 'c_include_paths');
-		if( !JS_IsUndefined(js_c_include_paths) ) {
-			int32_t! lg = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, js_c_include_paths, 'length'), 0);
-			for(int! i = 0; i < lg; i += 1) {
-				c_include_paths.push_back(ama::UnwrapString(
-					JS_GetPropertyUint32(ama::jsctx, js_c_include_paths, i)
-				));
-			}
-		}
 		char[+]! dir_base = new char[+]!(nd_root.data != NULL ? path.dirname(nd_root.data) : ".");
 		for(ama::Node*&+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( (nd_raw.flags & 0xffff) != 0 ) { continue; }
@@ -62,34 +52,6 @@ namespace ama {
 			char[|]! fn_included = nd_included.GetStringValue();
 			nd_raw.ReplaceWith(ama::nDependency(nd_included).setFlags(flags));
 			nd_raw.FreeASTStorage();
-		}
-		//re-check all nDependency and fill .data
-		for(ama::Node*&+! nd_dep : nd_root.FindAllWithin(0, ama::N_DEPENDENCY, NULL)) {
-			if( (nd_dep.flags & ama::DEP_TYPE_MASK) == ama::DEP_C_INCLUDE && nd_dep.data == NULL ) {
-				char[|]! fn_included = nd_dep.GetName();
-				if( fn_included == NULL ) { continue; }
-				char[|]! fn_found = NULL;
-				if( fn_included.startsWith('<') && fn_included.endsWith('>') ) {
-					fn_included = new char[|]!(fn_included.subarray(1, fn_included.length - 2));
-				} else {
-					if( fs.existsSync(path.join(dir_base, fn_included)) ) {
-						fn_found = path.join(dir_base, fn_included);
-					}
-				}
-				if( fn_found == NULL ) {
-					for(char[|]&! dir : c_include_paths) {
-						char[+]! fn_test = path.join(dir, fn_included);
-						if( fs.existsSync(fn_test) ) {
-							fn_found = new char[|]!(fn_test);
-							break;
-						}
-					}
-				}
-				if( fn_found != NULL ) {
-					fn_found = path.resolve(fn_found);
-					nd_dep.data = fn_found;
-				}
-			}
 		}
 	}
 	void! ParseJSRequire(ama::Node*+! nd_root) {

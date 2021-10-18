@@ -15,6 +15,7 @@ modules/**/*.js
 !modules/path.js
 !modules/assert.js
 !modules/_init.js
+!modules/pipe.js
 !modules/*.ama.js
 !modules/**/*.ama.js
 /test/test_tmp.*
