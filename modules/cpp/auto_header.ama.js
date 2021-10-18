@@ -16,6 +16,7 @@ function GetFunctionNameNode(nd_func) {
 }
 
 function Transform(nd_root, options) {
+	if (path.extname(nd_root.data).startsWith('.h')) {return;}
 	let header_file = (options || {}).header_file;
 	if (!header_file) {
 		//search for same-name dependency first
@@ -81,7 +82,7 @@ function Transform(nd_root, options) {
 		let names = [];
 		while (nd_name.node_class == N_DOT) {
 			names.push(nd_name.data)
-				nd_name = nd_name.c;
+						nd_name = nd_name.c;
 		};
 		if (nd_name.node_class != N_AIR) {
 			names.push(nd_name.GetName());

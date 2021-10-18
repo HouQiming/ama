@@ -137,16 +137,18 @@ Node.MatchAll = function(nd_pattern) {
 
 Node.Subst = function(match) {
 	let nd_ret = this.Clone();
-	for (let ndi = nd_ret; ndi; ndi = ndi.PreorderNext(nd_ret)) {
+	for (let ndi = nd_ret; ndi; ndi = ndi.PreorderNext(null)) {
 		if (ndi.node_class === N_NODEOF) {
 			let nd_name = ndi.c;
 			if (nd_name.node_class === N_DOT) {
 				let nd_subst = nd_name.c.Subst(match).dot(match[nd_name.GetName()].GetName() || '');
+				nd_subst.BreakSibling();
 				ndi = ndi.ReplaceWith(nd_subst);
 			} else {
 				if (nd_name.node_class === N_CALL && nd_name.c.s) {nd_name = nd_name.c.s;}
 				let nd_subst = match[nd_name.GetName()];
 				if (nd_subst) {
+					//nd_subst.BreakSibling();
 					ndi = ndi.ReplaceWith(nd_subst);
 				}
 			}

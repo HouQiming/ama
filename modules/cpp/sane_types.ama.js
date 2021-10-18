@@ -12,9 +12,8 @@ function FixArrayTypes(nd_root) {
 	for (let nd_mul of nd_root.FindAll(N_BINOP, '*')) {
 		//[]
 		if (nd_mul.c.s.isRawNode('[', ']')) {
-			//console.log(nd_mul.toSource())
-			let nd_subscripts = nd_mul.c.s.c;
-			let nd_item = nItem(nPostfix(nd_mul.c, '*'));
+			let nd_subscripts = nd_mul.c.BreakSibling().c;
+			let nd_item = nItem(nPostfix(nd_mul.BreakChild(), '*'));
 			if (nd_subscripts) {
 				nd_item.Insert(POS_BACK, nd_subscripts);
 			}
