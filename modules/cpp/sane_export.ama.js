@@ -29,7 +29,9 @@ function BidirTransform(nd_root, is_forward) {
 			}
 		} else if(nd_func.c.node_class == N_RAW) {
 			//inverse it
-			nd_func.c.Insert(POS_FRONT, nRef(to).setCommentsAfter(' '));
+			if (!nd_func.c.Find(N_REF, to)) {
+				nd_func.c.Insert(POS_FRONT, nRef(to).setCommentsAfter(' '));
+			}
 		}
 	}
 	return nd_root;

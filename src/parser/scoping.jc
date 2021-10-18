@@ -8,7 +8,11 @@
 namespace ama {
 	void! ConvertToScope(ama::Node*+! nd_raw) {
 		nd_raw.node_class = ama::N_SCOPE;
-		nd_raw.flags = 0;
+		if( nd_raw.p ) {
+			nd_raw.flags = 0;
+		} else {
+			nd_raw.flags &= 0xffff0000u;
+		}
 	}
 	private ama::Node*+[+]! MergeScopesIntoStatements(Map<char[|], int>&! keywords_extension_clause, ama::Node*+[...]! lines_out) {
 		ama::Node*+[+]! line_group = new ama::Node*+[+]!();
@@ -277,7 +281,7 @@ namespace ama {
 		}
 		//flag the root as a scope to prevent DelimitCLikeStatements from merging its children like it were a raw statement
 		//the flag will be reset when converting to N_FILE
-		nd_root.flags = uint32_t('{') | uint32_t('}') << 8;
+		nd_root.flags = (nd_root.flags & 0xffff0000u) | uint32_t('{') | uint32_t('}') << 8;
 		return nd_root;
 	}
 };

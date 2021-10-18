@@ -45,6 +45,7 @@ namespace ama {
 	const uint16_t! TMPF_IS_NODE = 32768u;
 	const uint16_t! TMPF_GC_MARKED = 16384u;
 	/////////////////
+	const uint32_t! FILE_SPACE_INDENT = 1u;
 	const uint32_t! REF_WRITTEN = 1u;
 	//REF_RW is only set for REF_WRITTEN nodes: non-written nodes are trivially read 
 	const uint32_t! REF_RW = 2u;

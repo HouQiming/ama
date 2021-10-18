@@ -39,7 +39,7 @@ namespace ama {
 			}
 			case ama::N_FILE: case ama::N_RAW: {
 				char! ch_opening = char(nd.flags & 0xff);
-				if( ch_opening ) {
+				if( nd.node_class == ama::N_RAW && ch_opening ) {
 					this->code.push_back(ch_opening);
 				}
 				for(ama::Node*+! ndi = nd.c; ndi; ndi = ndi.s) {
@@ -49,7 +49,7 @@ namespace ama {
 					}
 				}
 				char! ch_closing = char(nd.flags >> 8 & 0xff);
-				if( ch_closing ) {
+				if( nd.node_class == ama::N_RAW && ch_closing ) {
 					this->code.push_back(ch_closing);
 				}
 				break;
@@ -371,7 +371,13 @@ namespace ama {
 		ama::CodeGenerator! ctx = new ama::CodeGenerator!();
 		ctx.tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_width'), 4);
 		ctx.auto_space = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'auto_space'), 1);
-		ctx.tab_indent = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_indent'), 1);
+		ctx.tab_indent = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'tab_indent'), 2);
+		if( ctx.tab_indent == 2 ) {
+			ama::Node*+! nd_root = nd.Root();
+			if( nd_root.node_class == ama::N_FILE && (nd_root.flags & ama::FILE_SPACE_INDENT) ) {
+				ctx.tab_indent = 0;
+			}
+		}
 		ctx.Generate(nd);
 		return <<ctx.code;
 	}

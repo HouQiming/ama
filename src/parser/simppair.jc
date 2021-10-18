@@ -522,11 +522,15 @@ namespace ama {
 					ama::FixParents(NULL, nd_root);
 					nd_root.comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 					if( tab_indent == 2 ) {
-						//auto tab-indent: update the options object
-						JS_SetPropertyStr(ama::jsctx, options, 'tab_indent', JS_NewInt32(
-							ama::jsctx,
-							vote_tabness >= vote_spaceness ? 1 : 0
-						));
+						//auto tab-indent: update the root flag
+						if( vote_spaceness > vote_tabness ) {
+							//treat as space indent
+							nd_root.flags |= 0x10000;
+						}
+						//JS_SetPropertyStr(ama::jsctx, options, 'tab_indent', JS_NewInt32(
+						//	ama::jsctx,
+						//	vote_tabness >= vote_spaceness ? 1 : 0
+						//));
 					}
 					return nd_root;
 				}
