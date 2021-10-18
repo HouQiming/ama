@@ -13,7 +13,7 @@ const jsism=require('cpp/jsism');
 const unified_null=require('cpp/unified_null');
 let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.Save('.indent.audit.cpp')
-	.AutoSemicolon()
+	.then(require('auto_semicolon'))
 	.Save('.mid.audit.cpp')
 	.then(sane_types.FixArrayTypes)
 	.then(require('cpp/typing').DeduceAuto)

@@ -7,7 +7,7 @@ const move_operator=require('cpp/move_operator');
 const unified_null=require('cpp/unified_null');
 let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.StripRedundantPrefixSpace()
-	.AutoSemicolon()
+	.then(require('auto_semicolon'))
 	.then(sane_types.FixArrayTypes)
 	.then(require('cpp/typing').DeduceAuto)
 	.then(require('cpp/auto_paren'))

@@ -16,6 +16,7 @@ modules/**/*.js
 !modules/assert.js
 !modules/_init.js
 !modules/pipe.js
+!modules/auto_semicolon.js
 !modules/*.ama.js
 !modules/**/*.ama.js
 /test/test_tmp.*

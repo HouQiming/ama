@@ -11,7 +11,7 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1});
 //console.log(JSON.stringify(nd_root,null,1));
 nd_root
     .StripRedundantPrefixSpace()
-    .AutoSemicolon()
+    .then(require('auto_semicolon'))
     .then(sane_types.FixArrayTypes)
     .then(require('cpp/typing').DeduceAuto)
     .then(require('cpp/auto_paren'))

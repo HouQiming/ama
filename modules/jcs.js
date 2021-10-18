@@ -20,7 +20,7 @@ jcs.TranslateJCS=function(nd_root){
 			nd_tmp.ReplaceWith(nParen(nd_arg));
 		}
 	}
-	nd_root.AutoSemicolon().Save();
+	nd_root.then(require('auto_semicolon')).Save();
 	for(let nd of nd_root.FindAll(N_BINOP,'!=')){
 		nd.data='!==';
 	}
