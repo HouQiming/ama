@@ -173,7 +173,7 @@ function Generate(version,my_call) {
 					type:typing.ComputeType(nd_ref)
 				})
 			}
-			if(ppt.method){
+			if(ppt.kind==='method'){
 				if( ppt.name === 'CloneEx' || ppt.name === 'CloneCB' || ppt.name === 'forEach' ) {
 					continue;
 				}
@@ -325,9 +325,15 @@ function Generate(version,my_call) {
 			nd_value:nd.p.c.s
 		}});
 	}else{
-		let class_desc = nd_node_jch.Find(N_CLASS, 'ama').ParseClass();
+		let class_desc=undefined;
+		for(let nd_class of nd_node_jch.FindAll(N_CLASS, 'ama')){
+			let class_desc_i = nd_class.ParseClass();
+			if(!class_desc||class_desc.properties.length<class_desc_i.properties.length){
+				class_desc=class_desc_i;
+			}
+		}
 		for(let ppt of class_desc.properties){
-			if(ppt.enumerable){
+			if(ppt.kind==='variable'){
 				let nd_asgn = ppt.node.Owning(N_ASSIGNMENT);
 				if(!nd_asgn){
 					continue;

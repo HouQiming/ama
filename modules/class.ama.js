@@ -29,32 +29,46 @@ function ListOwnProperties(properties, nd_class) {
 			}
 		}
 		if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
-			let is_static = last_appearance['static'] && last_appearance['static'].isAncestorOf(ndi);
+			let is_static = last_appearance['static'] && last_appearance['static'].isAncestorOf(ndi) || nd_class.data == 'namespace';
 			properties.push({
-				enumerable: (ndi.p.node_class != N_CLASS && !is_static) | 0,
+				enumerable: !is_static | 0,
 				writable: !(last_appearance['final'] && last_appearance['final'].isAncestorOf(ndi) || last_appearance['const'] && last_appearance['const'].isAncestorOf(ndi)) | 0,
-				method: 0,
 				own: 1,
 				shadowed: 0,
 				static: is_static | 0,
 				protection: protection,
+				kind: 'variable',
 				node: ndi,
 				name: ndi.data
 			});
-		} else if(ndi.node_class == N_FUNCTION) {
+		} else if (ndi.node_class == N_FUNCTION) {
 			if (ndi.data) {
 				properties.push({
 					enumerable: 0,
 					writable: 0,
-					method: 1,
 					own: 1,
 					shadowed: 0,
 					static: 0 | (last_appearance['static'] && last_appearance['static'].isAncestorOf(ndi)),
 					protection: protection,
+					kind: 'method',
 					node: ndi,
 					name: ndi.data
 				});
 			}
+			ndi = ndi.PreorderSkipChildren(nd_class);
+			continue;
+		} else if (ndi.node_class == N_CLASS) {
+			properties.push({
+				enumerable: 0,
+				writable: 0,
+				own: 1,
+				shadowed: 0,
+				static: 1,
+				protection: protection,
+				kind: 'class',
+				node: ndi,
+				name: ndi.GetName()
+			});
 			ndi = ndi.PreorderSkipChildren(nd_class);
 			continue;
 		}

@@ -40,7 +40,7 @@ gentag.UpdateGenTagContent = function(nd_gentag, nd_new) {
 			if (nd_end.node_class == N_KEYWORD_STATEMENT && nd_end.data == '#pragma' && nd_end.c && nd_end.c.node_class == N_CALL) {
 				if (nd_end.c.GetName() == 'gen_begin') {
 					count += 1;
-				} else if(nd_end.c.GetName() == 'gen_end') {
+				} else if (nd_end.c.GetName() == 'gen_end') {
 					count -= 1;
 					if (count < 0) {break;}
 				}
@@ -48,8 +48,14 @@ gentag.UpdateGenTagContent = function(nd_gentag, nd_new) {
 			nd_end = nd_end.s;
 		}
 		if (nd_end) {
-			nd_gentag.s.ReplaceUpto(nd_end.Prev(), nd_new);
-			nd_new.AutoFormat();
+			if (!nd_new) {
+				let nd_empty_gentag = nd_gentag.Clone();
+				nd_empty_gentag.c.c.ReplaceWith(nRef('gen'));
+				nd_gentag.ReplaceUpto(nd_end, nd_empty_gentag);
+			} else {
+				nd_gentag.s.ReplaceUpto(nd_end.Prev(), nd_new);
+				nd_new.AutoFormat();
+			}
 			return;
 		}
 		//if we can't find an ending tag, assume it's broken and treat as non-begin 'gen'
@@ -61,6 +67,22 @@ gentag.UpdateGenTagContent = function(nd_gentag, nd_new) {
 		nd_end.comments_before = '\n';
 	}
 	nd_gentag.Insert(POS_AFTER, nd_end);
-	nd_gentag.Insert(POS_AFTER, nd_new);
-	nd_new.AutoFormat();
+	if (nd_new) {
+		nd_gentag.Insert(POS_AFTER, nd_new);
+		nd_new.AutoFormat();
+	}
+};
+
+gentag.DropGeneratedCode = function(nd_root) {
+	let all_gen_begins = [];
+	for (let nd_pragma of nd_root.FindAll(N_KEYWORD_STATEMENT, '#pragma')) {
+		let nd_arg = nd_pragma.c;
+		if (!nd_arg || nd_arg.node_class != N_CALL || nd_arg.c.node_class != N_REF) {continue;}
+		if (nd_arg.c.data == 'gen_begin' && nd_arg.c.s) {
+			all_gen_begins.push(nd_pragma);
+		}
+	}
+	for (let nd_gentag of all_gen_begins) {
+		gentag.UpdateGenTagContent(nd_gentag, null);
+	}
 };

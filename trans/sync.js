@@ -25,6 +25,7 @@ function main(){
 		if(!fn_rel_hpp){continue;}
 		all_cpp_files.add(path.resolve(__dirname,'../src',fn_rel_hpp.replace(/\.ama\.hpp$/,'.hpp')));
 	}
+	let aba_test_jobs=[];
 	for(let fn_cpp of all_cpp_files){
 		let fn_ama_cpp=fn_cpp.replace(/\.cpp$/,'.ama.cpp').replace(/\.hpp$/,'.ama.hpp');
 		let t_cpp=GetFileTime(fn_cpp);
@@ -32,17 +33,24 @@ function main(){
 		if(t_ama<t_cpp){
 			//cpp to ama
 			ProcessAmaFile(fn_cpp,script_cpp2ama);
-			if(default_options.is_migrating){
-				//ABA test for migration
-				ProcessAmaFile(fn_ama_cpp,script_ama2cpp);
-			}
+			aba_test_jobs.push([fn_ama_cpp,script_ama2cpp]);
 			pipe.run(['touch -r ',JSON.stringify(fn_cpp),' ',JSON.stringify(fn_ama_cpp)].join(''));
 			//console.log('updated',fn_ama_cpp);
 		}else if(t_cpp<t_ama){
 			//ama to cpp
 			ProcessAmaFile(fn_ama_cpp,script_ama2cpp);
+			aba_test_jobs.push([fn_cpp,script_cpp2ama]);
 			pipe.run(['touch -r ',JSON.stringify(fn_ama_cpp),' ',JSON.stringify(fn_cpp)].join(''));
 			//console.log('updated',fn_cpp);
+		}
+	}
+	if(default_options.do_aba_test){
+		//ABA test for migration
+		require('depends').DropCache();
+		require('cpp/typing').DropCache();
+		for(let job of aba_test_jobs){
+			console.log('aba test',job[0]);
+			ProcessAmaFile(job[0],job[1]);
 		}
 	}
 }

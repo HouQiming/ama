@@ -6,6 +6,7 @@ const sane_init = require('cpp/sane_init');
 const sane_export = require('cpp/sane_export');
 const move_operator = require('cpp/move_operator');
 const unified_null = require('cpp/unified_null');
+const depends = require('depends');
 module.exports = ParseCurrentFile=>{
 	let nd_root = ParseCurrentFile({parse_indent_as_scope: 1})
 	.StripRedundantPrefixSpace()
@@ -20,7 +21,9 @@ module.exports = ParseCurrentFile=>{
 	//console.log(JSON.stringify(nd_root, null, 1));
 	//console.flush();
 	//////////////////////
-	nd_root
+	depends.DropCache();
+	require('cpp/typing').DropCache();
+	let nd_root_aba = depends.LoadFile(nd_root.data.replace(/\.cpp$/, '.audit.cpp'))
 	.StripRedundantPrefixSpace()
 	.then(require('auto_semicolon'))
 	.then(sane_types.FixArrayTypes)
@@ -36,6 +39,6 @@ module.exports = ParseCurrentFile=>{
 	.then(require('cpp/auto_decl'))
 	.then(require('cpp/auto_header'))
 	.Save('.aba.audit.cpp');
-	__system('diff ' + nd_root.data + ' ' + nd_root.data.replace(/\.cpp$/, '.aba.audit.cpp'));
+	__system('diff ' + nd_root.data + ' ' + nd_root_aba.data);
 	return nd_root;
 };

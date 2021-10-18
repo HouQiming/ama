@@ -22,37 +22,40 @@ depends.Resolve = function(nd) {
 		}
 		for (let dir of depends.c_include_paths) {
 			let fn_test = path.resolve(dir, fn)
-			if (fs.existsSync(fn_test)) {
-				return fn_test;
-			}
+				if (fs.existsSync(fn_test)) {
+					return fn_test;};
 		}
-	} else if((nd.flags & DEP_TYPE_MASK) == DEP_JS_REQUIRE) {
+	} else if ((nd.flags & DEP_TYPE_MASK) == DEP_JS_REQUIRE) {
 		//reuse the builtin searcher __ResolveJSRequire
 		if (nd.c && nd.c.node_class == N_STRING) {
 			return __ResolveJSRequire(__filename, nd.c.GetStringValue);
 		}
 	}
 	return undefined;
-}
+};
 
 depends.cache = new Map();
+depends.DropCache = function() {
+	depends.cache = new Map();
+};
+
 depends.LoadFile = function(fn, options) {
 	fn = __path_toAbsolute(fn);
 	let nd_cached = depends.cache.get(fn);
 	if (!nd_cached) {
-		let data = null
+		let data = null;
 		try {
 			data = fs.readFileSync(fn);
 		} catch (err) {
 			//do nothing
-		}
+		};
 		if (!data) {return null;}
 		nd_cached = ParseCode(data, options || __PrepareOptions(fn));
 		nd_cached.data = fn;
 		depends.cache.set(fn, nd_cached);
 	}
 	return nd_cached;
-}
+};
 
 let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))};
 depends.dependency_cache = [new Map(), new Map()];
@@ -73,9 +76,8 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 			if (fn_dep && !ret.has(fn_dep)) {
 				ret.add(fn_dep);
 				let nd_root_dep = depends.LoadFile(fn_dep)
-				if (nd_root_dep) {
-					Q.push(nd_root_dep);
-				}
+					if (nd_root_dep) {
+						Q.push(nd_root_dep);};
 			}
 		}
 		for (let match of nd_root.MatchAll(nd_add_template)) {
@@ -100,7 +102,7 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 	let qret = Q.map(ndi=>__path_toAbsolute(ndi.data));
 	cache.set(nd_root, qret);
 	return qret;
-}
+};
 
 depends.ListLoadedFiles = function() {
 	let ret = [];
@@ -111,4 +113,4 @@ depends.ListLoadedFiles = function() {
 		ret.push(path.resolve(name));
 	});
 	return ret;
-}
+};

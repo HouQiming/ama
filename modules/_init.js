@@ -251,9 +251,9 @@ __global.default_options = {
 	keywords_function: 'extern function fn def inline',
 	keywords_after_class_name: ': extends implements for where',
 	keywords_after_prototype: ': -> => throw const noexcept override',
-	keywords_not_a_function: 'switch case #define #if return',
+	keywords_not_a_function: 'switch case #define #if #else #elif return',
 	//case is better treated as a part of a label
-	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #else #endif break continue',
+	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif break continue',
 	///////////
 	//codegen
 	tab_width: 4,
