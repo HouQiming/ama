@@ -243,6 +243,9 @@ function MigrateProject(fn,patches){
 				let nd_obj=nd_call.c.s;
 				let nd_args=nd_obj.BreakSibling();
 				nd_obj.BreakSelf();
+				if(nd_obj.node_class==N_PREFIX){
+					nd_obj=nParen(nd_obj);
+				}
 				if(!(nd_obj.node_class===N_CALL&&nd_obj.GetName()==='push')&&name!=='data'){
 					nd_obj=nPostfix(nd_obj,'--');
 				}

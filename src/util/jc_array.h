@@ -180,39 +180,6 @@ static inline std::span<typename GetArrayElementType<typename std::remove_refere
 	return std::forward<Array>(a);
 }
 
-//string comparison
-static inline int operator==(std::span<char> a, std::span<char> b){
-	return a.size()==b.size()&&memcmp(a.data(),b.data(),b.size())==0;
-}
-
-static inline int operator!=(std::span<char> a, std::span<char> b){
-	return a.size()!=b.size()||memcmp(a.data(),b.data(),b.size())!=0;
-}
-
-static inline int operator<(std::span<char> a, std::span<char> b){
-	size_t size=a.size()<b.size()?a.size():b.size();
-	int diff=memcmp(a.data(),b.data(),size);
-	return diff<0||(diff==0&&a.size()<b.size());
-}
-
-static inline int operator>(std::span<char> a, std::span<char> b){
-	size_t size=a.size()<b.size()?a.size():b.size();
-	int diff=memcmp(a.data(),b.data(),size);
-	return diff>0||(diff==0&&a.size()>b.size());
-}
-
-static inline int operator<=(std::span<char> a, std::span<char> b){
-	size_t size=a.size()<b.size()?a.size():b.size();
-	int diff=memcmp(a.data(),b.data(),size);
-	return diff<0||(diff==0&&a.size()<=b.size());
-}
-
-static inline int operator>=(std::span<char> a, std::span<char> b){
-	size_t size=a.size()<b.size()?a.size():b.size();
-	int diff=memcmp(a.data(),b.data(),size);
-	return diff>0||(diff==0&&a.size()>=b.size());
-}
-
 template<typename T>
 static inline void array_concat_copy_into(std::vector<T> &dest){}
 
@@ -524,6 +491,39 @@ public:
 	}
 };
 
+}
+
+//string comparison
+static inline int operator==(std::span<char> a, std::span<char> b){
+	return a.size()==b.size()&&memcmp(a.data(),b.data(),b.size())==0;
+}
+
+static inline int operator!=(std::span<char> a, std::span<char> b){
+	return a.size()!=b.size()||memcmp(a.data(),b.data(),b.size())!=0;
+}
+
+static inline int operator<(std::span<char> a, std::span<char> b){
+	size_t size=a.size()<b.size()?a.size():b.size();
+	int diff=memcmp(a.data(),b.data(),size);
+	return diff<0||(diff==0&&a.size()<b.size());
+}
+
+static inline int operator>(std::span<char> a, std::span<char> b){
+	size_t size=a.size()<b.size()?a.size():b.size();
+	int diff=memcmp(a.data(),b.data(),size);
+	return diff>0||(diff==0&&a.size()>b.size());
+}
+
+static inline int operator<=(std::span<char> a, std::span<char> b){
+	size_t size=a.size()<b.size()?a.size():b.size();
+	int diff=memcmp(a.data(),b.data(),size);
+	return diff<0||(diff==0&&a.size()<=b.size());
+}
+
+static inline int operator>=(std::span<char> a, std::span<char> b){
+	size_t size=a.size()<b.size()?a.size():b.size();
+	int diff=memcmp(a.data(),b.data(),size);
+	return diff>0||(diff==0&&a.size()>=b.size());
 }
 
 //example: `std::string("foobar")--->startsWith("foo")`
