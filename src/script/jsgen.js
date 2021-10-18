@@ -194,7 +194,7 @@ function Generate(version,my_call) {
 				(
 					'nd.' + ppt.name
 				),
-				'=null;',
+				'=NULL;',
 				'}else{',
 				unwrap_code.validation
 			].join('');
@@ -247,7 +247,7 @@ function Generate(version,my_call) {
 		);
 		if( class_name === 'Node' ) {
 			if( method_i.name === 'Insert' ) {
-				code_func.push('if(nd==null){return JS_ThrowTypeError(jsctx, "cannot insert at a null node");}');
+				code_func.push('if(nd==NULL){return JS_ThrowTypeError(jsctx, "cannot insert at a null node");}');
 				code_func.push('if(JS_IsNull(argv[1])||JS_IsUndefined(argv[1])){return JS_ThrowTypeError(jsctx, "cannot insert a null node");}');
 			}
 		}
@@ -278,7 +278,7 @@ function Generate(version,my_call) {
 					unwrap_code.validation,
 					'}'
 				);
-				unwrap_code.jc_expr = ['argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L])?', unwrap_code.jc_expr, ':null'].join('');
+				unwrap_code.jc_expr = ['argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L])?', unwrap_code.jc_expr, ':NULL'].join('');
 			} else {
 				code_func.push(unwrap_code.validation);
 			}

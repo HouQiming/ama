@@ -1,4 +1,4 @@
-#include "jc_unique_string.h"
+#include "./jc_unique_string.h"
 #include <unordered_set>
 #include <stdlib.h>
 #include <memory.h>

@@ -5,7 +5,7 @@ require('class');
 function isTypeLike(nd_type) {
 	return nd_type.node_class == N_REF || nd_type.node_class == N_DOT || nd_type.node_class == N_CALL_TEMPLATE;
 }
-let g_obj_init_transform = {from: .(.(Node.MatchAny('key')):.(Node.MatchAny('value'))),to: .(.(Node.MatchDot(nAir(), 'key'))=.(Node.MatchAny('value')))}
+let g_obj_init_transform = {from: .(.(Node.MatchAny('key')): .(Node.MatchAny('value'))),to: .(.(Node.MatchDot(nAir(), 'key')) = .(Node.MatchAny('value')))};
 function BidirTransform(nd_root, is_forward) {
 	//`type foo{};` as the default
 	for (let nd_ref of nd_root.FindAll(N_REF, null)) {
@@ -14,9 +14,9 @@ function BidirTransform(nd_root, is_forward) {
 		let nd_stmt = nd_ref.ParentStatement();
 		if (nd_stmt.node_class != N_SEMICOLON || nd_stmt.c != nd_ref.p) {continue;}
 		if (is_forward) {
-			if (!nd_ref.s) {nd_ref.Insert(POS_AFTER, nScope());}
+			if (!nd_ref.s && !nd_stmt.Find(N_REF, 'extern') && !nd_stmt.Find(N_REF, 'struct') && !nd_stmt.Find(N_REF, 'class')) {nd_ref.Insert(POS_AFTER, nScope());}
 		} else {
-			if (nd_ref.s && nd_ref.s.node_class == N_SCOPE&&!nd_ref.s.c) {nd_ref.s.Unlink();}
+			if (nd_ref.s && nd_ref.s.node_class == N_SCOPE && !nd_ref.s.c) {nd_ref.s.Unlink();}
 		}
 	}
 	for (let nd_scope of nd_root.FindAll(N_SCOPE, null)) {

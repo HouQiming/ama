@@ -6,8 +6,8 @@
 #include <unordered_map>
 #include <cmath>
 #include <cstdlib>
-#include "jc_array.h"
-#include "jc_unique_string.h"
+#include "../../../src/util/jc_array.h"
+#include "../../../src/util/jc_unique_string.h"
 #ifndef NDEBUG
 #include <stdio.h>
 #endif

@@ -1,6 +1,6 @@
 #ifndef __UNIQUE_STRING_H
 #define __UNIQUE_STRING_H
-#include "jc_array.h"
+#include "./jc_array.h"
 
 namespace JC{
 

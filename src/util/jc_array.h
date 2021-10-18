@@ -223,6 +223,15 @@ static inline void array_concat_copy_into(std::vector<T> &dest, U&& first, Types
 	array_concat_copy_into(dest, std::forward<Types>(rest)...);
 }
 
+template<typename T>
+static inline void AppendArray(std::vector<T> a,std::span<T> b){
+	a.insert(a.end(),b.begin(),b.end());
+}
+
+static inline void AppendArray(std::string a,std::span<char> b){
+	a.append(b.data(),b.size());
+}
+
 template<typename Base,typename T>
 class ArrayExtension:public Base{
 public:
@@ -238,8 +247,11 @@ public:
 		return std::span<T>(this->data()+start,this->size()-start);
 	}
 	template<typename _Base=Base>
-	inline typename std::enable_if<isVector<_Base>::value,ArrayExtension<_Base,T>&>::type push(std::span<T> b){
-		this->insert(this->end(),b.begin(),b.end());
+	inline typename std::enable_if<
+		isResizable<_Base>::value,
+		ArrayExtension<_Base,T>&
+	>::type push(std::span<T> b){
+		AppendArray(*this,b);
 		return *this;
 	}
 	template<typename U>
@@ -248,14 +260,6 @@ public:
 		ArrayExtension<Base,T>&
 	>::type push(U const &b){
 		this->push_back(b);
-		return *this;
-	}
-	template<typename _Base>
-	inline typename std::enable_if<
-		std::is_same<_Base,std::string>::value,
-		ArrayExtension<Base,T>&
-	>::type push(std::span<char> b){
-		this->insert(this->end(),b.begin(),b.end());
 		return *this;
 	}
 	template<typename _Base=Base>
@@ -317,7 +321,6 @@ public:
 		array_concat_copy_into(ret, *this, std::forward<Types>(args)...);
 		return std::move(ret);
 	}
-	!?
 	template<typename _Base=Base,typename T1,typename T2,typename... Types>
 	inline typename std::enable_if<
 		isResizable<_Base>::value,

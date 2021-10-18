@@ -90,9 +90,14 @@ function MigrateProject(fn,patches){
 			for(let ndi of args){
 				if(ndi.node_class===N_STRING){
 					let fn_src=ndi.GetStringValue();
-					//TODO: hack the in-project files ${JC_LIB}/json.cpp and stuff
 					if(fn_src.startsWith('${JC_LIB}/')){
-						console.log(fn_src);
+						//set in-project files to project path
+						let fn_prj=base_to_prj.get(path.basename(fn_src));
+						if(fn_prj){
+							fn_src=path.relative(dir_cmake,path.join(dir,fn_prj));
+						}
+					}
+					if(fn_src.startsWith('${JC_LIB}/')){
 						//we need the raw .jc.cpp / .jch.hpp names here
 						required_jc_libs.push(fn_src.substr(10));
 					}else{
@@ -182,13 +187,14 @@ function MigrateProject(fn,patches){
 	]);
 	for(let fn of required_jc_libs){
 		if(do_not_copy.has(path.basename(fn))){continue;}
-		let fn_target=path.join(dir_target,'jc_lib',fn.replace('.jc.','.').replace('.jch.','.'));
+		let fn_target=path.resolve(dir_target,'jc_lib',fn.replace('.jc.','.').replace('.jch.','.'));
 		let dir_to_make=path.dirname(fn_target);
 		if(!made_dirs.has(dir_to_make)){
 			script.push('mkdir -p ',JSON.stringify(dir_to_make),'\n');
 			made_dirs.add(dir_to_make);
 		}
-		script.push("sed '/#line/d;s%\\.jc\\.cpp%.cpp%g;s%\\.jch\\.hpp%.hpp%g' ",JSON.stringify(path.join(dir_jc_lib,fn)),' > ',JSON.stringify(fn_target),'\n')
+		script.push("sed '/#line/d;s%\\.jc\\.cpp%.cpp%g;s%\\.jch\\.hpp%.hpp%g' ",JSON.stringify(path.join(dir_jc_lib,fn)),' > ',JSON.stringify(fn_target),'\n');
+		cpps_to_translate.push(fn_target);
 	}
 	//patch it
 	for(let key in patches){
@@ -292,6 +298,7 @@ function main(){
 	MigrateProject(path.join(__dirname,'../src/entry/amal.jc'),{
 		'src/script/jsgen.ama.cpp':[
 			"//@ama require('./jsgen.js')('ama',ParseCurrentFile()).Save('.cpp');\n",
+			'#include "./jsenv.hpp"\n',
 			'#pragma gen_begin(js_bindings)\n'
 		].join(''),
 		'src/script/jsgen.cpp':{rm:1}

@@ -174,10 +174,6 @@ Node.Save = function(options) {
 	}
 	let content = this.toSource(options);
 	let name = options.name || this.data;
-	if (options.only_write_changed && __existsSync(name) && content === __buffer_toString.call(__readFileSync(name))) {
-		 //'no change found'
-		 return this;
-	}
 	__writeFileSync(name, content);
 	return this;
 }
@@ -263,9 +259,6 @@ __global.default_options = {
 	tab_width: 4,
 	tab_indent: 2, //2 for auto, will be *updated* by ParseSimpPairing to reflect what the original source did
 	auto_space: 1,
-	///////////
-	//save
-	only_write_changed: 1,
 };
 
 let g_jc_options = Object.assign(Object.create(__global.default_options), {
