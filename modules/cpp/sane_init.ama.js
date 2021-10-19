@@ -46,17 +46,6 @@ function BidirTransform(nd_root, is_forward) {
 						} else {
 							all_properties = [];
 						}
-						//let classes = undefined;
-						//if (nd_type_provider.node_class == N_REF && (nd_type_provider.flags & REF_DECLARED)) {
-						//	classes = nd_type_provider.LookupVariableClass();
-						//} else {
-						//	classes = nd_type_provider.LookupClass();
-						//}
-						//if (classes.length > 0 && current_field_id < classes[0].properties.length) {
-						//	all_properties = classes[0].properties.filter(ppt=>ppt.enumerable);
-						//} else {
-						//	all_properties = [];
-						//}
 					}
 					if (current_field_id < all_properties.length) {
 						let name = all_properties[current_field_id++].name;

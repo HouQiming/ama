@@ -29,6 +29,7 @@ module.exports = ParseCurrentFile=>{
 	.then(sane_types.FixArrayTypes)
 	.then(require('cpp/typing').DeduceAuto)
 	.then(require('cpp/auto_paren'))
+	.then(require('cpp/cpp_indent'))
 	.then(sane_types, {view: {to: .(JC::array_base<.(Node.MatchAny('TElement'))>)}})
 	.then(sane_init)
 	.then(sane_export)

@@ -156,6 +156,10 @@ namespace ama {
 			ama::Node*+! nd_pending_else = NULL;
 			ama::Node*+! nd_if_of_pending_else = NULL;
 			int! kw_mode = KW_NONE;
+			if( nd_raw.p.node_class == ama::N_KEYWORD_STATEMENT ) {
+				//the `defined()` in #if defined(){}
+				kw_mode = KW_NOT_FUNC;
+			}
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
 				if( kw_mode == KW_EXT && nd_last_scoped_stmt && ndi == nd_keyword.s && 
