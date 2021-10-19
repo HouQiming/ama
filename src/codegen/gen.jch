@@ -1,4 +1,5 @@
 // //// JC version: 3
+#include '../ast/node.jch'
 #pragma add("jc_files", "./gen.jc");
 
 namespace ama {
@@ -9,7 +10,7 @@ namespace ama {
 		//ignore offsets for now
 		//COULDDO: provide a separate service to convert some (unicode) tag into cite-like comments
 		char[+]! code;
-		Node*+! nd_current = NULL;
+		ama::Node*+! nd_current = NULL;
 		void*! opaque = NULL;
 		FGeneratorHook! hook = NULL;
 		FGeneratorHookComment! hook_comment = NULL;

@@ -218,15 +218,15 @@ function isNamespace(nd_class) {
 	return 1;
 }
 
-typing.LookupNamespacesByNames = function(nd_root, names) {
+typing.LookupClassesByNames = function(nd_root, names, options) {
 	let all_scopes = [];
-	for (let nd_dep of [nd_root].concat(depends.ListAllDependency(nd_root, true).map(fn=>depends.LoadFile(fn)))) {
+	for (let nd_dep of [nd_root].concat(options.include_dependency ? depends.ListAllDependency(nd_root, true).map(fn=>depends.LoadFile(fn)) : [])) {
 		let scopes = [nd_dep];
 		for (let i = names.length - 1; i >= 0; i--) {
 			let new_scopes = [];
 			for (let nd_scope of scopes) {
 				for (let nd_class of nd_scope.FindAllWithin(BOUNDARY_FUNCTION | BOUNDARY_CLASS, N_CLASS, names[i])) {
-					if (nd_class.data == 'namespace' && nd_class.LastChild().node_class == N_SCOPE) {
+					if ((!options.must_be || nd_class.data == options.must_be) && nd_class.LastChild().node_class == N_SCOPE) {
 						new_scopes.push(nd_class.LastChild());
 					}
 				}
@@ -285,6 +285,28 @@ typing.ComputeReturnType = function(type_func) {
 		}
 	}
 	return type;
+};
+
+typing.LookupDottedName = function(nd_site, name, nd_scope) {
+	let nd_def = undefined;
+	if (nd_scope) {
+		typing.GetDefs(nd_scope).get(name);
+	}
+	if (!nd_def && isNamespace(nd_scope)) {
+		//it got ugly: we need to search ALL same-named namespaces
+		//don't merge namespaces internally: each file "sees" a different version of the same namespace
+		let names = [];
+		for (let ndi = nd_scope; ndi; ndi = ndi.p) {
+			if (ndi.node_class == N_CLASS) {names.push(ndi.GetName());}
+		}
+		for (let nd_scope of typing.LookupClassesByNames(nd_site.Root(), names, {must_be: 'namespace',include_dependency: 1})) {
+			let nd_def = typing.GetDefs(nd_scope.LastChild()).get(name);
+			if (nd_def) {
+				break;
+			}
+		}
+	}
+	return nd_def;
 };
 
 typing.ComputeType = function(nd_expr) {
@@ -401,28 +423,12 @@ typing.ComputeType = function(nd_expr) {
 			type_obj = typing.ComputeType(type_obj.c);
 		}
 		if (type_obj.node_class == N_CLASS) {
-			let nd_def = typing.GetDefs(type_obj.LastChild()).get(nd_expr.data);
+			let nd_def = typing.LookupDottedName(nd_expr, nd_expr.data, type_obj.LastChild());
 			if (nd_def) {
 				type = typing.ComputeDeclaredType(nd_def);
-				if (type) {break;}
 			}
 		}
-		//it got ugly: we need to search ALL same-named namespaces
-		//don't merge namespaces internally: each file "sees" a different version of the same namespace
-		if (isNamespace(type_obj)) {
-			let names = [];
-			for (let ndi = type_obj; ndi; ndi = ndi.p) {
-				if (ndi.node_class == N_CLASS) {names.push(ndi.GetName());}
-			}
-			for (let nd_scope of typing.LookupNamespacesByNames(nd_expr.Root(), names)) {
-				let nd_def = typing.GetDefs(nd_scope.LastChild()).get(nd_expr.data);
-				if (nd_def) {
-					type = typing.ComputeDeclaredType(nd_def);
-					if (type) {break;}
-				}
-			}
-		}
-		//assume self-representative when we fail to find the name
+		//assume self-representing type name when we fail to find the def
 		if (!type) {type = nd_expr;}
 		break;
 	}

@@ -3,6 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const depends = require('depends');
+const typing = require('cpp/typing');
 
 function GetFunctionNameNode(nd_func) {
 	let nd_name = nd_func.c;
@@ -81,38 +82,77 @@ function Transform(nd_root, options) {
 		let nd_name = GetFunctionNameNode(nd_func);
 		let names = [];
 		while (nd_name.node_class == N_DOT) {
-			names.push(nd_name.data)
-						nd_name = nd_name.c;
+			names.push(nd_name.data);
+			nd_name = nd_name.c;
 		};
 		if (nd_name.node_class != N_AIR) {
 			names.push(nd_name.GetName());
 		}
+		let class_names = [];
 		for (let ndi = nd_name.p; ndi; ndi = ndi.p) {
 			if (ndi.node_class == N_CLASS) {
-				names.push(ndi.GetName());
+				class_names.push(ndi.GetName());
 			}
 		}
+		//namespace deduplication
+		let n_dup = class_names.length;
+		while (n_dup > 0) {
+			let is_equal = 1;
+			for (let i = 0; i < n_dup; i++) {
+				if (class_names[i] != names[names.length - i]) {
+					is_equal = 0;
+					break;
+				}
+			}
+			if (is_equal) {
+				break;
+			}
+			n_dup--;
+		}
+		names.length -= n_dup;
 		if (!names.length) {continue;}
-		let nd_scope = nd_header;
-		let failed = 0;
-		for (let i = names.length - 1; i > 0; i--) {
-			let classes = nd_scope.FindAll(N_CLASS, names[i]).filter(nd=>nd.LastChild().node_class == N_SCOPE);
-			if (classes.length > 0) {
-				nd_scope = classes[0].LastChild();
-			} else {
-				failed = i;
+		//look up in all possible namespaces
+		let scopes = [nd_header];
+		if (names.length > 1) {
+			//finding in ANY dependent file prevents the sync
+			scopes = typing.LookupClassesByNames(nd_header, names.slice(1), {include_dependency: 1});
+		}
+		let found = 0;
+		for (let nd_scope of scopes) {
+			if (nd_scope.Find(N_FUNCTION, names[0])) {
+				found = 1;
 				break;
 			}
 		}
-		if (!failed && nd_scope.Find(N_FUNCTION, names[0])) {
+		if (!found) {
+			//check for out-of-class implementation of a private class
+			let body_scopes = typing.LookupClassesByNames(nd_root, names.slice(1), {});
+			for (let nd_scope of body_scopes) {
+				let nd_class = nd_scope.Owning(N_CLASS);
+				if (nd_class && nd_class.data != 'namespace') {
+					//use found=1 to prevent syncing
+					found = 1;
+					break;
+				}
+			}
+		}
+		if (found) {
 			//we already have it, no need to sync
 			//ignore overloading cases for now
 			continue;
 		}
 		//assume all ::s along the way are namespaces
+		//recreate them
+		let failed = 0;
+		while (failed < names.length) {
+			failed += 1;
+			scopes = (failed >= names.length ? [nd_header] : typing.LookupClassesByNames(nd_header, names.slice(failed), {}));
+			if (scopes.length) {break;}
+		}
+		let nd_scope = scopes[0];
 		changed = 1;
 		let nd_insertion_root = undefined;
-		for (let i = failed; i > 0; i--) {
+		for (let i = failed - 1; i > 0; i--) {
 			let nd_namespace = nClass('namespace', nAir(), nRef(names[i]), nAir(), nScope());
 			if (!nd_insertion_root) {
 				nd_insertion_root = nd_namespace;

@@ -190,10 +190,10 @@ private class NodeGraphContext {
 	ama::ExecSession*+! sess;
 	ama::Node*+! nd_entry = NULL;
 	int! labels_collected = 0;
-	Map<char[|], ama::Node*+>! labels = new Map<char[|], ama::Node*+>!();
-	ama::Node*+[+]! addressed_labels = new ama::Node*+[+]!();
-	Map<ama::Node*+, ama::Node*+>! jump_targets = new Map<ama::Node*+, ama::Node*+>!();
-	ama::ExecNode*+[+]! jump_jobs = new ama::ExecNode*+[+]!();
+	Map<char[|], ama::Node*+>! labels;
+	ama::Node*+[+]! addressed_labels;
+	Map<ama::Node*+, ama::Node*+>! jump_targets;
+	ama::ExecNode*+[+]! jump_jobs;
 	ama::Node*+! QueryJumpTarget(NodeGraphContext*+! this, ama::Node*+! ndi);
 	ama::ExecRange! dfsCreateNodeGraph(NodeGraphContext*+! this, ama::Node*+! nd);
 };
