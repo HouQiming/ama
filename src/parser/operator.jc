@@ -140,13 +140,12 @@ namespace ama {
 					nd_value.comments_before = ndi_next_next.comments_before;
 					ndi_next_next.comments_before = '';
 					nd_value.MergeCommentsBefore(ndi_next);
-					nd_value.indent_level = ndi_next_next.indent_level;
 					ama::Node*+! nd_tmp = ama::GetPlaceHolder();
 					nd_raw.ReplaceWith(nd_tmp);
 					//ndi.s = NULL;
 					ama::Node*+! nd_asgn = nd_tmp.ReplaceWith(ama::nAssignment(nd_raw, nd_value));
 					nd_raw.AdjustIndentLevel(-nd_asgn.indent_level);
-					nd_value.AdjustIndentLevel(-nd_asgn.indent_level);
+					//nd_value doesn't need adjusting: it was a child, while nd_raw was the parent
 					//always allow :=
 					if( ndi.node_class == ama::N_SYMBOL && (binop_priority[ndi.data] || ndi.data == ":") && ndi != nd_raw.c ) {
 						//updating assignment
