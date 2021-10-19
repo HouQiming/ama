@@ -120,7 +120,14 @@ namespace ama {
 			int! after_cpp_macro = 0;
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
-				if( (ndi.isSymbol(";") && !
+				if( ndi.isRawNode(0, 0) || (ndi_next && ndi_next.isRawNode(0, 0)) ) {
+					//already delimited, keep it
+					if( !changed ) { changed = ','; }
+					ndi.BreakSibling();
+					if( ndi_next ) {
+						new_children.push_back(ndi_next);
+					}
+				} else if( (ndi.isSymbol(";") && !
 				(ndi_next && ndi_next.node_class == ama::N_REF && keywords_extension_clause[ndi_next.data])) || 
 				(ndi_next && ndi_next.isSymbol(";") && !
 				(ndi_next.s && ndi_next.s.node_class == ama::N_REF && keywords_extension_clause[ndi_next.s.data])) ) {
