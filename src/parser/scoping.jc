@@ -19,16 +19,18 @@ namespace ama {
 		ama::Node*+[+]! line_out_final = new ama::Node*+[+]!();
 		for(int! i0 = 0; i0 < lines_out.length;) {
 			int! i1 = i0 + 1;
-			while( i1 < lines_out.length && 
-			(lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1].isRawNode('{', '}') || 
-			(lines_out[i1].isRawNode(0, 0) && lines_out[i1].c && (lines_out[i1].c.node_class == ama::N_SCOPE || lines_out[i1].c.isRawNode('{', '}'))) || 
-			((lines_out[i1 - 1].node_class == ama::N_SCOPE || lines_out[i1 - 1].isRawNode('{', '}')) && 
-			((lines_out[i1].node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].data]) || 
-			(lines_out[i1].node_class == ama::N_RAW && lines_out[i1].c && lines_out[i1].c.node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].c.data])))) ) {
-				if( (lines_out[i1 - 1].node_class == ama::N_SCOPE || lines_out[i1 - 1].isRawNode('{', '}')) && lines_out[i1].comments_before.startsWith('\n') ) {
-					lines_out[i1].comments_before = new char[|]!(lines_out[i1].comments_before.subarray(1));
+			if( !(lines_out[i0].c && lines_out[i0].LastChild().isSymbol(";")) ) {
+				while( i1 < lines_out.length && 
+				(lines_out[i1].node_class == ama::N_SCOPE || lines_out[i1].isRawNode('{', '}') || 
+				(lines_out[i1].isRawNode(0, 0) && lines_out[i1].c && (lines_out[i1].c.node_class == ama::N_SCOPE || lines_out[i1].c.isRawNode('{', '}'))) || 
+				((lines_out[i1 - 1].node_class == ama::N_SCOPE || lines_out[i1 - 1].isRawNode('{', '}')) && 
+				((lines_out[i1].node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].data]) || 
+				(lines_out[i1].node_class == ama::N_RAW && lines_out[i1].c && lines_out[i1].c.node_class == ama::N_REF && keywords_extension_clause[lines_out[i1].c.data])))) ) {
+					if( (lines_out[i1 - 1].node_class == ama::N_SCOPE || lines_out[i1 - 1].isRawNode('{', '}')) && lines_out[i1].comments_before.startsWith('\n') ) {
+						lines_out[i1].comments_before = new char[|]!(lines_out[i1].comments_before.subarray(1));
+					}
+					i1 += 1;
 				}
-				i1 += 1;
 			}
 			if( (i1 - i0) <= 1 ) {
 				line_out_final.push_back(lines_out[i0]);

@@ -149,6 +149,10 @@ namespace ama {
 		int32_t! struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'struct_can_be_type_prefix'), 1);
 		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
 			if( !nd_raw.p ) { continue; }
+			if( nd_raw.p.node_class == ama::N_KEYWORD_STATEMENT && nd_raw.p.data.startsWith('#') ) {
+				//the `defined()` in #if defined(){}
+				continue;
+			}
 			ama::Node*+! ndi = nd_raw.c;
 			ama::Node*+! nd_prototype_start = ndi;
 			ama::Node*+! nd_last_scoped_stmt = NULL;
@@ -156,10 +160,6 @@ namespace ama {
 			ama::Node*+! nd_pending_else = NULL;
 			ama::Node*+! nd_if_of_pending_else = NULL;
 			int! kw_mode = KW_NONE;
-			if( nd_raw.p.node_class == ama::N_KEYWORD_STATEMENT ) {
-				//the `defined()` in #if defined(){}
-				kw_mode = KW_NOT_FUNC;
-			}
 			while( ndi ) {
 				ama::Node*+! ndi_next = ndi.s;
 				if( kw_mode == KW_EXT && nd_last_scoped_stmt && ndi == nd_keyword.s && 
