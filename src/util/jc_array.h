@@ -191,11 +191,11 @@ static inline void array_concat_copy_into(std::vector<T> &dest, U&& first, Types
 }
 
 template<typename T>
-static inline void AppendArray(std::vector<T> a,std::span<T> b){
+static inline void AppendArray(std::vector<T> &a,std::span<T> b){
 	a.insert(a.end(),b.begin(),b.end());
 }
 
-static inline void AppendArray(std::string a,std::span<char> b){
+static inline void AppendArray(std::string &a,std::span<char> b){
 	a.append(b.data(),b.size());
 }
 

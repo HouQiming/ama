@@ -94,7 +94,7 @@ Node.dfsMatch = function(ret, nd_pattern) {
 			ret[nd_save.c.s.GetName()] = this;
 		} else if(nd_save.node_class === N_DOT) {
 			if (this.node_class !== N_DOT) {return false;}
-			if (!ndi.dfsMatch(this.c, nd_save.c)) {
+			if (!this.c.dfsMatch(ret, nd_save.c)) {
 				return false;
 			}
 			ret[nd_save.GetName()] = nRef(this.data);
