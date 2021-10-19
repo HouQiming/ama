@@ -8,7 +8,7 @@ const move_operator = require('cpp/move_operator');
 const unified_null = require('cpp/unified_null');
 const depends = require('depends');
 module.exports = ParseCurrentFile=>{
-	let nd_root = ParseCurrentFile({parse_indent_as_scope: 1})
+	let nd_root = ParseCurrentFile()
 	.StripRedundantPrefixSpace()
 	.then(jsism.EnableJSLambdaSyntax.inverse)
 	.then(unified_null.inverse)
@@ -23,7 +23,7 @@ module.exports = ParseCurrentFile=>{
 	//////////////////////
 	depends.DropCache();
 	require('cpp/typing').DropCache();
-	let nd_root_aba = depends.LoadFile(nd_root.data.replace(/\.cpp$/, '.audit.cpp'))
+	let nd_root_aba = depends.LoadFile(nd_root.data.replace(/\.cpp$/, '.audit.cpp'), {parse_indent_as_scope: 1})
 	.StripRedundantPrefixSpace()
 	.then(require('auto_semicolon'))
 	.then(sane_types.FixArrayTypes)

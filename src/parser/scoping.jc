@@ -99,9 +99,10 @@ namespace ama {
 	}
 	ama::Node*+! DelimitCLikeStatements(ama::Node*+! nd_root, JSValue! options) {
 		Map<char[|], int>! keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
-		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL)) {
+		for(ama::Node*+! nd_raw : nd_root.FindAllWithin(0, ama::N_RAW, NULL).reverse()) {
 			if( !(nd_raw.flags & 0xffff) && nd_raw.p ) {
 				//move out trailing ;
+				//need to do it in reverse order so that we kick out ; before getting to the parent
 				ama::Node*+! nd_last = nd_raw.LastChild();
 				if( nd_last && nd_last.isSymbol(";") && nd_raw.p && (nd_raw.p.node_class == ama::N_SCOPE || nd_raw.p.node_class == ama::N_RAW) ) {
 					nd_last.comments_after = new char[|]!(nd_last.comments_after + nd_raw.comments_after);
