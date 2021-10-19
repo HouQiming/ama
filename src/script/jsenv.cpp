@@ -48,6 +48,9 @@ namespace ama {
 		if ( fs::existsSync(fn) ) {
 			return fn;
 		}
+		if ( fs::existsSync(JC::string_concat(fn, ".ama.js")) ) {
+			return JC::array_cast<JC::unique_string>(JC::string_concat(fn, ".ama.js"));
+		}
 		if ( fs::existsSync(JC::string_concat(fn, ".js")) ) {
 			return JC::array_cast<JC::unique_string>(JC::string_concat(fn, ".js"));
 		}

@@ -5,12 +5,12 @@ const sane_init=require('cpp/sane_init');
 const sane_export=require('cpp/sane_export');
 const move_operator=require('cpp/move_operator');
 const unified_null=require('cpp/unified_null');
-let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
+let nd_root=(ParseCurrentFile({parse_indent_as_scope:1})
 	.StripRedundantPrefixSpace()
 	.then(require('auto_semicolon'))
 	.then(sane_types.FixArrayTypes)
 	.then(require('cpp/typing').DeduceAuto)
-	.then(require('cpp/auto_paren'))
+	.then(require('auto_paren'))
 	.then(require('cpp/cpp_indent'))
 	.Save()
 	.then(sane_types)
@@ -20,8 +20,9 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.then(unified_null)
 	.then(jsism.EnableJSLambdaSyntax)
 	.then(jsism.EnableJSON)
+	.then(jsism.EnableSingleQuotedStrings)
 	.then(require('cpp/auto_decl'))
 	.then(require('cpp/auto_header'))
-	.Save(path.extname(__filename));
+	.Save(path.extname(__filename)));
 //make the per-file script take the translated source
 ParseCurrentFile=function(){return nd_root;}

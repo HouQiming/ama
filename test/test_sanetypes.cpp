@@ -24,7 +24,7 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.then(jsism.EnableJSLambdaSyntax)
 	.then(jsism.EnableJSON)
 	.then(require('cpp/auto_decl'))
-	.then(require('cpp/auto_paren'))
+	.then(require('auto_paren'))
 	.then(require('cpp/auto_header'),{audit:path.join(__dirname,'test_sanetypes.header.audit.cpp')})
 	.Save('.audit.cpp');
 //console.log(JSON.stringify(nd_root,null,1));

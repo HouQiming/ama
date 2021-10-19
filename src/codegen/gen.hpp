@@ -12,10 +12,10 @@ namespace ama {
 		//ignore offsets for now
 		//COULDDO: provide a separate service to convert some (unicode) tag into cite-like comments
 		std::string code{};
-		ama::Node* nd_current{};
-		void const* opaque{};
-		FGeneratorHook hook{};
-		FGeneratorHookComment hook_comment{};
+		ama::Node* nd_current = nullptr;
+		void const* opaque = nullptr;
+		FGeneratorHook hook = nullptr;
+		FGeneratorHookComment hook_comment = nullptr;
 		intptr_t scope_indent_level = intptr_t(0L);
 		intptr_t p_last_indent = intptr_t(0L);
 		int32_t tab_width = 4;

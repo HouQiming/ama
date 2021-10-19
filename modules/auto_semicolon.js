@@ -1,3 +1,4 @@
+//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
 'use strict';
 module.exports = function(nd_root) {
 	for (let nd of nd_root.FindAll(N_RAW, null)) {

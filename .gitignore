@@ -10,17 +10,6 @@ build/
 *.js.c
 *.js.h
 a.out
-modules/*.js
-modules/**/*.js
-!modules/jcs.js
-!modules/fs.js
-!modules/path.js
-!modules/assert.js
-!modules/_init.js
-!modules/pipe.js
-!modules/auto_semicolon.js
-!modules/*.ama.js
-!modules/**/*.ama.js
 /test/test_tmp.*
 /test/cmake/CMakeLists.txt
 /test/cmake/test_cmake.cpp

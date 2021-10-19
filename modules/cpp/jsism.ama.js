@@ -480,3 +480,11 @@ jsism.EnableJSLambdaSyntax.inverse = function(nd_root) {
 		}
 	}
 };
+
+jsism.EnableSingleQuotedStrings = function(nd_root) {
+	for (let nd_str of nd_root.FindAll(N_STRING)) {
+		if (nd_str.GetStringValue().length > 1) {
+			nd_str.flags &= ~STRING_SINGLE_QUOTED;;
+		}
+	}
+};

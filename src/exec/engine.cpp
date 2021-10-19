@@ -875,7 +875,7 @@ std::string ama::ExecSession::DumpGraphviz(ama::ExecNode* extra_graph) {
 	dctx.cur_num = 0;
 	dctx.cur_ed_num = 0;
 	dctx.nd_dumping = nullptr;
-	ama::CodeGenerator gctx{.code = {}, .nd_current = nullptr, .opaque = nullptr, .hook = nullptr, .hook_comment = nullptr, .scope_indent_level = intptr_t(0L), .p_last_indent = intptr_t(0L), .tab_width = 4, .auto_space = 1};
+	ama::CodeGenerator gctx{};
 	gctx.opaque = &dctx;
 	gctx.hook = GraphvizGenerateNode;
 	gctx.tab_indent = 0;

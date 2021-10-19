@@ -1,10 +1,10 @@
+#include <vector>
+#include <unordered_map>
+#include "../util/jc_array.h"
+#include "../util/jc_unique_string.h"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "operator.hpp"
-#include <vector>
-#include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
-#include <unordered_map>
 namespace ama {
 	struct ColonStackItem {
 		ama::Node* nd_head{};

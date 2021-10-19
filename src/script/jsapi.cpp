@@ -74,12 +74,25 @@ namespace ama {
 		if ( their_extname == ".json" ) {
 			return JC::string_concat("(function(exports,module){module.exports=JSON.parse(", JSON::stringify(s_code.some), ")})");
 		} else {
+			if ( fn--->endsWith(".ama.js") ) {
+				ama::Node* nd_root = ParseCode(s_code->c_str(), JS_UNDEFINED);
+				if (nd_root) {
+					for (ama::Node* nd: nd_root->FindAll(ama::N_BINOP, "!=")) {
+						nd->data = "!==";
+					}
+					for (ama::Node* nd: nd_root->FindAll(ama::N_BINOP, "==")) {
+						nd->data = "===";
+					}
+					ama::NodeofToASTExpression(nd_root);
+					s_code.some = nd_root->toSource();
+				}
+			}
 			return JC::string_concat("(function(exports,module,__filename,__dirname){let require=__require.bind(null,__filename);", s_code.some, "\n})\n");
 		}
 	}
 	static std::string ResolveJSRequire(std::span<char> fn_base, std::span<char> fn_required) {
-		std::string dir_base = path::dirname((path::CPathResolver{std::string()}).add(fn_base)->done());
-		std::string fn_final = (path::CPathResolver{std::string()}).add(dir_base)->add(fn_required)->done();
+		std::string dir_base = path::dirname((path::CPathResolver{}).add(fn_base)->done());
+		std::string fn_final = (path::CPathResolver{}).add(dir_base)->add(fn_required)->done();
 		JC::unique_string fn_commonjs{};
 		if ( !fn_required--->startsWith(".") && !fn_required--->startsWith("/") ) {
 			//it's a standard module

@@ -6,14 +6,35 @@ const pipe=require('pipe');
 const path=require('path');
 const fs=require('fs');
 
-function GetFileTime(fn){
-	if(!fs.existsSync(fn)){return 0;}
-	let stat=fs.statSync(fn);
-	return stat.mtimeMs;
+function FixAMAJS(){
+	//minimize the `require` here: we are *modifying* the js files which we'll probably `require` later
+	const auto_paren=require('auto_paren');
+	const auto_semicolon=require('auto_semicolon');
+	process.chdir(path.join(__dirname,'../modules'));
+	for(let fn_rel_amajs of pipe.runPiped(process.platform==='win32'?'dir /s /b *.ama.js':"find -iname '*.ama.js'").stdout.split('\n')){
+		if(!fn_rel_amajs){continue;}
+		let fn=path.resolve(__dirname,'../modules',fn_rel_amajs);
+		let nd_root=ParseCode(fs.readFileSync(fn));
+		if(nd_root){
+			nd_root.data=fn;
+			for(let nd of nd_root.FindAll(N_BINOP,'!==')){
+				nd.data='!=';
+			}
+			for(let nd of nd_root.FindAll(N_BINOP,'===')){
+				nd.data='==';
+			}
+			nd_root.then(auto_paren).then(auto_semicolon).Save();
+		}
+	}
+	Node.gc();
 }
 
-function main(){
-	__dirname=path.resolve(__dirname);
+function FixAMACPP(){
+	function GetFileTime(fn){
+		if(!fs.existsSync(fn)){return 0;}
+		let stat=fs.statSync(fn);
+		return stat.mtimeMs;
+	}
 	process.chdir(path.join(__dirname,'../src'));
 	let script_ama2cpp=fs.readFileSync(path.join(__dirname,'from_ama.js')).toString();
 	let script_cpp2ama=fs.readFileSync(path.join(__dirname,'to_ama.js')).toString();
@@ -28,6 +49,7 @@ function main(){
 	}
 	let aba_test_jobs=[];
 	for(let fn_cpp of all_cpp_files){
+		Node.gc();
 		let fn_ama_cpp=fn_cpp.replace(/\.cpp$/,'.ama.cpp').replace(/\.hpp$/,'.ama.hpp');
 		let t_cpp=GetFileTime(fn_cpp);
 		let t_ama=GetFileTime(fn_ama_cpp);
@@ -45,15 +67,8 @@ function main(){
 			console.log('updated',fn_cpp);
 		}
 	}
-	if(default_options.do_aba_test){
-		//ABA test for migration
-		require('depends').DropCache();
-		require('cpp/typing').DropCache();
-		for(let job of aba_test_jobs){
-			console.log('aba test',job[0]);
-			ProcessAmaFile(job[0],job[1]);
-		}
-	}
 }
 
-main();
+__dirname=path.resolve(__dirname);
+FixAMAJS();
+FixAMACPP();
