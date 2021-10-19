@@ -53,7 +53,7 @@ module.exports = function(nd_root) {
 				nd_parent=nd_parent.p;
 			}
 			if(nd_parent&&nd_parent.node_class!==N_SCOPED_STATEMENT&&nd_parent.node_class!==N_FUNCTION&&nd_parent.node_class!==N_CLASS){
-				//constant-ish scope, don't auto-semicolon
+				//initializer-ish scope, don't auto-semicolon
 				continue;
 			}
 		}

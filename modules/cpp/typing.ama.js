@@ -300,13 +300,20 @@ typing.LookupDottedName = function(nd_site, name, nd_scope) {
 			if (ndi.node_class == N_CLASS) {names.push(ndi.GetName());}
 		}
 		for (let nd_scope of typing.LookupClassesByNames(nd_site.Root(), names, {must_be: 'namespace',include_dependency: 1})) {
-			let nd_def = typing.GetDefs(nd_scope.LastChild()).get(name);
+			nd_def = typing.GetDefs(nd_scope).get(name);
 			if (nd_def) {
 				break;
 			}
 		}
 	}
 	return nd_def;
+};
+
+typing.TryGettingClass = function(type_obj) {
+	while (type_obj && type_obj.node_class == N_CALL_TEMPLATE) {
+		type_obj = typing.ComputeType(type_obj.c);
+	}
+	return type_obj;
 };
 
 typing.ComputeType = function(nd_expr) {
@@ -418,10 +425,7 @@ typing.ComputeType = function(nd_expr) {
 	case N_DOT: {
 		//try to look up the "primary" type first
 		//COULDDO: substitute template parameters
-		let type_obj = typing.ComputeType(nd_expr.c);
-		while (type_obj && type_obj.node_class == N_CALL_TEMPLATE) {
-			type_obj = typing.ComputeType(type_obj.c);
-		}
+		let type_obj = typing.TryGettingClass(typing.ComputeType(nd_expr.c));
 		if (type_obj.node_class == N_CLASS) {
 			let nd_def = typing.LookupDottedName(nd_expr, nd_expr.data, type_obj.LastChild());
 			if (nd_def) {

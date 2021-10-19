@@ -4,7 +4,6 @@
 /*
 @ama
 const path=require('path');
-const jsism=require('jsism');
 const sane_types=require('cpp/sane_types');
 const sane_init=require('cpp/sane_init');
 const sane_export=require('cpp/sane_export');
