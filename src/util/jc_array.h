@@ -1,6 +1,20 @@
 #ifndef __JC_ARRAY_H
 #define __JC_ARRAY_H
-#include "jc_stdinc.h"
+#include <vector>
+#include <string>
+#include <memory>
+#include <functional>
+#include <type_traits>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <memory.h>
+#include <cstddef>
+#include <unordered_map>
+#include <algorithm>
+#include <new>
+#include <utility>
 #if __cplusplus>=202002L
 	#include <span>
 #else

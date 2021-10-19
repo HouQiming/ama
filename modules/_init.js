@@ -170,7 +170,7 @@ Node.Save = function(options) {
 	}
 	if (options.change_ext) {
 		//we need to handle .ama.js => .js shenanigans, so remove everything after the *first* dot
-		let pdot = this.data.indexOf('.');
+		let pdot = this.data.indexOf('.',Math.max(this.data.lastIndexOf('/'),this.data.lastIndexOf('\\'),0));
 		if (pdot < 0) {pdot = this.data.length;}
 		options.name = this.data.substr(0, pdot) + (options.change_ext.startsWith('.') ? '' : '.') + options.change_ext;
 	}
