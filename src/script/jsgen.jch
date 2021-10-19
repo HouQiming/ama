@@ -1,6 +1,0 @@
-// //// JC version: 3
-#pragma add("jc_files", "./jsgen.jc");
-
-namespace ama {
-	void! GeneratedJSBindings();
-};

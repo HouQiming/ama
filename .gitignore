@@ -3,6 +3,8 @@ build/
 *.jc.cpp
 *.jch.hpp
 *.audit.*
+*.ama.cpp
+*.ama.hpp
 *.bak
 /default.qpad_notebook
 *.js.c

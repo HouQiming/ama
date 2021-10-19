@@ -1,0 +1,812 @@
+#include "console.hpp"
+#include "../ast/node.hpp"
+#include "../script/jsenv.hpp"
+#include "postfix.hpp"
+#include "decl.hpp"
+#include "operator.hpp"
+#include "scoping.hpp"
+#include <vector>
+#include "../util/jc_array.h"
+#include "../util/jc_unique_string.h"
+#include <unordered_map>
+namespace ama {
+	static ama::Node* ConvertToParameterList(ama::Node* nd_raw) {
+		assert(nd_raw->isRawNode('(', ')'));
+		std::vector<ama::Node*> params{};
+		for (ama::Node* ndi_0 = nd_raw->c; ndi_0; ndi_0 = ndi_0->s) {
+			{
+				if ( ndi_0->isSymbol(",") ) { continue; }
+				if ( ndi_0->isRawNode(0, 0) && ndi_0->c && ndi_0->c->s && ndi_0->LastChild()->isSymbol(",") ) {
+					ama::Node* nd_comma_0 = ndi_0->LastChild();
+					nd_comma_0->Unlink();
+					ama::Node* nd_arg_last_0 = ndi_0->LastChild();
+					nd_arg_last_0->MergeCommentsAndIndentAfter(nd_comma_0);
+					ndi_0->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(ndi_0->comments_after, nd_comma_0->comments_after));
+					nd_comma_0->FreeASTStorage();
+					if ( !ndi_0->c->s ) {
+						ndi_0 = ama::UnparseRaw(ndi_0);
+					}
+				}
+				params--->push(ndi_0);
+			}
+		}
+		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params)->setIndent(nd_raw->indent_level)->setCommentsBefore(nd_raw->comments_before)->setCommentsAfter(nd_raw->comments_after);
+	}
+	//detects: N_FUNCTION and N_CLASS
+	//also parses if / else / ...
+	//after ParseAssignment	
+	static const int KW_NONE = 0;
+	static const int KW_CLASS = 1;
+	static const int KW_STMT = 2;
+	static const int KW_EXT = 3;
+	static const int KW_FUNC = 4;
+	static const int KW_NOT_FUNC = 5;
+	//void! DumpASTAsJSON(ama::Node*+! nd);
+	static ama::Node* TranslateCUnscopedStatement(ama::Node* nd_keyword, ama::Node* nd_end) {
+		ama::Node* nd_tmp = ama::GetPlaceHolder();
+		nd_keyword->ReplaceUpto(nd_end, nd_tmp);
+		ama::Node* nd_arg{};
+		ama::Node* nd_body = nd_keyword->BreakSibling();
+		if ( nd_keyword->node_class == ama::N_CALL ) {
+			nd_keyword = ama::UnparseCall(nd_keyword);
+			nd_arg = nd_keyword->BreakSibling();
+		} else if ( nd_body && nd_body->isRawNode('(', ')') ) {
+			nd_arg = nd_body;
+			nd_body = nd_body->BreakSibling();
+		} else {
+			//Python-like : separation handling
+			ama::Node* nd_last_colon{};
+			for (ama::Node* ndi = nd_body; ndi; ndi = ndi->s) {
+				if ( ndi->isSymbol(":") ) {
+					nd_last_colon = ndi;
+				}
+			}
+			if ( nd_last_colon ) {
+				nd_arg = nd_body;
+				nd_body = nd_last_colon->BreakSibling();
+			}
+		}
+		ama::Node* nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
+		nd_body = ama::toSingleNode(nd_body);
+		ama::Node* nd_scoped_body = ama::CreateNode(ama::N_SCOPE, nd_body);
+		if ( nd_body->comments_before--->indexOf('\n') < 0 ) {
+			std::swap(nd_scoped_body->comments_before, nd_body->comments_before);
+		}
+		if ( nd_body->comments_after--->indexOf('\n') < 0 ) {
+			std::swap(nd_scoped_body->comments_after, nd_body->comments_after);
+		}
+		nd_scoped_body->indent_level = nd_keyword->indent_level;
+		if ( nd_body->comments_after--->indexOf('\n') >= 0 && nd_stmt->comments_after--->indexOf('\n') < 0 ) {
+			nd_stmt->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_stmt->comments_after, "\n"));
+		}
+		if ( nd_body->comments_before--->indexOf('\n') >= 0 && nd_body->comments_after--->indexOf('\n') < 0 ) {
+			nd_body->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_body->comments_after, "\n"));
+		}
+		nd_body->AdjustIndentLevel(-nd_scoped_body->indent_level);
+		nd_stmt->Insert(
+			ama::POS_FRONT,
+			ama::cons(ama::toSingleNode(nd_arg)->MergeCommentsBefore(nd_keyword), nd_scoped_body)
+		);
+		nd_tmp->ReplaceWith(nd_stmt);
+		nd_keyword->s = nullptr;
+		nd_keyword->FreeASTStorage();
+		return nd_stmt;
+	}
+	static ama::Node* TranslateDoWhileClause(ama::Node* nd_keyword, ama::Node* nd_end) {
+		ama::Node* nd_tmp = ama::GetPlaceHolder();
+		nd_keyword->ReplaceUpto(nd_end, nd_tmp);
+		ama::Node* nd_arg{};
+		ama::Node* nd_body = nd_keyword->BreakSibling();
+		if ( nd_keyword->node_class == ama::N_CALL ) {
+			nd_keyword = ama::UnparseCall(nd_keyword);
+			nd_arg = nd_keyword->BreakSibling();
+		} else if ( nd_body && nd_body->isRawNode('(', ')') ) {
+			nd_arg = nd_body;
+			nd_body = nd_body->BreakSibling();
+		}
+		ama::Node* nd_stmt = ama::CreateNode(
+			ama::N_EXTENSION_CLAUSE, ama::cons(ama::toSingleNode(nd_arg)->MergeCommentsBefore(nd_keyword), ama::nAir())
+		)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
+		nd_tmp->ReplaceWith(ama::cons(nd_stmt, nd_body));
+		nd_keyword->s = nullptr;
+		nd_keyword->FreeASTStorage();
+		return nd_stmt;
+	}
+	static ama::Node* TranslateCForwardDeclaration(ama::Node* nd_raw) {
+		//N_FUNCTION with air body
+		//before, paramlist, after, body
+		ama::Node* nd_proto{};
+		for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
+			if ( ndi->node_class == ama::N_CALL ) {
+				nd_proto = ndi;
+			}
+		}
+		if ( !nd_proto ) { return nullptr; }
+		ama::Node* nd_fname = ama::UnparseCall(nd_proto);
+		nd_proto = nd_fname->BreakSibling();
+		ama::Node* nd_after = ama::toSingleNode(nd_proto->BreakSibling());
+		ama::Node* nd_before = ama::toSingleNode(nd_raw->BreakChild());
+		ama::Node* nd_func = ama::nFunction(nd_before, ConvertToParameterList(nd_proto), nd_after, ama::nAir());
+		//nd_func.data = GetFunctionName(0, nd_func);
+		nd_raw->ReplaceWith(nd_func);
+		nd_raw->FreeASTStorage();
+		return nd_func;
+	}
+	////pp1 is inclusive, also breaks the pp1 link
+	//private ama::Node*+*+! UpdateLink(ama::Node*+! nd0, ama::Node*+! nd1) {
+	//	for(ama::Node*+! ndi = nd0; ndi != nd1; ndi = ndi.s) {
+	//		if( ndi.s == nd1 ) { return &ndi.s; }
+	//	}
+	//	assert(0);
+	//	return NULL;
+	//}
+	ama::Node* ParseScopedStatements(ama::Node* nd_root, JSValue options) {
+		std::unordered_map<JC::unique_string, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
+		std::unordered_map<JC::unique_string, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
+		std::unordered_map<JC::unique_string, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
+		std::unordered_map<JC::unique_string, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
+		std::unordered_map<JC::unique_string, int> keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
+		std::unordered_map<JC::unique_string, int> keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
+		std::unordered_map<JC::unique_string, int> keywords_not_a_function = ama::GetPrioritizedList(options, "keywords_not_a_function");
+		int32_t parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_forward_declarations"), 1);
+		int32_t parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp11_lambda"), 1);
+		int32_t struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "struct_can_be_type_prefix"), 1);
+		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+			if ( !nd_raw->p ) { continue; }
+			if ( nd_raw->p->node_class == ama::N_KEYWORD_STATEMENT && nd_raw->p->data--->startsWith('#') ) {
+				//the `defined()` in #if defined(){}
+				continue;
+			}
+			ama::Node* ndi = nd_raw->c;
+			ama::Node* nd_prototype_start = ndi;
+			ama::Node* nd_last_scoped_stmt{};
+			ama::Node* nd_keyword{};
+			ama::Node* nd_pending_else{};
+			ama::Node* nd_if_of_pending_else{};
+			int kw_mode = KW_NONE;
+			while ( ndi ) {
+				ama::Node* ndi_next = ndi->s;
+				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && ndi == nd_keyword->s && 
+				(ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL) && keywords_scoped_statement--->get(ndi->GetName()) ) {
+					//`else if` case
+					nd_pending_else = nd_keyword;
+					nd_if_of_pending_else = nd_last_scoped_stmt;
+					nd_keyword = ndi;
+					kw_mode = KW_STMT;
+					continue;
+				}
+				if ( !nd_keyword && (ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL) ) {
+					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
+					JC::unique_string name = ndi->GetName();
+					if ( name != nullptr ) {
+						if ( keywords_class--->get(name) ) {
+							nd_pending_else = nullptr;
+							nd_keyword = ndi;
+							kw_mode = KW_CLASS;
+							continue;
+						} else if ( keywords_extension_clause--->get(name) ) {
+							if ( nd_last_scoped_stmt ) {
+								nd_pending_else = nullptr;
+								nd_keyword = ndi;
+								kw_mode = KW_EXT;
+								continue;
+							} else if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
+								//extension of unscoped statement
+								//ama::Node*+! nd_ext_keyword = ndi.BreakSelf();
+								ama::Node* nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi->Prev());
+								//nd_stmt.Insert(ama::POS_AFTER, nd_ext_keyword);
+								nd_last_scoped_stmt = nd_stmt;
+								nd_keyword = ndi;
+								kw_mode = KW_EXT;
+								continue;
+							} else {
+								//fallback: could be `while`
+							}
+						}
+						if ( keywords_scoped_statement--->get(name) ) {
+							nd_keyword = ndi;
+							kw_mode = KW_STMT;
+							continue;
+						} else if ( keywords_function--->get(name) ) {
+							nd_pending_else = nullptr;
+							nd_keyword = ndi;
+							kw_mode = KW_FUNC;
+							continue;
+						} else if ( keywords_not_a_function--->get(name) ) {
+							nd_pending_else = nullptr;
+							nd_keyword = ndi;
+							kw_mode = KW_NOT_FUNC;
+							continue;
+						}
+					}
+				} else if ( ndi->isSymbol(";") ) {
+					//we can't delimit at ",": C++ constructor parameter list
+					//ndi.data == ","
+					if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
+						//unscoped statement
+						//ndi_next = ndi.BreakSibling();
+						//drop the ;
+						//ama::BreakLink(pndi);
+						ama::Node* nd_stmt{};
+						if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
+							nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
+						} else {
+							nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi);
+						}
+						if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
+							nd_stmt->node_class = ama::N_EXTENSION_CLAUSE;
+							nd_stmt->Unlink();
+							nd_last_scoped_stmt->Insert(ama::POS_BACK, nd_stmt);
+							ndi = nd_last_scoped_stmt;
+							//assert(ndi.s == NULL);
+							//ndi.Insert(ama::POS_AFTER, ndi_next);
+							ndi = ndi_next;
+							nd_prototype_start = ndi;
+							kw_mode = KW_NONE;
+							nd_keyword = nullptr;
+						} else {
+							//nd_stmt.Insert(ama::POS_AFTER, ndi_next);
+							nd_last_scoped_stmt = nd_stmt;
+							nd_prototype_start = ndi_next;
+							ndi = ndi_next;
+							kw_mode = KW_NONE;
+							nd_keyword = nullptr;
+						}
+						continue;
+					}
+					nd_prototype_start = ndi_next;
+					kw_mode = KW_NONE;
+					nd_keyword = nullptr;
+				} else if ( ndi->isRawNode('[', ']') && ndi_next && ndi_next->isRawNode('(', ')') ) {
+					//C++11 lambda
+					nd_prototype_start = ndi;
+					kw_mode = KW_NONE;
+					nd_keyword = nullptr;
+				} else if(ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi ) {
+					switch ( kw_mode ) {
+						case KW_CLASS: {
+							//search for the class name
+							ama::Node* nd_class_name{};
+							for (ama::Node* ndj = nd_keyword->s; ndj != ndi; ndj = ndj->s) {
+								if ( (ndj->node_class == ama::N_SYMBOL || ndj->node_class == ama::N_REF) && keywords_after_class_name--->get(ndj->data) && nd_class_name ) {
+									break;
+								}
+								if ( ndj->node_class == ama::N_REF || ((ndj->node_class == ama::N_CALL || ndj->node_class == ama::N_CALL_TEMPLATE) && ndj->GetName() != nullptr) ) {
+									if ( struct_can_be_type_prefix && ndj->node_class == ama::N_CALL ) {
+										//C struct-derived-type-returning function: struct foo bar(){}
+										JC::unique_string keyword = nd_keyword->GetName();
+										if ( keyword == "struct" || keyword == "union" ) {
+											kw_mode = KW_NONE;
+											nd_keyword = nullptr;
+											goto its_actually_a_function;
+										}
+									}
+									nd_class_name = ndj;
+								}
+							}
+							if ( !nd_class_name ) {
+								//C mode switch: struct foo{union{int bar;float baz;}}
+								//it's not a declaration
+								kw_mode = KW_NONE;
+								nd_keyword = nullptr;
+								goto not_declaration;
+							}
+							if ( nd_keyword->node_class == ama::N_CALL ) {
+								nd_keyword = ama::UnparseCall(nd_keyword);
+							}
+							if ( nd_class_name->node_class == ama::N_CALL || nd_class_name->node_class == ama::N_CALL_TEMPLATE ) {
+								nd_class_name = ama::UnparseCall(nd_class_name);
+							}
+							ama::Node* nd_class = nd_keyword->ReplaceUpto(
+								ndi,
+								ama::CreateNode(ama::N_CLASS, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level)
+							);
+							ndi->BreakSelf();
+							ama::Node* nd_after = ama::toSingleNode(nd_class_name->BreakSibling());
+							nd_class_name->BreakSelf();
+							ama::Node* nd_before = ama::toSingleNode(nd_keyword->s);
+							ama::ConvertToScope(ndi);
+							nd_class->Insert(
+								ama::POS_FRONT,
+								ama::cons(nd_before, ama::cons(nd_class_name, ama::cons(nd_after, ndi)))
+							);
+							ndi = nd_class;
+							nd_prototype_start = ndi->s;
+							ndi_next = ndi->s;
+							nd_keyword->s = nullptr;
+							nd_keyword->p = nullptr;
+							nd_keyword->FreeASTStorage();
+							nd_keyword = nullptr;
+							break;
+						}
+						case KW_STMT: {
+							//pull keyword out of raw, separate "condition" (even if it's empty) and scope
+							if ( nd_keyword->node_class == ama::N_CALL ) {
+								nd_keyword = ama::UnparseCall(nd_keyword);
+							}
+							ama::Node* nd_stmt = nd_keyword->ReplaceUpto(
+								ndi,
+								ama::CreateNode(ama::N_SCOPED_STATEMENT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level)
+							);
+							ama::Node* nd_arg = nd_keyword->s == ndi ? ama::nAir() : ama::toSingleNode(nd_keyword->s);
+							nd_arg->MergeCommentsBefore(nd_keyword);
+							ndi->BreakSelf();
+							ama::ConvertToScope(ndi);
+							nd_stmt->Insert(ama::POS_FRONT, ama::cons(nd_arg, ndi));
+							ndi = nd_stmt;
+							nd_prototype_start = ndi->s;
+							nd_keyword->s = nullptr;
+							nd_keyword->FreeASTStorage();
+							////////
+							//a=b;while(foo){} case - we could have mistaken the statement as an extension clause and didn't delimit at the previous ; / {}
+							//delimit it
+							ama::Node* nd_prev = ndi->Prev();
+							if ( nd_prev && (nd_prev->node_class == ama::N_SCOPE || nd_prev->node_class == ama::N_SCOPED_STATEMENT || nd_prev->node_class == ama::N_KEYWORD_STATEMENT || 
+							nd_prev->isSymbol(";") || nd_prev->isSymbol(",")) ) {
+								ama::Node* nd_last_stmt_head = nd_raw->c;
+								nd_last_stmt_head->ReplaceUpto(nd_prev, nullptr);
+								nd_last_stmt_head = nd_last_stmt_head->toSingleNode();
+								nd_last_stmt_head->AdjustIndentLevel(nd_raw->indent_level);
+								std::swap(nd_last_stmt_head->comments_before, nd_raw->comments_before);
+								nd_raw->Insert(ama::POS_BEFORE, nd_last_stmt_head);
+								if ( nd_prev->isSymbol(";") || (nd_prev->isSymbol(",") && nd_last_stmt_head != nd_prev) ) {
+									nd_prev->Unlink();
+									//nd_prev.indent_level = nd_last_stmt_head.indent_level;
+									nd_raw->Insert(ama::POS_BEFORE, nd_prev);
+								}
+							}
+							////////
+							nd_last_scoped_stmt = nd_stmt;
+							////////
+							//`else if(){}` case: we just translated the if part, now do the else
+							if ( nd_pending_else ) {
+								//do not wrap an additional scope: else {if(){}} is too ugly
+								nd_pending_else->Unlink();
+								nd_stmt->Unlink();
+								nd_if_of_pending_else->Insert(
+									ama::POS_BACK,
+									ama::nExtensionClause(
+										nd_pending_else->data, ama::nAir(), nd_stmt
+									)->setCommentsBefore(nd_pending_else->comments_before)->setIndent(nd_pending_else->indent_level)
+								);
+								ndi = nd_if_of_pending_else;
+								nd_pending_else = nullptr;
+								nd_if_of_pending_else = nullptr;
+							}
+							////////
+							ndi = ndi->s;
+							kw_mode = KW_NONE;
+							nd_keyword = nullptr;
+							continue;
+						}
+						case KW_EXT: {
+							if ( nd_keyword->node_class == ama::N_CALL ) {
+								nd_keyword = ama::UnparseCall(nd_keyword);
+							}
+							ama::DeleteChildRange(nd_keyword, ndi);
+							assert(nd_last_scoped_stmt);
+							ama::Node* nd_arg = nd_keyword->s == ndi ? ama::nAir() : ama::toSingleNode(nd_keyword->s);
+							nd_arg->MergeCommentsBefore(nd_keyword);
+							ndi->BreakSelf();
+							//insert into the last statement
+							ama::ConvertToScope(ndi);
+							nd_last_scoped_stmt->Insert(ama::POS_BACK, ama::nExtensionClause(
+								nd_keyword->data, nd_arg, ndi
+							)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level));
+							nd_keyword->s = nullptr;
+							nd_keyword->FreeASTStorage();
+							ndi = nd_last_scoped_stmt;
+							ndi = ndi->s;
+							nd_prototype_start = ndi;
+							kw_mode = KW_NONE;
+							nd_keyword = nullptr;
+							continue;
+						}
+						case KW_NOT_FUNC: {
+							//it's not a function
+							break;
+						}
+						case KW_FUNC: default: {
+							its_actually_a_function: 
+							//it's not necessarily a declaration, detect C / C++11 / Java / etc. keywordless functions
+							//what else could it be? C/C++ initializer list, new (which could have (){} for JC)
+							//use (){} as indicator: we could drag back those misidentified functions later
+							//if we had a keyword, we won't have a C-like return type
+							ama::Node* nd_paramlist_start = nd_prototype_start;
+							if ( !nd_keyword ) {
+								nd_keyword = nd_prototype_start;
+							} else {
+								nd_paramlist_start = nd_keyword->s;
+								if ( nd_keyword->node_class == ama::N_CALL ) {
+									//the unparsing always creates a paramlist
+									int start_was_paramlist = nd_keyword == nd_keyword;
+									nd_keyword = ama::UnparseCall(nd_keyword);
+									if ( start_was_paramlist ) {
+										nd_prototype_start = nd_keyword;
+									}
+									nd_paramlist_start = nd_keyword->s;
+								}
+							}
+							ama::Node* nd_paramlist{};
+							for (ama::Node* ndj = nd_paramlist_start; ndj != ndi; ndj = ndj->s) {
+								if ( ndj->isRawNode('(', ')') || ndj->node_class == ama::N_CALL ) {
+									nd_paramlist = ndj;
+								} else if ( (ndj->node_class == ama::N_SYMBOL || (ndj->node_class == ama::N_REF && nd_paramlist)) && keywords_after_prototype--->get(ndj->data) ) {
+									break;
+								} else if ( parse_cpp11_lambda && ndj->isRawNode('[', ']') && ndj->s->isRawNode('(', ')') ) {
+									nd_paramlist = ndj->s;
+									break;
+								}
+							}
+							if ( !nd_paramlist ) {
+								goto not_declaration;
+							}
+							if ( nd_paramlist->node_class == ama::N_CALL ) {
+								int start_was_paramlist = nd_prototype_start == nd_paramlist;
+								nd_paramlist = ama::UnparseCall(nd_paramlist)->s;
+								if ( start_was_paramlist ) {
+									nd_prototype_start = nd_paramlist;
+								}
+							}
+							//keyworded function shouldn't have any junk before... but C++ function has both junk before and junk after
+							//before (C++ return type plus junk plus name, or just a name), paramlist, after, body, figure out return type separately
+							ama::Node* nd_func = nd_prototype_start->ReplaceUpto(
+								ndi,
+								ama::CreateNode(ama::N_FUNCTION, nullptr)
+							);
+							ama::Node* nd_before = nd_prototype_start;
+							if ( nd_before == nd_paramlist ) {
+								nd_before = ama::nAir();
+							}
+							ndi->BreakSelf();
+							ama::Node* nd_after = nd_paramlist->BreakSibling();
+							nd_paramlist->BreakSelf();
+							if ( !nd_after ) {
+								nd_after = ama::nAir();
+							}
+							nd_paramlist = ConvertToParameterList(nd_paramlist);
+							nd_before = ama::toSingleNode(nd_before);
+							nd_after = ama::toSingleNode(nd_after);
+							ama::ConvertToScope(ndi);
+							nd_func->Insert(ama::POS_FRONT, ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, ndi))));
+							//nd_func.data = GetFunctionName(kw_mode == KW_FUNC, nd_func);
+							ndi = nd_func;
+							nd_prototype_start = ndi->s;
+							ndi_next = ndi->s;
+							break;
+						}
+					}
+					kw_mode = KW_NONE;
+					nd_keyword = nullptr;
+					not_declaration:   ;
+				}
+				if ( !(kw_mode == KW_EXT && nd_keyword) ) {
+					nd_last_scoped_stmt = nullptr;
+				}
+				ndi = ndi_next;
+			}
+			if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
+				//C unscoped statement
+				if ( nd_raw->s && nd_raw->s->isSymbol(";") ) {
+					//pull in the misclassified ";"
+					ama::Node* nd_semicolon = nd_raw->s;
+					nd_semicolon->Unlink();
+					nd_raw->Insert(ama::POS_BACK, nd_semicolon);
+				}
+				ama::Node* ndi = nd_raw->LastChild();
+				ama::Node* nd_stmt{};
+				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
+					nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
+				} else {
+					nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi);
+				}
+				if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
+					nd_stmt->node_class = ama::N_EXTENSION_CLAUSE;
+					nd_stmt->Unlink();
+					nd_last_scoped_stmt->Insert(ama::POS_BACK, nd_stmt);
+				}
+			} else if ( kw_mode == KW_FUNC && nd_keyword && parse_c_forward_declarations && 
+			nd_raw->isRawNode(0, 0) && nd_raw->p && (nd_raw->p->node_class == ama::N_SCOPE || nd_raw->p->node_class == ama::N_FILE) ) {
+				//C forward declaration with extern
+				TranslateCForwardDeclaration(nd_raw);
+				//note that extern is not necessarily function... we may have extern "C"{}
+			} else if ( nd_keyword && kw_mode == KW_CLASS ) {
+				//class forward declaration, treat as keyword statement
+				nd_keyword->BreakSelf();
+				ama::Node* nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword->BreakSibling()));
+				nd_stmt->indent_level = nd_keyword->indent_level;
+				nd_stmt->comments_before = nd_keyword->comments_before;
+				if ( nd_stmt->c ) {
+					nd_stmt->c->MergeCommentsBefore(nd_keyword);
+				} else {
+					nd_stmt->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_keyword->comments_after, nd_stmt->comments_after));
+				}
+				nd_stmt->data = nd_keyword->DestroyForSymbol();
+				ndi = nd_raw->Insert(ama::POS_BACK, nd_stmt);
+			}
+		}
+		//C forward declaration
+		if ( parse_c_forward_declarations ) {
+			for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+				//have to rely on context? we can do Owner tests here 
+				ama::Node* nd_owner = nd_raw->Owner();
+				if ( !(nd_raw->p && (nd_raw->p->node_class == ama::N_SCOPE || nd_raw->p->node_class == ama::N_FILE)) || nd_owner->node_class == ama::N_FUNCTION ) { continue; }
+				if ( !nd_raw->isRawNode(0, 0) ) { continue; }
+				ama::Node* nd_proto{};
+				//console.log('>>>', nd_owner.node_class, nd_raw.toSource());
+				for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
+					//console.log(ndi.node_class)
+					if ( (ndi->node_class == ama::N_REF && keywords_not_a_function--->get(ndi->data)) || ndi->isSymbol("=") ) {
+						nd_proto = nullptr;
+						break;
+					}
+					if ( ndi->node_class == ama::N_CALL ) {
+						nd_proto = ndi;
+					}
+					if ( ndi->node_class == ama::N_SCOPE ) {
+						nd_proto = nullptr;
+						break;
+					}
+				}
+				if ( !nd_proto ) { continue; }
+				if ( !nd_raw->c->s && nd_proto->c->node_class != ama::N_CALL ) {
+					//ignore just-a-call, but allow::
+					//FOO_DECL(int,foo)(int bar);
+					continue;
+				}
+				TranslateCForwardDeclaration(nd_raw);
+			}
+		}
+		/////////
+		//don't set REF_WRITTEN for function / class names: it's not profitable to treat them as "written" in our current AST formulation
+		//turn params into N_ASSIGNMENT
+		for ( ama::Node* const &nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST, nullptr)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
+			for (ama::Node* nd_param = nd_paramlist->node_class == ama::N_CALL_TEMPLATE ? nd_paramlist->c->s : nd_paramlist->c; nd_param; nd_param = nd_param->s) {
+				if ( nd_param->node_class == ama::N_ASSIGNMENT ) { continue; }
+				if ( nd_param->node_class == ama::N_SYMBOL || (nd_param->node_class == ama::N_RAW && nd_param->c && nd_param->c->node_class == ama::N_SYMBOL) ) {
+					//rest args
+					continue;
+				}
+				ama::Node* nd_tmp = ama::GetPlaceHolder();
+				nd_param->ReplaceWith(nd_tmp);
+				nd_param = nd_tmp->ReplaceWith(ama::nAssignment(nd_param, ama::nAir()));
+			}
+		}
+		return nd_root;
+	}
+	ama::Node* ParseKeywordStatements(ama::Node* nd_root, JSValue options) {
+		std::unordered_map<JC::unique_string, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
+		for ( ama::Node* const &nd_keyword: nd_root->FindAllWithin(0, ama::N_REF, nullptr) ) {
+			if ( !keywords_statement--->get(nd_keyword->data) ) { continue; }
+			ama::Node* nd_parent = nd_keyword->p;
+			if ( !nd_parent ) { continue; }
+			if ( nd_parent->node_class == ama::N_SCOPE || nd_parent->node_class == ama::N_FILE ) {
+				nd_keyword->node_class = ama::N_KEYWORD_STATEMENT;
+				nd_keyword->Insert(ama::POS_FRONT, ama::nAir());
+			} else if ( nd_parent->node_class == ama::N_RAW ) {
+				ama::Node* nd_raw = nd_parent;
+				ama::Node* nd_tmp = ama::GetPlaceHolder();
+				ama::Node* nd_last = nd_keyword;
+				while ( nd_last->s && !nd_last->s->isSymbol(";") && !nd_last->s->isSymbol(",") ) {
+					nd_last = nd_last->s;
+				}
+				nd_keyword->ReplaceUpto(nd_last, nd_tmp);
+				ama::Node* nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword->BreakSibling()));
+				nd_stmt->indent_level = nd_keyword->indent_level;
+				nd_stmt->comments_before = nd_keyword->comments_before;
+				if ( nd_stmt->c ) {
+					nd_stmt->c->MergeCommentsBefore(nd_keyword);
+				} else {
+					nd_stmt->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_keyword->comments_after, nd_stmt->comments_after));
+				}
+				nd_stmt->data = nd_keyword->DestroyForSymbol();
+				nd_tmp->ReplaceWith(nd_stmt);
+				//if( !nd_raw.c && nd_raw.isRawNode(0, 0) ) {
+				//	nd_raw.ReplaceWith(nd_stmt);
+				//	nd_raw.c = NULL; nd_raw.FreeASTStorage();
+				//} else {
+				//	nd_raw.Insert(ama::POS_BACK, nd_stmt);
+				//}
+			}
+		}
+		return nd_root;
+	}
+	static void FixTypeSuffixFromInnerRef(std::unordered_map<JC::unique_string, int> const& ambiguous_type_suffix, ama::Node* nd_ref) {
+		while ( (nd_ref->p->node_class == ama::N_ITEM || nd_ref->p->node_class == ama::N_CALL) && nd_ref == nd_ref->p->c ) {
+			nd_ref = nd_ref->p;
+		}
+		if ( nd_ref->p->node_class == ama::N_BINOP && nd_ref->p->c->s == nd_ref && ambiguous_type_suffix--->get(nd_ref->p->data) ) {
+			ama::UnparseBinop(nd_ref->p);
+		}
+		while ( nd_ref->Prev() && nd_ref->Prev()->node_class == ama::N_SYMBOL && ambiguous_type_suffix--->get(nd_ref->Prev()->data) && nd_ref->Prev()->Prev() ) {
+			ama::Node* nd_opr = nd_ref->Prev();
+			ama::Node* ndi = nd_opr->Prev();
+			ndi->MergeCommentsAfter(nd_opr);
+			nd_opr->Unlink();
+			ama::Node* nd_tmp = ama::GetPlaceHolder();
+			ndi->ReplaceWith(nd_tmp);
+			std::swap(ndi->comments_after, nd_tmp->comments_after);
+			ndi = nd_tmp->ReplaceWith(ama::nPostfix(ndi, nd_opr->data)->setCommentsAfter(nd_opr->comments_after));
+			nd_opr->FreeASTStorage();
+		}
+	}
+	//detects N_TYPED_VAR
+	//also sets REF_WRITTEN and REF_RW
+	//after ParseAssignment
+	ama::Node* ParseDeclarations(ama::Node* nd_root, JSValue options) {
+		//find declaratives and set REF_DECLARED
+		//also find writes and set REF_WRITTEN
+		std::unordered_map<JC::unique_string, int> ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		std::unordered_map<JC::unique_string, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
+		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
+		for ( ama::Node* const &nd_ref: nd_root->FindAllWithin(0, ama::N_REF, nullptr) ) {
+			if ( nd_ref->p->node_class == ama::N_CLASS && nd_ref->p->c->s == nd_ref ) {
+				//class, just declared and nothing else
+				nd_ref->flags |= ama::REF_DECLARED;
+				continue;
+			}
+			ama::Node* nd_stmt = nd_ref->ParentStatement();
+			ama::Node* nd_asgn = nd_ref->Owning(ama::N_ASSIGNMENT);
+			ama::Node* nd_owner = nd_ref->Owner();
+			if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_stmt->p->p->data == "enum" && !
+			(nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->s->isAncestorOf(nd_ref)) ) {
+				nd_ref->flags |= ama::REF_DECLARED;
+			}
+			if ( nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->isAncestorOf(nd_ref) ) {
+				//Go := operator or general assignment
+				if ( nd_stmt->data == ":" || nd_stmt->data == "" ) {
+					if ( nd_ref == nd_stmt->c ) {
+						if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_stmt->p->p->data == "enum" ) {
+							nd_ref->flags |= ama::REF_DECLARED;
+						} else {
+							nd_ref->flags |= ama::REF_WRITTEN;
+						}
+					}
+					if ( nd_stmt->data == ":" ) {
+						//Go := operator
+						FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
+						nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
+					} else {
+						//destructuring case: `[foo]=...`
+						ama::Node* nd_destructuring = nd_ref;
+						int destructured = 0;
+						while ( nd_destructuring != nd_stmt ) {
+							if ( nd_destructuring->node_class == ama::N_SCOPE || nd_destructuring->isRawNode('[', ']') || nd_destructuring->isRawNode('{', '}') || nd_destructuring->isRawNode('(', ')') ) {
+								destructured = 1;
+								break;
+							}
+							if ( nd_destructuring->p && nd_destructuring->p->node_class == ama::N_LABELED && nd_destructuring == nd_destructuring->p->c ) {
+								//used as a label in JS destructuring, drop it
+								destructured = 0;
+								break;
+							}
+							nd_destructuring = nd_destructuring->p;
+						}
+						if ( destructured ) {
+							FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
+							nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
+						}
+					}
+					//could be a C initialized declaration, defer for now
+				} else {
+					//updating assignment
+					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_RW;
+				}
+			} else if ( nd_stmt->p->node_class == ama::N_SCOPE && nd_owner && nd_asgn && nd_owner->isAncestorOf(nd_asgn) && nd_asgn->c->isAncestorOf(nd_stmt) ) {
+				//could be {} nd_destructuring, here nd_stmt is BS
+				//`type {...,foo,...}=...; {"bar":foo}=...;`
+				ama::Node* nd_destructuring = nd_ref;
+				int destructured = 0;
+				while ( nd_destructuring != nd_stmt ) {
+					if ( nd_destructuring->node_class == ama::N_SCOPE || nd_destructuring->isRawNode('[', ']') || nd_destructuring->isRawNode('{', '}') || nd_destructuring->isRawNode('(', ')') ) {
+						destructured = 1;
+						break;
+					}
+					if ( nd_destructuring->p && nd_destructuring->p->node_class == ama::N_LABELED && nd_destructuring == nd_destructuring->p->c ) {
+						//used as a label in JS destructuring, drop it
+						destructured = 0;
+						break;
+					}
+					nd_destructuring = nd_destructuring->p;
+				}
+				if ( destructured ) {
+					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
+				}
+			}
+			//Rust / JS / Go var / let keyword
+			//C/C++ type foo
+			//C/C++ type foo, *bar[baz]
+			//C++/JS LHS {} destructuring
+			ama::Node* nd_cdecl = nd_ref;
+			while ( nd_cdecl && nd_cdecl != nd_stmt ) {
+				if ( nd_cdecl->p->node_class == ama::N_RAW ) {
+					ama::Node* nd_core = nd_cdecl;
+					nd_cdecl = nd_cdecl->p;
+					if ( !nd_core->s || nd_core->s->isSymbol(",") || nd_core->s->isSymbol(";") || 
+					(parse_cpp_declaration_initialization && nd_core->s->node_class == ama::N_SCOPE && !(nd_cdecl->p && nd_cdecl->p->node_class == ama::N_ASSIGNMENT)) ) {
+						//it could be a declarative raw
+					} else {
+						//don't go to that raw
+						nd_cdecl = nd_core;
+					}
+					break;
+				}
+				if ( ((nd_cdecl->p->node_class == ama::N_ITEM || nd_cdecl->p->node_class == ama::N_CALL) && nd_cdecl == nd_cdecl->p->c) || 
+				(nd_cdecl->p->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(nd_cdecl->p->data) && nd_cdecl == nd_cdecl->p->c->s) || 
+				nd_cdecl->p->node_class == ama::N_PREFIX ) {
+					//it's OK
+				} else {
+					break;
+				}
+				nd_cdecl = nd_cdecl->p;
+			}
+			if ( nd_cdecl != nd_ref ) {
+				//we found at least one feasible declaration-ish
+				//check parent
+				int is_ok = 0;
+				if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_LABELED && nd_cdecl->p->c == nd_cdecl ) {
+					ama::Node* nd_loop = nd_cdecl->Owning(ama::N_SCOPED_STATEMENT);
+					if ( nd_loop && nd_stmt->isAncestorOf(nd_loop) && nd_loop->c->isAncestorOf(nd_cdecl) ) {
+						//foo in `for(foo:bar)`
+						is_ok = 1;
+					}
+				}
+				if ( nd_cdecl == nd_stmt ) {
+					//foo in `type foo;` or `type bar,*foo[8];`
+					is_ok = 1;
+				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_ASSIGNMENT && nd_cdecl->p->c == nd_cdecl ) {
+					//foo in `type foo=bar;` or `type bar,*foo[8],baz=...;`
+					is_ok = 1;
+				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_FUNCTION && nd_cdecl->p->c == nd_cdecl ) {
+					//non-dotted function declaration, handle it here, also name the function
+					is_ok = 1;
+					if ( nd_cdecl->p->data == nullptr ) {
+						nd_cdecl->p->data = nd_ref->data;
+					}
+				}
+				if ( is_ok ) {
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
+					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
+				}
+			}
+		}
+		//detect type before dotted function name
+		//non-dotted non-C-macro functions should have been handled above
+		for ( ama::Node* const &nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION, nullptr) ) {
+			if ( nd_func->data != nullptr ) { continue; }
+			//C++ dotted declaration: `type foo::bar(){}`
+			//common C macro style: `FOO_DECL(int,foo)(int bar){}`
+			nd_func->data = "";
+			ama::Node* nd_before = nd_func->c;
+			//try to find a name
+			int found = 0;
+			for (ama::Node* ndi = nd_before->c; ndi; ndi = ndi->s) {
+				//we could have mistaken it for binop due to type shenanigans
+				ama::Node* ndj = ndi;
+				while ( ndj->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(ndj->data) ) {
+					ndj = ndj->c->s;
+				}
+				if ( ndj->node_class == ama::N_REF || ndj->node_class == ama::N_DOT ) {
+					//the starting keyword doesn't count
+					//if it appears after a non-key word, we are likely in the wrong language so take the name
+					if ( !found && keywords_function--->get(ndj->data) ) { continue; }
+					nd_func->data = ndj->data;
+					found = 1;
+				}
+			}
+			if ( !found ) {
+				//test for old C macro style `FOO_DECL(int,foo)(int bar){}`
+				ama::Node* nd_maybe_c_macro = nd_before->node_class == ama::N_RAW ? nd_before : nd_before->LastChild();
+				if ( nd_maybe_c_macro && (nd_maybe_c_macro->node_class == ama::N_CALL || nd_maybe_c_macro->isRawNode('(', ')')) ) {
+					ama::Node* nd_maybe_name = nd_maybe_c_macro->LastChild();
+					if ( nd_maybe_name->node_class == ama::N_REF ) {
+						//C macros won't have dotted name / mistaken-N_BINOP here
+						nd_func->data = nd_maybe_name->data;
+					}
+				}
+			}
+		}
+		//we can't possibly have types-mistaken-as-binop in casts for standard C/C++
+		return nd_root;
+	}
+};

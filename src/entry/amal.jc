@@ -1,3 +1,0 @@
-// //// JC version: 3
-#include '../script/jsapi.jch'
-//note: use `cmake -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE` to build on Windows

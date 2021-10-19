@@ -1,8 +1,0 @@
-// //// JC version: 3
-#include '../ast/node.jch'
-#include '../script/jsenv.jch'
-#pragma add("jc_files", "./simppair.jc");
-
-namespace ama {
-	ama::Node*+! ParseSimplePairing(char*! feed, JSValueConst! options);
-};
