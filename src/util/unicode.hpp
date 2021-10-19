@@ -3,8 +3,7 @@
 #include <stdint.h>
 #include <vector>
 #include <string>
-#include "../src/util/jc_array.h"
-#include <functional>
+#include "jc_array.h"
 /*#pragma add("jc_files", "./unicode.jc");*/
 namespace unicode {
 	struct TWTF8Filter {

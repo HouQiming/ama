@@ -3,7 +3,6 @@
 #include "../ast/node.hpp"
 #include <string>
 #include "../util/jc_array.h"
-#include <functional>
 /*#pragma add("jc_files", "./gen.jc");*/
 namespace ama {
 	class CodeGenerator;

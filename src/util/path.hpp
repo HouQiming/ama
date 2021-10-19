@@ -1,9 +1,8 @@
 #ifndef _PATH_JCH_HPP
 #define _PATH_JCH_HPP
 //the goal is bug-for-bug node.js compatibility
-#include "jc_platform.h"
+#include "jc_array.h"
 #include <string>
-#include "../src/util/jc_array.h"
 /*#pragma add("jc_files", "./path_win32.jc");*/
 /*#pragma add("jc_files", "./path_posix.jc");*/
 namespace path {

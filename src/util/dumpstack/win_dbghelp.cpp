@@ -1,6 +1,4 @@
-#include "../jc_platform.h"
-
-#if JC_OS == JC_OS_WINDOWS
+#if defined(_WIN32)
 #include <windows.h>
 #pragma warning(disable: 4091)
 #include <dbghelp.h>

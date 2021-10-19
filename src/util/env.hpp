@@ -1,9 +1,8 @@
 #ifndef _ENV_JCH_HPP
 #define _ENV_JCH_HPP
 #include <string>
-#include "../src/util/jc_array.h"
 #include <memory>
-#include <functional>
+#include "jc_array.h"
 /*#pragma add("jc_files", "./env.jc");*/
 namespace ENV {
 	JC::StringOrError get(std::span<char> name);

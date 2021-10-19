@@ -1,4 +1,4 @@
-#include "dumpstack.hpp"
+#include "../util/dumpstack/dumpstack.h"
 #include "console.hpp"
 #include <stdlib.h>
 #include "../script/jsapi.hpp"

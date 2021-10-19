@@ -10,7 +10,6 @@
 #include "../util/jc_array.h"
 #include "../util/jc_unique_string.h"
 #include <unordered_map>
-#include <functional>
 namespace ama {
 	ama::ExecSession CreateSession(ama::Node* nd_entry, std::span<ama::Node*> interests) {
 		//remove the default entry / interest? that's just `new ExecSession!`

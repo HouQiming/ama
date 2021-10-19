@@ -1,7 +1,6 @@
 //////////////////////////////
 //Unicode case conversion - here we have to rely on STL
-#include "jc_platform.h"
-#if JC_OS == JC_OS_WINDOWS
+#if defined(_WIN32)
 	#include <windows.h>
 	/*#pragma add("ldflags", "user32.lib");*/
 #else
@@ -12,11 +11,11 @@
 #include "unicode/case.hpp"
 #include <string>
 #include <vector>
-#include "../../src/util/jc_array.h"
+#include "../jc_array.h"
 //std::locale is unreliable garbage, use [NSString uppercaseString] for Apple, and towupper / towlower for Linux
 std::string unicode::toUpper(std::span<char> s) {
 	std::vector<uint16_t> s16 = unicode::WTF8ToUTF16(s);
-	#if JC_OS == JC_OS_WINDOWS
+	#if defined(_WIN32)
 		for (size_t i = uintptr_t(0uL); i < s.size(); i += uintptr_t(1048576uL)) {
 			size_t n_i = s.size() - i;
 			if ( n_i > uintptr_t(1048576uL) ) {
@@ -38,7 +37,7 @@ std::string unicode::toUpper(std::span<char> s) {
 }
 std::string unicode::toLower(std::span<char> s) {
 	std::vector<uint16_t> s16 = unicode::WTF8ToUTF16(s);
-	#if JC_OS == JC_OS_WINDOWS
+	#if defined(_WIN32)
 		for (size_t i = uintptr_t(0uL); i < s.size(); i += uintptr_t(1048576uL)) {
 			size_t n_i = s.size() - i;
 			if ( n_i > uintptr_t(1048576uL) ) {

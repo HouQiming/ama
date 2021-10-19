@@ -2,12 +2,11 @@
 #define _FS_JCH_HPP
 #include <string>
 #include <vector>
-#include "../src/util/jc_array.h"
 #include <memory>
-#include <functional>
+#include "jc_array.h"
 /*#pragma add("jc_files", "./fs.jc");*/
 namespace fs {
-	#if JC_OS == JC_OS_WINDOWS
+	#if defined(_WIN32)
 		std::vector<uint16_t> PathToWindows(std::span<char> s);
 	#endif
 	JC::StringOrError readFileSync(std::span<char> fn);

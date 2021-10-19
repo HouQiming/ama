@@ -11,8 +11,7 @@
 #include <string>
 #include <vector>
 #include <array>
-#include <memory>
-#include "../src/util/jc_array.h"
+#include "jc_array.h"
 #include "fs.hpp"
 typedef struct stat stat_t;
 #if defined(_WIN32)

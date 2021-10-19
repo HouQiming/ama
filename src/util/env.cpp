@@ -1,18 +1,16 @@
 //the goal is bug-for-bug node.js compatibility
-#include "jc_platform.h"
 #include "unicode.hpp"
 #include "env.hpp"
-#if JC_OS == JC_OS_WINDOWS
+#if defined(_WIN32)
 	#include <windows.h>
 #else
 	#include <stdlib.h>
 #endif
 #include <string>
 #include <vector>
-#include "../src/util/jc_array.h"
-#include <memory>
+#include "jc_array.h"
 JC::StringOrError ENV::get(std::span<char> name) {
-	#if JC_OS == JC_OS_WINDOWS
+	#if defined(_WIN32)
 		std::vector<uint16_t> name_win = unicode::WTF8ToUTF16(name);
 		name_win--->push(int16_t(0));
 		auto lg = GetEnvironmentVariableW(LPCWSTR(name_win.data()), nullptr, 0);
@@ -35,7 +33,7 @@ JC::StringOrError ENV::get(std::span<char> name) {
 	#endif
 }
 int ENV::set(std::span<char> name, std::span<char> value) {
-	#if JC_OS == JC_OS_WINDOWS
+	#if defined(_WIN32)
 		std::vector<uint16_t> name_win = unicode::WTF8ToUTF16(name);
 		std::vector<uint16_t> value_win = unicode::WTF8ToUTF16(value);
 		name_win--->push(uint16_t(0));

@@ -1,7 +1,7 @@
 #include "unicode.hpp"
 #include <string>
 #include <vector>
-#include "../src/util/jc_array.h"
+#include "jc_array.h"
 std::vector<uint16_t> unicode::WTF8ToUTF16(std::span<char> s) {
 	std::vector<uint16_t> ret{};
 	unicode::TWTF8Filter filter{0, 0, intptr_t(0L), -1, intptr_t(0L), 0};

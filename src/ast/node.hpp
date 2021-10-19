@@ -4,7 +4,6 @@
 #include <vector>
 #include "../util/jc_array.h"
 #include "../util/jc_unique_string.h"
-#include <functional>
 /*#pragma add("jc_files", "./node.jc");*/
 /*#pragma add("cflags", "-fno-delete-null-pointer-checks");*/
 namespace ama {

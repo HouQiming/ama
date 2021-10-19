@@ -238,7 +238,3 @@
 		}
 	};
 #endif
-#include <string>
-#include <vector>
-#include "../src/util/jc_array.h"
-
