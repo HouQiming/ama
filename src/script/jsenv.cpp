@@ -80,9 +80,9 @@ namespace ama {
 				return JC::array_cast<JC::unique_string>(JC::string_concat(fn, ".json"));
 			}
 			JC::unique_string fn_index = fn;
-			std::shared_ptr<std::string> s_package_json = fs::readFileSync(path::normalize(JC::string_concat(fn, path::sep, "package.json")));
-			if ( s_package_json != nullptr ) {
-				PackageJSON package_json = JSON::parse<PackageJSON>(s_package_json);
+			JC::StringOrError s_package_json = fs::readFileSync(path::normalize(JC::string_concat(fn, path::sep, "package.json")));
+			if ( !!s_package_json ) {
+				PackageJSON package_json = JSON::parse<PackageJSON>(s_package_json.some);
 				if ( package_json.main != nullptr ) {
 					JC::unique_string fn_main = JC::array_cast<JC::unique_string>(path::normalize(JC::string_concat(fn, path::sep, package_json.main)));
 					JC::unique_string ret = CommonJSLoadAsFile(fn_main);

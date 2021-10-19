@@ -238,7 +238,7 @@
 			std::string real_dir = JC::array_cast<std::string>(parts.dir--->subarray(parts.root.size()));
 			if ( real_root.size() == 2 ) {
 				//drive-current directory
-				std::shared_ptr<std::string> real_root_env = ENV::get(JC::string_concat("=", parts.root));
+				JC::StringOrError real_root_env = ENV::get(JC::string_concat("=", parts.root));
 				if ( !real_root_env || !real_root_env->size() ) {
 					real_root = JC::string_concat(parts.root, '\\');
 				} else {

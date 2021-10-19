@@ -10,7 +10,7 @@ namespace fs {
 	#if JC_OS == JC_OS_WINDOWS
 		std::vector<uint16_t> PathToWindows(std::span<char> s);
 	#endif
-	std::shared_ptr<std::string> readFileSync(std::span<char> fn);
+	JC::StringOrError readFileSync(std::span<char> fn);
 	intptr_t writeFileSync(std::span<char> fn, std::span<char> content);
 	int existsSync(std::span<char> fn);
 	int DirExists(std::span<char> dir);

@@ -6,7 +6,7 @@
 #include <functional>
 /*#pragma add("jc_files", "./env.jc");*/
 namespace ENV {
-	std::shared_ptr<std::string> get(std::span<char> name);
+	JC::StringOrError get(std::span<char> name);
 	int set(std::span<char> name, std::span<char> value);
 };
 

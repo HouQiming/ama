@@ -11,7 +11,7 @@
 #include <vector>
 #include "../src/util/jc_array.h"
 #include <memory>
-std::shared_ptr<std::string> ENV::get(std::span<char> name) {
+JC::StringOrError ENV::get(std::span<char> name) {
 	#if JC_OS == JC_OS_WINDOWS
 		std::vector<uint16_t> name_win = unicode::WTF8ToUTF16(name);
 		name_win--->push(int16_t(0));
@@ -22,13 +22,13 @@ std::shared_ptr<std::string> ENV::get(std::span<char> name) {
 			std::vector<uint16_t> buf((lg));
 			lg = GetEnvironmentVariableW(LPCWSTR(name_win.data()), LPWSTR(buf.data()), lg);
 			buf.resize(lg);
-			return JC::array_cast_shared<std::string>(unicode::UTF16ToUTF8(buf));
+			return unicode::UTF16ToUTF8(buf);
 		}
 	#else
 		std::string namei = JC::string_concat(name, '\000');
 		char const* ret = getenv(namei.c_str());
 		if ( ret ) {
-			return std::make_shared<std::string>(ret);
+			return std::string(ret);
 		} else {
 			return nullptr;
 		}

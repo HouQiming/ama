@@ -41,10 +41,10 @@ typedef struct stat stat_t;
 #endif
 
 static const intptr_t MAX_READ_BATCH = intptr_t(8388608L);
-std::shared_ptr<std::string> fs::readFileSync(std::span<char> fn) {
+JC::StringOrError fs::readFileSync(std::span<char> fn) {
 	size_t sz = intptr_t(0L);
 	intptr_t n_read = intptr_t(0L);
-	std::shared_ptr<std::string> ret_read{};
+	JC::StringOrError ret_read{nullptr};
 	intptr_t p{};
 	#if defined(_WIN32)
 		{
@@ -64,13 +64,13 @@ std::shared_ptr<std::string> fs::readFileSync(std::span<char> fn) {
 			std::array<int64_t, intptr_t(1L)> psz{int64_t(0LL)};
 			GetFileSizeEx(hf, PLARGE_INTEGER(psz.data()));
 			sz = size_t(psz[0]);
-			ret_read = std::make_shared<std::string>(sz, '\000');
+			ret_read = std::string(sz, '\000');
 			p = intptr_t(0L);
 			for (; ;) {
 				intptr_t sz_read = intptr_t(sz - p);
 				if ( sz_read > MAX_READ_BATCH ) { sz_read = MAX_READ_BATCH; }
 				n_read = DWORD(0);
-				ReadFile(hf, (*ret_read).data() + p, int(sz_read), LPDWORD(&n_read), LPOVERLAPPED(nullptr));
+				ReadFile(hf, ret_read->data() + p, int(sz_read), LPDWORD(&n_read), LPOVERLAPPED(nullptr));
 				if ( n_read <= intptr_t(0L) ) {
 					break;
 				}
@@ -95,12 +95,12 @@ std::shared_ptr<std::string> fs::readFileSync(std::span<char> fn) {
 			sb.st_size = 0;
 			fstat(fd, &sb);
 			sz = size_t(sb.st_size);
-			ret_read = std::make_shared<std::string>(sz, '\000');
+			ret_read = std::string(sz, '\000');
 			p = intptr_t(0L);
 			for (; ;) {
 				intptr_t sz_read = intptr_t(sz - p);
 				if ( sz_read > MAX_READ_BATCH ) { sz_read = MAX_READ_BATCH; }
-				n_read = read(fd, (char*)((*ret_read).data()) + p, sz_read);
+				n_read = read(fd, (char*)(ret_read->data()) + p, sz_read);
 				if ( n_read <= intptr_t(0L) ) {
 					break;
 				}

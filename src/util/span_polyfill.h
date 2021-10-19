@@ -14,13 +14,11 @@ namespace std{
 		size_t m_size;
 		span():m_data(NULL),m_size(0){}
 		span(const std::vector<T> &a):m_data((T*)a.data()),m_size(a.size()){}
-		span(const std::shared_ptr<std::vector<T>> &a):m_data((T*)a->data()),m_size(a->size()){}
-		span(const std::unique_ptr<std::vector<T>> &a):m_data((T*)a->data()),m_size(a->size()){}
+		//span(const std::shared_ptr<std::vector<T>> &a):m_data((T*)a->data()),m_size(a->size()){}
+		//span(const std::unique_ptr<std::vector<T>> &a):m_data((T*)a->data()),m_size(a->size()){}
 		template<size_t U>
 		span(const std::array<T,U> &a):m_data((T*)a.data()),m_size(U){}
 		span(const std::string &a):m_data((T*)a.data()),m_size(a.size()/sizeof(T)){}
-		span(const std::shared_ptr<std::string> &a):m_data((T*)a->data()),m_size(a->size()/sizeof(T)){}
-		span(const std::unique_ptr<std::string> &a):m_data((T*)a->data()),m_size(a->size()/sizeof(T)){}
 		#if __cplusplus>=201103L
 			#if __cplusplus&&!defined(__clang__)
 			#pragma GCC diagnostic ignored "-Winit-list-lifetime"

@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <memory.h>
 #include <stddef.h>
 #include <unordered_map>
 #include <algorithm>
@@ -31,16 +30,9 @@ template<typename T>static inline T* array_data(const std::vector<T> &a){return 
 template<typename T>static inline T* array_data(std::span<T> a){return a.data();}
 template<typename T,size_t lg>static inline T* array_data(const std::array<T,lg> &a){return (T*)a.data();}
 static inline char* array_data(const std::string &a){return (char*)a.data();}
-template<typename T>static inline decltype(array_data(T())) array_data(const std::shared_ptr<T> &a){return array_data(*a);}
-template<typename T>static inline decltype(array_data(T())) array_data(const std::unique_ptr<T> &a){return array_data(*a);}
 static inline char* array_data(const char* a){return (char*)a;}
 static inline char* array_data(const JC::unique_string &a);
 
-//template<typename T>static inline size_t array_size(const std::vector<T> &a){return a.size();}
-//template<typename T>static inline size_t array_size(std::span<T> a){return a.size();}
-//template<typename T,size_t lg>static inline size_t array_size(const std::array<T,lg> &a){return a.size();}
-//static inline size_t array_size(const std::string &a){return a.size();}
-//template<typename T>static inline size_t array_size(const std::shared_ptr<T> &a){return array_size(*a);}
 template<size_t lg>static inline size_t array_size(char const (&a)[lg]){return lg-1;/*remove the NUL*/}
 static inline size_t array_size(const JC::unique_string &a);
 
@@ -53,8 +45,6 @@ struct array_size_helper{
 	template<typename T>static inline size_t call(std::span<T> a){return a.size();}
 	template<typename T,size_t lg>static inline size_t call(const std::array<T,lg> &a){return a.size();}
 	static inline size_t call(const std::string &a){return a.size();}
-	template<typename T>static inline size_t call(const std::shared_ptr<T> &a){return array_size(*a);}
-	template<typename T>static inline size_t call(const std::unique_ptr<T> &a){return array_size(*a);}
 };
 
 template<>
@@ -169,22 +159,6 @@ template<typename T,typename U>
 static inline T array_cast(U&& a){
 	auto data=array_data(std::forward<U>(a));
 	return T(data,data+array_size(std::forward<U>(a)));
-}
-
-template<typename T,typename U>
-static inline std::shared_ptr<T> array_cast_shared(U&& a){
-	auto data=array_data(std::forward<U>(a));
-	return std::make_shared<T>(data,data+array_size(std::forward<U>(a)));
-}
-
-template<typename T,typename U>
-static inline std::unique_ptr<T> array_cast_unique(U&& a){
-	auto data=array_data(std::forward<U>(a));
-	#if __cplusplus>=201402L
-		return std::make_unique<T>(data,data+array_size(std::forward<U>(a)));
-	#else
-		return std::unique_ptr<T>(new T(data,data+array_size(std::forward<U>(a))));
-	#endif
 }
 
 template<typename Array>
@@ -508,6 +482,20 @@ public:
 		#else
 			(*this)[std::forward<NewKey>(k)]=std::forward<NewValue>(v);
 		#endif
+	}
+};
+
+struct StringOrError{
+	std::string some;
+	int32_t error;
+	StringOrError(std::string&& s):some(std::move(s)),error(0){}
+	StringOrError(int32_t error):error(error){assert(error!=0);}
+	StringOrError(std::nullptr_t):error(1){}
+	int operator!(){
+		return this->error!=0;
+	}
+	std::string* operator->(){
+		return &this->some;
 	}
 };
 

@@ -68,15 +68,15 @@ namespace ama {
 	static JSValueConst g_require_cache = JS_NULL;
 	static std::string GetScriptJSCode(std::span<char> fn) {
 		std::string their_extname = unicode::toLowerASCII(path::extname(fn));
-		std::shared_ptr<std::string const> s_code = fs::readFileSync(fn);
-		if ( s_code == nullptr ) {
+		JC::StringOrError s_code = fs::readFileSync(fn);
+		if ( !s_code ) {
 			//console::error('failed to read', fn);
 			return std::string();
 		}
 		if ( their_extname == ".json" ) {
-			return JC::string_concat("(function(exports,module){module.exports=JSON.parse(", JSON::stringify(s_code), ")})");
+			return JC::string_concat("(function(exports,module){module.exports=JSON.parse(", JSON::stringify(s_code.some), ")})");
 		} else {
-			return JC::string_concat("(function(exports,module,__filename,__dirname){let require=__require.bind(null,__filename);", s_code, "\n})\n");
+			return JC::string_concat("(function(exports,module,__filename,__dirname){let require=__require.bind(null,__filename);", s_code.some, "\n})\n");
 		}
 	}
 	static std::string ResolveJSRequire(std::span<char> fn_base, std::span<char> fn_required) {
@@ -175,9 +175,9 @@ namespace ama {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a name");
 		}
-		std::shared_ptr<std::string> ret = ENV::get(ama::UnwrapString(argv[0]));
+		JC::StringOrError ret = ENV::get(ama::UnwrapString(argv[0]));
 		if ( !ret ) { return JS_UNDEFINED; }
-		return ama::WrapString(*ret);
+		return ama::WrapString(ret.some);
 	}
 	void DumpASTAsJSON(ama::Node* nd) {
 		LazyInitScriptEnv();
@@ -308,12 +308,12 @@ namespace ama {
 	}
 	int ProcessAmaFile(char const* fn, std::span<char> extra_script) {
 		LazyInitScriptEnv();
-		std::shared_ptr<std::string> file_data = fs::readFileSync(JC::toSpan(fn));
-		if ( file_data == nullptr ) {
+		JC::StringOrError file_data = fs::readFileSync(JC::toSpan(fn));
+		if ( !file_data ) {
 			//console.error('unable to load', fn);
 			return ama::PROCESS_AMA_NOT_FOUND;
 		}
-		std::string script_i = ama::FindAma(*file_data);
+		std::string script_i = ama::FindAma(file_data.some);
 		if ( extra_script.size() ) {
 			script_i = std::move(JC::string_concat(extra_script, script_i));
 		}
@@ -448,11 +448,11 @@ namespace ama {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a path");
 		}
-		std::shared_ptr<std::string> data = fs::readFileSync(ama::UnwrapString(argv[0]));
+		JC::StringOrError data = fs::readFileSync(ama::UnwrapString(argv[0]));
 		if ( !data ) {
 			return JS_NULL;
 		}
-		return JS_NewArrayBufferCopy(ctx, (uint8_t*)((*data).data()), data->size());
+		return JS_NewArrayBufferCopy(ctx, (uint8_t*)(data->data()), data->size());
 	}
 	static JSValueConst JSWriteFileSync(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 2 ) {
@@ -967,7 +967,7 @@ namespace ama {
 			//we NEED that
 			fprintf(stderr, "panic: failed to find ${AMA_MODULES}/_init.js, things could break\n");
 		} else {
-			std::shared_ptr<std::string> bootstrap_code = fs::readFileSync(fn_initjs);
+			JC::StringOrError bootstrap_code = fs::readFileSync(fn_initjs);
 			JSValueConst ret = JS_Eval(
 				ama::jsctx, bootstrap_code->c_str(),
 				bootstrap_code->size(), fn_initjs.c_str(), JS_EVAL_TYPE_GLOBAL
