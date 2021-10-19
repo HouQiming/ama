@@ -289,8 +289,8 @@ namespace ama {
 							if( nd_class_name.node_class == ama::N_CALL || nd_class_name.node_class == ama::N_CALL_TEMPLATE ) {
 								nd_class_name = ama::UnparseCall(nd_class_name);
 							}
-							ama::Node*+! nd_class = ama::ReplaceChildRange(
-								nd_keyword, ndi,
+							ama::Node*+! nd_class = nd_keyword.ReplaceUpto(
+								ndi,
 								ama::CreateNode(ama::N_CLASS, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
 							ndi.BreakSelf();
@@ -316,8 +316,8 @@ namespace ama {
 							if( nd_keyword.node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
 							}
-							ama::Node*+! nd_stmt = ama::ReplaceChildRange(
-								nd_keyword, ndi,
+							ama::Node*+! nd_stmt = nd_keyword.ReplaceUpto(
+								ndi,
 								ama::CreateNode(ama::N_SCOPED_STATEMENT, NULL).setData(nd_keyword.data).setCommentsBefore(nd_keyword.comments_before).setIndent(nd_keyword.indent_level)
 							);
 							ama::Node*+! nd_arg = nd_keyword.s == ndi ? ama::nAir() : ama::toSingleNode(nd_keyword.s);
@@ -404,18 +404,23 @@ namespace ama {
 							//what else could it be? C/C++ initializer list, new (which could have (){} for JC)
 							//use (){} as indicator: we could drag back those misidentified functions later
 							//if we had a keyword, we won't have a C-like return type
+							ama::Node*+! nd_paramlist_start = nd_prototype_start;
 							if( !nd_keyword ) {
 								nd_keyword = nd_prototype_start;
 							} else {
-								nd_prototype_start = nd_keyword.s;
+								nd_paramlist_start = nd_keyword.s;
 								if( nd_keyword.node_class == ama::N_CALL ) {
 									//the unparsing always creates a paramlist
+									int! start_was_paramlist = nd_keyword == nd_keyword;
 									nd_keyword = ama::UnparseCall(nd_keyword);
-									nd_prototype_start = nd_keyword.s;
+									if( start_was_paramlist ) {
+										nd_prototype_start = nd_keyword;
+									}
+									nd_paramlist_start = nd_keyword.s;
 								}
 							}
 							ama::Node*+! nd_paramlist = NULL;
-							for(ama::Node*+! ndj = nd_prototype_start; ndj != ndi; ndj = ndj.s) {
+							for(ama::Node*+! ndj = nd_paramlist_start; ndj != ndi; ndj = ndj.s) {
 								if( ndj.isRawNode('(', ')') || ndj.node_class == ama::N_CALL ) {
 									nd_paramlist = ndj;
 								} else if( (ndj.node_class == ama::N_SYMBOL || (ndj.node_class == ama::N_REF && nd_paramlist)) && keywords_after_prototype[ndj.data] ) {
@@ -429,16 +434,16 @@ namespace ama {
 								`goto not_declaration;`
 							}
 							if( nd_paramlist.node_class == ama::N_CALL ) {
-								int! keyword_was_paramlist = nd_prototype_start == nd_paramlist;
+								int! start_was_paramlist = nd_prototype_start == nd_paramlist;
 								nd_paramlist = ama::UnparseCall(nd_paramlist).s;
-								if( keyword_was_paramlist ) {
+								if( start_was_paramlist ) {
 									nd_prototype_start = nd_paramlist;
 								}
 							}
 							//keyworded function shouldn't have any junk before... but C++ function has both junk before and junk after
 							//before (C++ return type plus junk plus name, or just a name), paramlist, after, body, figure out return type separately
-							ama::Node*+! nd_func = ama::ReplaceChildRange(
-								nd_prototype_start, ndi,
+							ama::Node*+! nd_func = nd_prototype_start.ReplaceUpto(
+								ndi,
 								ama::CreateNode(ama::N_FUNCTION, NULL)
 							);
 							ama::Node*+! nd_before = nd_prototype_start;
