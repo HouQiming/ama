@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <memory.h>
+#pragma no_auto_header()
 
 namespace JC {
 

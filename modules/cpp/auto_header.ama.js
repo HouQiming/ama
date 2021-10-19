@@ -18,6 +18,7 @@ function GetFunctionNameNode(nd_func) {
 
 function Transform(nd_root, options) {
 	if (path.extname(nd_root.data).startsWith('.h')) {return;}
+	if (nd_root.Find(N_CALL, 'no_auto_header')) {return;}
 	let header_file = (options || {}).header_file;
 	if (!header_file) {
 		//search for same-name dependency first

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string>
 #include "../util/jc_array.h"
+#pragma no_auto_header()
 /*#pragma add("ldflags", "amal");*/
 int main(int argc, char const* const* argv) {
 	if ( argc < 2 ) {

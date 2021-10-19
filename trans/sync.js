@@ -13,6 +13,7 @@ function GetFileTime(fn){
 }
 
 function main(){
+	__dirname=path.resolve(__dirname);
 	process.chdir(path.join(__dirname,'../src'));
 	let script_ama2cpp=fs.readFileSync(path.join(__dirname,'from_ama.js')).toString();
 	let script_cpp2ama=fs.readFileSync(path.join(__dirname,'to_ama.js')).toString();
@@ -35,13 +36,13 @@ function main(){
 			ProcessAmaFile(fn_cpp,script_cpp2ama);
 			aba_test_jobs.push([fn_ama_cpp,script_ama2cpp]);
 			pipe.run(['touch -r ',JSON.stringify(fn_cpp),' ',JSON.stringify(fn_ama_cpp)].join(''));
-			//console.log('updated',fn_ama_cpp);
+			console.log('updated',fn_ama_cpp);
 		}else if(t_cpp<t_ama){
 			//ama to cpp
 			ProcessAmaFile(fn_ama_cpp,script_ama2cpp);
 			aba_test_jobs.push([fn_cpp,script_cpp2ama]);
 			pipe.run(['touch -r ',JSON.stringify(fn_ama_cpp),' ',JSON.stringify(fn_cpp)].join(''));
-			//console.log('updated',fn_cpp);
+			console.log('updated',fn_cpp);
 		}
 	}
 	if(default_options.do_aba_test){
