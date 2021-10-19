@@ -40,6 +40,7 @@ module.exports = ParseCurrentFile=>{
 	.then(require('cpp/auto_header'))
 	.Save('.aba.audit.cpp');
 	//////////////////////
+	console.log(JSON.stringify(nd_root_aba, null, 1));
 	console.flush();
 	__system('diff ' + nd_root.data + ' ' + nd_root_aba.data.replace(/\.audit\.cpp$/, '.aba.audit.cpp'));
 	return nd_root;

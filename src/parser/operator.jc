@@ -48,6 +48,9 @@ namespace ama {
 			}
 		}
 		nd_tmp.ReplaceWith(nd_ret);
+		for(ama::Node*+! ndi = nd_ret.c; ndi; ndi = ndi.s) {
+			ndi.AdjustIndentLevel(-nd_ret.indent_level);
+		}
 		//if( nd_next ) { nd_ret.Insert(ama::POS_AFTER, nd_next); }
 		cstk.pop();
 		if( !cstk.length ) {
@@ -142,6 +145,8 @@ namespace ama {
 					nd_raw.ReplaceWith(nd_tmp);
 					//ndi.s = NULL;
 					ama::Node*+! nd_asgn = nd_tmp.ReplaceWith(ama::nAssignment(nd_raw, nd_value));
+					nd_raw.AdjustIndentLevel(-nd_asgn.indent_level);
+					nd_value.AdjustIndentLevel(-nd_asgn.indent_level);
 					//always allow :=
 					if( ndi.node_class == ama::N_SYMBOL && (binop_priority[ndi.data] || ndi.data == ":") && ndi != nd_raw.c ) {
 						//updating assignment

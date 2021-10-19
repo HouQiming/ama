@@ -7,4 +7,5 @@ namespace ama {
 	//ama::Node*+! StripBinaryOperatorSpaces(ama::Node*+! nd_root);
 	ama::Node*+! AutoFormat(ama::Node*+! nd_root);
 	ama::Node*+! NodifySemicolonAndParenthesis(ama::Node*+! nd_root);
+	ama::Node*+! FixPriorityReversal(ama::Node*+! nd_root);
 };

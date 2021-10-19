@@ -189,14 +189,14 @@ namespace ama {
 		}
 		ama::DelimitCLikeStatements(nd_root, options);
 		//from here on, N_RAW no longer includes the root scope
-		nd_root = ama::CleanupDummyRaws(nd_root);
+		ama::CleanupDummyRaws(nd_root);
 		nd_root.node_class = ama::N_FILE;
 		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
 		nd_root.flags = (nd_root.flags & 0x10000) ? ama::FILE_SPACE_INDENT : 0;
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root, ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_air_object'), 1));
 		ama::SanitizeCommentPlacement(nd_root);
-		nd_root = ama::CleanupDummyRaws(nd_root);
+		ama::CleanupDummyRaws(nd_root);
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_keyword_statements'), 1) ) {
 			ama::ParseKeywordStatements(nd_root, options);
 		}
@@ -213,12 +213,14 @@ namespace ama {
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_operators'), 1) ) {
 			ama::ParseOperators(nd_root, options);
 		}
+		ama::CleanupDummyRaws(nd_root);
+		ama::FixPriorityReversal(nd_root);
 		if( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, 'parse_declarations'), 1) ) {
 			ama::ParseDeclarations(nd_root, options);
 		}
 		//DumpASTAsJSON(nd_root);
 		ama::NodifySemicolonAndParenthesis(nd_root);
-		nd_root = ama::CleanupDummyRaws(nd_root);
+		ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		assert(!nd_root.p);
 		return nd_root;

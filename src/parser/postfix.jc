@@ -42,6 +42,7 @@ namespace ama {
 							pending_comments_before.push(ndk.comments_after);
 							comma_group.clear();
 						} else {
+							ndk.AdjustIndentLevel(ndj.indent_level);
 							comma_group.push_back(ndk);
 						}
 					}

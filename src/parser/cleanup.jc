@@ -16,12 +16,6 @@ namespace ama {
 				ama::UnparseRaw(nd_raw);
 			}
 		}
-		//while( nd_root.c && !nd_root.c.s && nd_root.c.node_class == ama::N_RAW && !(nd_root.c.flags & 0xffff) ) {
-		//	nd_root = nd_root.c;
-		//	nd_root.p.c = NULL;
-		//	nd_root.p.FreeASTStorage();
-		//	nd_root.p = NULL;
-		//}
 		return nd_root;
 	}
 	ama::Node*+! SanitizeCommentPlacement(ama::Node*+! nd_root) {
@@ -130,6 +124,25 @@ namespace ama {
 				if( !nd_root.s && nd_root.comments_after == "" ) {
 					nd_root.comments_after = "\n";
 				}
+			}
+		}
+		return nd_root;
+	}
+	ama::Node*+! FixPriorityReversal(ama::Node*+! nd_root) {
+		for(ama::Node*+! nd_label : nd_root.FindAll(ama::N_LABELED, NULL)) {
+			if( nd_label.p && nd_label.p.node_class == ama::N_ASSIGNMENT ) {
+				//fix the priority reversal
+				ama::Node*+! nd_asgn = nd_label.p;
+				ama::Node*+! nd_var = nd_label.c.s.Unlink();
+				int8_t! indent_asgn = nd_asgn.indent_level;
+				int8_t! indent_var = nd_var.indent_level;
+				int8_t! indent_label = nd_label.indent_level;
+				nd_label.ReplaceWith(nd_var);
+				nd_asgn.ReplaceWith(nd_label);
+				nd_label.Insert(ama::POS_BACK, nd_asgn);
+				nd_label.indent_level = indent_asgn;
+				nd_asgn.indent_level = indent_var;
+				nd_var.indent_level = 0;
 			}
 		}
 		return nd_root;
