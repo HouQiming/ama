@@ -203,6 +203,8 @@ jsism.EnableJSON = function(nd_root) {
 	for (let nd_json of nd_root.FindAll(N_REF, 'JSON')) {
 		let nd_parent = nd_json.p;
 		if (nd_parent.node_class != N_DOT || nd_parent.flags != 0) {continue;}
+		let nd_owning_pragma = nd_json.Owning(N_KEYWORD_STATEMENT);
+		if (nd_owning_pragma && nd_owning_pragma.data == '#pragma') {continue;}
 		let nd_call = nd_parent.p;
 		let type = undefined;
 		if (nd_parent.data == 'stringify' && nd_call && nd_call.node_class == N_CALL && nd_call.c.s) {

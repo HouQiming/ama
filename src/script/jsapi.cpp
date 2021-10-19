@@ -981,24 +981,3 @@ namespace ama {
 	}
 	ama::Node* Unparse();
 };
-namespace JSON {
-	template<>
-	struct StringifyToImpl<path::CPathObject> {
-		typedef void type;
-		template<typename T = path::CPathObject>
-		static void stringifyTo(std::string& buf, path::CPathObject const& a) {
-			buf += "{";
-			buf += "\"root\":";
-			JSON::stringifyTo(buf, a.root);
-			buf += ",\"dir\":";
-			JSON::stringifyTo(buf, a.dir);
-			buf += ",\"base\":";
-			JSON::stringifyTo(buf, a.base);
-			buf += ",\"ext\":";
-			JSON::stringifyTo(buf, a.ext);
-			buf += ",\"name\":";
-			JSON::stringifyTo(buf, a.name);
-			buf += "}";
-		}
-	};
-};

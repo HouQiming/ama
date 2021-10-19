@@ -25,10 +25,7 @@ namespace ama {
 	void ama::CodeGenerator::GenerateDefault(ama::Node* nd) {
 		switch ( nd->node_class ) {
 			default: {
-					
-					this->code--->push("/* unsupported node class "
-					, JSON::stringify(nd->node_class), " */ ", JSON::stringify(nd)
-					, " /* with children */ (");
+				this->code--->push("/* unsupported node class ", JSON::stringify(nd->node_class), " with children */ (");
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					this->Generate(ndi);
 					this->code--->push(' ');
@@ -382,29 +379,4 @@ namespace ama {
 	std::string ama::Node::toSource() const {
 		return GenerateCode((ama::Node*)(this), JS_NULL);
 	}
-};
-namespace JSON {
-	template<>
-	struct StringifyToImpl<ama::Node> {
-		typedef void type;
-		template<typename T = ama::Node>
-		static void stringifyTo(std::string& buf, ama::Node const& a) {
-			buf += "{";
-			buf += "\"node_class\":";
-			JSON::stringifyTo(buf, a.node_class);
-			buf += ",\"indent_level\":";
-			JSON::stringifyTo(buf, a.indent_level);
-			buf += ",\"tmp_flags\":";
-			JSON::stringifyTo(buf, a.tmp_flags);
-			buf += ",\"flags\":";
-			JSON::stringifyTo(buf, a.flags);
-			buf += ",\"data\":";
-			JSON::stringifyTo(buf, a.data);
-			buf += ",\"comments_before\":";
-			JSON::stringifyTo(buf, a.comments_before);
-			buf += ",\"comments_after\":";
-			JSON::stringifyTo(buf, a.comments_after);
-			buf += "}";
-		}
-	};
 };

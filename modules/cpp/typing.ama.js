@@ -490,7 +490,7 @@ typing.AccessTypeAt = function(type, nd_site) {
 		}
 		let ret = nRef(names.pop());
 		while (names.length) {
-			ret = ret.dot(names.pop());
+			ret = ret.dot(names.pop()).setFlags(DOT_CLASS);
 		}
 		return ret;
 	} else if (type.node_class == N_CALL_TEMPLATE) {
