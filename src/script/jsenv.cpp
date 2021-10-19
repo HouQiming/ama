@@ -1,15 +1,13 @@
-#include <stdio.h>
-#include "fs.hpp"
-#include "path.hpp"
-#include "../../modules/cpp/json/json.h"
-#include "console.hpp"
-#include "jsenv.hpp"
-#include "../util/jc_array.h"
 #include <string>
 #include <vector>
-#include "../util/jc_unique_string.h"
-#include <memory>
 #include <unordered_map>
+#include "../util/jc_array.h"
+#include "../util/jc_unique_string.h"
+#include <stdio.h>
+#include "../util/fs.hpp"
+#include "../util/path.hpp"
+#include "../../modules/cpp/json/json.h"
+#include "jsenv.hpp"
 namespace ama {
 	JSContext* jsctx{};
 	JSRuntime* g_runtime_handle{};

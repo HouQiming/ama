@@ -1,12 +1,11 @@
-#include "console.hpp"
+#include <string>
+#include "../util/jc_array.h"
 #include "../../modules/cpp/json/json.h"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "../parser/literal.hpp"
 #include "../parser/charset.hpp"
 #include "gen.hpp"
-#include <string>
-#include "../util/jc_array.h"
 namespace ama {
 	void ama::CodeGenerator::GenerateSpaceBefore(ama::Node* nd_next) {
 		if ( this->auto_space && !(nd_next->comments_before.size() && uint8_t(nd_next->comments_before[0]) <= uint8_t(' ')) ) {

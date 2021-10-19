@@ -1,12 +1,11 @@
-#include "console.hpp"
+#include <vector>
+#include <unordered_map>
+#include "../util/jc_array.h"
+#include "../util/jc_unique_string.h"
 #include "../../modules/cpp/json/json.h"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "scoping.hpp"
-#include <vector>
-#include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
-#include <unordered_map>
 namespace ama {
 	void ConvertToScope(ama::Node* nd_raw) {
 		nd_raw->node_class = ama::N_SCOPE;

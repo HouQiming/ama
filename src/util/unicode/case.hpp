@@ -1,7 +1,7 @@
 #ifndef _CASE_JCH_HPP
 #define _CASE_JCH_HPP
 #include <string>
-#include "../../src/util/jc_array.h"
+#include "../jc_array.h"
 #include <functional>
 /*#pragma add("jc_files", "./case.jc");*/
 namespace unicode {

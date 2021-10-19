@@ -1,4 +1,3 @@
-#include "console.hpp"
 #include "../../modules/cpp/json/json.h"
 #include "../ast/node.hpp"
 #include "cleanup.hpp"

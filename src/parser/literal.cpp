@@ -1,10 +1,10 @@
-#include "unicode.hpp"
-#include "charset.hpp"
-#include "literal.hpp"
 #include <string>
 #include <array>
 #include "../util/jc_array.h"
 #include "../util/jc_unique_string.h"
+#include "../util/unicode.hpp"
+#include "charset.hpp"
+#include "literal.hpp"
 namespace ama {
 	static const JC::unique_string g_hex = "0123456789abcdef";
 	static const std::array<uint32_t, 8> g_hex_charset = ama::CreateCharSet("0-9A-Fa-f");

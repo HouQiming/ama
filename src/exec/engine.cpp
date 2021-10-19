@@ -1,15 +1,14 @@
-#include "console.hpp"
+#include <stdio.h>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include "../util/jc_array.h"
+#include "../util/jc_unique_string.h"
 #include "../../modules/cpp/json/json.h"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "../codegen/gen.hpp"
 #include "engine.hpp"
-#include <stdio.h>
-#include <string>
-#include <vector>
-#include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
-#include <unordered_map>
 namespace ama {
 	ama::ExecSession CreateSession(ama::Node* nd_entry, std::span<ama::Node*> interests) {
 		//remove the default entry / interest? that's just `new ExecSession!`

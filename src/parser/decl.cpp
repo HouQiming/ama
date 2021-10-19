@@ -1,4 +1,3 @@
-#include "console.hpp"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "postfix.hpp"

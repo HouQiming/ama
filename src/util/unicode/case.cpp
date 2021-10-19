@@ -7,8 +7,8 @@
 	#include <wctype.h>
 	//the C95 to-w-foo-er doesn't work on Unicode by default on Windows
 #endif
-#include "unicode.hpp"
-#include "unicode/case.hpp"
+#include "../unicode.hpp"
+#include "./case.hpp"
 #include <string>
 #include <vector>
 #include "../jc_array.h"

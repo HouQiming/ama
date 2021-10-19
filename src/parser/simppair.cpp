@@ -1,15 +1,14 @@
-#include "../ast/node.hpp"
-#include "../script/jsenv.hpp"
-#include "charset.hpp"
-#include "simppair.hpp"
-#include "console.hpp"
-#include "../../modules/cpp/json/json.h"
 #include <stdio.h>
 #include <string>
 #include <vector>
 #include <array>
 #include "../util/jc_array.h"
 #include "../util/jc_unique_string.h"
+#include "../ast/node.hpp"
+#include "../script/jsenv.hpp"
+#include "../../modules/cpp/json/json.h"
+#include "charset.hpp"
+#include "simppair.hpp"
 
 static const int CHAR_TYPE_SYMBOL = 0;
 static const int CHAR_TYPE_SPACE = 1;

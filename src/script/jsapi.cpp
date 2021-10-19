@@ -1,10 +1,15 @@
+#include <stdio.h>
+#include <string>
+#include <vector>
+#include <array>
+#include "../util/jc_array.h"
+#include "../util/jc_unique_string.h"
 #include "../../modules/cpp/json/json.h"
-#include "path.hpp"
-#include "fs.hpp"
-#include "console.hpp"
-#include "env.hpp"
-#include "unicode.hpp"
-#include "unicode/case.hpp"
+#include "../util/path.hpp"
+#include "../util/fs.hpp"
+#include "../util/env.hpp"
+#include "../util/unicode.hpp"
+#include "../util/unicode/case.hpp"
 #if defined(_WIN32)
 	#include <windows.h>
 	/*#pragma add("ldflags", "kernel32.lib");*/
@@ -32,13 +37,6 @@
 #include "jsenv.hpp"
 #include "jsapi.hpp"
 #include "jsgen.hpp"
-#include "../util/jc_array.h"
-#include <stdio.h>
-#include <string>
-#include <vector>
-#include <array>
-#include "../util/jc_unique_string.h"
-#include <memory>
 ama::Node * ama::Node::Unparse() {
 	switch ( this->node_class ) {
 		default: {

@@ -1,16 +1,14 @@
-#include "fs.hpp"
-#include "console.hpp"
 #include <stdlib.h>
 #include <unordered_map>
-#include "../../modules/cpp/json/json.h"
-#include "../parser/literal.hpp"
-#include "../util/mempool.hpp"
-#include "node.hpp"
 #include <stdio.h>
 #include <string>
 #include <vector>
 #include "../util/jc_array.h"
 #include "../util/jc_unique_string.h"
+#include "../../modules/cpp/json/json.h"
+#include "../parser/literal.hpp"
+#include "../util/mempool.hpp"
+#include "node.hpp"
 
 static const int DEBUG_NODE_ALLOCATOR = 0;
 namespace ama {

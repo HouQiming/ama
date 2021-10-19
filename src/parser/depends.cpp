@@ -1,12 +1,12 @@
-#include "path.hpp"
-#include "fs.hpp"
+#include <string>
+#include <vector>
+#include "../util/jc_array.h"
+#include "../util/jc_unique_string.h"
+#include "../util/path.hpp"
+#include "../util/fs.hpp"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "depends.hpp"
-#include "../util/jc_array.h"
-#include <string>
-#include <vector>
-#include "../util/jc_unique_string.h"
 namespace ama {
 	//requires DelimitCLikeStatements, preferrably before ParsePostfix
 	void ParseCInclude(ama::Node* nd_root) {

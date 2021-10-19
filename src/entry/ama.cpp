@@ -1,9 +1,8 @@
-#include "../util/dumpstack/dumpstack.h"
-#include "console.hpp"
 #include <stdlib.h>
-#include "../script/jsapi.hpp"
 #include <stdio.h>
 #include <string>
+#include "../util/dumpstack/dumpstack.h"
+#include "../script/jsapi.hpp"
 #include "../util/jc_array.h"
 #pragma no_auto_header()
 /*#pragma add("ldflags", "amal");*/
