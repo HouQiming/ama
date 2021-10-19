@@ -111,10 +111,10 @@ namespace unicode {
 			output--->push(char(chi));
 		}
 	}
-	std::vector<uint16_t> WTF8ToUTF16(JC::array_base<char> s);
-	std::vector<int32_t> WTF8ToUTF32(JC::array_base<char> s);
-	std::string UTF16ToUTF8(JC::array_base<uint16_t> s);
-	std::string UTF32ToUTF8(JC::array_base<int32_t> s);
+	std::vector<uint16_t> WTF8ToUTF16(std::span<char> s);
+	std::vector<int32_t> WTF8ToUTF32(std::span<char> s);
+	std::string UTF16ToUTF8(std::span<uint16_t> s);
+	std::string UTF32ToUTF8(std::span<int32_t> s);
 };
 
 #endif

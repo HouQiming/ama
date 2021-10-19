@@ -26,7 +26,7 @@ namespace JSON{
 	
 	static const char g_hex_chars[17]="0123456789abcdef";
 	
-	void stringifyTo(std::string &buf,JC::array_base<char> a){
+	void stringifyTo(std::string &buf,std::span<char> a){
 		buf.push_back('"');
 		for(size_t i=0;i<a.size();i++){
 			char ch=a[i];

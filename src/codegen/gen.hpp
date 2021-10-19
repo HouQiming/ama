@@ -23,11 +23,11 @@ namespace ama {
 		int8_t auto_space = 1;
 		int8_t tab_indent = 1;
 		void GenerateDefault(ama::Node* nd);
-		void GenerateComment(int is_after, intptr_t expected_indent_level, JC::array_base<char> comment);
+		void GenerateComment(int is_after, intptr_t expected_indent_level, std::span<char> comment);
 		void Generate(ama::Node* nd);
 		void GenerateSpaceBefore(ama::Node* nd_next);
 		void GenerateIndent(intptr_t expected_indent_level);
-		void GenerateCommentDefault(int is_after, intptr_t expected_indent_level, JC::array_base<char> comment);
+		void GenerateCommentDefault(int is_after, intptr_t expected_indent_level, std::span<char> comment);
 		void GenerateSpaceAfter(ama::Node* nd_last);
 		void GenerateSpaceBetween(ama::Node* nd_last, ama::Node* nd_next);
 	};

@@ -15,7 +15,7 @@ module.exports = ParseCurrentFile=>{
 	.then(move_operator.inverse)
 	.then(sane_export.inverse)
 	.then(sane_init.inverse)
-	.then(sane_types.inverse, {view: {to: .(JC::array_base<.(Node.MatchAny('TElement'))>)}})
+	.then(sane_types.inverse)
 	.Save('.audit.cpp');
 	//////////////////////
 	//console.log(JSON.stringify(nd_root, null, 1));
@@ -30,7 +30,7 @@ module.exports = ParseCurrentFile=>{
 	.then(require('cpp/typing').DeduceAuto)
 	.then(require('cpp/auto_paren'))
 	.then(require('cpp/cpp_indent'))
-	.then(sane_types, {view: {to: .(JC::array_base<.(Node.MatchAny('TElement'))>)}})
+	.then(sane_types)
 	.then(sane_init)
 	.then(sane_export)
 	.then(move_operator)

@@ -66,7 +66,7 @@ namespace ama {
 };
 namespace ama {
 	static JSValueConst g_require_cache = JS_NULL;
-	static std::string GetScriptJSCode(JC::array_base<char> fn) {
+	static std::string GetScriptJSCode(std::span<char> fn) {
 		std::string their_extname = unicode::toLowerASCII(path::extname(fn));
 		std::shared_ptr<std::string const> s_code = fs::readFileSync(fn);
 		if ( s_code == nullptr ) {
@@ -79,7 +79,7 @@ namespace ama {
 			return JC::string_concat("(function(exports,module,__filename,__dirname){let require=__require.bind(null,__filename);", s_code, "\n})\n");
 		}
 	}
-	static std::string ResolveJSRequire(JC::array_base<char> fn_base, JC::array_base<char> fn_required) {
+	static std::string ResolveJSRequire(std::span<char> fn_base, std::span<char> fn_required) {
 		std::string dir_base = path::dirname((path::CPathResolver{std::string()}).add(fn_base)->done());
 		std::string fn_final = (path::CPathResolver{std::string()}).add(dir_base)->add(fn_required)->done();
 		JC::unique_string fn_commonjs{};
@@ -272,7 +272,7 @@ namespace ama {
 		fflush(stderr);
 		return JS_UNDEFINED;
 	}
-	int RunScriptOnFile(JC::array_base<char> script, char const* file_name, char const* file_data) {
+	int RunScriptOnFile(std::span<char> script, char const* file_name, char const* file_data) {
 		//we must not hold any Node* here: the script could gc them and native-only pointers can get freed
 		LazyInitScriptEnv();
 		std::string s_fixed_code = JC::string_concat("(function(__filename,__dirname,ParseCurrentFile){\"use strict\";let require=__require.bind(null,__filename);", script, "\n})\n");
@@ -293,7 +293,7 @@ namespace ama {
 		};
 		std::array<JSValueConst, intptr_t(3L)> module_args{
 			JS_NewString(ama::jsctx, file_name),
-			ama::WrapString(path::dirname(file_name)),
+			ama::WrapString(path::dirname(JC::toSpan(file_name))),
 			JS_NewCFunctionData(
 				ama::jsctx, JSParseCurrentFile,
 				1, 0, 2, func_data.data()
@@ -306,9 +306,9 @@ namespace ama {
 		}
 		return 1;
 	}
-	int ProcessAmaFile(char const* fn, JC::array_base<char> extra_script) {
+	int ProcessAmaFile(char const* fn, std::span<char> extra_script) {
 		LazyInitScriptEnv();
-		std::shared_ptr<std::string> file_data = fs::readFileSync(fn);
+		std::shared_ptr<std::string> file_data = fs::readFileSync(JC::toSpan(fn));
 		if ( file_data == nullptr ) {
 			//console.error('unable to load', fn);
 			return ama::PROCESS_AMA_NOT_FOUND;
@@ -460,7 +460,7 @@ namespace ama {
 		}
 		size_t len = int64_t(0uLL);
 		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, argv[1]);
-		intptr_t n_written = fs::writeFileSync(ama::UnwrapString(argv[0]), JC::array_base<char>(ptr, intptr_t(len)));
+		intptr_t n_written = fs::writeFileSync(ama::UnwrapString(argv[0]), std::span<char>(ptr, intptr_t(len)));
 		return JS_NewInt64(ctx, n_written);
 	}
 	static JSValueConst JSExistsSync(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
@@ -613,7 +613,7 @@ namespace ama {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a command");
 		}
-		return JS_NewInt32(ctx, fs::chdir(JS_ToCString(ctx, argv[0])));
+		return JS_NewInt32(ctx, fs::chdir(ama::UnwrapString(argv[0])));
 	}
 	static JSValueConst JSByteLength(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 1 ) {

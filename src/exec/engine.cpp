@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <functional>
 namespace ama {
-	ama::ExecSession CreateSession(ama::Node* nd_entry, JC::array_base<ama::Node*> interests) {
+	ama::ExecSession CreateSession(ama::Node* nd_entry, std::span<ama::Node*> interests) {
 		//remove the default entry / interest? that's just `new ExecSession!`
 		//the sole query to support is "lookup"
 		ama::ExecSession ret{};
@@ -24,7 +24,7 @@ namespace ama {
 		return std::move(ret);
 	}
 };
-std::vector<ama::ExecNode*> ama::ExecSession::ComputeReachableSet(JC::array_base<ama::ExecNode*> entries, int32_t dir) {
+std::vector<ama::ExecNode*> ama::ExecSession::ComputeReachableSet(std::span<ama::ExecNode*> entries, int32_t dir) {
 	std::vector<ama::ExecNode*> Q{};
 	std::unordered_map<ama::ExecNode*, intptr_t> inQ{};
 	for ( ama::ExecNode * & ed: entries ) {

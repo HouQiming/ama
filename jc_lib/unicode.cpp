@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include "../src/util/jc_array.h"
-std::vector<uint16_t> unicode::WTF8ToUTF16(JC::array_base<char> s) {
+std::vector<uint16_t> unicode::WTF8ToUTF16(std::span<char> s) {
 	std::vector<uint16_t> ret{};
 	unicode::TWTF8Filter filter{0, 0, intptr_t(0L), -1, intptr_t(0L), 0};
 	for (intptr_t I = intptr_t(0L); I < intptr_t(s.size()); I++) {
@@ -21,7 +21,7 @@ std::vector<uint16_t> unicode::WTF8ToUTF16(JC::array_base<char> s) {
 	}
 	return std::move(ret);
 }
-std::vector<int32_t> unicode::WTF8ToUTF32(JC::array_base<char> s) {
+std::vector<int32_t> unicode::WTF8ToUTF32(std::span<char> s) {
 	std::vector<int32_t> ret{};
 	unicode::TWTF8Filter filter{0, 0, intptr_t(0L), -1, intptr_t(0L), 0};
 	for (intptr_t I = intptr_t(0L); I < intptr_t(s.size()); I++) {
@@ -32,7 +32,7 @@ std::vector<int32_t> unicode::WTF8ToUTF32(JC::array_base<char> s) {
 	}
 	return std::move(ret);
 }
-std::string unicode::UTF16ToUTF8(JC::array_base<uint16_t> s) {
+std::string unicode::UTF16ToUTF8(std::span<uint16_t> s) {
 	std::string ret{};
 	int32_t surrogate_1st = -1;
 	intptr_t surrogate_II = intptr_t(0L);
@@ -55,7 +55,7 @@ std::string unicode::UTF16ToUTF8(JC::array_base<uint16_t> s) {
 	}
 	return std::move(ret);
 }
-std::string unicode::UTF32ToUTF8(JC::array_base<int32_t> s) {
+std::string unicode::UTF32ToUTF8(std::span<int32_t> s) {
 	std::string ret{};
 	for ( int32_t const &chi: s ) {
 		unicode::AppendUTF8Char(ret, chi);

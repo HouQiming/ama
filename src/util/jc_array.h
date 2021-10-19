@@ -333,6 +333,14 @@ public:
 		AppendArray(*this,b);
 		return *this;
 	}
+	template<typename _Base=Base>
+	inline typename std::enable_if<
+		std::is_same<_Base,std::string>::value,
+		ArrayExtension<_Base,T>&
+	>::type push(T const* b){
+		this->append(b,strlen(b));
+		return *this;
+	}
 	template<typename U>
 	inline typename std::enable_if<
 		isResizable<Base>::value&&std::is_convertible<U,T>::value&&!std::is_convertible<U,std::span<T>>::value,
@@ -503,6 +511,10 @@ public:
 	}
 };
 
+static inline std::span<char> toSpan(char const* s){
+	return std::span<char>(s,strlen(s));
+}
+
 }
 
 //string comparison
@@ -559,4 +571,5 @@ template<typename Key,typename Value>
 auto operator--(std::unordered_map<Key,Value> const&a,int){
 	return reinterpret_cast<JC::MapExtension<Key,Value>const*>(&a);
 }
+
 #endif

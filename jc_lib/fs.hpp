@@ -8,16 +8,16 @@
 /*#pragma add("jc_files", "./fs.jc");*/
 namespace fs {
 	#if JC_OS == JC_OS_WINDOWS
-		std::vector<uint16_t> PathToWindows(JC::array_base<char> s);
+		std::vector<uint16_t> PathToWindows(std::span<char> s);
 	#endif
-	std::shared_ptr<std::string> readFileSync(JC::array_base<char> fn);
-	intptr_t writeFileSync(JC::array_base<char> fn, JC::array_base<char> content);
-	int existsSync(JC::array_base<char> fn);
-	int DirExists(JC::array_base<char> dir);
+	std::shared_ptr<std::string> readFileSync(std::span<char> fn);
+	intptr_t writeFileSync(std::span<char> fn, std::span<char> content);
+	int existsSync(std::span<char> fn);
+	int DirExists(std::span<char> dir);
 	std::string cwd();
-	int chdir(JC::array_base<char> dir);
-	int mkdirSync(JC::array_base<char> dir);
-	intptr_t appendFileSync(JC::array_base<char> fn, JC::array_base<char> content);
+	int chdir(std::span<char> dir);
+	int mkdirSync(std::span<char> dir);
+	intptr_t appendFileSync(std::span<char> fn, std::span<char> content);
 };
 
 #endif

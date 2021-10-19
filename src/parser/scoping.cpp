@@ -16,7 +16,7 @@ namespace ama {
 			nd_raw->flags &= 0xffff0000u;
 		}
 	}
-	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<JC::unique_string, int> const& keywords_extension_clause, JC::array_base<ama::Node*> lines_out) {
+	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<JC::unique_string, int> const& keywords_extension_clause, std::span<ama::Node*> lines_out) {
 		std::vector<ama::Node*> line_group{};
 		std::vector<ama::Node*> line_out_final{};
 		for (int i0 = 0; i0 < lines_out.size();) {

@@ -1,11 +1,10 @@
-#include "jc_platform.h"
-#if JC_OS != JC_OS_WINDOWS
+#if !defined(_WIN32)
 	#include "path.hpp"
 	#include "fs.hpp"
 	namespace path {
 		char delimiter = ':';
 		char sep = '/';
-		std::string basename(JC::array_base<char> s_path) {
+		std::string basename(std::span<char> s_path) {
 			//remove trailing seps
 			intptr_t pend = s_path.size();
 			for (; pend > intptr_t(0L); pend--) {
@@ -23,7 +22,7 @@
 			p += 1;
 			return JC::array_cast<std::string>(s_path--->subarray(p, pend - p));
 		}
-		std::string extname(JC::array_base<char> s_path) {
+		std::string extname(std::span<char> s_path) {
 			//again ignores trailing seps
 			//remove trailing seps
 			intptr_t pend = s_path.size();
@@ -52,7 +51,7 @@
 			}
 			return JC::array_cast<std::string>(s_path--->subarray(p, pend - p));
 		}
-		std::string dirname(JC::array_base<char> s_path) {
+		std::string dirname(std::span<char> s_path) {
 			//remove trailing seps
 			intptr_t pend = intptr_t(s_path.size());
 			for (; pend > intptr_t(0L); pend--) {
@@ -75,14 +74,14 @@
 			}
 			return JC::array_cast<std::string>(s_path--->subarray(0, p));
 		}
-		int isAbsolute(JC::array_base<char> s_path) {
+		int isAbsolute(std::span<char> s_path) {
 			if ( s_path.size() >= 1 && s_path[0] == '/' ) {
 				return 1;
 			} else {
 				return 0;
 			}
 		}
-		std::string normalize(JC::array_base<char> s_path) {
+		std::string normalize(std::span<char> s_path) {
 			//split and resolve . / .. / ''
 			std::string ret{};
 			std::vector<size_t> last_levels{};
@@ -99,7 +98,7 @@
 							size_t I00 = I0;
 							I0 = I + 1;
 							//the return will be replaced
-							JC::array_base<char> part(s_path.data() + I00, I - I00);
+							std::span<char> part(s_path.data() + I00, I - I00);
 							if ( part == "" ) {
 								if ( !ret.size() ) {
 									ret--->push('/');
@@ -133,7 +132,7 @@
 			}
 			return std::move(ret);
 		}
-		path::CPathObject parse(JC::array_base<char> s_path) {
+		path::CPathObject parse(std::span<char> s_path) {
 			//compute the dir-basename boundary
 			//remove trailing seps
 			intptr_t pend = s_path.size();
@@ -174,7 +173,7 @@
 			}
 			return path::CPathObject{JC::array_cast<std::string>(s_path--->subarray(0, pend_root)), JC::array_cast<std::string>(s_path--->subarray(0, pend_dir)), JC::array_cast<std::string>(s_path--->subarray(pbase, pend - pbase)), JC::array_cast<std::string>(s_path--->subarray(pdot, pend - pdot)), JC::array_cast<std::string>(s_path--->subarray(pbase, pdot - pbase))};
 		}
-		std::string toAbsolute(JC::array_base<char> s_path) {
+		std::string toAbsolute(std::span<char> s_path) {
 			path::CPathObject parts = parse(s_path);
 			std::string real_root = JC::array_cast<std::string>(parts.root);
 			std::string real_dir = JC::array_cast<std::string>(parts.dir--->subarray(parts.root.size()));
@@ -183,9 +182,9 @@
 			}
 			return normalize(JC::string_concat(real_root, real_dir, "/", parts.base));
 		}
-		std::string relative(JC::array_base<char> from, JC::array_base<char> _to) {
+		std::string relative(std::span<char> from, std::span<char> _to) {
 			std::string a = toAbsolute(from);
-			std::vector<JC::array_base<char>> parts_from{};
+			std::vector<std::span<char>> parts_from{};
 			{
 				//coulddo: SSE / NEON vectorization
 				size_t I0 = intptr_t(0L);
@@ -196,13 +195,13 @@
 						size_t I00 = I0;
 						I0 = I + 1;
 						//the return will be replaced
-						JC::array_base<char> value(a.data() + I00, I - I00);
+						std::span<char> value(a.data() + I00, I - I00);
 						parts_from.push_back(value);
 					}
 				}
 			}
 			std::string a_0 = toAbsolute(_to);
-			std::vector<JC::array_base<char>> parts_to{};
+			std::vector<std::span<char>> parts_to{};
 			{
 				//coulddo: SSE / NEON vectorization
 				size_t I0 = intptr_t(0L);
@@ -213,7 +212,7 @@
 						size_t I00 = I0;
 						I0 = I + 1;
 						//the return will be replaced
-						JC::array_base<char> value(a_0.data() + I00, I - I00);
+						std::span<char> value(a_0.data() + I00, I - I00);
 						parts_to.push_back(value);
 					}
 				}

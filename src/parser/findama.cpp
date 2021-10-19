@@ -2,14 +2,14 @@
 #include <string>
 #include "../util/jc_array.h"
 namespace ama {
-	std::string FindAma(JC::array_base<char> input) {
+	std::string FindAma(std::span<char> input) {
 		std::string ret{};
 		//note: we don't want to see the trigger string in our own file
 		intptr_t p_ama = input--->indexOf("@a""ma");
 		if ( p_ama < intptr_t(0L) ) { return std::move(ret); }
 		auto p_prefix = input--->subarray(intptr_t(0L), p_ama)--->lastIndexOf('\n') + intptr_t(1L);
-		JC::array_base<char> prefix = input--->subarray(p_prefix, p_ama - p_prefix);
-		JC::array_base<char> ama_str = input--->subarray(p_ama);
+		std::span<char> prefix = input--->subarray(p_prefix, p_ama - p_prefix);
+		std::span<char> ama_str = input--->subarray(p_ama);
 		intptr_t p_line = ama_str--->indexOf('\n');
 		//align lines
 		for (int i = 0; i < p_ama; i += 1) {

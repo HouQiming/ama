@@ -75,7 +75,7 @@ namespace ama {
 		}
 		return ret;
 	}
-	ama::Node* CreateNodeFromChildren(uint8_t node_class, JC::array_base<ama::Node*> children) {
+	ama::Node* CreateNodeFromChildren(uint8_t node_class, std::span<ama::Node*> children) {
 		ama::Node* nd = AllocNode();
 		nd->node_class = node_class;
 		for (intptr_t I = children.size() - intptr_t(1L); I >= intptr_t(0L); I -= intptr_t(1L)) {
@@ -686,10 +686,10 @@ std::vector<ama::Node*> ama::Node::FindAllBefore(ama::Node const* nd_before, int
 int ama::Node::isRawNode(char ch_open, char ch_close) const {
 	return this->node_class == ama::N_RAW && (this->flags & 0xffff) == (int32_t(ch_open) | int32_t(ch_close) << 8);
 }
-int ama::Node::isSymbol(JC::array_base<char> name) const {
+int ama::Node::isSymbol(std::span<char> name) const {
 	return this->node_class == ama::N_SYMBOL && this->data == name;
 }
-int ama::Node::isRef(JC::array_base<char> name) const {
+int ama::Node::isRef(std::span<char> name) const {
 	return this->node_class == ama::N_REF && this->data == name;
 }
 int ama::Node::isMethodCall(JC::unique_string name) const {
@@ -702,7 +702,7 @@ ama::Node * ama::Node::InsertDependency(uint32_t flags, JC::unique_string name) 
 	}
 	return this->Insert(ama::POS_FRONT, ama::nDependency(ama::nString(name))->setFlags(flags));
 }
-ama::Node * ama::Node::InsertCommentBefore(JC::array_base<char> s) {
+ama::Node * ama::Node::InsertCommentBefore(std::span<char> s) {
 	this->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(s, this->comments_before));
 	return this;
 }

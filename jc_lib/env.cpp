@@ -11,7 +11,7 @@
 #include <vector>
 #include "../src/util/jc_array.h"
 #include <memory>
-std::shared_ptr<std::string> ENV::get(JC::array_base<char> name) {
+std::shared_ptr<std::string> ENV::get(std::span<char> name) {
 	#if JC_OS == JC_OS_WINDOWS
 		std::vector<uint16_t> name_win = unicode::WTF8ToUTF16(name);
 		name_win--->push(int16_t(0));
@@ -34,7 +34,7 @@ std::shared_ptr<std::string> ENV::get(JC::array_base<char> name) {
 		}
 	#endif
 }
-int ENV::set(JC::array_base<char> name, JC::array_base<char> value) {
+int ENV::set(std::span<char> name, std::span<char> value) {
 	#if JC_OS == JC_OS_WINDOWS
 		std::vector<uint16_t> name_win = unicode::WTF8ToUTF16(name);
 		std::vector<uint16_t> value_win = unicode::WTF8ToUTF16(value);

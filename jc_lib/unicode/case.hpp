@@ -5,10 +5,10 @@
 #include <functional>
 /*#pragma add("jc_files", "./case.jc");*/
 namespace unicode {
-	std::string toUpper(JC::array_base<char> s);
-	std::string toLower(JC::array_base<char> s);
-	std::string toUpperASCII(JC::array_base<char> s);
-	std::string toLowerASCII(JC::array_base<char> s);
+	std::string toUpper(std::span<char> s);
+	std::string toLower(std::span<char> s);
+	std::string toUpperASCII(std::span<char> s);
+	std::string toLowerASCII(std::span<char> s);
 };
 
 #endif

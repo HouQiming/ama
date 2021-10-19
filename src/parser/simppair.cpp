@@ -113,7 +113,7 @@ namespace ama {
 		//for debugging
 		char const* feed_all_begin = feed;
 		JC::unique_string s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, "symbols"));
-		std::vector<JC::array_base<char>> symbol_array{};
+		std::vector<std::span<char>> symbol_array{};
 		{
 			{
 				//coulddo: SSE / NEON vectorization
@@ -125,7 +125,7 @@ namespace ama {
 						size_t I00 = I0;
 						I0 = I + 1;
 						//the return will be replaced
-						JC::array_base<char> s_symbol(s_symbols.data() + I00, I - I00);
+						std::span<char> s_symbol(s_symbols.data() + I00, I - I00);
 						if ( s_symbol.size() > 0 ) {
 							symbol_array.push_back(s_symbol);
 						}
@@ -141,7 +141,7 @@ namespace ama {
 		std::array<uint8_t, 256> n_symbol{};
 		std::array<uint8_t, 256> p_symbol{};
 		for (size_t I = 0; I < symbol_array.size(); ++I) {
-			JC::array_base<char> const& s_symbol = symbol_array[I];
+			std::span<char> const& s_symbol = symbol_array[I];
 			if ( 0 == n_symbol[uint8_t(s_symbol[0])]++ ) {
 				p_symbol[uint8_t(s_symbol[0])] = uint8_t(I);
 			}
@@ -314,7 +314,7 @@ namespace ama {
 					handle_symbol: 
 					intptr_t lg = intptr_t(1L);
 					for (intptr_t i = 0; i < intptr_t(n_symbol[ch]); i += intptr_t(1L)) {
-						JC::array_base<char> sym_i = symbol_array[p_symbol[ch] + i];
+						std::span<char> sym_i = symbol_array[p_symbol[ch] + i];
 						if ( memcmp(feed, sym_i.data(), sym_i.size()) == 0 ) {
 							lg = sym_i.size();
 							break;

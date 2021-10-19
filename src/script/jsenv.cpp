@@ -124,25 +124,21 @@ namespace ama {
 		JC::unique_string s_binops = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, name));
 		std::unordered_map<JC::unique_string, int> ret{};
 		int priority = 1;
-		{
-			{
-				//coulddo: SSE / NEON vectorization
-				size_t I0 = intptr_t(0L);
-				for (size_t I = 0; I <= s_binops.size(); ++I) {
-					//char ch=(I<str.size()?str[I]:0)
-					if ( I >= s_binops.size() || s_binops[I] == ' ' ) {
-						//this scope will be if-wrapped
-						size_t I00 = I0;
-						I0 = I + 1;
-						//the return will be replaced
-						JC::array_base<char> s_binop(s_binops.data() + I00, I - I00);
-						if ( s_binop--->endsWith('\n') ) {
-							ret--->set(JC::array_cast<JC::unique_string>(s_binop--->subarray(0, s_binop.size() - 1)), priority);
-							priority += 1;
-						} else {
-							ret--->set(JC::array_cast<JC::unique_string>(s_binop), priority);
-						}
-					}
+		//coulddo: SSE / NEON vectorization
+		size_t I0 = intptr_t(0L);
+		for (size_t I = 0; I <= s_binops.size(); ++I) {
+			//char ch=(I<str.size()?str[I]:0)
+			if ( I >= s_binops.size() || s_binops[I] == ' ' ) {
+				//this scope will be if-wrapped
+				size_t I00 = I0;
+				I0 = I + 1;
+				//the return will be replaced
+				std::span<char> s_binop(s_binops.data() + I00, I - I00);
+				if ( s_binop--->endsWith('\n') ) {
+					ret--->set(JC::array_cast<JC::unique_string>(s_binop--->subarray(0, s_binop.size() - 1)), priority);
+					priority += 1;
+				} else {
+					ret--->set(JC::array_cast<JC::unique_string>(s_binop), priority);
 				}
 			}
 		}

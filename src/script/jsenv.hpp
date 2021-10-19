@@ -32,7 +32,7 @@ namespace ama {
 		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
 		return JC::unique_string(ptr, intptr_t(len));
 	}
-	static inline JSValueConst WrapString(JC::array_base<char> s) {
+	static inline JSValueConst WrapString(std::span<char> s) {
 		return JS_NewStringLen(ama::jsctx, s.data(), s.size());
 	}
 	static inline JSValueConst WrapStringNullable(JC::unique_string s) {
@@ -52,7 +52,7 @@ namespace ama {
 		return (ama::Node*)(JS_GetOpaque(val, g_node_classid));
 	}
 	JSValueConst WrapNode(ama::Node const* nd);
-	static inline JSValueConst WrapNodeArray(JC::array_base<ama::Node*> nds) {
+	static inline JSValueConst WrapNodeArray(std::span<ama::Node*> nds) {
 		JSValueConst ret = JS_NewArray(jsctx);
 		for (intptr_t i = intptr_t(0L); i < intptr_t(nds.size()); i += 1) {
 			JS_SetPropertyUint32(jsctx, ret, uint32_t(uintptr_t(i)), ama::WrapNode(nds[i]));

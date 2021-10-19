@@ -2,7 +2,7 @@
 #include <array>
 #include "../util/jc_array.h"
 namespace ama {
-	char const* SkipChars(char const* feed, JC::array_base<uint32_t> cset) {
+	char const* SkipChars(char const* feed, std::span<uint32_t> cset) {
 		while ( ama::isInCharSet(cset, uint32_t(uint8_t(feed[intptr_t(0L)]))) ) {
 			feed += 1;
 		}

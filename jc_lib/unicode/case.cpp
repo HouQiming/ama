@@ -14,7 +14,7 @@
 #include <vector>
 #include "../../src/util/jc_array.h"
 //std::locale is unreliable garbage, use [NSString uppercaseString] for Apple, and towupper / towlower for Linux
-std::string unicode::toUpper(JC::array_base<char> s) {
+std::string unicode::toUpper(std::span<char> s) {
 	std::vector<uint16_t> s16 = unicode::WTF8ToUTF16(s);
 	#if JC_OS == JC_OS_WINDOWS
 		for (size_t i = uintptr_t(0uL); i < s.size(); i += uintptr_t(1048576uL)) {
@@ -36,7 +36,7 @@ std::string unicode::toUpper(JC::array_base<char> s) {
 		}
 	#endif
 }
-std::string unicode::toLower(JC::array_base<char> s) {
+std::string unicode::toLower(std::span<char> s) {
 	std::vector<uint16_t> s16 = unicode::WTF8ToUTF16(s);
 	#if JC_OS == JC_OS_WINDOWS
 		for (size_t i = uintptr_t(0uL); i < s.size(); i += uintptr_t(1048576uL)) {
@@ -58,7 +58,7 @@ std::string unicode::toLower(JC::array_base<char> s) {
 		}
 	#endif
 }
-std::string unicode::toUpperASCII(JC::array_base<char> s) {
+std::string unicode::toUpperASCII(std::span<char> s) {
 	std::string ret(s.size(), '\000');
 	for (size_t i = 0; i < s.size(); ++i) {
 		char const& ch0 = s[i];
@@ -70,7 +70,7 @@ std::string unicode::toUpperASCII(JC::array_base<char> s) {
 	}
 	return std::move(ret);
 }
-std::string unicode::toLowerASCII(JC::array_base<char> s) {
+std::string unicode::toLowerASCII(std::span<char> s) {
 	std::string ret(s.size(), '\000');
 	for (size_t i = 0; i < s.size(); ++i) {
 		char const& ch0 = s[i];

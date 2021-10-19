@@ -8,7 +8,7 @@
 namespace ama {
 	static const JC::unique_string g_hex = "0123456789abcdef";
 	static const std::array<uint32_t, 8> g_hex_charset = ama::CreateCharSet("0-9A-Fa-f");
-	std::string escapeJSString(JC::array_base<char> s) {
+	std::string escapeJSString(std::span<char> s) {
 		std::string ret{};
 		ret--->push('\'');
 		for ( char const &ch: s ) {
@@ -56,7 +56,7 @@ namespace ama {
 		return std::move(ret);
 	}
 	//we don't have to be fully conformant here - this won't get executed when we convert C / C++ code
-	std::string ParseJCString(JC::array_base<char> s) {
+	std::string ParseJCString(std::span<char> s) {
 		if ( !s.size() || (s[intptr_t(0L)] != '\'' && s[intptr_t(0L)] != '"') ) {
 			return JC::array_cast<std::string>(s);
 		}

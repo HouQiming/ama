@@ -304,7 +304,7 @@ namespace ama {
 		}
 		this->p_last_indent = this->code--->lastIndexOf('\n') + intptr_t(1L);
 	}
-	void ama::CodeGenerator::GenerateCommentDefault(int is_after, intptr_t expected_indent_level, JC::array_base<char> comment) {
+	void ama::CodeGenerator::GenerateCommentDefault(int is_after, intptr_t expected_indent_level, std::span<char> comment) {
 		//if( comment.indexOf('\n') < 0 ) {
 		//	this.code.push(comment);
 		//	return;
@@ -335,7 +335,7 @@ namespace ama {
 			this->code--->push(ch);
 		}
 	}
-	void ama::CodeGenerator::GenerateComment(int is_after, intptr_t expected_indent_level, JC::array_base<char> comment) {
+	void ama::CodeGenerator::GenerateComment(int is_after, intptr_t expected_indent_level, std::span<char> comment) {
 		if ( this->hook_comment != nullptr ) {
 			if ( this->hook_comment(this, comment.data(), comment.size(), is_after, expected_indent_level) != 0 ) { return; }
 		}

@@ -16,18 +16,18 @@ namespace path {
 	};
 	extern char delimiter;
 	extern char sep;
-	std::string basename(JC::array_base<char> path);
-	std::string dirname(JC::array_base<char> path);
-	std::string extname(JC::array_base<char> path);
-	int isAbsolute(JC::array_base<char> path);
-	std::string normalize(JC::array_base<char> path);
-	CPathObject parse(JC::array_base<char> path);
-	std::string relative(JC::array_base<char> from, JC::array_base<char> _to);
+	std::string basename(std::span<char> path);
+	std::string dirname(std::span<char> path);
+	std::string extname(std::span<char> path);
+	int isAbsolute(std::span<char> path);
+	std::string normalize(std::span<char> path);
+	CPathObject parse(std::span<char> path);
+	std::string relative(std::span<char> from, std::span<char> _to);
 	//toAbsolute implements resolve
-	std::string toAbsolute(JC::array_base<char> path);
+	std::string toAbsolute(std::span<char> path);
 	struct CPathResolver {
 		std::string cur_path{};
-		CPathResolver* add(JC::array_base<char> b) {
+		CPathResolver* add(std::span<char> b) {
 			if ( isAbsolute(b) ) {
 				this->cur_path.clear();
 			} else {

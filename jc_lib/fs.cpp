@@ -16,7 +16,7 @@
 #include "fs.hpp"
 typedef struct stat stat_t;
 #if defined(_WIN32)
-	std::vector<uint16_t> fs::PathToWindows(JC::array_base<char> s) {
+	std::vector<uint16_t> fs::PathToWindows(std::span<char> s) {
 		std::vector<uint16_t> ret{};
 		unicode::TWTF8Filter filter{0, 0, intptr_t(0L), -1, intptr_t(0L), 0};
 		for (intptr_t I = intptr_t(0L); I < intptr_t(s.size()); I++) {
@@ -41,7 +41,7 @@ typedef struct stat stat_t;
 #endif
 
 static const intptr_t MAX_READ_BATCH = intptr_t(8388608L);
-std::shared_ptr<std::string> fs::readFileSync(JC::array_base<char> fn) {
+std::shared_ptr<std::string> fs::readFileSync(std::span<char> fn) {
 	size_t sz = intptr_t(0L);
 	intptr_t n_read = intptr_t(0L);
 	std::shared_ptr<std::string> ret_read{};
@@ -115,7 +115,7 @@ std::shared_ptr<std::string> fs::readFileSync(JC::array_base<char> fn) {
 		}
 	#endif
 }
-intptr_t fs::writeFileSync(JC::array_base<char> fn, JC::array_base<char> content) {
+intptr_t fs::writeFileSync(std::span<char> fn, std::span<char> content) {
 	FILE* f{};
 	#if defined(_WIN32)
 		std::array<int16_t, intptr_t(3L)> s_wb{int16_t('w'), int16_t('b'), int16_t(0)};
@@ -133,7 +133,7 @@ intptr_t fs::writeFileSync(JC::array_base<char> fn, JC::array_base<char> content
 	fclose(f);
 	return n_written;
 }
-int fs::existsSync(JC::array_base<char> fn) {
+int fs::existsSync(std::span<char> fn) {
 	#if defined(_WIN32)
 		std::vector<uint16_t> fnu = fs::PathToWindows(fn);
 		return GetFileAttributesW(LPCWSTR(fnu.data())) != -1;
@@ -144,7 +144,7 @@ int fs::existsSync(JC::array_base<char> fn) {
 		return stat(fnz.data(), &sb) == 0;
 	#endif
 }
-int fs::DirExists(JC::array_base<char> dir) {
+int fs::DirExists(std::span<char> dir) {
 	#if defined(_WIN32)
 		std::vector<uint16_t> fnu = fs::PathToWindows(dir);
 		DWORD attr = GetFileAttributesW(LPCWSTR(fnu.data()));
@@ -186,7 +186,7 @@ std::string fs::cwd() {
 		}
 	#endif
 }
-int fs::chdir(JC::array_base<char> dir) {
+int fs::chdir(std::span<char> dir) {
 	#if defined(_WIN32)
 		std::vector<uint16_t> su = fs::PathToWindows(dir);
 		return SetCurrentDirectoryW(LPCWSTR(su.data()));
@@ -195,7 +195,7 @@ int fs::chdir(JC::array_base<char> dir) {
 		return ::chdir(sdir.c_str()) == 0;
 	#endif
 }
-int fs::mkdirSync(JC::array_base<char> dir) {
+int fs::mkdirSync(std::span<char> dir) {
 	#if defined(_WIN32)
 		std::vector<uint16_t> su = fs::PathToWindows(dir);
 		return CreateDirectoryW(LPCWSTR(su.data()), nullptr);
@@ -204,7 +204,7 @@ int fs::mkdirSync(JC::array_base<char> dir) {
 		return mkdir(sdir.c_str(), 509) == 0;
 	#endif
 }
-intptr_t fs::appendFileSync(JC::array_base<char> fn, JC::array_base<char> content) {
+intptr_t fs::appendFileSync(std::span<char> fn, std::span<char> content) {
 	FILE* f{};
 	#if defined(_WIN32)
 		std::array<int16_t, intptr_t(3L)> s_wb{int16_t('a'), int16_t('b'), int16_t(0)};

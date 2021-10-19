@@ -175,7 +175,7 @@ namespace ama {
 		std::string toSource()const;
 		int isMethodCall(JC::unique_string name)const;
 		ama::Node* InsertDependency(uint32_t flags, JC::unique_string name);
-		ama::Node* InsertCommentBefore(JC::array_base<char> s);
+		ama::Node* InsertCommentBefore(std::span<char> s);
 		//ama::Node*! Save(ama::Node*! this, char[|]! change_ext);
 		ama::Node* MergeCommentsBefore(ama::Node* nd_before);
 		ama::Node* MergeCommentsAfter(ama::Node* nd_after);
@@ -184,8 +184,8 @@ namespace ama {
 		//expr is ill-defined once detached from a base language
 		//NeedTrailingSemicolon is more practical
 		//int! isExpr(ama::Node*! this);
-		int isSymbol(JC::array_base<char> name)const;
-		int isRef(JC::array_base<char> name)const;
+		int isSymbol(std::span<char> name)const;
+		int isRef(std::span<char> name)const;
 		void Validate();
 		intptr_t ValidateEx(intptr_t max_depth, int quiet);
 		int NeedTrailingSemicolon()const;
@@ -220,7 +220,7 @@ namespace ama {
 		if ( b ) { b->v = a; }
 		return a;
 	}
-	static inline ama::Node* InsertMany(JC::array_base<ama::Node*> children) {
+	static inline ama::Node* InsertMany(std::span<ama::Node*> children) {
 		ama::Node* nd{};
 		for (intptr_t I = children.size() - intptr_t(1L); I >= intptr_t(0L); I -= intptr_t(1L)) {
 			nd = cons(children[I], nd);
@@ -312,7 +312,7 @@ namespace ama {
 		assert(intptr_t(nd_tail) & intptr_t(1L));
 		return (Node*)(intptr_t(nd_tail) & ~intptr_t(1L));
 	}
-	ama::Node* CreateNodeFromChildren(uint8_t node_class, JC::array_base<ama::Node*> children);
+	ama::Node* CreateNodeFromChildren(uint8_t node_class, std::span<ama::Node*> children);
 	///////////////
 	int8_t ClampIndentLevel(intptr_t level);
 	ama::Node* toSingleNode(ama::Node* nd_child);

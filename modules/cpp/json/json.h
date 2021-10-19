@@ -23,7 +23,7 @@ namespace JSON{
 	static inline typename JSON::StringifyToImpl<T>::type stringifyTo(std::string& buf, T const& a){
 		JSON::StringifyToImpl<T>::stringifyTo(buf,a);
 	}
-	void stringifyTo(std::string &buf,JC::array_base<char> a);
+	void stringifyTo(std::string &buf,std::span<char> a);
 	void stringifyTo(std::string &buf,int64_t a);
 	void stringifyTo(std::string &buf,uint64_t a);
 	void stringifyTo(std::string &buf,double a);
@@ -34,9 +34,9 @@ namespace JSON{
 	}
 	template<typename T>
 	typename std::enable_if<std::is_same<T,JC::unique_string>::value,void>::type stringifyTo(std::string &buf,T const& a){
-		if(a.p){stringifyTo(buf,JC::array_base<char>(a));}else{buf+="null";}
+		if(a.p){stringifyTo(buf,std::span<char>(a));}else{buf+="null";}
 	}
-	static inline void stringifyTo(std::string &buf,const char* a){stringifyTo(buf,JC::array_base<char>(a));}
+	static inline void stringifyTo(std::string &buf,const char* a){stringifyTo(buf,std::span<char>(a));}
 	static inline void stringifyTo(std::string &buf,int32_t a){stringifyTo(buf,(int64_t)a);}
 	static inline void stringifyTo(std::string &buf,int16_t a){stringifyTo(buf,(int64_t)a);}
 	static inline void stringifyTo(std::string &buf,int8_t a){stringifyTo(buf,(int64_t)a);}
@@ -49,7 +49,7 @@ namespace JSON{
 	template<class T>
 	void stringifyTo(std::string &buf,const std::shared_ptr<T>& a);
 	template<typename T>
-	void stringifyTo(std::string &buf,JC::array_base<T> a){
+	void stringifyTo(std::string &buf,std::span<T> a){
 		buf.push_back('[');
 		for(size_t i=0;i<a.size();i++){
 			if(i){buf.push_back(',');}
@@ -273,7 +273,7 @@ namespace JSON{
 	//class parser will be generated in the macro
 	//COULDDO: JSValue, unordered_map
 	template<typename ReturnType>
-	static inline ReturnType parse(JC::array_base<char> s){
+	static inline ReturnType parse(std::span<char> s){
 		JSONParserContext ctx{s.begin(),s.end(),NULL,NULL};
 		ReturnType &&ret=parseFrom(ctx,(typename std::remove_const<ReturnType>::type**)NULL);
 		#ifndef NDEBUG

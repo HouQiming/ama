@@ -125,7 +125,7 @@ namespace ama {
 		~ExecSession() {
 			ama::poolRelease(&this->pool);
 		}
-		static std::vector<ama::ExecNode*> ComputeReachableSet(JC::array_base<ama::ExecNode*> entries, int32_t dir);
+		static std::vector<ama::ExecNode*> ComputeReachableSet(std::span<ama::ExecNode*> entries, int32_t dir);
 		intptr_t AddInterest(ama::Node* nd_interest);
 		ama::ExecNode* CreateExecNode(uint8_t kind, ama::Node* nd_exec);
 		void AddLinkTo(ama::ExecNodeLinks* plinks, ama::ExecNode* ed_target);
@@ -143,7 +143,7 @@ namespace ama {
 		ama::ExecNode* ed_exit, intptr_t interest_id,
 		FValueFilter filter);
 	};
-	ama::ExecSession CreateSession(ama::Node* nd_entry, JC::array_base<ama::Node*> interests);
+	ama::ExecSession CreateSession(ama::Node* nd_entry, std::span<ama::Node*> interests);
 };
 
 #endif
