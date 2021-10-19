@@ -254,7 +254,7 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
 					nd_keyword = NULL;
-				} else if( (ndi.node_class == ama::N_SCOPE || ndi.isRawNode('{', '}')) && nd_prototype_start && nd_prototype_start != ndi ) {
+				} else if( ndi.node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi ) {
 					switch( kw_mode ) {
 						case KW_CLASS: {
 							//search for the class name
@@ -715,7 +715,7 @@ namespace ama {
 					ama::Node*+! nd_core = nd_cdecl;
 					nd_cdecl = nd_cdecl.p;
 					if( !nd_core.s || nd_core.s.isSymbol(",") || nd_core.s.isSymbol(";") || 
-					(parse_cpp_declaration_initialization && (nd_core.s.node_class == ama::N_SCOPE || nd_core.s.isRawNode('{', '}')) && !(nd_cdecl.p && nd_cdecl.p.node_class == ama::N_ASSIGNMENT)) ) {
+					(parse_cpp_declaration_initialization && nd_core.s.node_class == ama::N_SCOPE && !(nd_cdecl.p && nd_cdecl.p.node_class == ama::N_ASSIGNMENT)) ) {
 						//it could be a declarative raw
 					} else {
 						//don't go to that raw

@@ -201,7 +201,7 @@ namespace ama {
 				nd_raw.Insert(ama::POS_FRONT, ama::InsertMany(new_children));
 			}
 			//if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
-			if( nd_raw.isRawNode('{', '}') && changed ) {
+			if( nd_raw.isRawNode('{', '}') ) {
 				ConvertToScope(nd_raw);
 			}
 		}

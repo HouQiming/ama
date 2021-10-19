@@ -40,6 +40,23 @@ module.exports = function(nd_root) {
 	}
 	for (let nd of nd_root.FindAll(N_SCOPE, null).concat([nd_root])) {
 		if (nd.Owning(N_NODEOF)) {continue;}
+		let found_semic=0;
+		for(let ndi=nd.c;ndi;ndi=ndi.s){
+			if(ndi.node_class===N_SEMICOLON){
+				found_semic=1;
+				break;
+			}
+		}
+		if(!found_semic){
+			let nd_parent=nd;
+			while(nd_parent&&(nd_parent.node_class===N_SCOPE||nd_parent.isRawNode(0,0))){
+				nd_parent=nd_parent.p;
+			}
+			if(nd_parent&&nd_parent.node_class!==N_SCOPED_STATEMENT&&nd_parent.node_class!==N_FUNCTION&&nd_parent.node_class!==N_CLASS){
+				//constant-ish scope, don't auto-semicolon
+				continue;
+			}
+		}
 		//let ndi=nd.LastChild();
 		//if(!ndi){continue;}
 		for (let ndi = nd.c; ndi; ndi = ndi.s) {

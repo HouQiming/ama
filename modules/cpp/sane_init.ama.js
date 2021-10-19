@@ -27,6 +27,7 @@ function BidirTransform(nd_root, is_forward) {
 		if (nd_scope.Find(N_SEMICOLON, null)) {continue;}
 		if (!is_forward) {
 			//console.log(nd_scope.toSource());
+			//TODO: rewrite with typing
 			let nd_class = nd_scope.Prev();
 			let all_properties = undefined;
 			//name the unnamed initializers
