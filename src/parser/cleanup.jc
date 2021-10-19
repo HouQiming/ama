@@ -130,7 +130,7 @@ namespace ama {
 	}
 	ama::Node*+! FixPriorityReversal(ama::Node*+! nd_root) {
 		for(ama::Node*+! nd_label : nd_root.FindAll(ama::N_LABELED, NULL)) {
-			if( nd_label.p && nd_label.p.node_class == ama::N_ASSIGNMENT ) {
+			if( nd_label.p && nd_label.p.node_class == ama::N_ASSIGNMENT && nd_label.p.c == nd_label ) {
 				//fix the priority reversal
 				ama::Node*+! nd_asgn = nd_label.p;
 				ama::Node*+! nd_var = nd_label.c.s.Unlink();
