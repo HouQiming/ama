@@ -38,7 +38,7 @@ cmake.LoadCMakeFile = function(fn, template) {
 			let name = ndi.GetName();
 			if (name == 'if') {
 				if_stk.push(ndi);
-			} else if(name == 'endif' && if_stk.length > 0) {
+			} else if (name == 'endif' && if_stk.length > 0) {
 				let nd0 = if_stk.pop();
 				let nd_tmp = Node.GetPlaceHolder();
 				nd0.ReplaceUpto(ndi, nd_tmp)
@@ -79,12 +79,12 @@ Node.TokenizeCMakeArgs = function() {
 			for (let ndi = nd.c; ndi; ndi = ndi.s) {
 				dfsTokenizeCMakeArgs(ndi);
 			}
-		} else if(nd.node_class == N_STRING) {
+		} else if (nd.node_class == N_STRING) {
 			if (merge_group.length) {
 				FlushMergeGroup();
 			}
 			ret.push(nd);
-		} else if(nd.node_class == N_REF || nd.node_class == N_NUMBER || nd.node_class == N_SYMBOL) {
+		} else if (nd.node_class == N_REF || nd.node_class == N_NUMBER || nd.node_class == N_SYMBOL) {
 			merge_group.push(nd);
 		} else {
 			//console.error('unrecognized cmake arg:', nd);
@@ -129,9 +129,9 @@ Node.CMakeCreateTarget = function(name, options) {
 	let output_format = options.format;
 	if (output_format == 'exe') {
 		new_target.push('add_executable(', name);
-	} else if(output_format == 'dll') {
+	} else if (output_format == 'dll') {
 		new_target.push('add_library(', name, ' SHARED');
-	} else if(output_format == 'lib') {
+	} else if (output_format == 'lib') {
 		new_target.push('add_library(', name);
 	} else {
 		throw new Error('invalid output format ' + output_format);
@@ -151,7 +151,7 @@ function TryRelative(dir_cmake, src_name_abs) {
 	}
 	if (src_name_abs.startsWith(__std_module_dir + '/')) {
 		src_name_rel = '${AMA_MODULES}' + src_name_abs.substr(__std_module_dir.length);
-	} else if(src_name_rel.startsWith(__std_module_dir_global + '/')) {
+	} else if (src_name_rel.startsWith(__std_module_dir_global + '/')) {
 		src_name_rel = '${AMA_MODULES_GLOBAL}' + src_name_abs.substr(__std_module_dir_global.length);
 	}
 	return src_name_rel;

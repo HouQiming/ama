@@ -1,6 +1,8 @@
 #include "./jc_unique_string.h"
 #include <unordered_set>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stddef.h>
 #include <memory.h>
 
 namespace JC {
@@ -19,7 +21,7 @@ struct string_interned_equal {
 };
 
 struct CTableSingleton {
-	static std::unordered_set<string_interned*, string_interned_hash, string_interned_equal>* g_table{};
+	static std::unordered_set<string_interned*, string_interned_hash, string_interned_equal>* g_table;
 	static std::unordered_set<string_interned*, string_interned_hash, string_interned_equal>* get() {
 		if (!g_table) {
 			g_table = new std::unordered_set<string_interned*, string_interned_hash, string_interned_equal>();
@@ -75,7 +77,8 @@ std::unordered_set<string_interned*, string_interned_hash, string_interned_equal
 #  define XXH_rotl64(x, r) ((x << r) | (x >> (64 - r)))
 #endif
 
-static template<int is_aligned>uint32_t XXH_get32bits(const uint8_t* p) {
+template<int is_aligned>
+static uint32_t XXH_get32bits(const uint8_t* p) {
 	return *(uint32_t*)p;
 }
 
@@ -86,7 +89,8 @@ uint32_t XXH_get32bits<0>(const uint8_t* p) {
 	return val;
 }
 
-static template<int is_aligned>uint64_t XXH_get64bits(const uint8_t* p) {
+template<int is_aligned>
+static uint64_t XXH_get64bits(const uint8_t* p) {
 	return *(uint64_t*)p;
 }
 
@@ -97,7 +101,7 @@ uint64_t XXH_get64bits<0>(const uint8_t* p) {
 	return val;
 }
 
-#if JC_POINTER_SIZE >= 8
+#if INTPTR_MAX==INT64_MAX
 	static const uint64_t PRIME64_1 = 11400714785074694791ULL;
 	static const uint64_t PRIME64_2 = 14029467366897019727ULL;
 	static const uint64_t PRIME64_3 = 1609587929392839161ULL;
@@ -120,7 +124,8 @@ uint64_t XXH_get64bits<0>(const uint8_t* p) {
 		return acc;
 	}
 	
-	static template<int is_aligned>uint64_t XXH(const void* input, size_t len)
+	template<int is_aligned>
+	static uint64_t XXH(const void* input, size_t len)
 	{
 		uint64_t seed = 0;
 		const uint8_t* p = (const uint8_t*)input;
@@ -195,7 +200,8 @@ uint64_t XXH_get64bits<0>(const uint8_t* p) {
 		return seed;
 	}
 	
-	static template<int is_aligned>uint32_t XXH(const void* input, size_t len)
+	template<int is_aligned>
+	static uint32_t XXH(const void* input, size_t len)
 	{
 		uint32_t seed = 0u;
 		const uint8_t* p = (const uint8_t*)input;

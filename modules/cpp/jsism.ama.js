@@ -70,7 +70,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
-			} else if(nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
+			} else if (nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				fmt = ':<' + nd_value.c.s.data;
 				nd_value = nd_value.c.c;
 				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
@@ -81,7 +81,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				if (!fmt) {fmt = ':';}
 				fmt = fmt + 'e';
 				nd_value = nd_value.c.c;
-			} else if(nd_value.isMethodCall('toFixed') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
+			} else if (nd_value.isMethodCall('toFixed') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				if (!fmt) {fmt = ':';}
 				fmt = fmt + '.' + nd_value.c.s.data + 'f';
 				nd_value = nd_value.c.c;
@@ -112,7 +112,7 @@ jsism.EnableConsole = function(nd_root, options) {
 			let ndi_next = ndi.s;
 			if (is_first) {
 				is_first = 0;
-			} else if(options.separator) {
+			} else if (options.separator) {
 				nd_stream = nBinop(nd_stream, '<<', nString(options.separator));  
 			}
 			let nd_value = ndi
@@ -124,7 +124,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
-			} else if(nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
+			} else if (nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				need_iomanip = 1;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('left').setFlags(DOT_CLASS))  ;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s))  
@@ -142,7 +142,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('defaultfloat').setFlags(DOT_CLASS))  ;
 				ndi = ndi_next;
 				continue;
-			} else if(nd_value.isMethodCall('toFixed') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
+			} else if (nd_value.isMethodCall('toFixed') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				need_iomanip = 1;
 				need_ios = 1;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('fixed').setFlags(DOT_CLASS))  
@@ -169,7 +169,7 @@ jsism.EnableConsole = function(nd_root, options) {
 	for (let nd_call of console_uses) {
 		if (backend == 'std::format') {
 			ReplaceWithStdFormat(nd_call);
-		} else if(backend == 'iostream') {
+		} else if (backend == 'iostream') {
 			ReplaceWithIOStream(nd_call);
 		} else {
 			throw new Error('unknown backend ' + backend);
@@ -178,7 +178,7 @@ jsism.EnableConsole = function(nd_root, options) {
 	if (backend == 'std::format') {
 		nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<format>');
 		nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<stdio.h>');
-	} else if(backend == 'iostream') {
+	} else if (backend == 'iostream') {
 		if (need_ios) {
 			nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<ios>');
 		}
@@ -207,7 +207,7 @@ jsism.EnableJSON = function(nd_root) {
 		let type = undefined;
 		if (nd_parent.data == 'stringify' && nd_call && nd_call.node_class == N_CALL && nd_call.c.s) {
 			type = typing.ComputeType(nd_call.c.s);
-		} else if(nd_parent.data == 'parse' && nd_call && nd_call.node_class == N_CALL_TEMPLATE && nd_call.c.s) {
+		} else if (nd_parent.data == 'parse' && nd_call && nd_call.node_class == N_CALL_TEMPLATE && nd_call.c.s) {
 			type = typing.ComputeType(nd_call.c.s);
 		} else {
 			continue;

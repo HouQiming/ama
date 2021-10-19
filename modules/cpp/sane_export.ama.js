@@ -20,17 +20,23 @@ function BidirTransform(nd_root, is_forward) {
 			//don't do it on forward declarations
 			continue;
 		}
-		let nd_kw = nd_func.c.Find(N_REF, from);
+		let nd_before = nd_func.c;
+		let nd_kw = nd_before.Find(N_REF, from);
 		if (nd_kw) {
 			let nd_next = nd_kw.s;
 			nd_kw.Unlink();
 			if (nd_next) {
 				nd_next.comments_before = nd_next.comments_before.replace(/^[ \t\r\n]+/, '');
 			}
-		} else if(nd_func.c.node_class == N_RAW) {
+		} else if (nd_before.node_class == N_RAW) {
 			//inverse it
-			if (!nd_func.c.Find(N_REF, to)) {
-				nd_func.c.Insert(POS_FRONT, nRef(to).setCommentsAfter(' '));
+			if (!nd_before.Find(N_REF, to)) {
+				let nd_1st = nd_before.c;
+				if (nd_1st && nd_1st.node_class == N_CALL_TEMPLATE && nd_1st.GetName() == 'template') {
+					nd_1st.Insert(POS_AFTER, nRef(to).setCommentsAfter(' '));
+				} else {
+					nd_before.Insert(POS_FRONT, nRef(to).setCommentsAfter(' '));
+				}
 			}
 		}
 	}
