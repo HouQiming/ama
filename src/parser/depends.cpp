@@ -11,7 +11,7 @@ namespace ama {
 	//requires DelimitCLikeStatements, preferrably before ParsePostfix
 	void ParseCInclude(ama::Node* nd_root) {
 		std::string dir_base = JC::array_cast<std::string>(nd_root->data != nullptr ? path::dirname(nd_root->data) : ".");
-		for ( ama::Node * & nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
 			if ( (nd_raw->flags & 0xffff) != 0 ) { continue; }
 			if ( !(nd_raw->c && nd_raw->c->node_class == ama::N_REF && nd_raw->c->data == "#include") ) { continue; }
 			uint32_t flags = ama::DEP_C_INCLUDE;
@@ -68,14 +68,14 @@ namespace ama {
 			}
 		}
 		std::string dir_base = JC::array_cast<std::string>(nd_root->data != nullptr ? path::dirname(nd_root->data) : ".");
-		for ( ama::Node * & nd_require: nd_root->FindAllWithin(0, ama::N_CALL, "require") ) {
+		for ( ama::Node* nd_require: nd_root->FindAllWithin(0, ama::N_CALL, "require") ) {
 			if ( !nd_require->c->s || nd_require->c->s->node_class != ama::N_STRING || nd_require->c->s->s ) { continue; }
 			JC::unique_string fn_required = nd_require->c->s->GetStringValue();
 			nd_require->ReplaceWith(ama::nDependency(nd_require->c->BreakSibling())->setFlags(ama::DEP_JS_REQUIRE));
 			nd_require->FreeASTStorage();
 		}
 		//re-check all nDependency and fill .data
-		for ( ama::Node * & nd_dep: nd_root->FindAllWithin(0, ama::N_DEPENDENCY, nullptr) ) {
+		for ( ama::Node* nd_dep: nd_root->FindAllWithin(0, ama::N_DEPENDENCY, nullptr) ) {
 			if ( (nd_dep->flags & ama::DEP_TYPE_MASK) == ama::DEP_JS_REQUIRE && nd_dep->data == nullptr ) {
 				JC::unique_string fn_required = nd_dep->GetName();
 				if ( fn_required == nullptr ) { continue; }
@@ -88,7 +88,7 @@ namespace ama {
 					fn_commonjs = ama::FindCommonJSModule(fn_required, JC::array_cast<JC::unique_string>(dir_base));
 				}
 				if ( fn_commonjs != nullptr ) {
-					fn_commonjs = JC::array_cast<JC::unique_string>((path::CPathResolver{std::string()}).add(fn_commonjs)->done());
+					fn_commonjs = JC::array_cast<JC::unique_string>(path::CPathResolver{}.add(fn_commonjs)->done());
 					nd_dep->data = fn_commonjs;
 				}
 			}

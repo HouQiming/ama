@@ -57,7 +57,7 @@ public:
 		}
 	}
 	//you cannot change the characters of a unique string
-	const char operator[](intptr_t index)const {
+	char operator[](intptr_t index)const {
 		assert(size_t(index) < p->m_size);
 		return p->data()[index];
 	}

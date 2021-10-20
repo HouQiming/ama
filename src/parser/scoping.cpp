@@ -177,7 +177,7 @@ namespace ama {
 					}
 					if ( changed != ';' ) {
 						std::vector<ama::Node*> comma_children{};
-						for ( ama::Node * & ndj: new_children ) {
+						for ( ama::Node* ndj: new_children ) {
 							ndi = ndj;
 							comma_children.push_back(ndi);
 							while ( ndi ) {

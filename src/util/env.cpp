@@ -23,7 +23,7 @@ JC::StringOrError ENV::get(std::span<char> name) {
 			return unicode::UTF16ToUTF8(buf);
 		}
 	#else
-		std::string namei = JC::string_concat(name, '\000');
+		std::string namei = JC::string_concat(name, char(0));
 		char const* ret = getenv(namei.c_str());
 		if ( ret ) {
 			return std::string(ret);
@@ -40,8 +40,8 @@ int ENV::set(std::span<char> name, std::span<char> value) {
 		value_win--->push(uint16_t(0));
 		return SetEnvironmentVariableW(LPCWSTR(name_win.data()), LPCWSTR(value_win.data()));
 	#else
-		std::string namei = JC::string_concat(name, '\000');
-		std::string valuei = JC::string_concat(value, '\000');
+		std::string namei = JC::string_concat(name, char(0));
+		std::string valuei = JC::string_concat(value, char(0));
 		return setenv(namei.c_str(), valuei.c_str(), 1) == 0;
 	#endif
 }

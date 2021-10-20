@@ -66,6 +66,15 @@ namespace JSON{
 		}
 		buf.push_back(']');
 	}
+	template<typename T,size_t U>
+	void stringifyTo(std::string &buf,const std::array<T,U>& a){
+		buf.push_back('[');
+		for(size_t i=0;i<U;i++){
+			if(i){buf.push_back(',');}
+			stringifyTo(buf,a[i]);
+		}
+		buf.push_back(']');
+	}
 	template<typename String,typename T>
 	static inline typename std::enable_if<std::is_convertible<char const*,String>::value,void>::type
 	stringifyTo(std::string &buf,const std::unordered_map<String,T>& a){

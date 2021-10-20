@@ -4,4 +4,4 @@ struct AutoEnableStackDump {
 	AutoEnableStackDump() {DumpStack::EnableDump();}
 };
 
-static AutoEnableStackDump enabler;
+static AutoEnableStackDump enabler{};

@@ -1,4 +1,4 @@
-#if (defined(__linux)||defined(__linux__)||defined(linux))&&!(defined(__ANDROID__)||defined(ANDROID)||defined(__EMSCRIPTEN__))
+#if (defined(__linux) || defined(__linux__) || defined(linux))&&!(defined(__ANDROID__) || defined(ANDROID) || defined(__EMSCRIPTEN__))
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <dlfcn.h>
 #include <sys/wait.h>
+#pragma no_auto_header()
 extern "C" char __executable_start;
 extern "C" char __etext;
 namespace DumpStack {
@@ -70,7 +71,7 @@ namespace DumpStack {
 				//if stderr were broken, we won't get to print anything anyway
 				dup2(open("/dev/null", O_RDONLY), STDIN_FILENO);
 				dup2(STDERR_FILENO, STDOUT_FILENO);
-				exit(execl("/bin/sh", "sh", "-c", cmd, NULL));
+				exit(execl("/bin/sh", "sh", "-c", cmd, nullptr));
 			}
 			if (pid != -1) {
 				waitpid(pid, &code, 0);
@@ -94,11 +95,11 @@ namespace DumpStack {
 		if (!g_is_our_abort) {
 			const char* name = "SIGNAL";
 			switch (sig) {
-			case SIGSEGV: name = "SIGSEGV";break;
-			case SIGABRT: name = "SIGABRT";break;
-			case SIGBUS: name = "SIGBUS";break;
-			case SIGPIPE: name = "SIGPIPE";break;
-			case SIGTRAP: name = "SIGTRAP";break;
+			case SIGSEGV: name = "SIGSEGV"; break;
+			case SIGABRT: name = "SIGABRT"; break;
+			case SIGBUS: name = "SIGBUS"; break;
+			case SIGPIPE: name = "SIGPIPE"; break;
+			case SIGTRAP: name = "SIGTRAP"; break;
 			}
 			pid_t pid = getpid();
 			if (isatty(2)) {
@@ -129,43 +130,43 @@ namespace DumpStack {
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
 		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
-		sigaction(SIGSEGV, &sa, NULL);
+		sigaction(SIGSEGV, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
 		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
-		sigaction(SIGTRAP, &sa, NULL);
+		sigaction(SIGTRAP, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
 		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
-		sigaction(SIGABRT, &sa, NULL);
+		sigaction(SIGABRT, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
 		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
-		sigaction(SIGBUS, &sa, NULL);
+		sigaction(SIGBUS, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
 		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
-		sigaction(SIGPIPE, &sa, NULL);
+		sigaction(SIGPIPE, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
 		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
-		sigaction(SIGINT, &sa, NULL);
+		sigaction(SIGINT, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
 		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
-		sigaction(SIGFPE, &sa, NULL);
+		sigaction(SIGFPE, &sa, nullptr);
 	}
 }
 #endif

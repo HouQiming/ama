@@ -153,7 +153,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				ndi = ndi_next;
 				continue;
 			}
-			nd_stream = nBinop(nd_stream, '<<', nd_value);
+			nd_stream = nBinop(nd_stream, '<<', nParen(nd_value));
 			ndi = ndi_next;
 		}
 		if (options.tail) {
@@ -483,8 +483,14 @@ jsism.EnableJSLambdaSyntax.inverse = function(nd_root) {
 
 jsism.EnableSingleQuotedStrings = function(nd_root) {
 	for (let nd_str of nd_root.FindAll(N_STRING)) {
-		if (nd_str.GetStringValue().length > 1) {
-			nd_str.flags &= ~STRING_SINGLE_QUOTED;;
+		let bk_flags = nd_str.flags;
+		let bk_data = nd_str.data;
+		if (nd_str.data.startsWith("'") && nd_str.GetStringValue().length > 1) {
+			nd_str.flags &= ~STRING_SINGLE_QUOTED;
+		} else {
+			//avoid unescaping / re-escaping strings unnecessarily
+			nd_str.data = bk_data;
+			nd_str.flags = bk_flags;
 		}
 	}
 };

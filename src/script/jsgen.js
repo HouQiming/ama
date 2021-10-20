@@ -385,6 +385,7 @@ function Generate(version,my_call) {
 		return compiler.ParseCode(code.join('')).c || nEmpty();
 	}else{
 		//my_call is actually nd_root
+		my_call.Find(N_CALL,'gen').c.data='gen_begin';
 		code_func.push(
 			'void GeneratedJSBindings(){\n',
 			code.join(''),

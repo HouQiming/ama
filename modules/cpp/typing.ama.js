@@ -310,6 +310,9 @@ typing.LookupDottedName = function(nd_site, name, nd_scope) {
 };
 
 typing.TryGettingClass = function(type_obj) {
+	if (type_obj && type_obj.node_class == N_POSTFIX && type_obj.data == '*') {
+		type_obj = typing.ComputeType(type_obj.c);
+	}
 	while (type_obj && type_obj.node_class == N_CALL_TEMPLATE) {
 		type_obj = typing.ComputeType(type_obj.c);
 	}
@@ -426,7 +429,7 @@ typing.ComputeType = function(nd_expr) {
 		//try to look up the "primary" type first
 		//COULDDO: substitute template parameters
 		let type_obj = typing.TryGettingClass(typing.ComputeType(nd_expr.c));
-		if (type_obj.node_class == N_CLASS) {
+		if (type_obj && type_obj.node_class == N_CLASS) {
 			let nd_def = typing.LookupDottedName(nd_expr, nd_expr.data, type_obj.LastChild());
 			if (nd_def) {
 				type = typing.ComputeDeclaredType(nd_def);

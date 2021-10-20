@@ -36,7 +36,7 @@ static JC::unique_string FormatComment(intptr_t& comment_indent_level0, int32_t 
 	//}
 	std::string tmp{};
 	tmp.reserve(comment_end - comment_begin);
-	retry: 
+	retry:
 	int32_t min_indent_level = 0x7fffffff;
 	for (char const* s = comment_begin; s != comment_end; s++) {
 		char ch = *s;
@@ -310,7 +310,7 @@ namespace ama {
 					}
 				}
 				case CHAR_TYPE_SYMBOL: {
-					handle_symbol: 
+					handle_symbol:
 					intptr_t lg = intptr_t(1L);
 					for (intptr_t i = 0; i < intptr_t(n_symbol[ch]); i += intptr_t(1L)) {
 						std::span<char> sym_i = symbol_array[p_symbol[ch] + i];
@@ -394,7 +394,7 @@ namespace ama {
 					} else if ( feed[intptr_t(1L)] == '\r' && feed[intptr_t(2L)] == '\n' ) {
 						feed += 3;
 					} else {
-						feed += feed[intptr_t(1L)] != '\000' ? intptr_t(2L) : intptr_t(1L);
+						feed += feed[intptr_t(1L)] != char(0) ? intptr_t(2L) : intptr_t(1L);
 					}
 					comment_end = feed;
 					break;

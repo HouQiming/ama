@@ -55,16 +55,16 @@ function FixAMACPP(){
 		let t_ama=GetFileTime(fn_ama_cpp);
 		if(t_ama<t_cpp){
 			//cpp to ama
-			ProcessAmaFile(fn_cpp,script_cpp2ama);
-			aba_test_jobs.push([fn_ama_cpp,script_ama2cpp]);
-			pipe.run(['touch -r ',JSON.stringify(fn_cpp),' ',JSON.stringify(fn_ama_cpp)].join(''));
-			console.log('updated',fn_ama_cpp);
+			if(ProcessAmaFile(fn_cpp,script_cpp2ama)===1){
+				pipe.run(['touch -r ',JSON.stringify(fn_cpp),' ',JSON.stringify(fn_ama_cpp)].join(''));
+				console.log('updated',fn_ama_cpp);
+			}
 		}else if(t_cpp<t_ama){
 			//ama to cpp
-			ProcessAmaFile(fn_ama_cpp,script_ama2cpp);
-			aba_test_jobs.push([fn_cpp,script_cpp2ama]);
-			pipe.run(['touch -r ',JSON.stringify(fn_ama_cpp),' ',JSON.stringify(fn_cpp)].join(''));
-			console.log('updated',fn_cpp);
+			if(ProcessAmaFile(fn_ama_cpp,script_ama2cpp)===1){
+				pipe.run(['touch -r ',JSON.stringify(fn_ama_cpp),' ',JSON.stringify(fn_cpp)].join(''));
+				console.log('updated',fn_cpp);
+			}
 		}
 	}
 }

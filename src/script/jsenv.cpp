@@ -170,7 +170,7 @@ namespace JSON {
 			while ( ctx.begin != ctx.end && ctx.begin[0] != '}' ) {
 				ctx.SkipSpace();
 				switch ( *ctx.begin ) {
-					case '\"': default: {
+					case '"': default: {
 						ctx.begin += 1;
 						if ( ctx.TrySkipName("main\"") ) {
 							ctx.SkipColon();

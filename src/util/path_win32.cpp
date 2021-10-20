@@ -1,3 +1,4 @@
+#pragma no_auto_header()
 #if defined(_WIN32)
 	#include "path.hpp"
 	#include "unicode/case.hpp"
@@ -230,7 +231,7 @@
 			if ( !pdot || s_path[pdot - 1] == '/' || s_path[pdot - 1] == '\\' || (pend == (pdot + 1) && s_path[pdot - 1] == '.' && (pdot == 1 || (s_path[pdot - 2] == '/' || s_path[pdot - 2] == '\\'))) ) {
 				pdot = pend;
 			}
-			return path::CPathObject{JC::array_cast<std::string>(s_path--->subarray(0, pend_root)), JC::array_cast<std::string>(s_path--->subarray(0, pend_dir)), JC::array_cast<std::string>(s_path--->subarray(pbase, pend - pbase)), JC::array_cast<std::string>(s_path--->subarray(pdot, pend - pdot)), JC::array_cast<std::string>(s_path--->subarray(pbase, pdot - pbase))};
+			return path::CPathObject{.root = JC::array_cast<std::string>(s_path--->subarray(0, pend_root)), .dir = JC::array_cast<std::string>(s_path--->subarray(0, pend_dir)), .base = JC::array_cast<std::string>(s_path--->subarray(pbase, pend - pbase)), .ext = JC::array_cast<std::string>(s_path--->subarray(pdot, pend - pdot)), .name = JC::array_cast<std::string>(s_path--->subarray(pbase, pdot - pbase))};
 		}
 		std::string toAbsolute(std::span<char> s_path) {
 			path::CPathObject parts = parse(s_path);

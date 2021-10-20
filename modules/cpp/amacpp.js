@@ -9,9 +9,10 @@ function ToCPP(nd_root){
 	return (nd_root
 		.StripRedundantPrefixSpace()
 		.then(require('auto_semicolon'))
-		.then(sane_types.FixArrayTypes)
-		.then(require('cpp/typing').DeduceAuto)
 		.then(require('auto_paren'))
+		.then(sane_types.FixArrayTypes)
+		.then(require('cpp/auto_dot'))
+		.then(require('cpp/typing').DeduceAuto)
 		.then(require('cpp/cpp_indent'))
 		.Save()
 		.then(sane_types)

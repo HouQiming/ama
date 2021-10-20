@@ -1,6 +1,6 @@
 //@ama require('./jsgen.js')('ama',ParseCurrentFile()).Save('.cpp');
 #include "./jsenv.hpp"
-#pragma gen(js_bindings)
+#pragma gen_begin(js_bindings)
 namespace ama {
 	auto NodeGet_node_class(JSContext* jsctx, JSValueConst this_val) {
 		auto nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));

@@ -6,12 +6,13 @@
 #include <stdint.h>
 #include <signal.h>
 #include <tlhelp32.h>
+#pragma no_auto_header()
 
 namespace DumpStack {
 	//NOT DEAD
 	static const int DUMP_STACK_EXCEPTION = 0x0507DEAD;
 	struct IMAGEHLP_SYMBOL64_with_buffer {
-		IMAGEHLP_SYMBOL64 main;
+		IMAGEHLP_SYMBOL64 main{};
 		char buffer[1024];
 	};
 	static IMAGEHLP_SYMBOL64_with_buffer symbol = {};
@@ -47,7 +48,7 @@ namespace DumpStack {
 		HANDLE hprocess = GetCurrentProcess();
 		int is_call = 0;
 		for (; ;) {
-			if (!StackWalk64(MY_MACHINE_TYPE, hprocess, hthread, &frame, ctx, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL)) {
+			if (!StackWalk64(MY_MACHINE_TYPE, hprocess, hthread, &frame, ctx, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr)) {
 				break;
 			}
 			//////////
@@ -212,8 +213,8 @@ namespace DumpStack {
 		DumpCallStackFromContext(&g_backup_ctx, GetCurrentThread());
 		// Take a snapshot of all running threads
 		if (g_dump_all_threads) {
-			THREADENTRY32 te32;
-			HANDLE hThreadSnap = CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, 0 );
+			THREADENTRY32 te32{};
+			HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0 );
 			int pid = GetProcessId(GetCurrentProcess());
 			int tid = GetThreadId(GetCurrentThread());
 			if ( hThreadSnap && hThreadSnap != INVALID_HANDLE_VALUE ) {
@@ -221,7 +222,7 @@ namespace DumpStack {
 				te32.dwSize = sizeof(THREADENTRY32 ); 
 				// Retrieve information about the first thread,
 				// and exit if unsuccessful
-				if ( Thread32First( hThreadSnap, &te32 ) ) {
+				if ( Thread32First(hThreadSnap, &te32 ) ) {
 					do { 
 						if ( te32.th32OwnerProcessID == pid ) {
 							fprintf(stderr, "\nThread #%d\n", te32.th32ThreadID);
@@ -244,7 +245,7 @@ namespace DumpStack {
 							}
 						}
 					} while ( Thread32Next(hThreadSnap, &te32 ) );}
-				CloseHandle( hThreadSnap );
+				CloseHandle(hThreadSnap );
 			}
 		}
 		LeaveCriticalSection(&g_lock);
@@ -258,8 +259,8 @@ namespace DumpStack {
 	static void CrashOnAbort(int signal) {
 		if (signal == SIGINT) {g_dump_all_threads = 1;}
 		AddVectoredExceptionHandler(1, StackDumper);
-		SetUnhandledExceptionFilter(NULL);
-		RaiseException(EXCEPTION_BREAKPOINT, 0, 0, NULL);
+		SetUnhandledExceptionFilter(nullptr);
+		RaiseException(EXCEPTION_BREAKPOINT, 0, 0, nullptr);
 		RemoveVectoredExceptionHandler(StackDumper);
 	}
 	
@@ -274,13 +275,13 @@ namespace DumpStack {
 	//}
 	void PrintCallStack() {
 		AddVectoredExceptionHandler(1, StackDumper);
-		RaiseException(DUMP_STACK_EXCEPTION, 0, 0, NULL);
+		RaiseException(DUMP_STACK_EXCEPTION, 0, 0, nullptr);
 		RemoveVectoredExceptionHandler(StackDumper);
 	}
 	
 	void EnableDump() {
 		InitializeCriticalSection(&g_lock);
-		SymInitializeW(GetCurrentProcess(), NULL, true);
+		SymInitializeW(GetCurrentProcess(), nullptr, true);
 		SymSetOptions(SYMOPT_UNDNAME);
 		SetUnhandledExceptionFilter(StackDumper);
 		signal(SIGABRT, CrashOnAbort);

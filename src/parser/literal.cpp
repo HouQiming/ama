@@ -75,7 +75,7 @@ namespace ama {
 						break;
 					}
 					case 'a': {
-						ret--->push('\007');
+						ret--->push(char(7));
 						break;
 					}
 					case 'b': {
@@ -91,11 +91,11 @@ namespace ama {
 						break;
 					}
 					case 'v': {
-						ret--->push('\013');
+						ret--->push(char(11));
 						break;
 					}
 					case 'f': {
-						ret--->push('\014');
+						ret--->push(char(12));
 						break;
 					}
 					case 'r': {

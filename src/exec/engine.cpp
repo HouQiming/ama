@@ -25,7 +25,7 @@ namespace ama {
 std::vector<ama::ExecNode*> ama::ExecSession::ComputeReachableSet(std::span<ama::ExecNode*> entries, int32_t dir) {
 	std::vector<ama::ExecNode*> Q{};
 	std::unordered_map<ama::ExecNode*, intptr_t> inQ{};
-	for ( ama::ExecNode * & ed: entries ) {
+	for ( ama::ExecNode* ed: entries ) {
 		Q.push_back(ed);
 		inQ--->set(ed, 1);
 	}
@@ -557,7 +557,7 @@ ama::ExecRange ama::ExecSession::CreateNodeGraph(ama::Node* nd_entry) {
 		int jump_mattered = 0;
 		for ( auto&& pair_nd_source_nd_target: ngctx.jump_targets ) {
 			ama::Node* nd_source = pair_nd_source_nd_target.first;
-			ama::Node * & nd_target = pair_nd_source_nd_target.second;
+			ama::Node * nd_target = pair_nd_source_nd_target.second;
 			ama::Node const* nd_jump_range = nd_source->CommonAncestor(nd_target);
 			if ( nd_entry->isAncestorOf(nd_jump_range) && (nd_jump_range->tmp_flags & TMPF_CFG_MATTERS_FOR_INTEREST) ) {
 				//we got a cross-interest jump, mark both side's parents as to-expand
@@ -768,7 +768,7 @@ FValueFilter filter) {
 		}
 	}
 	std::unordered_map<ama::ExecNode*, intptr_t> inQ{};
-	for ( ama::ExecNode * & ed: subgraph ) {
+	for ( ama::ExecNode * ed: subgraph ) {
 		Q.clear();
 		inQ.clear();
 		Q.push_back(ed);
@@ -797,7 +797,7 @@ FValueFilter filter) {
 
 ////////////////////////////
 static std::vector<char const*> g_superscript_digits{"⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"};
-static std::vector<char const*> g_subscript_digits{"\342\202\200", "\342\202\201", "\342\202\202", "\342\202\203", "\342\202\204", "\342\202\205", "\342\202\206", "\342\202\207", "\342\202\210", "\342\202\211"};
+static std::vector<char const*> g_subscript_digits{"₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"};
 struct GraphvizDumpingContext {
 	ama::ExecSession* sess{};
 	std::unordered_map<void*, intptr_t> node_numbers{};
@@ -815,7 +815,7 @@ void GraphvizDumpingContext::DumpNodeName(std::string& code, ama::Node* nd, int 
 		this->node_numbers--->set(nd, num);
 	}
 	if ( superscript ) {
-		code--->push("\313\231");
+		code--->push("˙");
 		for ( char const& ch: JSON::stringify(num) ) {
 			code--->push(g_superscript_digits[ch - '0']);
 		}
@@ -856,7 +856,7 @@ static int GraphvizGenerateNode(ama::CodeGenerator* gctx, ama::Node* nd) {
 static std::vector<char const*> g_enode_names{"nd", "after", "fork", "join", "br", "phi", "jump", "loop", "entry"};
 static std::vector<char const*> g_enode_shapes{"box", "invtrapezium", "triangle", "invtriangle", "diamond", "invhouse", "oval", "parallelogram", "hexagon"};
 std::string ama::ExecSession::DumpGraphviz(ama::ExecNode* extra_graph) {
-	std::string ret{};{
+	std::string ret; {
 		
 		ret--->push("digraph session {\n"
 		);

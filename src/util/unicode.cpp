@@ -4,7 +4,7 @@
 #include "jc_array.h"
 std::vector<uint16_t> unicode::WTF8ToUTF16(std::span<char> s) {
 	std::vector<uint16_t> ret{};
-	unicode::TWTF8Filter filter{0, 0, intptr_t(0L), -1, intptr_t(0L), 0};
+	unicode::TWTF8Filter filter{.ch0 = 0, .nnxt = 0, .II = intptr_t(0L), .surrogate_1st = -1, .surrogate_II = intptr_t(0L), .ch_min = 0};
 	for (intptr_t I = intptr_t(0L); I < intptr_t(s.size()); I++) {
 		int32_t ch = filter.NextByte(I, int32_t(uint32_t(uint8_t(s[I]))));
 		if ( ch < 0 ) {
@@ -23,7 +23,7 @@ std::vector<uint16_t> unicode::WTF8ToUTF16(std::span<char> s) {
 }
 std::vector<int32_t> unicode::WTF8ToUTF32(std::span<char> s) {
 	std::vector<int32_t> ret{};
-	unicode::TWTF8Filter filter{0, 0, intptr_t(0L), -1, intptr_t(0L), 0};
+	unicode::TWTF8Filter filter{.ch0 = 0, .nnxt = 0, .II = intptr_t(0L), .surrogate_1st = -1, .surrogate_II = intptr_t(0L), .ch_min = 0};
 	for (intptr_t I = intptr_t(0L); I < intptr_t(s.size()); I++) {
 		int32_t ch = filter.NextByte(I, int32_t(uint32_t(uint8_t(s[I]))));
 		if ( ch >= 0 ) {

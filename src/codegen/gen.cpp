@@ -247,7 +247,9 @@ namespace ama {
 			case ama::N_LABELED: {
 				this->Generate(nd->c);
 				this->code--->push(':');
-				this->GenerateSpaceBefore(nd->c->s);
+				if (nd->c->s->node_class != ama::N_AIR) {
+					this->GenerateSpaceBefore(nd->c->s);
+				}
 				this->Generate(nd->c->s);
 				break;
 			}

@@ -406,7 +406,7 @@ namespace ama {
 							break;
 						}
 						case KW_FUNC: default: {
-							its_actually_a_function: 
+							its_actually_a_function:
 							//it's not necessarily a declaration, detect C / C++11 / Java / etc. keywordless functions
 							//what else could it be? C/C++ initializer list, new (which could have (){} for JC)
 							//use (){} as indicator: we could drag back those misidentified functions later
@@ -477,7 +477,7 @@ namespace ama {
 					}
 					kw_mode = KW_NONE;
 					nd_keyword = nullptr;
-					not_declaration:   ;
+					not_declaration:;
 				}
 				if ( !(kw_mode == KW_EXT && nd_keyword) ) {
 					nd_last_scoped_stmt = nullptr;

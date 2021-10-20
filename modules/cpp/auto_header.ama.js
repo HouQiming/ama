@@ -134,12 +134,14 @@ function Transform(nd_root, options) {
 					//use found=1 to prevent headersyncing
 					found = 1;
 					//sync to that private class instead
-					let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
-					GetFunctionNameNode(nd_forward).ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
-					nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
-					nd_forward = nSemicolon(nd_forward);
-					nd_scope.Insert(POS_BACK, nd_forward);
-					nd_forward.AutoFormat();
+					if (!nd_scope.Find(N_FUNCTION, names[0])) {
+						let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
+						GetFunctionNameNode(nd_forward).ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
+						nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
+						nd_forward = nSemicolon(nd_forward);
+						nd_scope.Insert(POS_BACK, nd_forward);
+						nd_forward.AutoFormat();
+					}
 					break;
 				}
 			}

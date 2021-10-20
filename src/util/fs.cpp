@@ -17,7 +17,7 @@ typedef struct stat stat_t;
 #if defined(_WIN32)
 	std::vector<uint16_t> fs::PathToWindows(std::span<char> s) {
 		std::vector<uint16_t> ret{};
-		unicode::TWTF8Filter filter{0, 0, intptr_t(0L), -1, intptr_t(0L), 0};
+		unicode::TWTF8Filter filter{.ch0 = 0, .nnxt = 0, .II = intptr_t(0L), .surrogate_1st = -1, .surrogate_II = intptr_t(0L), .ch_min = 0};
 		for (intptr_t I = intptr_t(0L); I < intptr_t(s.size()); I++) {
 			int32_t ch = filter.NextByte(I, int32_t(uint32_t(uint8_t(s[I]))));
 			if ( ch < 0 ) {
@@ -43,7 +43,7 @@ static const intptr_t MAX_READ_BATCH = intptr_t(8388608L);
 JC::StringOrError fs::readFileSync(std::span<char> fn) {
 	size_t sz = intptr_t(0L);
 	intptr_t n_read = intptr_t(0L);
-	JC::StringOrError ret_read{nullptr};
+	JC::StringOrError ret_read{some: nullptr};
 	intptr_t p{};
 	#if defined(_WIN32)
 		{
@@ -63,7 +63,7 @@ JC::StringOrError fs::readFileSync(std::span<char> fn) {
 			std::array<int64_t, intptr_t(1L)> psz{int64_t(0LL)};
 			GetFileSizeEx(hf, PLARGE_INTEGER(psz.data()));
 			sz = size_t(psz[0]);
-			ret_read = std::string(sz, '\000');
+			ret_read = std::string(sz, char(0));
 			p = intptr_t(0L);
 			for (; ;) {
 				intptr_t sz_read = intptr_t(sz - p);
@@ -85,7 +85,7 @@ JC::StringOrError fs::readFileSync(std::span<char> fn) {
 	#else
 		{
 			std::string fnz = JC::array_cast<std::string>(fn);
-			fnz--->push('\000');
+			fnz--->push(char(0));
 			int fd = open(fnz.data(), O_RDONLY, 0777);
 			if ( fd == -1 ) {
 				return nullptr;
@@ -94,7 +94,7 @@ JC::StringOrError fs::readFileSync(std::span<char> fn) {
 			sb.st_size = 0;
 			fstat(fd, &sb);
 			sz = size_t(sb.st_size);
-			ret_read = std::string(sz, '\000');
+			ret_read = std::string(sz, char(0));
 			p = intptr_t(0L);
 			for (; ;) {
 				intptr_t sz_read = intptr_t(sz - p);
@@ -171,7 +171,7 @@ std::string fs::cwd() {
 		}
 	#else
 		{
-			std::string buf(1024, '\000');
+			std::string buf(1024, char(0));
 			while ( !getcwd((char*)(buf.data()), buf.size() - 1) && buf.size() < (1 << 24) ) {
 				buf.resize(buf.size() * 2);
 			}

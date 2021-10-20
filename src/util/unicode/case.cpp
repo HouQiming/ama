@@ -58,7 +58,7 @@ std::string unicode::toLower(std::span<char> s) {
 	#endif
 }
 std::string unicode::toUpperASCII(std::span<char> s) {
-	std::string ret(s.size(), '\000');
+	std::string ret(s.size(), char(0));
 	for (size_t i = 0; i < s.size(); ++i) {
 		char const& ch0 = s[i];
 		int ch = int(ch0);
@@ -70,7 +70,7 @@ std::string unicode::toUpperASCII(std::span<char> s) {
 	return std::move(ret);
 }
 std::string unicode::toLowerASCII(std::span<char> s) {
-	std::string ret(s.size(), '\000');
+	std::string ret(s.size(), char(0));
 	for (size_t i = 0; i < s.size(); ++i) {
 		char const& ch0 = s[i];
 		int ch = int(ch0);

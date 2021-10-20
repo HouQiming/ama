@@ -609,7 +609,7 @@ JC::unique_string ama::Node::GetName() const {
 static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t boundary, int node_class, JC::unique_string data, std::vector<ama::Node*>* ret) {
 	ama::Node* nd_ret{};
 	for (ama::Node* nd = nd_root; nd; nd = nd->PreorderNext(nd_root)) {
-		skip_children: 
+		skip_children:
 		if ( nd == nd_before ) {
 			break;
 		}

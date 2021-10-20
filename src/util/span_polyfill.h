@@ -19,12 +19,6 @@ namespace std{
 		template<size_t U>
 		span(const std::array<T,U> &a):m_data((T*)a.data()),m_size(U){}
 		span(const std::string &a):m_data((T*)a.data()),m_size(a.size()/sizeof(T)){}
-		#if __cplusplus>=201103L
-			#if __cplusplus&&!defined(__clang__)
-			#pragma GCC diagnostic ignored "-Winit-list-lifetime"
-			#endif
-			span(std::initializer_list<T> a):m_data((T*)a.begin()),m_size(a.size()){}
-		#endif
 		//for string literals only
 		template<size_t size>
 		span(T const (&data)[size]):m_data((T*)data),m_size((size-1)/sizeof(T)){}
