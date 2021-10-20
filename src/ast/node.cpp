@@ -564,23 +564,6 @@ void ama::Node::FreeASTStorage() {
 }
 /////////////////////////
 ama::gcstring ama::Node::GetName() const {
-	ama::Node const* nd = this;
-	if ( !nd ) {
-		return "";
-	}
-	//} else if( int(this.node_class) == ama::N_FUNCTION ) {
-	//	if( this.p != NULL && this == this.p.c.s && int(this.p.node_class) == ama::N_DECLARATION ) {
-	//		return this.p.c.data;
-	//	}
-	//	if( this.p != NULL && this == this.p.c.s && int(this.p.node_class) == ama::N_ASSIGNMENT && this.p.c.node_class == ama::N_DOT ) {
-	//		return this.p.c.data;
-	//	}
-	//} else if( int(this.node_class) == ama::N_CLASS || int(this.node_class) == ama::N_SET_FIELD || 
-	//int(this.node_class) == ama::N_PRAGMA || int(this.node_class) == ama::N_DECLARATION || 
-	//int(this.node_class) == ama::N_EXTERN || int(this.node_class) == ama::N_EXTERN_VAR ) {
-	//	return this.c.data;
-	//} else if( int(this.node_class) == ama::N_INCLUDE ) {
-	//	return this.c.GetStringValue();
 	if ( this->node_class == ama::N_FUNCTION ) {
 		//COULDDO: re-query the function name
 		return this->data;

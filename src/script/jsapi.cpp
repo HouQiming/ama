@@ -743,6 +743,19 @@ namespace ama {
 	void InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
+		#if defined(_WIN32)
+		{
+			//fix the Windows terminal
+			HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+			DWORD mode = 0;
+			GetConsoleMode(hstdout, &mode);
+			//4 is ENABLE_VIRTUAL_TERMINAL_PROCESSING
+			SetConsoleMode(hstdout, mode | 4);
+			//65001 is CP_UTF8
+			SetConsoleCP(65001);
+			SetConsoleOutputCP(65001);
+		}
+		#endif
 		///////////
 		JS_NewClassID(&ama::g_node_classid);
 		JSClassDef class_def{};

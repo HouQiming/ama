@@ -10,7 +10,6 @@ add_executable(ama
 	"src/util/dumpstack/linux_bt.cpp"
 	"src/util/dumpstack/win_dbghelp.cpp"
 	"src/util/dumpstack/enable_dump.cpp"
-	"src/util/fix_win_console.cpp"
 	"src/entry/ama.cpp")
 add_library(amal SHARED
 	"src/script/quickjs/src/quickjs.c"
@@ -19,7 +18,6 @@ add_library(amal SHARED
 	"src/script/quickjs/src/cutils.c"
 	"modules/cpp/json/json.cpp"
 	"src/util/gcstring.cpp"
-	"src/util/fix_win_console.cpp"
 	"src/parser/charset.cpp"
 	"src/util/mempool.cpp"
 	"src/parser/literal.cpp"

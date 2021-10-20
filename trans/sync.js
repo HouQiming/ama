@@ -1,7 +1,7 @@
 /*
 @ama //*/
 //starting the line with a quote will terminate the @ama
-;'use strict';
+//'use strict' is the default setting anyway
 const pipe=require('pipe');
 const path=require('path');
 const fs=require('fs');
