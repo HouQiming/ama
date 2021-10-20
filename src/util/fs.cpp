@@ -43,7 +43,7 @@ static const intptr_t MAX_READ_BATCH = intptr_t(8388608L);
 JC::StringOrError fs::readFileSync(std::span<char> fn) {
 	size_t sz = intptr_t(0L);
 	intptr_t n_read = intptr_t(0L);
-	JC::StringOrError ret_read{some: nullptr};
+	JC::StringOrError ret_read = JC::StringOrError(nullptr);
 	intptr_t p{};
 	#if defined(_WIN32)
 		{

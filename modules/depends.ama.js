@@ -9,8 +9,8 @@ depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 
 depends.Resolve = function(nd) {
 	assert(nd.node_class == N_DEPENDENCY);
 	if ((nd.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE) {
-		let fn = nd.c.GetStringValue()
-		if(nd.flags & DEPF_C_INCLUDE_NONSTR) {
+		let fn = nd.c.GetStringValue();
+		if (nd.flags & DEPF_C_INCLUDE_NONSTR) {
 			fn = fn.replace(new RegExp('[<>]', 'g'), '');
 		}
 		if (!(nd.flags & DEPF_C_INCLUDE_NONSTR)) {

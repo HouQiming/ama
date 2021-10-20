@@ -9,7 +9,7 @@
 namespace ama {
 	//requires DelimitCLikeStatements, preferrably before ParsePostfix
 	void ParseCInclude(ama::Node* nd_root) {
-		std::string dir_base = (nd_root->data.empty() ? ".":path::dirname(nd_root->data));
+		std::string dir_base = (nd_root->data.empty() ? "." : path::dirname(nd_root->data));
 		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( (nd_raw->flags & 0xffff) != 0 ) { continue; }
 			if ( !(nd_raw->c && nd_raw->c->node_class == ama::N_REF && nd_raw->c->data == "#include") ) { continue; }
@@ -66,7 +66,7 @@ namespace ama {
 				));
 			}
 		}
-		std::string dir_base = (nd_root->data.empty() ? ".":path::dirname(nd_root->data));
+		std::string dir_base = (nd_root->data.empty() ? "." : path::dirname(nd_root->data));
 		for ( ama::Node* nd_require: nd_root->FindAllWithin(0, ama::N_CALL, "require") ) {
 			if ( !nd_require->c->s || nd_require->c->s->node_class != ama::N_STRING || nd_require->c->s->s ) { continue; }
 			ama::gcstring fn_required = nd_require->c->s->GetStringValue();

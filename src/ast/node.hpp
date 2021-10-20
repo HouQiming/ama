@@ -164,9 +164,9 @@ namespace ama {
 		ama::Node* dot(ama::gcstring name);
 		void FreeASTStorage();
 		ama::Node* Find(int node_class, ama::gcstring data)const;
-		std::vector<ama::Node*> FindAll(int node_class, ama::gcstring data=ama::gcstring())const;
-		std::vector<ama::Node*> FindAllWithin(int32_t boundary, int node_class, ama::gcstring data=ama::gcstring())const;
-		std::vector<ama::Node*> FindAllBefore(ama::Node const* nd_before, int32_t boundary, int node_class, ama::gcstring data=ama::gcstring())const;
+		std::vector<ama::Node*> FindAll(int node_class, ama::gcstring data = ama::gcstring())const;
+		std::vector<ama::Node*> FindAllWithin(int32_t boundary, int node_class, ama::gcstring data = ama::gcstring())const;
+		std::vector<ama::Node*> FindAllBefore(ama::Node const* nd_before, int32_t boundary, int node_class, ama::gcstring data = ama::gcstring())const;
 		int isRawNode(char ch_open, char ch_close)const;
 		ama::gcstring GetName()const;
 		/////////////

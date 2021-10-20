@@ -18,7 +18,6 @@ namespace ama {
 		std::vector<ama::Node*> Q{};
 		for ( auto&& pair_nd_v: ama::g_js_node_map ) {
 			ama::Node const* nd = pair_nd_v.first;
-			auto& v = pair_nd_v.second;
 			mark(Q, nd->Root());
 		}
 		ama::mark(Q, ama::GetPlaceHolder());

@@ -90,6 +90,7 @@ namespace ama {
 		}
 	}
 	static std::string ResolveJSRequire(std::span<char> fn_base, std::span<char> fn_required) {
+		//ResolveJSRequire's result is used in JS-running functions, so don't return ama::gcstring
 		std::string dir_base = path::dirname((path::CPathResolver{}).add(fn_base)->done());
 		std::string fn_final = (path::CPathResolver{}).add(dir_base)->add(fn_required)->done();
 		ama::gcstring fn_commonjs{};
@@ -125,7 +126,7 @@ namespace ama {
 	static JSValueConst JSRequire(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		//custom CommonJS module loader
 		//we MUST NOT hold any ama::gcstring when calling JS - it could get gc-ed
-		std::string fn_final;
+		std::string fn_final{};
 		{
 			std::span<char> fn_base = ama::UnwrapStringSpan(argv[intptr_t(0L)]);
 			std::span<char> fn_required = ama::UnwrapStringSpan(argv[intptr_t(1L)]);

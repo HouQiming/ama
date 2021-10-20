@@ -176,7 +176,7 @@
 		}
 		std::string toAbsolute(std::span<char> s_path) {
 			path::CPathObject parts = parse(s_path);
-			std::string real_root = JC::array_cast<std::string>(parts.root);
+			std::string real_root = (parts.root);
 			std::string real_dir = JC::array_cast<std::string>(parts.dir--->subarray(parts.root.size()));
 			if ( !real_root.size() ) {
 				real_root = JC::string_concat(fs::cwd(), "/");

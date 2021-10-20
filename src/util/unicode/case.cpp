@@ -23,7 +23,7 @@ std::string unicode::toUpper(std::span<char> s) {
 			}
 			CharUpperBuffW(LPWSTR(s16.data() + i), int(n_i));
 		}
-		return JC::array_cast<std::string>(unicode::UTF16ToUTF8(s16));
+		return (unicode::UTF16ToUTF8(s16));
 	#else
 		{
 			std::vector<uint16_t> ret((s16.size()));
@@ -31,7 +31,7 @@ std::string unicode::toUpper(std::span<char> s) {
 				uint16_t value = uint16_t(towupper(s16[i]));
 				ret[i] = std::move(value);
 			}
-			return JC::array_cast<std::string>(unicode::UTF16ToUTF8(ret));
+			return (unicode::UTF16ToUTF8(ret));
 		}
 	#endif
 }
@@ -45,7 +45,7 @@ std::string unicode::toLower(std::span<char> s) {
 			}
 			CharLowerBuffW(LPWSTR(s16.data() + i), int(n_i));
 		}
-		return JC::array_cast<std::string>(unicode::UTF16ToUTF8(s16));
+		return (unicode::UTF16ToUTF8(s16));
 	#else
 		{
 			std::vector<uint16_t> ret((s16.size()));
@@ -53,7 +53,7 @@ std::string unicode::toLower(std::span<char> s) {
 				uint16_t value = uint16_t(towlower(s16[i]));
 				ret[i] = std::move(value);
 			}
-			return JC::array_cast<std::string>(unicode::UTF16ToUTF8(ret));
+			return (unicode::UTF16ToUTF8(ret));
 		}
 	#endif
 }

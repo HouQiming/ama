@@ -26,7 +26,7 @@ function FixAMAJS(){
 			nd_root.then(auto_paren).then(auto_semicolon).Save();
 		}
 	}
-	Node.gc();
+	//Node.gc();
 }
 
 function FixAMACPP(){
@@ -49,17 +49,18 @@ function FixAMACPP(){
 	}
 	let aba_test_jobs=[];
 	for(let fn_cpp of all_cpp_files){
-		Node.gc();
+		//Node.gc();
 		let fn_ama_cpp=fn_cpp.replace(/\.cpp$/,'.ama.cpp').replace(/\.hpp$/,'.ama.hpp');
 		let t_cpp=GetFileTime(fn_cpp);
 		let t_ama=GetFileTime(fn_ama_cpp);
-		if(t_ama<t_cpp){
+		if(t_ama<t_cpp||process.aba){
 			//cpp to ama
 			if(ProcessAmaFile(fn_cpp,script_cpp2ama)===1){
 				pipe.run(['touch -r ',JSON.stringify(fn_cpp),' ',JSON.stringify(fn_ama_cpp)].join(''));
 				console.log('updated',fn_ama_cpp);
 			}
-		}else if(t_cpp<t_ama){
+		}
+		if(t_cpp<t_ama||process.aba){
 			//ama to cpp
 			if(ProcessAmaFile(fn_ama_cpp,script_ama2cpp)===1){
 				pipe.run(['touch -r ',JSON.stringify(fn_ama_cpp),' ',JSON.stringify(fn_cpp)].join(''));

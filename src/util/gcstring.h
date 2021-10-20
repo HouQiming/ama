@@ -34,6 +34,8 @@ namespace ama{
 		}
 	}
 	struct raw_construction;
+	//ama::gc() can free gcstring instances
+	//the only recognized root references are those in ama::Node
 	struct gcstring{
 		//val could pack a 7- byte zero-terminated string 
 		uint64_t val=0;
