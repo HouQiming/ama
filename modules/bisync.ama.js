@@ -7,12 +7,11 @@ const fs = require('fs');
 /**
 @param options Options and default values:
 {
-	dir_script: process.cwd(),
-	dir_src: path.join(dir_script,'../src'),
+	dir_src: path.resolve('./src'),
 	middle_extension: '.ama',
 	processed_extensions:['.cpp','.hpp']
-	script_forward: fs.readFileSync(path.join(dir_script,'from_ama.js')).toString(),
-	script_backward: fs.readFileSync(path.join(dir_script,'to_ama.js')).toString(),
+	script_forward: fs.readFileSync(path.join(__dirname,'cpp/from_ama.js')).toString(),
+	script_backward: fs.readFileSync(path.join(__dirname,'cpp/to_ama.js')).toString(),
 }
 */
 module.exports = function Bisync(options) {
@@ -22,18 +21,18 @@ module.exports = function Bisync(options) {
 		let stat = fs.statSync(fn);
 		return stat.mtimeMs;
 	}
-	let dir_script = options.dir_script || process.cwd();
 	let middle_extension = options.middle_extension || '.ama';
-	process.chdir(options.dir_src || path.join(dir_script, '../src'));
-	let script_ama2cpp = options.script_forward || fs.readFileSync(path.join(dir_script, 'from_ama.js')).toString();
-	let script_cpp2ama = options.script_backward || fs.readFileSync(path.join(dir_script, 'to_ama.js')).toString();
+	let dir_src = options.dir_src || path.resolve('./src');
+	process.chdir(dir_src);
+	let script_ama2cpp = options.script_forward || fs.readFileSync(path.join(__dirname, 'cpp/from_ama.js')).toString();
+	let script_cpp2ama = options.script_backward || fs.readFileSync(path.join(__dirname, 'cpp/to_ama.js')).toString();
 	let all_cpp_files = new Set();
 	let mext_dot = middle_extension + '.';
 	let exts = options.processed_extensions || ['.cpp', '.hpp'];
 	for (let ext of exts) {
 		for (let fn_rel_cpp of pipe.runPiped(process.platform == 'win32' ? 'dir /s /b *' + ext : "find -iname '*" + ext + "'").stdout.split('\n')) {
 			if (!fn_rel_cpp) {continue;}
-			all_cpp_files.add(path.resolve(dir_script, '../src', fn_rel_cpp.replace(mext_dot, '.')));
+			all_cpp_files.add(path.resolve(dir_src, fn_rel_cpp.replace(mext_dot, '.')));
 		}
 	}
 	let rebuild_ama = 'rebuild_' + middle_extension.replace(/\./g, '');

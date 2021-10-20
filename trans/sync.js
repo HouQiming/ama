@@ -32,4 +32,4 @@ function FixAMAJS(){
 
 __dirname=path.resolve(__dirname);
 FixAMAJS();
-bisync({dir_script:__dirname});
+bisync({dir_src:path.resolve(__dirname,'../src')});
