@@ -311,7 +311,8 @@ __global.process = {
 		}
 	}),
 	platform: __platform,
-	chdir: __chdir
+	chdir: __chdir,
+	cwd: __cwd
 };
 
 __global.__RequireNativeLibrary = function(exports, module, __filename, __dirname) {

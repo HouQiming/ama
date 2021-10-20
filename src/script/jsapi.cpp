@@ -630,6 +630,9 @@ namespace ama {
 		}
 		return JS_NewInt32(ctx, fs::chdir(ama::UnwrapString(argv[0])));
 	}
+	static JSValueConst JSCwd(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
+		return ama::WrapString(fs::cwd());
+	}
 	static JSValueConst JSByteLength(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a string");
@@ -744,7 +747,6 @@ namespace ama {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
 		#if defined(_WIN32)
-		{
 			//fix the Windows terminal
 			HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
 			DWORD mode = 0;
@@ -754,7 +756,6 @@ namespace ama {
 			//65001 is CP_UTF8
 			SetConsoleCP(65001);
 			SetConsoleOutputCP(65001);
-		}
 		#endif
 		///////////
 		JS_NewClassID(&ama::g_node_classid);
@@ -890,6 +891,12 @@ namespace ama {
 			ama::jsctx, global, "__chdir", JS_NewCFunction(
 				ama::jsctx, JSChdir,
 				"__chdir", 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, "__cwd", JS_NewCFunction(
+				ama::jsctx, JSCwd,
+				"__cwd", 0
 			)
 		);
 		JS_SetPropertyStr(
