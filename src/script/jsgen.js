@@ -26,6 +26,8 @@ function Generate(version,my_call) {
 			}
 		} else if( s_src.indexOf('unique_string') >= 0 ) {
 			return 'string^';
+		} else if( s_src.indexOf('gcstring') >= 0 ) {
+			return 'string';
 		} else if( s_src.indexOf('std::string') >= 0 || s_src.indexOf('std::span<char') >= 0 || s_src.indexOf('array_base<char') >= 0 ) {
 			return 'string';
 		} else if( s_src.indexOf('char[') >= 0 ) {

@@ -12,13 +12,17 @@
 #include <unordered_map>
 #include <algorithm>
 #include <utility>
+#include <iostream>
 #if __cplusplus>=202002L
 	#include <span>
 #else
 	#include "./span_polyfill.h"
 #endif
+static inline std::ostream& operator<<(std::ostream& os, std::span<char> const& a){
+    os.write(a.data(),a.size());
+    return os;
+}
 
-typedef const char const_char;
 namespace JC{
 
 template<typename T>
