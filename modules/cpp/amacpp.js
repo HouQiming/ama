@@ -5,8 +5,9 @@ const sane_init=require('cpp/sane_init');
 const sane_export=require('cpp/sane_export');
 const move_operator=require('cpp/move_operator');
 const unified_null=require('cpp/unified_null');
-function ToCPP(nd_root){
-	return (nd_root
+function ToCPP(nd_root,options){
+	if(!options){options={};}
+	(nd_root
 		.StripRedundantPrefixSpace()
 		.then(require('auto_semicolon'))
 		.then(require('auto_paren'))
@@ -14,7 +15,9 @@ function ToCPP(nd_root){
 		.then(require('cpp/auto_dot'))
 		.then(require('cpp/typing').DeduceAuto)
 		.then(require('cpp/cpp_indent'))
-		.Save()
+	);
+	if(options.update_source){nd_root.Save();}
+	return (nd_root
 		.then(sane_types)
 		.then(sane_init)
 		.then(sane_export)

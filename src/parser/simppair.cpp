@@ -306,7 +306,6 @@ namespace ama {
 						break;
 					} else {
 						goto handle_symbol;
-						//*** PASS THROUGH ***
 					}
 				}
 				case CHAR_TYPE_SYMBOL: {

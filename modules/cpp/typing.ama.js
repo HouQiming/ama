@@ -290,7 +290,7 @@ typing.ComputeReturnType = function(type_func) {
 typing.LookupDottedName = function(nd_site, name, nd_scope) {
 	let nd_def = undefined;
 	if (nd_scope) {
-		typing.GetDefs(nd_scope).get(name);
+		nd_def = typing.GetDefs(nd_scope).get(name);
 	}
 	if (!nd_def && isNamespace(nd_scope)) {
 		//it got ugly: we need to search ALL same-named namespaces
