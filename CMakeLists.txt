@@ -1,3 +1,4 @@
+#note: use `cmake -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE` to build on Windows
 cmake_minimum_required (VERSION 3.0)
 project(entry)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-delete-null-pointer-checks")
@@ -42,8 +43,7 @@ add_library(amal SHARED
 	"src/util/path_win32.cpp"
 	"src/script/jsenv.cpp"
 	"src/ast/node.cpp"
-	"src/script/jsapi.cpp"
-	"src/entry/amal.cpp")
+	"src/script/jsapi.cpp")
 set_property(
 	TARGET ama
 	APPEND PROPERTY LINK_LIBRARIES

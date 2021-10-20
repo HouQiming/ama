@@ -2,7 +2,6 @@
 #define __JC_ARRAY_H
 #include <vector>
 #include <string>
-#include <memory>
 #include <type_traits>
 #include <stdint.h>
 #include <stdlib.h>

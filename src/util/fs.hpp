@@ -2,7 +2,6 @@
 #define _FS_JCH_HPP
 #include <string>
 #include <vector>
-#include <memory>
 #include "jc_array.h"
 /*#pragma add("jc_files", "./fs.jc");*/
 namespace fs {

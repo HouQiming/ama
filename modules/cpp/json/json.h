@@ -2,7 +2,6 @@
 #define __JSON_CPP_HPP
 #include <string>
 #include <vector>
-#include <memory>
 #include <unordered_map>
 #include <cmath>
 #include <cstdlib>
@@ -41,8 +40,6 @@ namespace JSON{
 	static inline void stringifyTo(std::string &buf,float a){stringifyTo(buf,(double)a);}
 	template<class T>
 	typename std::enable_if<!std::is_same<T,char>::value,void>::type stringifyTo(std::string &buf,const T* a);
-	template<class T>
-	void stringifyTo(std::string &buf,const std::shared_ptr<T>& a);
 	template<typename T>
 	void stringifyTo(std::string &buf,std::span<T> a){
 		buf.push_back('[');
@@ -89,14 +86,6 @@ namespace JSON{
 	}
 	template<class T>
 	typename std::enable_if<!std::is_same<T,char>::value,void>::type stringifyTo(std::string &buf,const T* a){
-		if(a){
-			::JSON::stringifyTo(buf,*a);
-		}else{
-			buf+="null";
-		}
-	}
-	template<class T>
-	void stringifyTo(std::string &buf,const std::shared_ptr<T>& a){
 		if(a){
 			::JSON::stringifyTo(buf,*a);
 		}else{
@@ -164,34 +153,7 @@ namespace JSON{
 	std::string parseFrom(JSONParserContext& ctx,std::string**);
 	//forward decl for overloads
 	template<typename T>
-	std::shared_ptr<T> parseFrom(JSONParserContext& ctx,std::shared_ptr<T>**);
-	template<typename T>
-	std::unique_ptr<T> parseFrom(JSONParserContext& ctx,std::unique_ptr<T>**);
-	template<typename T>
 	std::vector<T> parseFrom(JSONParserContext& ctx,std::vector<T>**);
-	//pointers
-	template<typename T>
-	std::shared_ptr<T> parseFrom(JSONParserContext& ctx,std::shared_ptr<T>**){
-		const char* s0=ctx.begin;
-		int ch=*s0;
-		if(ch=='n'){
-			ctx.SkipNumber();
-			return nullptr;
-		}else{
-			return std::make_shared<T>(parseFrom(ctx,(typename std::remove_const<T>::type**)NULL));
-		}
-	}
-	template<typename T>
-	std::unique_ptr<T> parseFrom(JSONParserContext& ctx,std::unique_ptr<T>**){
-		const char* s0=ctx.begin;
-		int ch=*s0;
-		if(ch=='n'){
-			ctx.SkipNumber();
-			return nullptr;
-		}else{
-			return std::make_unique<T>(parseFrom(ctx,(typename std::remove_const<T>::type**)NULL));
-		}
-	}
 	//arrays
 	template<typename T>
 	std::vector<T> parseFrom(JSONParserContext& ctx,std::vector<T>**){
