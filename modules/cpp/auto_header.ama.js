@@ -22,7 +22,7 @@ function Transform(nd_root, options) {
 	if (!header_file) {
 		//search for same-name dependency first
 		let my_name = path.parse(nd_root.data).name;
-		for (let ndi of nd_root.FindAll(N_DEPENDENCY, null)) {
+		for (let ndi of nd_root.FindAll(N_DEPENDENCY)) {
 			if ((ndi.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE && ( ndi.flags & DEPF_C_INCLUDE_NONSTR )) {
 				continue;
 			}

@@ -1,5 +1,6 @@
 const path=require('path');
 const jsism=require('cpp/jsism');
+const short_types=require('cpp/short_types');
 const sane_types=require('cpp/sane_types');
 const sane_init=require('cpp/sane_init');
 const sane_export=require('cpp/sane_export');
@@ -18,6 +19,7 @@ function ToCPP(nd_root,options){
 	);
 	if(options.update_source){nd_root.Save();}
 	return (nd_root
+		.then(short_types)
 		.then(sane_types)
 		.then(sane_init)
 		.then(sane_export)
@@ -42,6 +44,7 @@ function FromCPP(nd_root){
 		.then(sane_export.inverse)
 		.then(sane_init.inverse)
 		.then(sane_types.inverse)
+		.then(short_types.inverse)
 	);
 }
 
