@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
 #include "../../modules/cpp/json/json.h"
 #include "../parser/literal.hpp"
 #include "../util/mempool.hpp"
@@ -17,15 +16,11 @@ namespace ama {
 	static const intptr_t NODE_BLOCK_SIZE = (intptr_t(1L) << 21) - intptr_t(64L);
 	static ama::TMemoryPool g_node_pool{};
 	ama::Node* g_free_nodes{};
-	static JC::unique_string g_empty_comment = "";
+	static ama::gcstring g_empty_comment = "";
 	ama::Node* AllocNode() {
 		ama::Node* ret{};
 		if ( g_free_nodes ) {
 			ret = g_free_nodes;
-			//we could have leftover data from a freed node, set to NULL to release RC
-			ret->data = nullptr;
-			ret->comments_before = nullptr;
-			ret->comments_after = nullptr;
 			g_free_nodes = ret->s;
 			memset((void*)(ret), 0, sizeof(ama::Node));
 		} else {
@@ -505,10 +500,10 @@ ama::Node * ama::Node::CommonAncestor(ama::Node const* b) const {
 	}
 	return ret;
 }
-JC::unique_string ama::Node::GetStringValue() const {
+ama::gcstring ama::Node::GetStringValue() const {
 	ama::Node* nd_this = (ama::Node*)(this);
 	assert(nd_this->node_class == ama::N_STRING);
-	if ( nd_this->node_class != ama::N_STRING || nd_this->data == nullptr || (nd_this->flags & ama::LITERAL_PARSED) ) {
+	if ( nd_this->node_class != ama::N_STRING || nd_this->data.empty() || (nd_this->flags & ama::LITERAL_PARSED) ) {
 		return nd_this->data;
 	} else {
 		//process on demand
@@ -516,12 +511,12 @@ JC::unique_string ama::Node::GetStringValue() const {
 		if ( nd_this->data.size() && nd_this->data[intptr_t(0L)] == '\'' ) {
 			nd_this->flags |= ama::STRING_SINGLE_QUOTED;
 		}
-		nd_this->data = JC::array_cast<JC::unique_string>(ama::ParseJCString(nd_this->data));
+		nd_this->data = ama::gcstring(ama::ParseJCString(nd_this->data));
 		nd_this->flags |= ama::LITERAL_PARSED;
 		return nd_this->data;
 	}
 }
-ama::Node * ama::Node::dot(JC::unique_string name) {
+ama::Node * ama::Node::dot(ama::gcstring name) {
 	ama::Node* nd_ret = ama::CreateNode(ama::N_DOT, this);
 	nd_ret->data = name;
 	nd_ret->indent_level = this->indent_level;
@@ -568,10 +563,10 @@ void ama::Node::FreeASTStorage() {
 	ama::g_free_nodes = this;
 }
 /////////////////////////
-JC::unique_string ama::Node::GetName() const {
+ama::gcstring ama::Node::GetName() const {
 	ama::Node const* nd = this;
 	if ( !nd ) {
-		return nullptr;
+		return "";
 	}
 	//} else if( int(this.node_class) == ama::N_FUNCTION ) {
 	//	if( this.p != NULL && this == this.p.c.s && int(this.p.node_class) == ama::N_DECLARATION ) {
@@ -593,7 +588,7 @@ JC::unique_string ama::Node::GetName() const {
 		if ( this->c && this->c->node_class != this->node_class && this->c->node_class != ama::N_CALL ) {
 			return this->c->GetName();
 		} else {
-			return nullptr;
+			return "";
 		}
 	} else if ( this->node_class == ama::N_ASSIGNMENT || this->node_class == ama::N_DEPENDENCY ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
 		return this->c->GetName();
@@ -606,7 +601,7 @@ JC::unique_string ama::Node::GetName() const {
 		return this->data;
 	}
 }
-static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t boundary, int node_class, JC::unique_string data, std::vector<ama::Node*>* ret) {
+static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t boundary, int node_class, ama::gcstring data, std::vector<ama::Node*>* ret) {
 	ama::Node* nd_ret{};
 	for (ama::Node* nd = nd_root; nd; nd = nd->PreorderNext(nd_root)) {
 		skip_children:
@@ -616,7 +611,7 @@ static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t bou
 		int32_t my_boundary = ama::BOUNDARY_ONE_LEVEL;
 		if ( int(nd->node_class) == node_class || node_class == ama::N_NONE ) {
 			int matched = 1;
-			if ( data != nullptr ) {
+			if ( !data.empty() ) {
 				matched = nd->GetName() == data;
 			}
 			//matched
@@ -663,20 +658,20 @@ static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t bou
 	}
 	return nd_ret;
 }
-ama::Node * ama::Node::Find(int node_class, JC::unique_string data) const {
+ama::Node * ama::Node::Find(int node_class, ama::gcstring data) const {
 	return FindImpl((ama::Node*)(this), nullptr, 0, node_class, data, nullptr);
 }
-std::vector<ama::Node*> ama::Node::FindAll(int node_class, JC::unique_string data) const {
+std::vector<ama::Node*> ama::Node::FindAll(int node_class, ama::gcstring data) const {
 	std::vector<ama::Node*> ret{};
 	FindImpl((ama::Node*)(this), nullptr, ama::BOUNDARY_DEFAULT, node_class, data, &ret);
 	return std::move(ret);
 }
-std::vector<ama::Node*> ama::Node::FindAllWithin(int32_t boundary, int node_class, JC::unique_string data) const {
+std::vector<ama::Node*> ama::Node::FindAllWithin(int32_t boundary, int node_class, ama::gcstring data) const {
 	std::vector<ama::Node*> ret{};
 	FindImpl((ama::Node*)(this), nullptr, boundary, node_class, data, &ret);
 	return std::move(ret);
 }
-std::vector<ama::Node*> ama::Node::FindAllBefore(ama::Node const* nd_before, int32_t boundary, int node_class, JC::unique_string data) const {
+std::vector<ama::Node*> ama::Node::FindAllBefore(ama::Node const* nd_before, int32_t boundary, int node_class, ama::gcstring data) const {
 	std::vector<ama::Node*> ret{};
 	FindImpl((ama::Node*)(this), (ama::Node*)(nd_before), boundary, node_class, data, &ret);
 	return std::move(ret);
@@ -690,23 +685,23 @@ int ama::Node::isSymbol(std::span<char> name) const {
 int ama::Node::isRef(std::span<char> name) const {
 	return this->node_class == ama::N_REF && this->data == name;
 }
-int ama::Node::isMethodCall(JC::unique_string name) const {
+int ama::Node::isMethodCall(ama::gcstring name) const {
 	return this->node_class == ama::N_CALL && this->c->node_class == ama::N_DOT && this->c->data == name;
 }
 ///dependency is global: have to re-ParseDependency after you InsertDependency
-ama::Node * ama::Node::InsertDependency(uint32_t flags, JC::unique_string name) {
+ama::Node * ama::Node::InsertDependency(uint32_t flags, ama::gcstring name) {
 	for ( ama::Node* const &ndi: this->FindAll(ama::N_DEPENDENCY, name) ) {
 		if ( ndi->flags == flags ) { return ndi; }
 	}
 	return this->Insert(ama::POS_FRONT, ama::nDependency(ama::nString(name))->setFlags(flags));
 }
 ama::Node * ama::Node::InsertCommentBefore(std::span<char> s) {
-	this->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(s, this->comments_before));
+	this->comments_before = (ama::gcscat(s, this->comments_before));
 	return this;
 }
 ///////////////////////////////////////
 ama::Node * ama::Node::MergeCommentsAfter(ama::Node* nd_after) {
-	this->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(this->comments_after, nd_after->comments_before));
+	this->comments_after = (ama::gcscat(this->comments_after, nd_after->comments_before));
 	nd_after->comments_before = "";
 	return this;
 }
@@ -717,17 +712,17 @@ ama::Node * ama::Node::MergeCommentsAndIndentAfter(ama::Node* nd_after) {
 			ret.push_back(' ');
 		}
 	}
-	this->comments_after = JC::array_cast<JC::unique_string>(ret);
+	this->comments_after = ama::gcstring(ret);
 	nd_after->comments_before = "";
 	return this;
 }
 ama::Node * ama::Node::MergeCommentsBefore(ama::Node* nd_before) {
-	this->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(nd_before->comments_after, this->comments_before));
+	this->comments_before = (ama::gcscat(nd_before->comments_after, this->comments_before));
 	nd_before->comments_after = "";
 	return this;
 }
-JC::unique_string ama::Node::DestroyForSymbol() {
-	JC::unique_string ret = this->data;
+ama::gcstring ama::Node::DestroyForSymbol() {
+	ama::gcstring ret = this->data;
 	this->p = nullptr;
 	this->FreeASTStorage();
 	return ret;
@@ -737,14 +732,14 @@ int ama::Node::ValidateChildCount(int n_children) {
 	for (int i = 0; i < n_children; i += 1) {
 		if ( !ndi ) {
 			printf("need %d children but only got %d : %lld\n", n_children, i + 1, ((long long)(intptr_t(this))));
-			this->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat("/*bad children count*/ ", this->comments_before));
+			this->comments_before = ama::gcstring(JC::string_concat("/*bad children count*/ ", this->comments_before));
 			return 0;
 		}
 		ndi = ndi->s;
 	}
 	if ( ndi ) {
 		printf("too many children %lld\n", ((long long)(intptr_t(this))));
-		this->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat("/*too many children*/ ", this->comments_before));
+		this->comments_before = ama::gcstring(JC::string_concat("/*too many children*/ ", this->comments_before));
 		return 0;
 	}
 	return 1;
@@ -761,9 +756,9 @@ intptr_t ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 		ama::Node* nd = stack--->pop();
 		if ( g_validate_dedup--->get(nd) ) {
 			if ( !quiet ) {
-				printf("found cycle to %lld %s\n", ((long long)(intptr_t(nd))), nd->data == nullptr ? "NULL" : JSON::stringify(nd->data).c_str());
+				printf("found cycle to %lld %s\n", ((long long)(intptr_t(nd))), JSON::stringify(nd->data).c_str());
 			}
-			nd->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat("/*cycle ", JSON::stringify(intptr_t(nd)), "*/ ", nd->comments_before));
+			nd->comments_before = ama::gcstring(JC::string_concat("/*cycle ", JSON::stringify(intptr_t(nd)), "*/ ", nd->comments_before));
 			error_count += 1;
 			continue;
 		}
@@ -773,7 +768,7 @@ intptr_t ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 			if ( !quiet ) {
 				printf("node too deep\n");
 			}
-			nd->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat("/*too deep*/ ", nd->comments_before));
+			nd->comments_before = ama::gcstring(JC::string_concat("/*too deep*/ ", nd->comments_before));
 			error_count += 1;
 		}
 		if ( nd->s && (nd->tmp_flags & ama::TMPF_IS_NODE) ) {
@@ -788,25 +783,9 @@ intptr_t ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 			if ( !quiet ) {
 				printf("found freed node %lld\n", ((long long)(intptr_t(nd))));
 			}
-			nd->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat("/*freed ", JSON::stringify(intptr_t(nd)), "*/ ", nd->comments_before));
+			nd->comments_before = ama::gcstring(JC::string_concat("/*freed ", JSON::stringify(intptr_t(nd)), "*/ ", nd->comments_before));
 			error_count += 1;
 			//other immediate validations do not make sense for a freed node
-			continue;
-		}
-		if ( nd->comments_before == nullptr ) {
-			if ( !quiet ) {
-				printf("comments_before == NULL %lld\n", ((long long)(intptr_t(nd))));
-			}
-			nd->comments_before = "/*NULL comments_before*/";
-			error_count += 1;
-			continue;
-		}
-		if ( nd->comments_after == nullptr ) {
-			if ( !quiet ) {
-				printf("comments_after == NULL %lld\n", ((long long)(intptr_t(nd))));
-			}
-			nd->comments_after = "/*NULL comments_after*/";
-			error_count += 1;
 			continue;
 		}
 		if ( nd->p && nd->node_class == ama::N_FILE ) {
@@ -829,30 +808,30 @@ intptr_t ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 		for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 			if ( ndi->p != nd ) {
 				if ( !quiet ) {
-					printf("bad parent %lld %u %s under %u\n", ((long long)(intptr_t(ndi))), ndi->node_class, ndi->data == nullptr ? "NULL" : JSON::stringify(ndi->data).c_str(), nd->node_class);
+					printf("bad parent %lld %u %s under %u\n", ((long long)(intptr_t(ndi))), ndi->node_class, JSON::stringify(ndi->data).c_str(), nd->node_class);
 				}
-				ndi->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat("/*bad parent ", JSON::stringify(intptr_t(ndi)), "*/ ", ndi->comments_before));
+				ndi->comments_before = ama::gcstring(JC::string_concat("/*bad parent ", JSON::stringify(intptr_t(ndi)), "*/ ", ndi->comments_before));
 				error_count += 1;
 			}
 			if ( ndi->s && ndi->s->v != ndi ) {
 				if ( !quiet ) {
-					printf("bad previous sibling %lld %u %s after %u\n", ((long long)(intptr_t(ndi->s))), ndi->s->node_class, ndi->s->data == nullptr ? "NULL" : JSON::stringify(ndi->s->data).c_str(), ndi->node_class);
+					printf("bad previous sibling %lld %u %s after %u\n", ((long long)(intptr_t(ndi->s))), ndi->s->node_class, JSON::stringify(ndi->s->data).c_str(), ndi->node_class);
 				}
-				ndi->s->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat("/*bad previous sibling ", JSON::stringify(intptr_t(ndi->s)), "*/ ", ndi->s->comments_before));
+				ndi->s->comments_before = ama::gcstring(JC::string_concat("/*bad previous sibling ", JSON::stringify(intptr_t(ndi->s)), "*/ ", ndi->s->comments_before));
 				error_count += 1;
 			}
 			nd_last = ndi;
 		}
 		if ( nd_last && nd->c->v != ama::PackTailPointer(nd_last) ) {
 			if ( !quiet ) {
-				printf("bad tail pointer %lld %u %s %lld\n", ((long long)(intptr_t(nd))), nd->node_class, nd->data == nullptr ? "NULL" : JSON::stringify(nd->data).c_str(), ((long long)(intptr_t(nd->c->v))));
+				printf("bad tail pointer %lld %u %s %lld\n", ((long long)(intptr_t(nd))), nd->node_class, JSON::stringify(nd->data).c_str(), ((long long)(intptr_t(nd->c->v))));
 			}
 			for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 				if ( !quiet ) {
 					printf("    %lld\n", ((long long)(intptr_t(ndi))));
 				}
 			}
-			nd->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat("/*bad tail pointer ", JSON::stringify(intptr_t(nd)), "*/ ", nd->comments_before));
+			nd->comments_before = ama::gcstring(JC::string_concat("/*bad tail pointer ", JSON::stringify(intptr_t(nd)), "*/ ", nd->comments_before));
 			error_count += 1;
 		}
 	}

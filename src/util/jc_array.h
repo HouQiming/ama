@@ -23,6 +23,8 @@ static inline std::ostream& operator<<(std::ostream& os, std::span<char> const& 
     return os;
 }
 
+namespace ama{struct gcstring;}
+
 namespace JC{
 
 template<typename T>
@@ -35,13 +37,16 @@ template<typename T>static inline T* array_data(std::span<T> a){return a.data();
 template<typename T,size_t lg>static inline T* array_data(const std::array<T,lg> &a){return (T*)a.data();}
 static inline char* array_data(const std::string &a){return (char*)a.data();}
 static inline char* array_data(const char* a){return (char*)a;}
-static inline char* array_data(const JC::unique_string &a);
+static inline char* array_data(const ama::gcstring &a);
 
 template<size_t lg>static inline size_t array_size(char const (&a)[lg]){return lg-1;/*remove the NUL*/}
-static inline size_t array_size(const JC::unique_string &a);
+static inline size_t array_size(const ama::gcstring &a);
 
 template<typename T,bool is_charptr=std::is_same<typename std::remove_reference<typename std::remove_cv<T>::type>::type,char*>::value>
-static inline typename std::enable_if<!std::is_same<typename std::remove_reference<typename std::remove_cv<T>::type>::type,JC::unique_string>::value,size_t>::type array_size(T&& a);
+static inline typename std::enable_if<
+	!std::is_same<typename std::remove_reference<typename std::remove_cv<T>::type>::type,ama::gcstring>::value,
+	size_t
+>::type array_size(T&& a);
 
 template<bool is_charptr>
 struct array_size_helper{
@@ -59,7 +64,10 @@ struct array_size_helper<true>{
 };
 
 template<typename T,bool is_charptr>
-static inline typename std::enable_if<!std::is_same<typename std::remove_reference<typename std::remove_cv<T>::type>::type,JC::unique_string>::value,size_t>::type array_size(T&& a){
+static inline typename std::enable_if<
+	!std::is_same<typename std::remove_reference<typename std::remove_cv<T>::type>::type,ama::gcstring>::value,
+	size_t
+>::type array_size(T&& a){
 	return array_size_helper<is_charptr>::call(std::forward<T>(a));
 }
 

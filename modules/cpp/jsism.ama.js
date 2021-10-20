@@ -1,5 +1,4 @@
 'use strict'
-//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 const assert = require('assert');
 let jsism = module.exports;
 

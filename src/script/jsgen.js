@@ -196,11 +196,11 @@ function Generate(version,my_call) {
 		if( unwrap_code.validation && ClassifyType(nd_type) !== 'int' && ClassifyType(nd_type) !== 'float' ) {
 			//it's nullable, hack the null case
 			unwrap_code.validation = [
-				'if(JS_IsNull(val)){',
+				'if(JS_IsNull(val)||JS_IsUndefined(val)){',
 				(
 					'nd->' + ppt.name
 				),
-				'=NULL;',
+				'="";',
 				'}else{',
 				unwrap_code.validation
 			].join('');
@@ -287,7 +287,7 @@ function Generate(version,my_call) {
 					unwrap_code.validation,
 					'}'
 				);
-				unwrap_code.jc_expr = ['argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L])?', unwrap_code.jc_expr, ':nullptr'].join('');
+				unwrap_code.jc_expr = ['argc>', i.toString(), '&&!JS_IsNull(argv[', i.toString(), 'L])?', unwrap_code.jc_expr, ':""'].join('');
 			} else {
 				code_func.push(unwrap_code.validation);
 			}

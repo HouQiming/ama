@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
+#include "../util/gcstring.h"
 #include <unordered_map>
 /*#pragma add("jc_files", "./jsenv.jc");*/
 /*#pragma add("h_files", "./quickjs/src/quickjs.h");*/
@@ -27,16 +27,18 @@ namespace ama {
 	extern JSRuntime* g_runtime_handle;
 	extern std::string std_module_dir;
 	void DumpError(JSContext* ctx);
-	static inline JC::unique_string UnwrapString(JSValueConst val) {
+	static inline ama::gcstring UnwrapString(JSValueConst val) {
 		size_t len = int64_t(0uLL);
 		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
-		return JC::unique_string(ptr, intptr_t(len));
+		return ama::gcstring(ptr, intptr_t(len));
+	}
+	static inline std::span<char> UnwrapStringSpan(JSValueConst val) {
+		size_t len = int64_t(0uLL);
+		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
+		return std::span<char>(ptr, intptr_t(len));
 	}
 	static inline JSValueConst WrapString(std::span<char> s) {
 		return JS_NewStringLen(ama::jsctx, s.data(), s.size());
-	}
-	static inline JSValueConst WrapStringNullable(JC::unique_string s) {
-		return s == nullptr ? JS_NULL : WrapString(s);
 	}
 	static inline int32_t UnwrapInt32(JSValueConst val, int32_t dflt) {
 		int32_t ret = 0;
@@ -68,11 +70,11 @@ namespace ama {
 		}
 		return std::move(ret);
 	}
-	JC::unique_string FindCommonJSModuleByPath(JC::unique_string fn);
-	JC::unique_string FindCommonJSModule(JC::unique_string fn_required, JC::unique_string dir_base);
+	ama::gcstring FindCommonJSModuleByPath(std::span<char> fn);
+	ama::gcstring FindCommonJSModule(std::span<char> fn_required, std::span<char> dir_base);
 	extern std::vector<char const*> g_builder_names;
 	extern std::vector<char const*> g_node_class_names;
-	std::unordered_map<JC::unique_string, int> GetPrioritizedList(JSValueConst options, char const* name);
+	std::unordered_map<ama::gcstring, int> GetPrioritizedList(JSValueConst options, char const* name);
 	extern std::string std_module_dir_global;
 	JSValue InheritOptions(JSValueConst options);
 };

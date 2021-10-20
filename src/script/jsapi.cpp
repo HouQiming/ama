@@ -2,14 +2,6 @@
 #include <string>
 #include <vector>
 #include <array>
-#include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
-#include "../../modules/cpp/json/json.h"
-#include "../util/path.hpp"
-#include "../util/fs.hpp"
-#include "../util/env.hpp"
-#include "../util/unicode.hpp"
-#include "../util/unicode/case.hpp"
 #if defined(_WIN32)
 	#include <windows.h>
 	/*#pragma add("ldflags", "kernel32.lib");*/
@@ -20,6 +12,14 @@
 	#include <dlfcn.h>
 	/*#pragma add("ldflags", "-ldl");*/
 #endif
+#include "../util/jc_array.h"
+#include "../util/gcstring.h"
+#include "../../modules/cpp/json/json.h"
+#include "../util/path.hpp"
+#include "../util/fs.hpp"
+#include "../util/env.hpp"
+#include "../util/unicode.hpp"
+#include "../util/unicode/case.hpp"
 #include "./quickjs/src/quickjs.h"
 #include "../ast/node.hpp"
 #include "../ast/nodegc.hpp"
@@ -32,7 +32,6 @@
 #include "../parser/decl.hpp"
 #include "../parser/cleanup.hpp"
 #include "../parser/findama.hpp"
-#include "../exec/engine.hpp"
 #include "nodeof_to_ast.hpp"
 #include "jsenv.hpp"
 #include "jsapi.hpp"
@@ -93,23 +92,23 @@ namespace ama {
 	static std::string ResolveJSRequire(std::span<char> fn_base, std::span<char> fn_required) {
 		std::string dir_base = path::dirname((path::CPathResolver{}).add(fn_base)->done());
 		std::string fn_final = (path::CPathResolver{}).add(dir_base)->add(fn_required)->done();
-		JC::unique_string fn_commonjs{};
+		ama::gcstring fn_commonjs{};
 		if ( !fn_required--->startsWith(".") && !fn_required--->startsWith("/") ) {
 			//it's a standard module
 			//COULDDO: internal asset strings - faster and simpler than zip
-			fn_commonjs = ama::FindCommonJSModuleByPath(JC::array_cast<JC::unique_string>(path::normalize(JC::string_concat(ama::std_module_dir, path::sep, fn_required))));
-			if ( fn_commonjs == nullptr ) {
-				fn_commonjs = ama::FindCommonJSModuleByPath(JC::array_cast<JC::unique_string>(path::normalize(JC::string_concat(ama::std_module_dir_global, path::sep, fn_required))));
+			fn_commonjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir, path::sep, fn_required))));
+			if ( fn_commonjs.empty() ) {
+				fn_commonjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir_global, path::sep, fn_required))));
 			}
-			if ( fn_commonjs == nullptr ) {
-				fn_commonjs = ama::FindCommonJSModule(JC::array_cast<JC::unique_string>(fn_required), JC::array_cast<JC::unique_string>(dir_base));
+			if ( fn_commonjs.empty() ) {
+				fn_commonjs = ama::FindCommonJSModule((fn_required), (dir_base));
 			}
-			if ( fn_commonjs != nullptr ) {
+			if ( !fn_commonjs.empty() ) {
 				fn_final = JC::array_cast<std::string>(fn_commonjs);
 			}
 		} else {
-			fn_commonjs = ama::FindCommonJSModuleByPath(JC::array_cast<JC::unique_string>(fn_final));
-			if ( fn_commonjs != nullptr ) {
+			fn_commonjs = ama::FindCommonJSModuleByPath((fn_final));
+			if ( !fn_commonjs.empty() ) {
 				fn_final = JC::array_cast<std::string>(fn_commonjs);
 			}
 		}
@@ -119,15 +118,19 @@ namespace ama {
 		if ( argc < 2 ) {
 			return JS_ThrowReferenceError(ctx, "need base name and required name");
 		}
-		JC::unique_string fn_base = ama::UnwrapString(argv[intptr_t(0L)]);
-		JC::unique_string fn_required = ama::UnwrapString(argv[intptr_t(1L)]);
+		std::span<char> fn_base = ama::UnwrapStringSpan(argv[intptr_t(0L)]);
+		std::span<char> fn_required = ama::UnwrapStringSpan(argv[intptr_t(1L)]);
 		return ama::WrapString(ResolveJSRequire(fn_base, fn_required));
 	}
 	static JSValueConst JSRequire(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		//custom CommonJS module loader
-		JC::unique_string fn_base = ama::UnwrapString(argv[intptr_t(0L)]);
-		JC::unique_string fn_required = ama::UnwrapString(argv[intptr_t(1L)]);
-		std::string fn_final = ResolveJSRequire(fn_base, fn_required);
+		//we MUST NOT hold any ama::gcstring when calling JS - it could get gc-ed
+		std::string fn_final;
+		{
+			std::span<char> fn_base = ama::UnwrapStringSpan(argv[intptr_t(0L)]);
+			std::span<char> fn_required = ama::UnwrapStringSpan(argv[intptr_t(1L)]);
+			fn_final = ResolveJSRequire(fn_base, fn_required);
+		}
 		/////////////
 		JSValueConst obj_module = JS_GetPropertyStr(ctx, g_require_cache, fn_final.c_str());
 		if ( JS_IsUndefined(obj_module) ) {
@@ -157,7 +160,7 @@ namespace ama {
 				std::string s_fixed_code = GetScriptJSCode(fn_final);
 				if ( !s_fixed_code.size() ) {
 					JS_SetPropertyStr(ctx, g_require_cache, fn_final.c_str(), JS_UNDEFINED);
-					return JS_ThrowReferenceError(ctx, "module `%s` not found", fn_required.c_str());
+					return JS_ThrowReferenceError(ctx, "module `%s` not found", JS_ToCString(ctx, argv[intptr_t(1L)]));
 				}
 				JSValueConst ret = JS_Eval(
 					ctx, (char const*)(s_fixed_code.data()),
@@ -343,13 +346,13 @@ namespace ama {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a file name");
 		}
-		return JS_NewInt32(ctx, ProcessAmaFile(JS_ToCString(ctx, argv[0]), argc < 2 ? (JC::unique_string("")) : ama::UnwrapString(argv[1])));
+		return JS_NewInt32(ctx, ProcessAmaFile(JS_ToCString(ctx, argv[0]), argc < 2 ? (ama::gcstring("")) : ama::UnwrapString(argv[1])));
 	}
 	static JSValueConst JSCreateNode(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv, int magic) {
 		ama::Node* c = (ama::Node*)(nullptr);
-		JC::unique_string data{};
+		ama::gcstring data{};
 		for (int i = argc - 1; i >= 0; --i) {
-			if ( data == nullptr && JS_IsString(argv[i]) ) {
+			if ( data.empty() && JS_IsString(argv[i]) ) {
 				data = ama::UnwrapString(argv[i]);
 				continue;
 			}
@@ -486,7 +489,7 @@ namespace ama {
 		}
 	#endif
 	static JSValueConst JSStatSync(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
-		JC::unique_string fn = ama::UnwrapString(argv[intptr_t(0L)]);
+		ama::gcstring fn = ama::UnwrapString(argv[intptr_t(0L)]);
 		#if defined(_WIN32)
 			std::vector<uint16_t> fnw = fs::PathToWindows(fn);
 			WIN32_FIND_DATAW find_data{};
@@ -970,11 +973,11 @@ namespace ama {
 		JS_SetPropertyStr(ama::jsctx, g_native_library_proto, "load", JS_NewCFunction(ama::jsctx, JSLoadNativeLibrary, "load", 1));
 		/////////////
 		//run the JS part of the initialization
-		JC::unique_string fn_initjs = ama::FindCommonJSModuleByPath(JC::array_cast<JC::unique_string>(path::normalize(JC::string_concat(ama::std_module_dir, path::sep, "_init.js"))));
-		if ( fn_initjs == nullptr ) {
-			fn_initjs = ama::FindCommonJSModuleByPath(JC::array_cast<JC::unique_string>(path::normalize(JC::string_concat(ama::std_module_dir_global, path::sep, "_init.js"))));
+		ama::gcstring fn_initjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir, path::sep, "_init.js"))));
+		if ( fn_initjs.empty() ) {
+			fn_initjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir_global, path::sep, "_init.js"))));
 		}
-		if ( fn_initjs == nullptr ) {
+		if ( fn_initjs.empty() ) {
 			//we NEED that
 			fprintf(stderr, "panic: failed to find ${AMA_MODULES}/_init.js, things could break\n");
 		} else {

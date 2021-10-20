@@ -1,10 +1,9 @@
+#include <string>
+#include <vector>
 #include "../../modules/cpp/json/json.h"
 #include "../ast/node.hpp"
 #include "postfix.hpp"
-#include <string>
-#include <vector>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
 namespace ama {
 	static inline int isCPPLambda(ama::Node* ndi) {
 		return ndi->node_class == ama::N_CALL && ndi->c->isRawNode('[', ']');
@@ -29,15 +28,15 @@ namespace ama {
 				//strip trailing ','s
 				if ( ndi->isRawNode(0, 0) ) {
 					if ( comma_group.size() ) {
-						comma_group[comma_group.size() - 1]->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_before));
+						comma_group[comma_group.size() - 1]->comments_after = (ama::gcscat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_before));
 					} else {
 						pending_comments_before--->push(ndi->comments_before);
 					}
 					for (ama::Node* ndk = ndi->c; ndk; ndk = ndk->s) {
 						if ( ndk->isSymbol(",") ) {
 							ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
-							nd_arg->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(pending_comments_before, nd_arg->comments_before));
-							nd_arg->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_arg->comments_after, ndk->comments_before));
+							nd_arg->comments_before = (ama::gcscat(pending_comments_before, nd_arg->comments_before));
+							nd_arg->comments_after = (ama::gcscat(nd_arg->comments_after, ndk->comments_before));
 							new_children.push_back(nd_arg);
 							pending_comments_before.clear();
 							pending_comments_before--->push(ndk->comments_after);
@@ -48,14 +47,14 @@ namespace ama {
 						}
 					}
 					if ( comma_group.size() ) {
-						comma_group[comma_group.size() - 1]->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_after));
+						comma_group[comma_group.size() - 1]->comments_after = (ama::gcscat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_after));
 					} else {
 						pending_comments_before--->push(ndi->comments_after);
 					}
 				} else if ( ndi->isSymbol(",") ) {
 					ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
-					nd_arg->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(pending_comments_before, nd_arg->comments_before));
-					nd_arg->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_arg->comments_after, ndi->comments_before));
+					nd_arg->comments_before = (ama::gcscat(pending_comments_before, nd_arg->comments_before));
+					nd_arg->comments_after = (ama::gcscat(nd_arg->comments_after, ndi->comments_before));
 					new_children.push_back(nd_arg);
 					pending_comments_before.clear();
 					pending_comments_before--->push(ndi->comments_after);
@@ -68,7 +67,7 @@ namespace ama {
 			//we could get comma_group.size() == 0 for a(foo,)
 			if ( comma_group.size() > 0 || new_children.size() > 0 ) {
 				ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
-				nd_arg->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(pending_comments_before, nd_arg->comments_before));
+				nd_arg->comments_before = (ama::gcscat(pending_comments_before, nd_arg->comments_before));
 				new_children.push_back(nd_arg);
 				pending_comments_before.clear();
 			}
@@ -83,7 +82,7 @@ namespace ama {
 		//.setCommentsAfter(nd_arglist.comments_after)
 		ama::Node* nd_call = nd_tmp->ReplaceWith(ama::CreateNodeFromChildren(call_class, new_children));
 		if ( pending_comments_before.size() ) {
-			nd_call->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(pending_comments_before, nd_call->comments_after));
+			nd_call->comments_after = (ama::gcscat(pending_comments_before, nd_call->comments_after));
 			pending_comments_before.clear();
 		}
 		//console.log(JSON.stringify(ndi.toSource()), JSON.stringify(ndi.comments_after));
@@ -98,84 +97,66 @@ namespace ama {
 	}
 	ama::Node* ParsePostfix(ama::Node* nd_root, int parse_air_object) {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
-		{
-			std::vector<ama::Node*> a = std::vector<ama::Node*> {nd_root}--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE, nullptr), nd_root->FindAllWithin(0, ama::N_RAW, nullptr));
-			for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
-				{
-					ama::Node* ndi = a[i]->c;
-					int LAST_PROTOTYPE_NONE = 0;
-					int LAST_PROTOTYPE_CPP_LAMBDA = 1;
-					int LAST_PROTOTYPE_MAYBE_SUFFIX = 2;
-					int last_prototype_kind = 0;
-					while ( ndi ) {
-						//console.log(intptr_t(ndi), ndi.node_class, ndi.toSource());
-						//Map<ama::Node*, int>! dedup = new Map<ama::Node*, int>!();
-						//for(ama::Node*+! ndj = ndi; ndj; ndj = ndj.s) {
-						//	if( dedup[ndj] ) {
-						//		assert(0);
-						//	}
-						//	dedup[ndj] = 1;
-						//}
-						//(!isCPPLambda(ndi) && ndi.data == "->")
-						//air -> doesn't make sense and it complicates C++ lambda return type parsing
-						ama::Node* ndi_next = ndi->s;
-						if ( parse_air_object && 
-						ndi->node_class == ama::N_SYMBOL && (ndi->data == "." || ndi->data == "::") && 
-						ndi->s && ndi->s->node_class == ama::N_REF ) {
-							//dot
-							int dot_flags = 0;
-							if ( ndi->data == "->" ) {
-								dot_flags = ama::DOT_PTR;
-							} else if ( ndi->data == "::" ) {
-								dot_flags = ama::DOT_CLASS;
-							}
-							JC::unique_string name = ndi_next->data;
-							//.setCommentsBefore(ndi.comments_before).setCommentsAfter(ndi_next.comments_after)
-							ama::Node* nd_dot = ndi->ReplaceUpto(
-								ndi_next,
-								ama::nAir()->setCommentsAfter(JC::array_cast<JC::unique_string>(JC::string_concat(ndi->comments_after, ndi_next->comments_before)))->dot(name)->setFlags(dot_flags)
-							);
-							ndi_next->p = nullptr; ndi_next->FreeASTStorage();
-							ndi->p = nullptr; ndi->s = nullptr; ndi->FreeASTStorage();
-							ndi = nd_dot;
-							continue;
-						} else if ( ndi->isSymbol(".") && ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('{', '}') || ndi_next->node_class == ama::N_SCOPE) ) {
-							//nodeof
-							ndi_next->Unlink();
-							ndi = ndi->ReplaceWith(ama::nNodeof(ndi_next)->setIndent(ndi->indent_level));
-							continue;
-						} else if ( ndi->node_class == ama::N_SYMBOL ) {
-							//do nothing
-						} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
-						(ndi_next->data == "." || (!isCPPLambda(ndi) && ndi_next->data == "->") || ndi_next->data == "::") && 
-						ndi_next->s && ndi_next->s->node_class == ama::N_REF ) {
-							//dot
-							int dot_flags = 0;
-							if ( ndi_next->data == "->" ) {
-								dot_flags = ama::DOT_PTR;
-							} else if ( ndi_next->data == "::" ) {
-								dot_flags = ama::DOT_CLASS;
-							}
-							ama::Node* nd_name = ndi_next->s;
-							nd_name->MergeCommentsBefore(ndi_next);
-							JC::unique_string name = nd_name->data;
-							ama::Node* nd_tmp = ama::GetPlaceHolder();
-							ndi->ReplaceUpto(nd_name, nd_tmp);
-							ndi->BreakSibling();
-							ndi = nd_tmp->ReplaceWith(
-								ndi->MergeCommentsAndIndentAfter(ndi_next)->MergeCommentsAfter(nd_name)->dot(name)->setFlags(dot_flags)->setCommentsAfter(nd_name->comments_after)
-							);
-							nd_name->p = nullptr; nd_name->FreeASTStorage();
-							ndi_next->p = nullptr; ndi_next->FreeASTStorage();
-							continue;
-						} else if(ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size() ) {
-							//call
-							ndi = TranslatePostfixCall(ndi);
-							continue;
-						}
-						ndi = ndi_next;
+		std::vector<ama::Node*> a = std::vector<ama::Node*> {nd_root}--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
+		for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
+			ama::Node* ndi = a[i]->c;
+			while ( ndi ) {
+				ama::Node* ndi_next = ndi->s;
+				if ( parse_air_object && 
+				ndi->node_class == ama::N_SYMBOL && (ndi->data == "." || ndi->data == "::") && 
+				ndi->s && ndi->s->node_class == ama::N_REF ) {
+					//dot
+					int dot_flags = 0;
+					if ( ndi->data == "->" ) {
+						dot_flags = ama::DOT_PTR;
+					} else if ( ndi->data == "::" ) {
+						dot_flags = ama::DOT_CLASS;
 					}
+					ama::gcstring name = ndi_next->data;
+					//.setCommentsBefore(ndi.comments_before).setCommentsAfter(ndi_next.comments_after)
+					ama::Node* nd_dot = ndi->ReplaceUpto(
+						ndi_next,
+						ama::nAir()->setCommentsAfter((ama::gcscat(ndi->comments_after, ndi_next->comments_before)))->dot(name)->setFlags(dot_flags)
+					);
+					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
+					ndi->p = nullptr; ndi->s = nullptr; ndi->FreeASTStorage();
+					ndi = nd_dot;
+					continue;
+				} else if ( ndi->isSymbol(".") && ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('{', '}') || ndi_next->node_class == ama::N_SCOPE) ) {
+					//nodeof
+					ndi_next->Unlink();
+					ndi = ndi->ReplaceWith(ama::nNodeof(ndi_next)->setIndent(ndi->indent_level));
+					continue;
+				} else if ( ndi->node_class == ama::N_SYMBOL ) {
+					//do nothing
+				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
+				(ndi_next->data == "." || (!isCPPLambda(ndi) && ndi_next->data == "->") || ndi_next->data == "::") && 
+				ndi_next->s && ndi_next->s->node_class == ama::N_REF ) {
+					//dot
+					int dot_flags = 0;
+					if ( ndi_next->data == "->" ) {
+						dot_flags = ama::DOT_PTR;
+					} else if ( ndi_next->data == "::" ) {
+						dot_flags = ama::DOT_CLASS;
+					}
+					ama::Node* nd_name = ndi_next->s;
+					nd_name->MergeCommentsBefore(ndi_next);
+					ama::gcstring name = nd_name->data;
+					ama::Node* nd_tmp = ama::GetPlaceHolder();
+					ndi->ReplaceUpto(nd_name, nd_tmp);
+					ndi->BreakSibling();
+					ndi = nd_tmp->ReplaceWith(
+						ndi->MergeCommentsAndIndentAfter(ndi_next)->MergeCommentsAfter(nd_name)->dot(name)->setFlags(dot_flags)->setCommentsAfter(nd_name->comments_after)
+					);
+					nd_name->p = nullptr; nd_name->FreeASTStorage();
+					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
+					continue;
+				} else if(ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size() ) {
+					//call
+					ndi = TranslatePostfixCall(ndi);
+					continue;
 				}
+				ndi = ndi_next;
 			}
 		}
 		return nd_root;

@@ -17,7 +17,7 @@ add_library(amal SHARED
 	"src/script/quickjs/src/libunicode.c"
 	"src/script/quickjs/src/cutils.c"
 	"modules/cpp/json/json.cpp"
-	"src/util/jc_unique_string.cpp"
+	"src/util/gcstring.cpp"
 	"src/util/fix_win_console.cpp"
 	"src/parser/charset.cpp"
 	"src/util/mempool.cpp"

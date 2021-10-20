@@ -56,12 +56,12 @@ namespace ama {
 	}
 	auto NodeGet_data(JSContext* jsctx, JSValueConst this_val) {
 		auto nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		return ama::WrapStringNullable(nd->data);
+		return ama::WrapString(nd->data);
 	}
 	auto NodeSet_data(JSContext* jsctx, JSValueConst this_val, JSValueConst val) {
 		auto nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		if (JS_IsNull(val)) {
-			nd->data = NULL;
+		if (JS_IsNull(val) || JS_IsUndefined(val)) {
+			nd->data = "";
 		} else {
 			if (!JS_IsString(val)) {
 				return JS_ThrowTypeError(jsctx, "string expected for `val`");
@@ -72,12 +72,12 @@ namespace ama {
 	}
 	auto NodeGet_comments_before(JSContext* jsctx, JSValueConst this_val) {
 		auto nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		return ama::WrapStringNullable(nd->comments_before);
+		return ama::WrapString(nd->comments_before);
 	}
 	auto NodeSet_comments_before(JSContext* jsctx, JSValueConst this_val, JSValueConst val) {
 		auto nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		if (JS_IsNull(val)) {
-			nd->comments_before = NULL;
+		if (JS_IsNull(val) || JS_IsUndefined(val)) {
+			nd->comments_before = "";
 		} else {
 			if (!JS_IsString(val)) {
 				return JS_ThrowTypeError(jsctx, "string expected for `val`");
@@ -88,12 +88,12 @@ namespace ama {
 	}
 	auto NodeGet_comments_after(JSContext* jsctx, JSValueConst this_val) {
 		auto nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		return ama::WrapStringNullable(nd->comments_after);
+		return ama::WrapString(nd->comments_after);
 	}
 	auto NodeSet_comments_after(JSContext* jsctx, JSValueConst this_val, JSValueConst val) {
 		auto nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		if (JS_IsNull(val)) {
-			nd->comments_after = NULL;
+		if (JS_IsNull(val) || JS_IsUndefined(val)) {
+			nd->comments_after = "";
 		} else {
 			if (!JS_IsString(val)) {
 				return JS_ThrowTypeError(jsctx, "string expected for `val`");
@@ -145,7 +145,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNode(nd->setData(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNode(nd->setData(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_setFlags(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -162,7 +162,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNode(nd->setCommentsBefore(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNode(nd->setCommentsBefore(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_setCommentsAfter(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -171,7 +171,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNode(nd->setCommentsAfter(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNode(nd->setCommentsAfter(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_setIndent(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -245,7 +245,7 @@ namespace ama {
 	}
 	JSValue NodeCall_GetStringValue(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		return ama::WrapStringNullable(nd->GetStringValue());
+		return ama::WrapString(nd->GetStringValue());
 	}
 	JSValue NodeCall_dot(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -254,7 +254,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNode(nd->dot(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNode(nd->dot(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_FreeASTStorage(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -271,7 +271,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(1<argc?argv[1L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNode(nd->Find(res8, argc > 1 && !JS_IsNull(argv[1L]) ? ama::UnwrapString((1 < argc ? argv[1L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNode(nd->Find(res8, argc > 1 && !JS_IsNull(argv[1L]) ? ama::UnwrapString((1 < argc ? argv[1L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_FindAll(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -284,7 +284,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(1<argc?argv[1L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNodeArray(nd->FindAll(res9, argc > 1 && !JS_IsNull(argv[1L]) ? ama::UnwrapString((1 < argc ? argv[1L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNodeArray(nd->FindAll(res9, argc > 1 && !JS_IsNull(argv[1L]) ? ama::UnwrapString((1 < argc ? argv[1L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_FindAllWithin(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -301,7 +301,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(2<argc?argv[2L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNodeArray(nd->FindAllWithin(res10, res11, argc > 2 && !JS_IsNull(argv[2L]) ? ama::UnwrapString((2 < argc ? argv[2L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNodeArray(nd->FindAllWithin(res10, res11, argc > 2 && !JS_IsNull(argv[2L]) ? ama::UnwrapString((2 < argc ? argv[2L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_FindAllBefore(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -318,7 +318,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(3<argc?argv[3L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNodeArray(nd->FindAllBefore(ama::UnwrapNode((0 < argc ? argv[0L] : JS_UNDEFINED)), res12, res13, argc > 3 && !JS_IsNull(argv[3L]) ? ama::UnwrapString((3 < argc ? argv[3L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNodeArray(nd->FindAllBefore(ama::UnwrapNode((0 < argc ? argv[0L] : JS_UNDEFINED)), res12, res13, argc > 3 && !JS_IsNull(argv[3L]) ? ama::UnwrapString((3 < argc ? argv[3L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_isRawNode(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -334,7 +334,7 @@ namespace ama {
 	}
 	JSValue NodeCall_GetName(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		return ama::WrapStringNullable(nd->GetName());
+		return ama::WrapString(nd->GetName());
 	}
 	JSValue NodeCall_toSource(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -347,7 +347,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
 			}
 		}
-		return JS_NewInt32(jsctx, nd->isMethodCall(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : nullptr));
+		return JS_NewInt32(jsctx, nd->isMethodCall(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_InsertDependency(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -360,7 +360,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(1<argc?argv[1L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNode(nd->InsertDependency(res16, argc > 1 && !JS_IsNull(argv[1L]) ? ama::UnwrapString((1 < argc ? argv[1L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNode(nd->InsertDependency(res16, argc > 1 && !JS_IsNull(argv[1L]) ? ama::UnwrapString((1 < argc ? argv[1L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_InsertCommentBefore(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -369,7 +369,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
 			}
 		}
-		return ama::WrapNode(nd->InsertCommentBefore(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : nullptr));
+		return ama::WrapNode(nd->InsertCommentBefore(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_MergeCommentsBefore(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -385,7 +385,7 @@ namespace ama {
 	}
 	JSValue NodeCall_DestroyForSymbol(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
-		return ama::WrapStringNullable(nd->DestroyForSymbol());
+		return ama::WrapString(nd->DestroyForSymbol());
 	}
 	JSValue NodeCall_isSymbol(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -394,7 +394,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
 			}
 		}
-		return JS_NewInt32(jsctx, nd->isSymbol(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : nullptr));
+		return JS_NewInt32(jsctx, nd->isSymbol(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_isRef(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -403,7 +403,7 @@ namespace ama {
 				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
 			}
 		}
-		return JS_NewInt32(jsctx, nd->isRef(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : nullptr));
+		return JS_NewInt32(jsctx, nd->isRef(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : ""));
 	}
 	JSValue NodeCall_Validate(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));

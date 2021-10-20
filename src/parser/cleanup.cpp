@@ -3,11 +3,10 @@
 #include "cleanup.hpp"
 #include <vector>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
 namespace ama {
 	ama::Node* CleanupDummyRaws(ama::Node* nd_root) {
 		//need cleanup inside nodeofs
-		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( (nd_raw->flags & 0xffff) != 0 || nd_raw == nd_root ) { continue; }
 			if ( !nd_raw->c && nd_raw->p && nd_raw->p->node_class == ama::N_RAW ) {
 				nd_raw->Unlink();
@@ -27,8 +26,8 @@ namespace ama {
 				//associate the first "line" of multi-line comments with the previous statement
 				intptr_t p_newline = nd->comments_before--->indexOf('\n');
 				if ( p_newline > intptr_t(0L) ) {
-					ndi_last->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(ndi_last->comments_after, nd->comments_before--->subarray(0, p_newline)));
-					nd->comments_before = JC::array_cast<JC::unique_string>(nd->comments_before--->subarray(p_newline));
+					ndi_last->comments_after = (ama::gcscat(ndi_last->comments_after, nd->comments_before--->subarray(0, p_newline)));
+					nd->comments_before = ama::gcstring(nd->comments_before--->subarray(p_newline));
 				}
 			}
 			if ( nd->c && 
@@ -39,7 +38,7 @@ namespace ama {
 			nd->node_class == ama::N_LABELED || nd->node_class == ama::N_SEMICOLON || 
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
 				if ( nd->c->comments_before.size() ) {
-					nd->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(nd->comments_before, nd->c->comments_before));
+					nd->comments_before = (ama::gcscat(nd->comments_before, nd->c->comments_before));
 					nd->c->comments_before = "";
 				}
 			}
@@ -51,7 +50,7 @@ namespace ama {
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
 				ama::Node* nd_last = nd->LastChild();
 				if ( nd_last->comments_after.size() ) {
-					nd->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd->comments_after, nd_last->comments_after));
+					nd->comments_after = (ama::gcscat(nd->comments_after, nd_last->comments_after));
 					nd_last->comments_after = "";
 				}
 			}
@@ -129,7 +128,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* FixPriorityReversal(ama::Node* nd_root) {
-		for ( ama::Node* const &nd_label: nd_root->FindAll(ama::N_LABELED, nullptr) ) {
+		for ( ama::Node* nd_label: nd_root->FindAll(ama::N_LABELED) ) {
 			if ( nd_label->p && nd_label->p->node_class == ama::N_ASSIGNMENT && nd_label->p->c == nd_label ) {
 				//fix the priority reversal
 				ama::Node* nd_asgn = nd_label->p;
@@ -148,20 +147,20 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* NodifySemicolonAndParenthesis(ama::Node* nd_root) {
-		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE, nullptr);
+		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
 		scopes--->push(nd_root);
-		for ( ama::Node const* const& nd_nodeof: nd_root->FindAllWithin(0, ama::N_NODEOF, nullptr) ) {
+		for ( ama::Node const* const& nd_nodeof: nd_root->FindAllWithin(0, ama::N_NODEOF) ) {
 			if ( nd_nodeof->c ) {
 				scopes--->push(nd_nodeof->c);
 			}
 		}
-		for ( ama::Node* const &nd_scope: scopes ) {
+		for ( ama::Node* nd_scope: scopes ) {
 			for (ama::Node* ndi = nd_scope->c; ndi; ndi = ndi->s) {
 				while ( ndi->s && ndi->s->isSymbol(";") ) {
 					ama::Node* nd_semicolon = ndi->s;
 					ndi->Unlink();
 					nd_semicolon->node_class = ama::N_SEMICOLON;
-					nd_semicolon->data = nullptr;
+					nd_semicolon->data = "";
 					nd_semicolon->indent_level = ndi->indent_level;
 					nd_semicolon->Insert(ama::POS_FRONT, ndi);
 					ndi->indent_level = 0;
@@ -170,7 +169,7 @@ namespace ama {
 				}
 			}
 		}
-		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( nd_raw->isRawNode('(', ')') && nd_raw->c && !nd_raw->c->s ) {
 				nd_raw->node_class = ama::N_PAREN;
 				nd_raw->flags = 0;

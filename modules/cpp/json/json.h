@@ -7,7 +7,6 @@
 #include <cmath>
 #include <cstdlib>
 #include "../../../src/util/jc_array.h"
-#include "../../../src/util/jc_unique_string.h"
 #ifndef NDEBUG
 #include <stdio.h>
 #endif
@@ -31,10 +30,6 @@ namespace JSON{
 	template<typename T>
 	typename std::enable_if<std::is_same<T,bool>::value,void>::type stringifyTo(std::string &buf,T a){
 		if(a){buf+="true";}else{buf+="false";}
-	}
-	template<typename T>
-	typename std::enable_if<std::is_same<T,JC::unique_string>::value,void>::type stringifyTo(std::string &buf,T const& a){
-		if(a.p){stringifyTo(buf,std::span<char>(a));}else{buf+="null";}
 	}
 	static inline void stringifyTo(std::string &buf,const char* a){stringifyTo(buf,std::span<char>(a));}
 	static inline void stringifyTo(std::string &buf,int32_t a){stringifyTo(buf,(int64_t)a);}
@@ -167,14 +162,6 @@ namespace JSON{
 	}
 	//strings
 	std::string parseFrom(JSONParserContext& ctx,std::string**);
-	static inline JC::unique_string parseFrom(JSONParserContext& ctx,JC::unique_string**){
-		if(ctx.begin!=ctx.end&&*ctx.begin=='n'){
-			ctx.SkipNumber();
-			return JC::unique_string(nullptr);
-		}else{
-			return JC::unique_string(parseFrom(ctx,(std::string**)NULL));
-		}
-	}
 	//forward decl for overloads
 	template<typename T>
 	std::shared_ptr<T> parseFrom(JSONParserContext& ctx,std::shared_ptr<T>**);

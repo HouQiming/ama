@@ -1,6 +1,5 @@
 //CPP (C Pre-Processor) command fix for the {parse_indent_as_scope:1} mode 
 'use strict'
-//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 module.exports = function DropCPPCommandScopes(nd_root) {
 	//N_SCOPE inside N_KEYWORD_STATEMENT
 	for (let nd_stmt of nd_root.FindAll(N_KEYWORD_STATEMENT)) {

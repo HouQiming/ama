@@ -1,7 +1,6 @@
 #include <vector>
 #include <unordered_map>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "operator.hpp"
@@ -61,7 +60,7 @@ namespace ama {
 		return nd_next;
 	}
 	ama::Node* ParseColons(ama::Node* nd_root, int has_c_conditional) {
-		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( !nd_raw->c ) { continue; }
 			//console.error('--------');
 			//console.error(nd_raw.toSource());
@@ -115,8 +114,8 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* ParseAssignment(ama::Node* nd_root, JSValueConst options) {
-		std::unordered_map<JC::unique_string, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
-		std::vector<ama::Node*> Q = nd_root->FindAllWithin(0, ama::N_RAW, nullptr);
+		std::unordered_map<ama::gcstring, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
+		std::vector<ama::Node*> Q = nd_root->FindAllWithin(0, ama::N_RAW);
 		for (intptr_t i = 0; i < Q.size(); i++) {
 			ama::Node* nd_raw = Q[i];
 			ama::Node* ndi = nd_raw->c;
@@ -160,7 +159,7 @@ namespace ama {
 		return nd_root;
 	}
 	//COULDDO: lazy parsing with OwningUnparsedExpr  
-	static int FoldBinop(std::unordered_map<JC::unique_string, int> const& binop_priority, std::vector<ama::Node*>& stack, int pr) {
+	static int FoldBinop(std::unordered_map<ama::gcstring, int> const& binop_priority, std::vector<ama::Node*>& stack, int pr) {
 		int changed = 0;
 		while ( stack.size() >= 3 && stack.back()->node_class != ama::N_SYMBOL && 
 		stack[stack.size() - 2]->node_class == ama::N_SYMBOL && stack[stack.size() - 3]->node_class != ama::N_SYMBOL && 
@@ -203,15 +202,15 @@ namespace ama {
 		return nd_operand;
 	}
 	ama::Node* ParseOperators(ama::Node* nd_root, JSValueConst options) {
-		std::unordered_map<JC::unique_string, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
-		std::unordered_map<JC::unique_string, int> prefix_ops = ama::GetPrioritizedList(options, "prefix_operators");
-		std::unordered_map<JC::unique_string, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
-		std::unordered_map<JC::unique_string, int> named_ops = ama::GetPrioritizedList(options, "named_operators");
-		std::unordered_map<JC::unique_string, int> c_type_prefix_operators = ama::GetPrioritizedList(options, "c_type_prefix_operators");
-		std::unordered_map<JC::unique_string, int> is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
-		std::unordered_map<JC::unique_string, int> cv_qualifiers = ama::GetPrioritizedList(options, "cv_qualifiers");
+		std::unordered_map<ama::gcstring, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
+		std::unordered_map<ama::gcstring, int> prefix_ops = ama::GetPrioritizedList(options, "prefix_operators");
+		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
+		std::unordered_map<ama::gcstring, int> named_ops = ama::GetPrioritizedList(options, "named_operators");
+		std::unordered_map<ama::gcstring, int> c_type_prefix_operators = ama::GetPrioritizedList(options, "c_type_prefix_operators");
+		std::unordered_map<ama::gcstring, int> is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		std::unordered_map<ama::gcstring, int> cv_qualifiers = ama::GetPrioritizedList(options, "cv_qualifiers");
 		//named operators: convert refs to symbols
-		for ( ama::Node* const &nd_ref: nd_root->FindAllWithin(0, ama::N_REF, nullptr) ) {
+		for ( ama::Node* const &nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( named_ops--->get(nd_ref->data) || (c_type_prefix_operators--->get(nd_ref->data) && nd_ref->s && nd_ref->s->node_class == ama::N_REF && nd_ref->p && nd_ref->p->node_class == ama::N_RAW) ) {
 				nd_ref->node_class = ama::N_SYMBOL;
 			}
@@ -220,7 +219,7 @@ namespace ama {
 		//we need to leave uninterpreted structures alone
 		//reverse() to fold smaller raws first
 		{
-			std::vector<ama::Node*> a = nd_root->FindAllWithin(0, ama::N_RAW, nullptr);
+			std::vector<ama::Node*> a = nd_root->FindAllWithin(0, ama::N_RAW);
 			for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 				{
 					//binary and unary in one pass
@@ -320,7 +319,7 @@ namespace ama {
 		//	}
 		//}
 		//convert failed-to-fold named ops back
-		for ( ama::Node* const &nd_ref: nd_root->FindAllWithin(0, ama::N_SYMBOL, nullptr) ) {
+		for ( ama::Node* const &nd_ref: nd_root->FindAllWithin(0, ama::N_SYMBOL) ) {
 			if ( named_ops--->get(nd_ref->data) || c_type_prefix_operators--->get(nd_ref->data) ) {
 				nd_ref->node_class = ama::N_REF;
 			}
@@ -328,7 +327,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* ParsePointedBrackets(ama::Node* nd_root) {
-		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			//actually split it
 			std::vector<ama::Node*> stack{};
 			int was_ref = 0;

@@ -1,5 +1,4 @@
 'use strict'
-//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 const depends = require('depends');
 const classes = require('class');
 const assert = require('assert');

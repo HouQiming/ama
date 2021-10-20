@@ -1,33 +1,30 @@
+#include <vector>
+#include <unordered_map>
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "postfix.hpp"
 #include "decl.hpp"
 #include "operator.hpp"
 #include "scoping.hpp"
-#include <vector>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
-#include <unordered_map>
 namespace ama {
 	static ama::Node* ConvertToParameterList(ama::Node* nd_raw) {
 		assert(nd_raw->isRawNode('(', ')'));
 		std::vector<ama::Node*> params{};
-		for (ama::Node* ndi_0 = nd_raw->c; ndi_0; ndi_0 = ndi_0->s) {
-			{
-				if ( ndi_0->isSymbol(",") ) { continue; }
-				if ( ndi_0->isRawNode(0, 0) && ndi_0->c && ndi_0->c->s && ndi_0->LastChild()->isSymbol(",") ) {
-					ama::Node* nd_comma_0 = ndi_0->LastChild();
-					nd_comma_0->Unlink();
-					ama::Node* nd_arg_last_0 = ndi_0->LastChild();
-					nd_arg_last_0->MergeCommentsAndIndentAfter(nd_comma_0);
-					ndi_0->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(ndi_0->comments_after, nd_comma_0->comments_after));
-					nd_comma_0->FreeASTStorage();
-					if ( !ndi_0->c->s ) {
-						ndi_0 = ama::UnparseRaw(ndi_0);
-					}
+		for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
+			if ( ndi->isSymbol(",") ) { continue; }
+			if ( ndi->isRawNode(0, 0) && ndi->c && ndi->c->s && ndi->LastChild()->isSymbol(",") ) {
+				ama::Node* nd_comma = ndi->LastChild();
+				nd_comma->Unlink();
+				ama::Node* nd_arg_last = ndi->LastChild();
+				nd_arg_last->MergeCommentsAndIndentAfter(nd_comma);
+				ndi->comments_after = (ama::gcscat(ndi->comments_after, nd_comma->comments_after));
+				nd_comma->FreeASTStorage();
+				if ( !ndi->c->s ) {
+					ndi = ama::UnparseRaw(ndi);
 				}
-				params--->push(ndi_0);
 			}
+			params--->push(ndi);
 		}
 		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params)->setIndent(nd_raw->indent_level)->setCommentsBefore(nd_raw->comments_before)->setCommentsAfter(nd_raw->comments_after);
 	}
@@ -76,10 +73,10 @@ namespace ama {
 		}
 		nd_scoped_body->indent_level = nd_keyword->indent_level;
 		if ( nd_body->comments_after--->indexOf('\n') >= 0 && nd_stmt->comments_after--->indexOf('\n') < 0 ) {
-			nd_stmt->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_stmt->comments_after, "\n"));
+			nd_stmt->comments_after = (ama::gcscat(nd_stmt->comments_after, "\n"));
 		}
 		if ( nd_body->comments_before--->indexOf('\n') >= 0 && nd_body->comments_after--->indexOf('\n') < 0 ) {
-			nd_body->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_body->comments_after, "\n"));
+			nd_body->comments_after = (ama::gcscat(nd_body->comments_after, "\n"));
 		}
 		nd_body->AdjustIndentLevel(-nd_scoped_body->indent_level);
 		nd_stmt->Insert(
@@ -140,17 +137,17 @@ namespace ama {
 	//	return NULL;
 	//}
 	ama::Node* ParseScopedStatements(ama::Node* nd_root, JSValue options) {
-		std::unordered_map<JC::unique_string, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
-		std::unordered_map<JC::unique_string, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
-		std::unordered_map<JC::unique_string, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
-		std::unordered_map<JC::unique_string, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
-		std::unordered_map<JC::unique_string, int> keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
-		std::unordered_map<JC::unique_string, int> keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
-		std::unordered_map<JC::unique_string, int> keywords_not_a_function = ama::GetPrioritizedList(options, "keywords_not_a_function");
+		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
+		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
+		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
+		std::unordered_map<ama::gcstring, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
+		std::unordered_map<ama::gcstring, int> keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
+		std::unordered_map<ama::gcstring, int> keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
+		std::unordered_map<ama::gcstring, int> keywords_not_a_function = ama::GetPrioritizedList(options, "keywords_not_a_function");
 		int32_t parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_forward_declarations"), 1);
 		int32_t parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp11_lambda"), 1);
 		int32_t struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "struct_can_be_type_prefix"), 1);
-		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( !nd_raw->p ) { continue; }
 			if ( nd_raw->p->node_class == ama::N_KEYWORD_STATEMENT && nd_raw->p->data--->startsWith('#') ) {
 				//the `defined()` in #if defined(){}
@@ -176,8 +173,8 @@ namespace ama {
 				}
 				if ( !nd_keyword && (ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL) ) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
-					JC::unique_string name = ndi->GetName();
-					if ( name != nullptr ) {
+					ama::gcstring name = ndi->GetName();
+					if ( !name.empty() ) {
 						if ( keywords_class--->get(name) ) {
 							nd_pending_else = nullptr;
 							nd_keyword = ndi;
@@ -270,10 +267,10 @@ namespace ama {
 								if ( (ndj->node_class == ama::N_SYMBOL || ndj->node_class == ama::N_REF) && keywords_after_class_name--->get(ndj->data) && nd_class_name ) {
 									break;
 								}
-								if ( ndj->node_class == ama::N_REF || ((ndj->node_class == ama::N_CALL || ndj->node_class == ama::N_CALL_TEMPLATE) && ndj->GetName() != nullptr) ) {
+								if ( ndj->node_class == ama::N_REF || ((ndj->node_class == ama::N_CALL || ndj->node_class == ama::N_CALL_TEMPLATE) && !ndj->GetName().empty()) ) {
 									if ( struct_can_be_type_prefix && ndj->node_class == ama::N_CALL ) {
 										//C struct-derived-type-returning function: struct foo bar(){}
-										JC::unique_string keyword = nd_keyword->GetName();
+										ama::gcstring keyword = nd_keyword->GetName();
 										if ( keyword == "struct" || keyword == "union" ) {
 											kw_mode = KW_NONE;
 											nd_keyword = nullptr;
@@ -518,7 +515,7 @@ namespace ama {
 				if ( nd_stmt->c ) {
 					nd_stmt->c->MergeCommentsBefore(nd_keyword);
 				} else {
-					nd_stmt->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_keyword->comments_after, nd_stmt->comments_after));
+					nd_stmt->comments_after = (ama::gcscat(nd_keyword->comments_after, nd_stmt->comments_after));
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				ndi = nd_raw->Insert(ama::POS_BACK, nd_stmt);
@@ -526,7 +523,7 @@ namespace ama {
 		}
 		//C forward declaration
 		if ( parse_c_forward_declarations ) {
-			for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+			for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 				//have to rely on context? we can do Owner tests here 
 				ama::Node* nd_owner = nd_raw->Owner();
 				if ( !(nd_raw->p && (nd_raw->p->node_class == ama::N_SCOPE || nd_raw->p->node_class == ama::N_FILE)) || nd_owner->node_class == ama::N_FUNCTION ) { continue; }
@@ -559,7 +556,7 @@ namespace ama {
 		/////////
 		//don't set REF_WRITTEN for function / class names: it's not profitable to treat them as "written" in our current AST formulation
 		//turn params into N_ASSIGNMENT
-		for ( ama::Node* const &nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST, nullptr)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
+		for ( ama::Node* nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
 			for (ama::Node* nd_param = nd_paramlist->node_class == ama::N_CALL_TEMPLATE ? nd_paramlist->c->s : nd_paramlist->c; nd_param; nd_param = nd_param->s) {
 				if ( nd_param->node_class == ama::N_ASSIGNMENT ) { continue; }
 				if ( nd_param->node_class == ama::N_SYMBOL || (nd_param->node_class == ama::N_RAW && nd_param->c && nd_param->c->node_class == ama::N_SYMBOL) ) {
@@ -574,8 +571,8 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* ParseKeywordStatements(ama::Node* nd_root, JSValue options) {
-		std::unordered_map<JC::unique_string, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
-		for ( ama::Node* const &nd_keyword: nd_root->FindAllWithin(0, ama::N_REF, nullptr) ) {
+		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
+		for ( ama::Node* nd_keyword: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( !keywords_statement--->get(nd_keyword->data) ) { continue; }
 			ama::Node* nd_parent = nd_keyword->p;
 			if ( !nd_parent ) { continue; }
@@ -596,7 +593,7 @@ namespace ama {
 				if ( nd_stmt->c ) {
 					nd_stmt->c->MergeCommentsBefore(nd_keyword);
 				} else {
-					nd_stmt->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_keyword->comments_after, nd_stmt->comments_after));
+					nd_stmt->comments_after = (ama::gcscat(nd_keyword->comments_after, nd_stmt->comments_after));
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				nd_tmp->ReplaceWith(nd_stmt);
@@ -610,7 +607,7 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	static void FixTypeSuffixFromInnerRef(std::unordered_map<JC::unique_string, int> const& ambiguous_type_suffix, ama::Node* nd_ref) {
+	static void FixTypeSuffixFromInnerRef(std::unordered_map<ama::gcstring, int> const& ambiguous_type_suffix, ama::Node* nd_ref) {
 		while ( (nd_ref->p->node_class == ama::N_ITEM || nd_ref->p->node_class == ama::N_CALL) && nd_ref == nd_ref->p->c ) {
 			nd_ref = nd_ref->p;
 		}
@@ -635,10 +632,10 @@ namespace ama {
 	ama::Node* ParseDeclarations(ama::Node* nd_root, JSValue options) {
 		//find declaratives and set REF_DECLARED
 		//also find writes and set REF_WRITTEN
-		std::unordered_map<JC::unique_string, int> ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
-		std::unordered_map<JC::unique_string, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
+		std::unordered_map<ama::gcstring, int> ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		std::unordered_map<ama::gcstring, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
-		for ( ama::Node* const &nd_ref: nd_root->FindAllWithin(0, ama::N_REF, nullptr) ) {
+		for ( ama::Node* nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( nd_ref->p->node_class == ama::N_CLASS && nd_ref->p->c->s == nd_ref ) {
 				//class, just declared and nothing else
 				nd_ref->flags |= ama::REF_DECLARED;
@@ -759,7 +756,7 @@ namespace ama {
 				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_FUNCTION && nd_cdecl->p->c == nd_cdecl ) {
 					//non-dotted function declaration, handle it here, also name the function
 					is_ok = 1;
-					if ( nd_cdecl->p->data == nullptr ) {
+					if ( nd_cdecl->p->data.empty() ) {
 						nd_cdecl->p->data = nd_ref->data;
 					}
 				}
@@ -771,8 +768,8 @@ namespace ama {
 		}
 		//detect type before dotted function name
 		//non-dotted non-C-macro functions should have been handled above
-		for ( ama::Node* nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION, nullptr) ) {
-			if ( nd_func->data != nullptr ) { continue; }
+		for ( ama::Node* nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION) ) {
+			if ( !nd_func->data.empty() ) { continue; }
 			//C++ dotted declaration: `type foo::bar(){}`
 			//common C macro style: `FOO_DECL(int,foo)(int bar){}`
 			nd_func->data = "";

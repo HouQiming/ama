@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
+#include "../util/gcstring.h"
 /*#pragma add("jc_files", "./node.jc");*/
 /*#pragma add("cflags", "-fno-delete-null-pointer-checks");*/
 namespace ama {
@@ -108,10 +108,10 @@ namespace ama {
 		int8_t indent_level{};
 		uint16_t tmp_flags{};
 		uint32_t flags{};
-		JC::unique_string data{};
+		ama::gcstring data{};
 		/////////////
-		JC::unique_string comments_before{};
-		JC::unique_string comments_after{};
+		ama::gcstring comments_before{};
+		ama::gcstring comments_after{};
 		/////////////
 		//child
 		Node* c{};
@@ -122,7 +122,7 @@ namespace ama {
 		//last sibling
 		Node* v{};
 		/////////////
-		inline ama::Node* setData(JC::unique_string data) {
+		inline ama::Node* setData(ama::gcstring data) {
 			this->data = data;
 			return this;
 		}
@@ -130,13 +130,13 @@ namespace ama {
 			this->flags = flags;
 			return this;
 		}
-		inline ama::Node* setCommentsBefore(JC::unique_string comments) {
-			assert(comments != nullptr);
+		inline ama::Node* setCommentsBefore(ama::gcstring comments) {
+			//assert(comments != nullptr);
 			this->comments_before = comments;
 			return this;
 		}
-		inline ama::Node* setCommentsAfter(JC::unique_string comments) {
-			assert(comments != nullptr);
+		inline ama::Node* setCommentsAfter(ama::gcstring comments) {
+			//assert(comments != nullptr);
 			this->comments_after = comments;
 			return this;
 		}
@@ -160,26 +160,26 @@ namespace ama {
 		ama::Node* LastChildSP()const;
 		ama::Node* LastChild()const;
 		ama::Node* CommonAncestor(ama::Node const* b)const;
-		JC::unique_string GetStringValue()const;
-		ama::Node* dot(JC::unique_string name);
+		ama::gcstring GetStringValue()const;
+		ama::Node* dot(ama::gcstring name);
 		void FreeASTStorage();
-		ama::Node* Find(int node_class, JC::unique_string data)const;
-		std::vector<ama::Node*> FindAll(int node_class, JC::unique_string data)const;
-		std::vector<ama::Node*> FindAllWithin(int32_t boundary, int node_class, JC::unique_string data)const;
-		std::vector<ama::Node*> FindAllBefore(ama::Node const* nd_before, int32_t boundary, int node_class, JC::unique_string data)const;
+		ama::Node* Find(int node_class, ama::gcstring data)const;
+		std::vector<ama::Node*> FindAll(int node_class, ama::gcstring data=ama::gcstring())const;
+		std::vector<ama::Node*> FindAllWithin(int32_t boundary, int node_class, ama::gcstring data=ama::gcstring())const;
+		std::vector<ama::Node*> FindAllBefore(ama::Node const* nd_before, int32_t boundary, int node_class, ama::gcstring data=ama::gcstring())const;
 		int isRawNode(char ch_open, char ch_close)const;
-		JC::unique_string GetName()const;
+		ama::gcstring GetName()const;
 		/////////////
 		//src/codegen/gen.jc
 		std::string toSource()const;
-		int isMethodCall(JC::unique_string name)const;
-		ama::Node* InsertDependency(uint32_t flags, JC::unique_string name);
+		int isMethodCall(ama::gcstring name)const;
+		ama::Node* InsertDependency(uint32_t flags, ama::gcstring name);
 		ama::Node* InsertCommentBefore(std::span<char> s);
 		//ama::Node*! Save(ama::Node*! this, char[|]! change_ext);
 		ama::Node* MergeCommentsBefore(ama::Node* nd_before);
 		ama::Node* MergeCommentsAfter(ama::Node* nd_after);
 		ama::Node* MergeCommentsAndIndentAfter(ama::Node* nd_after);
-		JC::unique_string DestroyForSymbol();
+		ama::gcstring DestroyForSymbol();
 		//expr is ill-defined once detached from a base language
 		//NeedTrailingSemicolon is more practical
 		//int! isExpr(ama::Node*! this);
@@ -226,40 +226,40 @@ namespace ama {
 		}
 		return nd;
 	}
-	static inline ama::Node* nString(JC::unique_string s) {
+	static inline ama::Node* nString(ama::gcstring s) {
 		return ama::CreateNode(N_STRING, nullptr)->setFlags(ama::LITERAL_PARSED)->setData(s);
 	}
-	static inline ama::Node* nRef(JC::unique_string s) {
+	static inline ama::Node* nRef(ama::gcstring s) {
 		return ama::CreateNode(N_REF, nullptr)->setData(s);
 	}
-	static inline ama::Node* nSymbol(JC::unique_string s) {
+	static inline ama::Node* nSymbol(ama::gcstring s) {
 		return ama::CreateNode(N_SYMBOL, nullptr)->setData(s);
 	}
-	static inline ama::Node* nNumber(JC::unique_string s) {
+	static inline ama::Node* nNumber(ama::gcstring s) {
 		return ama::CreateNode(N_NUMBER, nullptr)->setData(s);
 	}
 	static inline ama::Node* nNodeof(Node* nd) {
 		nd->s = nullptr;
 		return ama::CreateNode(N_NODEOF, nd);
 	}
-	static inline ama::Node* nPrefix(JC::unique_string s, Node* nd) {
+	static inline ama::Node* nPrefix(ama::gcstring s, Node* nd) {
 		nd->s = nullptr;
 		return ama::CreateNode(N_PREFIX, nd)->setData(s);
 	}
-	static inline ama::Node* nPostfix(Node* nd, JC::unique_string s) {
+	static inline ama::Node* nPostfix(Node* nd, ama::gcstring s) {
 		nd->s = nullptr;
 		return ama::CreateNode(N_POSTFIX, nd)->setData(s);
 	}
 	static inline ama::Node* nAssignment(Node* nd_def, Node* nd_value) {
 		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, nullptr)))->setData("");
 	}
-	static inline ama::Node* nUpdate(Node* nd_def, JC::unique_string op, Node* nd_value) {
+	static inline ama::Node* nUpdate(Node* nd_def, ama::gcstring op, Node* nd_value) {
 		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, nullptr)))->setData(op);
 	}
-	static inline ama::Node* nBinop(Node* nd_a, JC::unique_string op, Node* nd_b) {
+	static inline ama::Node* nBinop(Node* nd_a, ama::gcstring op, Node* nd_b) {
 		return ama::CreateNode(N_BINOP, cons(nd_a, cons(nd_b, nullptr)))->setData(op);
 	}
-	static inline ama::Node* nExtensionClause(JC::unique_string keyword, Node* nd_arg, Node* nd_scope) {
+	static inline ama::Node* nExtensionClause(ama::gcstring keyword, Node* nd_arg, Node* nd_scope) {
 		return ama::CreateNode(N_EXTENSION_CLAUSE, cons(nd_arg, nd_scope))->setData(keyword);
 	}
 	//inline ama::Node*+! nTypedVar(Node*+! nd_type, Node*+! nd_def) {
@@ -272,7 +272,7 @@ namespace ama {
 	static inline ama::Node* nConditional(Node* nd_cond, Node* nd_true, Node* nd_false) {
 		return ama::CreateNode(N_CONDITIONAL, cons(nd_cond, cons(nd_true, cons(nd_false, nullptr))));
 	}
-	static inline ama::Node* nClass(JC::unique_string keyword, Node* nd_before, Node* nd_name, Node* nd_after, Node* nd_body) {
+	static inline ama::Node* nClass(ama::gcstring keyword, Node* nd_before, Node* nd_name, Node* nd_after, Node* nd_body) {
 		assert(nd_name->node_class == N_REF || nd_name->node_class == N_DOT);
 		return ama::CreateNode(N_CLASS, cons(nd_before, cons(nd_name, cons(nd_after, cons(nd_body, nullptr)))))->setData(keyword);
 	}

@@ -1,5 +1,4 @@
 'use strict';
-//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 
 function Transform(nd_root, options) {
 	let all_refs = nd_root.FindAll(N_REF, null);

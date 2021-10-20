@@ -1,11 +1,9 @@
+#include <string>
 #include "../../modules/cpp/json/json.h"
 #include "jsenv.hpp"
 #include "../ast/node.hpp"
 #include "jsenv.hpp"
 #include "nodeof_to_ast.hpp"
-#include <string>
-#include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
 namespace ama {
 	static void dfsTranslate(std::string& ret, ama::Node* nd);
 };
@@ -24,7 +22,7 @@ namespace ama {
 	}
 	static void dfsTranslate(std::string& ret, ama::Node* nd) {
 		if ( nd->node_class == ama::N_NODEOF ) {
-			for ( ama::Node* const &nd_nodeof: nd->c->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF, nullptr) ) {
+			for ( ama::Node* const &nd_nodeof: nd->c->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF) ) {
 				std::string ret2{};
 				dfsTranslateList(ret2, nd_nodeof->c->c);
 				nd_nodeof->ReplaceWith(ParseCode(ret2.c_str(), JS_NULL));
@@ -38,7 +36,7 @@ namespace ama {
 			ret--->push(')');
 		} else {
 			ret--->push(ama::g_builder_names[nd->node_class], '(');
-			if ( nd->data != nullptr ) {
+			if ( !nd->data.empty() ) {
 				if ( nd->node_class == ama::N_STRING ) {
 					//parse it
 					nd->GetStringValue();
@@ -76,11 +74,11 @@ namespace ama {
 		}
 	}
 	ama::Node* NodeofToASTExpression(ama::Node* nd_root) {
-		for ( ama::Node* const &nd_nodeof: nd_root->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF, nullptr) ) {
+		for ( ama::Node* const &nd_nodeof: nd_root->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF) ) {
 			std::string ret{};
 			ama::Node* nd_tmp = nd_nodeof->c->c;
 			int8_t bk_ind = nd_tmp->indent_level;
-			JC::unique_string bk_cmta = nd_tmp->comments_after;
+			ama::gcstring bk_cmta = nd_tmp->comments_after;
 			nd_tmp->comments_after = "";
 			nd_tmp->indent_level = 0;
 			dfsTranslateList(ret, nd_tmp);

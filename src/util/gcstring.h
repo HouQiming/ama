@@ -20,7 +20,7 @@ namespace ama{
 	};
 	//we do enough concatenations to warrant an interface like this
 	gcstring_long* toGCStringLongCat(char const* data0, size_t length0,char const* data1, size_t length1);
-	static inline uint64_t toGCString(char const* data, size_t length){
+	static inline uint64_t toGCStringValue(char const* data, size_t length){
 		if(length<=7){
 			union{
 				uint64_t v;
@@ -30,22 +30,26 @@ namespace ama{
 			memcpy(u.s,data,length);
 			return u.v;
 		}else{
-			return ama::GCS_PTR_TAG^uint64_t(toGCStringLongCat(data,length,nullptr,0));
+			return ama::GCS_PTR_TAG^uint64_t(toGCStringLongCat(data,length,"",0));
 		}
 	}
 	struct raw_construction;
 	struct gcstring{
 		//val could pack a 7- byte zero-terminated string 
-		uint64_t val{};
+		uint64_t val=0;
 		//////////////
 		gcstring():val(0){}
-		gcstring(char const* data, size_t size): val(toGCString(data, size)) {}
-		gcstring(char const* data, char const* data_end): val(toGCString(data, data_end - data)) {}
+		gcstring(char const* data, size_t size): val(toGCStringValue(data, size)) {}
+		gcstring(char const* data, char const* data_end): val(toGCStringValue(data, data_end - data)) {}
 		template<size_t size>
-		gcstring(char const (&data)[size]): val(toGCString(data, size - 1)) {}
-		gcstring(gcstring const& a): val(a.val) {}
+		gcstring(char const (&data)[size]): val(toGCStringValue(data, size - 1)) {}
+		//gcstring(gcstring &&a): val(a.val) {}
+		//gcstring(gcstring const& a): val(a.val) {}
+		gcstring(std::string const& a): val(toGCStringValue(a.data(), a.size())) {}
+		gcstring(std::span<char> a): val(toGCStringValue(a.data(), a.size())) {}
 		//for hacky construction from raw val
 		gcstring(uint64_t val,raw_construction*):val(val){}
+		gcstring(gcstring_long const* s,raw_construction*):val(GCS_PTR_TAG|uint64_t(s)){}
 		//////////////
 		gcstring_long const* _as_long()const{
 			return (gcstring_long const*)(val^GCS_PTR_TAG);
@@ -57,11 +61,11 @@ namespace ama{
 			return this->data();
 		}
 		size_t size()const{
-			if(val&GCS_PTR_TAG){
+			if(this->val&GCS_PTR_TAG){
 				return this->_as_long()->length;
 			}else{
 				size_t ret=0;
-				uint64_t s=val;
+				uint64_t s=this->val;
 				if(s&0xffffffff00000000uLL){s>>=32;ret+=4;}
 				if(s&0xffff0000uLL){s>>=16;ret+=2;}
 				if(s&0xff00uLL){ret+=1;}
@@ -128,6 +132,7 @@ namespace ama{
 		}
 	};
 	void gcstring_gcsweep();
+	ama::gcstring gcscat(std::span<char> a,std::span<char> b);
 }
 namespace JC{
 	template<>

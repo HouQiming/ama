@@ -1,5 +1,4 @@
 'use strict';
-//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 const path = require('path');
 require('class');
 

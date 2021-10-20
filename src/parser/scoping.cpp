@@ -1,7 +1,6 @@
 #include <vector>
 #include <unordered_map>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
 #include "../../modules/cpp/json/json.h"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
@@ -15,7 +14,7 @@ namespace ama {
 			nd_raw->flags &= 0xffff0000u;
 		}
 	}
-	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<JC::unique_string, int> const& keywords_extension_clause, std::span<ama::Node*> lines_out) {
+	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<ama::gcstring, int> const& keywords_extension_clause, std::span<ama::Node*> lines_out) {
 		std::vector<ama::Node*> line_group{};
 		std::vector<ama::Node*> line_out_final{};
 		for (int i0 = 0; i0 < lines_out.size();) {
@@ -28,7 +27,7 @@ namespace ama {
 				((lines_out[i1]->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->data)) || 
 				(lines_out[i1]->node_class == ama::N_RAW && lines_out[i1]->c && lines_out[i1]->c->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->c->data))))) ) {
 					if ( (lines_out[i1 - 1]->node_class == ama::N_SCOPE || lines_out[i1 - 1]->isRawNode('{', '}')) && lines_out[i1]->comments_before--->startsWith('\n') ) {
-						lines_out[i1]->comments_before = JC::array_cast<JC::unique_string>(lines_out[i1]->comments_before--->subarray(1));
+						lines_out[i1]->comments_before = ama::gcstring(lines_out[i1]->comments_before--->subarray(1));
 					}
 					i1 += 1;
 				}
@@ -41,9 +40,9 @@ namespace ama {
 					ama::Node* ndj = lines_out[j];
 					if ( ndj->isRawNode(0, 0) ) {
 						if ( ndj->c ) {
-							ndj->c->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(ndj->comments_before, ndj->c->comments_before));
+							ndj->c->comments_before = (ama::gcscat(ndj->comments_before, ndj->c->comments_before));
 							ama::Node* ndj_last = ndj->LastChild();
-							ndj_last->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(ndj_last->comments_after, ndj->comments_after));
+							ndj_last->comments_after = (ama::gcscat(ndj_last->comments_after, ndj->comments_after));
 						}
 						for (ama::Node* ndi = ndj->c; ndi; ndi = ndi->s) {
 							{
@@ -58,7 +57,7 @@ namespace ama {
 				assert(line_group.size() > 1);
 				ama::Node* nd_raw = ama::CreateNodeFromChildren(ama::N_RAW, line_group);
 				nd_raw->indent_level = line_group[0]->indent_level;
-				for ( ama::Node* const &ndj: line_group ) {
+				for ( ama::Node* ndj: line_group ) {
 					ndj->AdjustIndentLevel(-nd_raw->indent_level);
 				}
 				line_out_final.push_back(nd_raw);
@@ -68,7 +67,7 @@ namespace ama {
 		return std::move(line_out_final);
 	}
 	static void FoldIndentGroup(
-	std::unordered_map<JC::unique_string, int> const& keywords_extension_clause,
+	std::unordered_map<ama::gcstring, int> const& keywords_extension_clause,
 	std::vector<ama::Node*>& lines_out, int32_t level, intptr_t lineno, ama::Node* nd_nextline) {
 		for (intptr_t i = lineno; i < lines_out.size(); i += 1) {
 			lines_out[i]->AdjustIndentLevel(-level);
@@ -81,11 +80,11 @@ namespace ama {
 				if ( nd_new_scope->c ) {
 					ama::Node* nd_last = nd_new_scope->LastChild();
 					if ( nd_last->comments_after--->indexOf('\n') < intptr_t(0L) ) {
-						nd_last->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_last->comments_after, "\n"));
+						nd_last->comments_after = (ama::gcscat(nd_last->comments_after, "\n"));
 					}
 				}
-				nd_new_scope->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_new_scope->comments_after, nd_nextline->comments_before--->subarray(0, p_newline)));
-				nd_nextline->comments_before = JC::array_cast<JC::unique_string>(nd_nextline->comments_before--->subarray(p_newline));
+				nd_new_scope->comments_after = (ama::gcscat(nd_new_scope->comments_after, nd_nextline->comments_before--->subarray(0, p_newline)));
+				nd_nextline->comments_before = ama::gcstring(nd_nextline->comments_before--->subarray(p_newline));
 			}
 			//MergeCommentsAfter(nd_nextline);
 			//console.log(JSON.stringify(nd_new_scope.comments_after))
@@ -93,7 +92,7 @@ namespace ama {
 			if ( nd_new_scope->c ) {
 				ama::Node* nd_last = nd_new_scope->LastChild();
 				if ( nd_last->comments_after--->indexOf('\n') < intptr_t(0L) ) {
-					nd_last->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_last->comments_after, "\n"));
+					nd_last->comments_after = (ama::gcscat(nd_last->comments_after, "\n"));
 				}
 			}
 			nd_new_scope->comments_after = "\n";
@@ -102,9 +101,9 @@ namespace ama {
 		lines_out.push_back(nd_new_scope);
 	}
 	ama::Node* DelimitCLikeStatements(ama::Node* nd_root, JSValue options) {
-		std::unordered_map<JC::unique_string, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
+		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		{
-			std::vector<ama::Node*> a = nd_root->FindAllWithin(0, ama::N_RAW, nullptr);
+			std::vector<ama::Node*> a = nd_root->FindAllWithin(0, ama::N_RAW);
 			for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 				{
 					if ( !(a[i]->flags & 0xffff) && a[i]->p ) {
@@ -112,7 +111,7 @@ namespace ama {
 						//need to do it in reverse order so that we kick out ; before getting to the parent
 						ama::Node* nd_last = a[i]->LastChild();
 						if ( nd_last && nd_last->isSymbol(";") && a[i]->p && (a[i]->p->node_class == ama::N_SCOPE || a[i]->p->node_class == ama::N_RAW) ) {
-							nd_last->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_last->comments_after, a[i]->comments_after));
+							nd_last->comments_after = (ama::gcscat(nd_last->comments_after, a[i]->comments_after));
 							nd_last->AdjustIndentLevel(a[i]->indent_level);
 							a[i]->comments_after = "";
 							nd_last->Unlink();
@@ -222,15 +221,15 @@ namespace ama {
 		int32_t lineno{};
 	};
 	ama::Node* ConvertIndentToScope(ama::Node* nd_root, JSValue options) {
-		std::unordered_map<JC::unique_string, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
-		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE, nullptr);
-		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW, nullptr) ) {
+		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
+		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
+		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( nd_raw->isRawNode('{', '}') ) {
 				scopes--->push(nd_raw);
 			}
 		}
 		scopes.push_back(nd_root);
-		for ( ama::Node* const &nd_scope: scopes ) {
+		for ( ama::Node* nd_scope: scopes ) {
 			std::vector<ama::Node*> lines{};
 			int passed_newline = 1;
 			lines.push_back(nd_scope->c);
@@ -281,7 +280,7 @@ namespace ama {
 			//merge scopes into surrounding raws
 			std::vector<ama::Node*> line_out_final = MergeScopesIntoStatements(keywords_extension_clause, lines_out);
 			//replace old children
-			for ( ama::Node* const &ndi: line_out_final ) {
+			for ( ama::Node* ndi: line_out_final ) {
 				ndi->p = nd_scope;
 				//if( ndi.s ) {
 				//	console.log('has s', ndi.toSource());

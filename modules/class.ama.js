@@ -1,4 +1,3 @@
-//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 'use strict';
 const assert = require('assert');
 const depends = require('depends');

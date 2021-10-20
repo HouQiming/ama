@@ -3,7 +3,6 @@
 #include <vector>
 #include <array>
 #include "../util/jc_array.h"
-#include "../util/jc_unique_string.h"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
 #include "../../modules/cpp/json/json.h"
@@ -29,7 +28,7 @@ struct ParserState {
 	intptr_t indent_level{};
 };
 //updates comment_indent_level0 to the minimum indent inside the comment, which could be larger than its original value
-static JC::unique_string FormatComment(intptr_t& comment_indent_level0, int32_t tab_width, char const* comment_begin, char const* comment_end) {
+static ama::gcstring FormatComment(intptr_t& comment_indent_level0, int32_t tab_width, char const* comment_begin, char const* comment_end) {
 	intptr_t& comment_indent_level = comment_indent_level0;
 	//if( !comment_indent_level || !memchr(comment_begin, '\n', comment_end - comment_begin) ) {
 	//	return new char[|]!(comment_begin, comment_end - comment_begin);
@@ -97,7 +96,7 @@ static JC::unique_string FormatComment(intptr_t& comment_indent_level0, int32_t 
 	//	//drop trailing indent
 	//	tmp.resize(n);
 	//}
-	return JC::array_cast<JC::unique_string>(tmp);
+	return ama::gcstring(tmp);
 }
 static int canHaveRegexpAfter(ama::Node* nd) {
 	//the first node can be regexp
@@ -111,7 +110,7 @@ namespace ama {
 	ama::Node* ParseSimplePairing(char const* feed, JSValueConst options) {
 		//for debugging
 		char const* feed_all_begin = feed;
-		JC::unique_string s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, "symbols"));
+		ama::gcstring s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, "symbols"));
 		std::vector<std::span<char>> symbol_array{};
 		{
 			{
@@ -293,9 +292,9 @@ namespace ama {
 								bracket_counter -= 1;
 							}
 							tmp_buffer.push_back(char(ch_closing));
-							nd->data = JC::array_cast<JC::unique_string>(tmp_buffer);
+							nd->data = ama::gcstring(tmp_buffer);
 						} else {
-							nd->data = JC::unique_string(feed, feed_end - feed);
+							nd->data = ama::gcstring(feed, feed_end - feed);
 						}
 						*state_stack.back().p_nd_next = nd;
 						state_stack.back().p_nd_next = &nd->s;
@@ -321,7 +320,7 @@ namespace ama {
 					nd = ama::CreateNode(ama::N_SYMBOL, nullptr);
 					nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
-					nd->data = JC::unique_string(feed, lg);
+					nd->data = ama::gcstring(feed, lg);
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd->s;
 					feed += lg;
@@ -350,14 +349,14 @@ namespace ama {
 					if ( state_stack.size() > intptr_t(1L) ) {
 						ama::Node* nd = state_stack.back().nd_parent;
 						if ( (comment_end - comment_begin) > 0 ) {
-							JC::unique_string trailing_comment = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+							ama::gcstring trailing_comment = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 							if ( !nd->c ) {
 								nd->Insert(ama::POS_FRONT, ama::nAir()->setIndent(
 									ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level)
 								));
 							}
 							ama::Node* nd_last = nd->LastChildSP();
-							nd_last->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_last->comments_after, trailing_comment));
+							nd_last->comments_after = ama::gcscat(nd_last->comments_after, trailing_comment);
 						}
 						nd->flags |= uint32_t(ch) << 8;
 						state_stack.pop_back();
@@ -409,7 +408,7 @@ namespace ama {
 					nd = ama::CreateNode(ama::N_REF, nullptr);
 					nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
-					nd->data = JC::unique_string(feed0, feed - feed0);
+					nd->data = ama::gcstring(feed0, feed - feed0);
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd->s;
 					comment_indent_level = current_indent_level;
@@ -436,7 +435,7 @@ namespace ama {
 					nd = ama::CreateNode(ama::N_NUMBER, nullptr);
 					nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
-					nd->data = JC::unique_string(feed0, feed - feed0);
+					nd->data = ama::gcstring(feed0, feed - feed0);
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd->s;
 					comment_indent_level = current_indent_level;
@@ -475,9 +474,9 @@ namespace ama {
 							backslash_counter = 0;
 						}
 						tmp_buffer.push_back(char(ch_closing));
-						nd->data = JC::array_cast<JC::unique_string>(tmp_buffer);
+						nd->data = ama::gcstring(tmp_buffer);
 					} else {
-						nd->data = JC::unique_string(feed, lg);
+						nd->data = ama::gcstring(feed, lg);
 					}
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd->s;

@@ -7,6 +7,9 @@ namespace ama {
 		if ( nd && !(nd->tmp_flags & ama::TMPF_GC_MARKED) ) {
 			nd->tmp_flags |= ama::TMPF_GC_MARKED;
 			Q--->push(nd);
+			nd->data.gcmark();
+			nd->comments_before.gcmark();
+			nd->comments_after.gcmark();
 		}
 	}
 	intptr_t gc() {
@@ -34,9 +37,9 @@ namespace ama {
 					//unreachable but un-free, release
 					//console.log('freed node', nd.node_class, nd.data == NULL ? "NULL" : nd.data.c_str());
 					n_freed += 1;
-					nd->data = nullptr;
-					nd->comments_before = nullptr;
-					nd->comments_after = nullptr;
+					nd->data = ama::gcstring();
+					nd->comments_before = ama::gcstring();
+					nd->comments_after = ama::gcstring();
 					////////////
 					memset((void*)(nd), 0, sizeof(ama::Node));
 					////////////
@@ -49,6 +52,7 @@ namespace ama {
 				}
 			}
 		}
+		ama::gcstring_gcsweep();
 		return n_freed;
 	}
 };

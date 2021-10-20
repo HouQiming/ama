@@ -1,5 +1,4 @@
 'use strict';
-//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 require('class');
 let typing = undefined;
 /////////////

@@ -1,5 +1,4 @@
 'use strict';
-//@ama ParseCurrentFile().then(require("jcs").TranslateJCS)
 
 function BidirTransform(nd_root, is_forward) {
 	if (is_forward) {
