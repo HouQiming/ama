@@ -771,7 +771,7 @@ namespace ama {
 		}
 		//detect type before dotted function name
 		//non-dotted non-C-macro functions should have been handled above
-		for ( ama::Node* const &nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION, nullptr) ) {
+		for ( ama::Node* nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION, nullptr) ) {
 			if ( nd_func->data != nullptr ) { continue; }
 			//C++ dotted declaration: `type foo::bar(){}`
 			//common C macro style: `FOO_DECL(int,foo)(int bar){}`

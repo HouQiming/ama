@@ -26,44 +26,42 @@ namespace ama {
 			//console.error(nd_arglist.toSource());
 			std::vector<ama::Node*> comma_group{};
 			for (ama::Node* ndi = nd_arglist->c; ndi; ndi = ndi->s) {
-				{
-					//strip trailing ','s
-					if ( ndi->isRawNode(0, 0) ) {
-						if ( comma_group.size() ) {
-							comma_group[comma_group.size() - 1]->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_before));
-						} else {
-							pending_comments_before--->push(ndi->comments_before);
-						}
-						for (ama::Node* ndk_0 = ndi->c; ndk_0; ndk_0 = ndk_0->s) {
-							if ( ndk_0->isSymbol(",") ) {
-								ama::Node* nd_arg_0 = ama::toSingleNode(ama::InsertMany(comma_group));
-								nd_arg_0->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(pending_comments_before, nd_arg_0->comments_before));
-								nd_arg_0->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_arg_0->comments_after, ndk_0->comments_before));
-								new_children.push_back(nd_arg_0);
-								pending_comments_before.clear();
-								pending_comments_before--->push(ndk_0->comments_after);
-								comma_group.clear();
-							} else {
-								ndk_0->AdjustIndentLevel(ndi->indent_level);
-								comma_group.push_back(ndk_0);
-							}
-						}
-						if ( comma_group.size() ) {
-							comma_group[comma_group.size() - 1]->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_after));
-						} else {
-							pending_comments_before--->push(ndi->comments_after);
-						}
-					} else if ( ndi->isSymbol(",") ) {
-						ama::Node* nd_arg_0 = ama::toSingleNode(ama::InsertMany(comma_group));
-						nd_arg_0->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(pending_comments_before, nd_arg_0->comments_before));
-						nd_arg_0->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_arg_0->comments_after, ndi->comments_before));
-						new_children.push_back(nd_arg_0);
-						pending_comments_before.clear();
-						pending_comments_before--->push(ndi->comments_after);
-						comma_group.clear();
+				//strip trailing ','s
+				if ( ndi->isRawNode(0, 0) ) {
+					if ( comma_group.size() ) {
+						comma_group[comma_group.size() - 1]->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_before));
 					} else {
-						comma_group.push_back(ndi);
+						pending_comments_before--->push(ndi->comments_before);
 					}
+					for (ama::Node* ndk = ndi->c; ndk; ndk = ndk->s) {
+						if ( ndk->isSymbol(",") ) {
+							ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+							nd_arg->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(pending_comments_before, nd_arg->comments_before));
+							nd_arg->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_arg->comments_after, ndk->comments_before));
+							new_children.push_back(nd_arg);
+							pending_comments_before.clear();
+							pending_comments_before--->push(ndk->comments_after);
+							comma_group.clear();
+						} else {
+							ndk->AdjustIndentLevel(ndi->indent_level);
+							comma_group.push_back(ndk);
+						}
+					}
+					if ( comma_group.size() ) {
+						comma_group[comma_group.size() - 1]->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_after));
+					} else {
+						pending_comments_before--->push(ndi->comments_after);
+					}
+				} else if ( ndi->isSymbol(",") ) {
+					ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
+					nd_arg->comments_before = JC::array_cast<JC::unique_string>(JC::string_concat(pending_comments_before, nd_arg->comments_before));
+					nd_arg->comments_after = JC::array_cast<JC::unique_string>(JC::string_concat(nd_arg->comments_after, ndi->comments_before));
+					new_children.push_back(nd_arg);
+					pending_comments_before.clear();
+					pending_comments_before--->push(ndi->comments_after);
+					comma_group.clear();
+				} else {
+					comma_group.push_back(ndi);
 				}
 			}
 			//assert(comma_group.size() > 0);
