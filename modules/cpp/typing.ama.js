@@ -220,7 +220,7 @@ function isNamespace(nd_class) {
 
 typing.LookupClassesByNames = function(nd_root, names, options) {
 	let all_scopes = [];
-	for (let nd_dep of [nd_root].concat(options.include_dependency ? depends.ListAllDependency(nd_root, true).map(fn=>depends.LoadFile(fn)) : [])) {
+	for (let nd_dep of [nd_root].concat(options.include_dependency ? depends.ListAllDependency(nd_root, true).map(fn=>depends.LoadFile(fn)).filter(nd_root=>nd_root) : [])) {
 		let scopes = [nd_dep];
 		for (let i = names.length - 1; i >= 0; i--) {
 			let new_scopes = [];

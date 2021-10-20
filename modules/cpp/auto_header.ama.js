@@ -50,7 +50,7 @@ function Transform(nd_root, options) {
 		if (nd_func.LastChild().node_class != N_SCOPE) {continue;}
 		//reject private declarations
 		if (nd_func.c.Find(N_REF, 'static')) {continue;}
-		//reject methods of private classes
+		//reject in-class methods of private classes
 		let nd_class = nd_func.Owning(N_CLASS);
 		if (nd_class && nd_class.data != 'namespace') {continue;}
 		if (!GetFunctionNameNode(nd_func)) {continue;}
@@ -131,8 +131,15 @@ function Transform(nd_root, options) {
 			for (let nd_scope of body_scopes) {
 				let nd_class = nd_scope.Owning(N_CLASS);
 				if (nd_class && nd_class.data != 'namespace') {
-					//use found=1 to prevent syncing
+					//use found=1 to prevent headersyncing
 					found = 1;
+					//sync to that private class instead
+					let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
+					GetFunctionNameNode(nd_forward).ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
+					nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
+					nd_forward = nSemicolon(nd_forward);
+					nd_scope.Insert(POS_BACK, nd_forward);
+					nd_forward.AutoFormat();
 					break;
 				}
 			}

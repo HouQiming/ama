@@ -1,3 +1,4 @@
+//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
 'use strict'
 let fs = module.exports;
 

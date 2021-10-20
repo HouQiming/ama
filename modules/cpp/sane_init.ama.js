@@ -15,7 +15,9 @@ function BidirTransform(nd_root, is_forward) {
 		let nd_stmt = nd_ref.ParentStatement();
 		if (nd_stmt.node_class != N_SEMICOLON || nd_stmt.c != nd_ref.p) {continue;}
 		if (is_forward) {
-			if (!nd_ref.s && !nd_stmt.Find(N_REF, 'extern') && !nd_stmt.Find(N_REF, 'struct') && !nd_stmt.Find(N_REF, 'class')) {nd_ref.Insert(POS_AFTER, nScope());}
+			if (!nd_ref.s && !nd_stmt.Find(N_REF, 'extern') && !nd_stmt.Find(N_REF, 'struct') && !nd_stmt.Find(N_REF, 'class')) {
+				nd_ref.Insert(POS_AFTER, nScope());
+			}
 		} else {
 			if (nd_ref.s && nd_ref.s.node_class == N_SCOPE && !nd_ref.s.c) {nd_ref.s.Unlink();}
 		}
