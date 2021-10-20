@@ -30,6 +30,5 @@ function FixAMAJS(){
 	//Node.gc();
 }
 
-__dirname=path.resolve(__dirname);
 FixAMAJS();
 bisync({dir_src:path.resolve(__dirname,'../src')});
