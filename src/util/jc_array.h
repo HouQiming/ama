@@ -557,8 +557,8 @@ JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>* operato
 }
 
 template<typename Array>
-JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>const* operator--(Array const &a,int){
-	return reinterpret_cast<JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>const*>(&a);
+JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>* operator--(Array const &a,int){
+	return (JC::ArrayExtension<Array,typename JC::GetArrayElementType<Array>::type>*)(intptr_t)(&a);
 }
 
 template<typename Key,typename Value>

@@ -287,12 +287,18 @@ Node.CMakeBuild = function(options) {
 	const pipe = require('pipe');
 	process.chdir(path.dirname(path.resolve(this.data)));
 	let build = (options.build || process.build || 'Debug');
-	pipe.run([
-			'mkdir -p build/', process.platform, '_', build.toLowerCase(), ' && ',
-			'cd build/', process.platform, '_', build.toLowerCase(), ' && ',
-			'cmake -DCMAKE_BUILD_TYPE=', build, ' ../.. && ',
-			'cmake --build .', options.target ? ' --target ' + options.target : '', ' --config ', build, options.rebuild || process.rebuild ? ' --clean-first' : ''
+	let ret_code = pipe.run([
+		'mkdir -p build/', process.platform, '_', build.toLowerCase(), ' && ',
+		'cd build/', process.platform, '_', build.toLowerCase(), ' && ',
+		'cmake -DCMAKE_BUILD_TYPE=', build, ' ../.. && ',
+		'cmake --build .', options.target ? ' --target ' + options.target : '', ' --config ', build, options.rebuild || process.rebuild ? ' --clean-first' : ''
 	].join(''));
+	if (ret_code == 0 && (options.run || process.run) && options.target) {
+		pipe.run([
+			'build/', process.platform, '_', build.toLowerCase(), '/', options.target, ' ',
+			options.run.map(s=>s.indexOf(' ') >= 0 ? JSON.stringify(s) : s).join(' ')
+		].join(''));
+	}
 };
 
 Node.CMakeEnsureCommand = function(nd_command) {
