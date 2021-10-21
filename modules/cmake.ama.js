@@ -148,84 +148,16 @@ function TryRelative(dir_cmake, src_name_abs) {
 	if (path.isAbsolute(src_name_rel) || src_name_rel.length > src_name_abs.length) {
 		src_name_rel = src_name_abs;
 	}
-	if (src_name_abs.startsWith(__std_module_dir + '/')) {
-		src_name_rel = '${AMA_MODULES}' + src_name_abs.substr(__std_module_dir.length);
-	} else if (src_name_rel.startsWith(__std_module_dir_global + '/')) {
-		src_name_rel = '${AMA_MODULES_GLOBAL}' + src_name_abs.substr(__std_module_dir_global.length);
-	}
+	//if (src_name_abs.startsWith(__std_module_dir + '/')) {
+	//	src_name_rel = '${AMA_MODULES}' + src_name_abs.substr(__std_module_dir.length);
+	//} else if (src_name_rel.startsWith(__std_module_dir_global + '/')) {
+	//	src_name_rel = '${AMA_MODULES_GLOBAL}' + src_name_abs.substr(__std_module_dir_global.length);
+	//}
 	return src_name_rel;
 }
 
 //let nd_output_format_template = ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
 let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format')))};
-Node.CMakeUpdateTargetWithSourceRoot = function(nd_src_root) {
-	let src_name_abs = path.resolve(nd_src_root.data);
-	let dir_cmake = path.dirname(path.resolve(this.data));
-	let our_files = depends.ListAllDependency(nd_src_root, false)
-	let our_files_filtered = [];
-	let src_name_rel = TryRelative(dir_cmake, src_name_abs)
-	let pama = src_name_rel.lastIndexOf('.ama');
-	if (pama >= 0) {
-		src_name_rel = src_name_rel.substr(0, pama) + src_name_rel.substr(pama + 4);
-	}
-	for (let fn of our_files) {
-		if (path.extname(fn).startsWith('.h') && fn != src_name_abs) {
-			//exclude all headers except the current file
-			continue;
-		}
-		//use relative dirs whenever possible
-		let fn_rel = TryRelative(dir_cmake, fn);
-		let pama = fn_rel.lastIndexOf('.ama');
-		if (pama >= 0) {
-			fn_rel = fn_rel.substr(0, pama) + fn_rel.substr(pama + 4);
-		}
-		our_files_filtered.push(fn_rel);
-	}
-	//search for all targets containing src_name_rel, then add dependent files to them
-	//COULDDO: also add to 'set' commands
-	let found_any = 0;
-	for (let nd_target of this.FindAll(N_CALL, 'add_executable').concat(this.FindAll(N_CALL, 'add_library'))) {
-		if (!nd_target.c.s) {continue;}
-		let args = nd_target.TokenizeCMakeArgs();
-		let p_files = 1;
-		if (args.length >= 2 && args[1].GetName() == 'SHARED') {
-			p_files = 2;
-		}
-		let files = new Set(args.slice(p_files).map(nd=>nd.GetName()));
-		if (!files.has(src_name_rel)) {continue;}
-		found_any = 1;
-		let new_files = our_files_filtered.filter(fn=>!files.has(fn));
-		if (new_files.length) {
-			//append the new files
-			for (let fn of new_files) {
-				this.flags |= CMAKE_CHANGED;
-				nd_target.Insert(POS_BACK, nString(fn).setCommentsBefore(' '));
-			}
-		}
-	}
-	if (found_any) {
-		return;
-	}
-	let name = nd_src_root.data.replace(/[.].*/, '');
-	let format = undefined;
-	for (let nd_format of nd_src_root.FindAll(N_KEYWORD_STATEMENT, '#pragma')) {
-		let match = nd_format.Match(nd_output_format_template)
-			if (match) {
-				format = match.format.GetStringValue();
-				break;};
-	}
-	if (!format) {
-		if (nd_src_root.Find(N_FUNCTION, 'main')) {
-			format = 'exe';
-		}
-	}
-	if (format) {
-		this.flags |= CMAKE_CHANGED;
-		this.CMakeCreateTarget(name, {
-				format: format,
-				files: our_files_filtered});
-	}
-};
 
 Node.CMakeInsertAMACommand = function(options) {
 	let dir_cmake = path.dirname(path.resolve(this.data));
@@ -252,7 +184,7 @@ Node.CMakeInsertAMACommand = function(options) {
 	return this.Insert(POS_BACK, ParseCode(cmd, cmake_options).Find(N_CALL, null));
 };
 
-Node.UpdateCMakeLists = function(fn_cmake) {
+Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 	if (!fn_cmake) {
 		fn_cmake = __global.__cmakelist;
 	}
@@ -274,47 +206,101 @@ Node.UpdateCMakeLists = function(fn_cmake) {
 			fn_cmake = path.join(dir_git, 'CMakeLists.txt');
 		}
 	}
+	fn_cmake = path.resolve(fn_cmake);
 	let nd_cmake = cmake.LoadCMakeFile(fn_cmake, ()=>[
 		'cmake_minimum_required (VERSION 3.0)\n',
 		'project(', path.basename(path.dirname(path.resolve(fn_cmake))).replace(/[^0-9a-zA-Z]+/g, '_'), ')\n',
-		'if(NOT AMA)\n',
-		'  find_program(AMA ama)\n',
-		'endif()\n',
-		'if(NOT AMA_MODULES)\n',
-		'  if(DEFINED ENV{AMA_MODULES})\n',
-		'    set(AMA_MODULES "$ENV{AMA_MODULES}")\n',
-		'  else()\n',
-		'    set(AMA_MODULES "$ENV{HOME}/.ama_modules")\n',
-		'  endif()\n',
-		'endif()\n',
-		'if(NOT AMA_MODULES_GLOBAL)\n',
-		'  if(DEFINED ENV{AMA_MODULES_GLOBAL})\n',
-		'    set(AMA_MODULES_GLOBAL "$ENV{AMA_MODULES_GLOBAL}")\n',
-		'  else()\n',
-		'    set(AMA_MODULES_GLOBAL "/usr/share/ama_modules")\n',
-		'  endif()\n',
-		'endif()\n',
 	].join(''))   
 	//insert files
-	nd_cmake.CMakeUpdateTargetWithSourceRoot(this)
-	//insert the ama command for self
-	//about with-ama dependencies: ama once manually to pull, we don't want to crawl dependent files for @ama
-	//by default, remove the last '.ama' from the current name
-	//if the file name doesn't contain '.ama', just don't generate the ama command
-	let fn_output = this.data;
-	let pama = fn_output.lastIndexOf('.ama');
-	if (pama >= 0) {
-		fn_output = fn_output.substr(0, pama) + fn_output.substr(pama + 4);
-		nd_cmake.CMakeInsertAMACommand({
-			output: fn_output,
-			source_file: this.data,
-			command: '${AMA} -s "__global.__cmakelist=\'${CMAKE_CURRENT_LIST_FILE}\'" ${SOURCE_FILE}',
-			main_dependency: [path.resolve(this.data)].concat(depends.ListLoadedFiles())
-		});
-		if (nd_cmake.flags & CMAKE_CHANGED) {
-			nd_cmake.Save(cmake_options);
+	let src_name_abs = path.resolve(this.data);
+	let dir_cmake = path.dirname(fn_cmake);
+	let our_files = depends.ListAllDependency(this, false);
+	let our_files_filtered = [];
+	//our own file could be .ama.
+	let src_name_rel = TryRelative(dir_cmake, src_name_abs).replace('.ama.', '.');
+	for (let fn of our_files) {
+		if (path.extname(fn).startsWith('.h') && fn != src_name_abs) {
+			//exclude all headers except the current file
+			continue;
 		}
-		///////////////////////
-		this.Save({name: fn_output});
+		//use relative dirs whenever possible
+		let fn_rel = TryRelative(dir_cmake, fn).replace('.ama.', '.');
+		our_files_filtered.push(fn_rel);
+	}
+	let name = path.parse(this.data).name.replace(/[.].*/, '');
+	//search for existing target
+	//if found
+	//COULDDO: also add to 'set' commands
+	let nd_my_target = undefined;
+	for (let nd_target of nd_cmake.FindAll(N_CALL, 'add_executable').concat(nd_cmake.FindAll(N_CALL, 'add_library'))) {
+		if (!nd_target.c.s) {continue;}
+		let args = nd_target.TokenizeCMakeArgs();
+		if (args[0].isRef(name)) {
+			nd_my_target = nd_target;
+			break;
+		}
+	}
+	if (nd_my_target) {
+		//just add the files
+		let args = nd_my_target.TokenizeCMakeArgs();
+		let p_files = 1;
+		if (args[1] && args[1].isRef('SHARED')) {
+			p_files += 1;
+		}
+		let files = new Set(args.slice(p_files).map(nd=>nd.GetName()));
+		let new_files = our_files_filtered.filter(fn=>!files.has(fn));
+		if (new_files.length) {
+			//append the new files
+			for (let fn of new_files) {
+				nd_cmake.flags |= CMAKE_CHANGED;
+				nd_target.Insert(POS_BACK, nString(fn).setCommentsBefore(' '));
+			}
+		}
+	} else {
+		let format = 'exe';
+		for (let nd_format of this.FindAll(N_KEYWORD_STATEMENT, '#pragma')) {
+			let match = nd_format.Match(nd_output_format_template);
+			if (match) {
+				format = match.format.GetStringValue();
+				break;
+			}
+		}
+		nd_cmake.flags |= CMAKE_CHANGED;
+		nd_cmake.CMakeCreateTarget(name, {
+			format: format,
+			files: our_files_filtered
+		});
+	}
+	if (nd_cmake.flags & CMAKE_CHANGED) {
+		nd_cmake.Save(cmake_options);
+	}
+	if (options) {
+		options.target = name;
+		nd_cmake.CMakeBuild(options);
+	}
+	return nd_cmake;
+};
+
+///called from a cmake node
+Node.CMakeBuild = function(options) {
+	if (!options) {options = {};}
+	const pipe = require('pipe');
+	process.chdir(path.dirname(path.resolve(this.data)));
+	let build = (options.build || process.build || 'Debug');
+	pipe.run([
+			'mkdir -p build/', process.platform, '_', build.toLowerCase(), ' && ',
+			'cd build/', process.platform, '_', build.toLowerCase(), ' && ',
+			'cmake -DCMAKE_BUILD_TYPE=', build, ' ../.. && ',
+			'cmake --build .', options.target ? ' --target ' + options.target : '', ' --config ', build, options.rebuild || process.rebuild ? ' --clean-first' : ''
+	].join(''));
+};
+
+Node.CMakeEnsureCommand = function(nd_command) {
+	if (!this.MatchAll(nd_command).length) {
+		let nd_command_tokenized = nd_command.Clone();
+		nd_command_tokenized.TokenizeCMakeArgs();
+		if (!this.MatchAll(nd_command_tokenized).length) {
+			this.Insert(POS_BACK, nd_command);
+		}
 	}
 };

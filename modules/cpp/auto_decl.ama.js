@@ -65,7 +65,7 @@ function Transform(nd_root, options) {
 			all_possible_names = new Map();
 			for (let nd_root_i of [nd_root].concat(depends.ListAllDependency(nd_root, true).map(fn=>depends.LoadFile(fn)))) {
 				for (let ndi = nd_root_i; ndi; ndi = ndi.PreorderNext(nd_root_i)) {
-					if (ndi.node_class == N_FUNCTION || ndi.node_class == N_CLASS && ndi.data != 'namespace') {
+					if (ndi.node_class == N_SCOPE && ndi.p && (ndi.p.node_class == N_FUNCTION || ndi.p.node_class == N_CLASS && ndi.p.data != 'namespace')) {
 						ndi = ndi.PreorderLastInside();
 						continue;
 					}
