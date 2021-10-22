@@ -1,4 +1,5 @@
-'use strict'
+'use strict';
+const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const depends = require('depends');
@@ -253,7 +254,8 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 			//append the new files
 			for (let fn of new_files) {
 				nd_cmake.flags |= CMAKE_CHANGED;
-				nd_target.Insert(POS_BACK, nString(fn).setCommentsBefore(' '));
+				assert(nd_my_target.LastChild().node_class == N_RAW);
+				nd_my_target.LastChild().Insert(POS_BACK, nString(fn).setCommentsBefore(' '));
 			}
 		}
 	} else {

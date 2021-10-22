@@ -41,6 +41,7 @@ function Transform(nd_root, options) {
 			let nd_tmp = Node.GetPlaceHolder();
 			nd_ref.ReplaceWith(nd_tmp)
 			nd_tmp.ReplaceWith(nRaw(nRef(keyword).setCommentsAfter(' '), nd_ref));
+			nd_ref.flags |= REF_DECLARED;
 		}
 		if (nd_ref.flags & REF_WRITTEN) {
 			let nd_owner = nd_ref.Owner();

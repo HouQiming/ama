@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include "jc_array.h"
-/*#pragma add("jc_files", "./fs.jc");*/
+#pragma add("c_files", "./fs.cpp");
 namespace fs {
 	#if defined(_WIN32)
 		std::vector<uint16_t> PathToWindows(std::span<char> s);

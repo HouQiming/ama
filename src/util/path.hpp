@@ -1,11 +1,10 @@
 #ifndef _PATH_JCH_HPP
 #define _PATH_JCH_HPP
-//the goal is bug-for-bug node.js compatibility
 #include <string>
 #include "jc_array.h"
 #include "../../modules/cpp/json/json.h"
-/*#pragma add("jc_files", "./path_win32.jc");*/
-/*#pragma add("jc_files", "./path_posix.jc");*/
+#pragma add("c_files", "./path_win32.cpp");
+#pragma add("c_files", "./path_posix.cpp");
 namespace path {
 	struct CPathObject {
 		std::string root{};

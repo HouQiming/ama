@@ -634,6 +634,7 @@ namespace ama {
 		//also find writes and set REF_WRITTEN
 		std::unordered_map<ama::gcstring, int> ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
 		std::unordered_map<ama::gcstring, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
+		std::unordered_map<ama::gcstring, int> keywords_not_variable_name = ama::GetPrioritizedList(options, "keywords_not_variable_name");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
 		for ( ama::Node* nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( nd_ref->p->node_class == ama::N_CLASS && nd_ref->p->c->s == nd_ref ) {
@@ -736,7 +737,7 @@ namespace ama {
 				}
 				nd_cdecl = nd_cdecl->p;
 			}
-			if ( nd_cdecl != nd_ref ) {
+			if ( nd_cdecl != nd_ref && !(nd_ref->s && nd_ref->s->node_class == ama::N_REF) && !keywords_not_variable_name[nd_ref->data]) {
 				//we found at least one feasible declaration-ish
 				//check parent
 				int is_ok = 0;

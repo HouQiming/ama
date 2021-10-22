@@ -209,6 +209,19 @@ Node.TranslateTemplates = function(match_jobs, is_forward) {
 	return nd_root;
 }
 
+Node.GetFunctionNameNode=function() {
+	if(this.node_class !== N_FUNCTION){return undefined;}
+	let nd_name = this.c;
+	if (nd_name.node_class === N_RAW) {
+		nd_name = nd_name.LastChild();
+	}
+	if (nd_name && nd_name.node_class !== N_REF && nd_name.node_class !== N_DOT) {
+		return undefined;
+	}
+	return nd_name;
+}
+
+
 //__global.c_include_paths=['/usr/include','/usr/local/include']
 __global.default_options = {
 	enable_hash_comment: 0,
@@ -254,6 +267,7 @@ __global.default_options = {
 	keywords_after_class_name: ': extends implements for where',
 	keywords_after_prototype: ': -> => throw const noexcept override',
 	keywords_not_a_function: 'switch case #define #if #else #elif return',
+	keywords_not_variable_name: 'static const volatile private public protected final noexcept throw override virtual',
 	//case is better treated as a part of a label
 	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif break continue',
 	///////////

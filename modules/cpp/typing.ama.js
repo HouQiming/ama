@@ -148,7 +148,7 @@ typing.LookupSymbol = function(nd_ref, want_all) {
 		}
 	}
 	//not found: we have to load dependencies
-	for (let nd_dep of depends.ListAllDependency(nd_ref.Root(), true).map(fn=>depends.LoadFile(fn))) {
+	for (let nd_dep of depends.ListAllDependency(nd_ref.Root(), true).map(fn=>depends.LoadFile(fn)).filter(nd=>nd)) {
 		let nd_def = typing.GetDefs(nd_dep).get(nd_ref.data);
 		if (nd_def) {
 			if (want_all) {
@@ -311,11 +311,21 @@ typing.LookupDottedName = function(nd_site, name, nd_scope) {
 typing.TryGettingClass = function(type_obj) {
 	if (type_obj && type_obj.node_class == N_POSTFIX && type_obj.data == '*') {
 		type_obj = typing.ComputeType(type_obj.c);
+	} else if (type_obj&&type_obj.node_class == N_CALL_TEMPLATE && (type_obj.GetName() == 'unique_ptr' || type_obj.GetName() == 'shared_ptr') && type_obj.c.s) {
+		type_obj = typing.ComputeType(type_obj.c.s);
 	}
+	while (type_obj && type_obj.node_class == N_POSTFIX && (type_obj.data == '&' || type_obj.data == 'const' || type_obj.data == 'volatile')) {
+		type_obj = typing.ComputeType(type_obj.c);
+	};
 	while (type_obj && type_obj.node_class == N_CALL_TEMPLATE) {
 		type_obj = typing.ComputeType(type_obj.c);
 	}
 	return type_obj;
+};
+
+typing.PointerType = function(type) {
+	if (!type) {return type;}
+	return nPostfix(typing.AccessTypeAt(type, type), '*');
 };
 
 typing.ComputeType = function(nd_expr) {
@@ -388,6 +398,9 @@ typing.ComputeType = function(nd_expr) {
 		//COULDDO: try to find overloaded operators
 		//here we cheat and return the operand
 		type = typing.ComputeType(nd_expr.c);
+		if (nd_expr.data == '&') {
+			type = typing.PointerType(type);
+		}
 		break;
 	}
 	case N_CONDITIONAL:
@@ -411,6 +424,24 @@ typing.ComputeType = function(nd_expr) {
 	}
 	case N_REF: {
 		//find the declaration
+		if (nd_expr.data == 'this') {
+			let nd_owner = nd_expr.Owner();
+			if (nd_owner.node_class == N_FUNCTION) {
+				let nd_name = nd_owner.GetFunctionNameNode();
+				if (nd_name.node_class == N_DOT) {
+					type = typing.ComputeType(nd_name.c);
+				} else {
+					let nd_owner_owner = nd_owner.Owner();
+					if (nd_owner_owner.node_class == N_CLASS && nd_owner_owner.data != 'namespace') {
+						type = nd_owner_owner;
+					}
+				}
+			}
+			if (type) {
+				type = typing.PointerType(type);
+				break;
+			}
+		}
 		let nd_def = typing.LookupSymbol(nd_expr, false);
 		if (!nd_def) {
 			//assume self-representing
@@ -465,13 +496,18 @@ typing.ComputeType = function(nd_expr) {
 		//we should do this before sane_types: we want the untranslated *sane* types
 		let type_obj = typing.ComputeType(nd_expr.c);
 		//recognize array and pointer
-		if (type_obj && type_obj.node_class == N_ITEM) {
-			type = type_obj.c;
-			break;
-		}
-		if (type_obj && type_obj.node_class == N_PREFIX && type_obj.data == '*') {
-			type = type_obj.c;
-			break;
+		if (type_obj) {
+			if (type_obj.node_class == N_ITEM) {
+				type = type_obj.c;
+				break;
+			}
+			if (type_obj.node_class == N_PREFIX && type_obj.data == '*') {
+				type = type_obj.c;
+				break;
+			}
+			if (type_obj.node_class == N_CALL_TEMPLATE && type_obj.GetName() == 'vector' && type_obj.c.s) {
+				type = typing.ComputeType(type_obj.c.s);
+			}
 		}
 		//recognize other hard-coded templates in hooks: don't put them here
 		break;  
@@ -494,14 +530,18 @@ typing.AccessTypeAt = function(type, nd_site) {
 		while (names.length) {
 			ret = ret.dot(names.pop()).setFlags(DOT_CLASS);
 		}
+		typing.type_cache.set(ret, type);
 		return ret;
 	} else if (type.node_class == N_CALL_TEMPLATE) {
 		let ret = type.Clone();
-		ret.c.ReplaceWith(typing.AccessTypeAt(ret.c, nd_site))
+		ret.c.ReplaceWith(typing.AccessTypeAt(ret.c, nd_site));
+		typing.type_cache.set(ret, type);
 		return ret;
 	}
 	//COULDDO: N_REF case
-	return type.Clone();
+	let ret = type.Clone();
+	typing.type_cache.set(ret, type);
+	return ret.setCommentsBefore('').setCommentsAfter('');
 };
 
 typing.DeduceAutoTypedDef = function(nd_def) {

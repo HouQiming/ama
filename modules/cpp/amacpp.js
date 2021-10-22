@@ -13,8 +13,9 @@ function ToCPP(nd_root,options){
 		.then(require('auto_semicolon'))
 		.then(require('auto_paren'))
 		.then(sane_types.FixArrayTypes)
-		.then(require('cpp/auto_dot'))
+		.then(require('cpp/auto_decl'))
 		.then(require('cpp/typing').DeduceAuto)
+		.then(require('cpp/auto_dot'))
 		.then(require('cpp/cpp_indent'))
 	);
 	if(options.update_source){nd_root.Save();}
@@ -29,7 +30,6 @@ function ToCPP(nd_root,options){
 		.then(jsism.EnableJSON)
 		.then(jsism.EnableConsole)
 		.then(jsism.EnableSingleQuotedStrings)
-		.then(require('cpp/auto_decl'))
 		.then(require('cpp/auto_header'))
 	);
 }

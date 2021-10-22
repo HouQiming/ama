@@ -4,17 +4,6 @@ const fs = require('fs');
 const depends = require('depends');
 const typing = require('cpp/typing');
 
-function GetFunctionNameNode(nd_func) {
-	let nd_name = nd_func.c;
-	if (nd_name.node_class == N_RAW) {
-		nd_name = nd_name.LastChild();
-	}
-	if (nd_name && nd_name.node_class != N_REF && nd_name.node_class != N_DOT) {
-		return undefined;
-	}
-	return nd_name;
-}
-
 function Transform(nd_root, options) {
 	if (path.extname(nd_root.data).startsWith('.h')) {return;}
 	if (nd_root.Find(N_CALL, 'no_auto_header')) {return;}
@@ -52,7 +41,7 @@ function Transform(nd_root, options) {
 		//reject in-class methods of private classes
 		let nd_class = nd_func.Owning(N_CLASS);
 		if (nd_class && nd_class.data != 'namespace') {continue;}
-		if (!GetFunctionNameNode(nd_func)) {continue;}
+		if (!nd_func.GetFunctionNameNode()) {continue;}
 		//gotta sync to header
 		to_sync.push(nd_func);
 	}
@@ -61,7 +50,7 @@ function Transform(nd_root, options) {
 	//load the header
 	let nd_header = undefined;
 	if (!fs.existsSync(header_file)) {
-		let header_name = path.parse(header_file).name;
+		let header_name = path.parse(header_file).name.replace(/[^a-zA-Z0-9]+/g, '_').toUpperCase();
 		nd_header = ParseCode([
 			'#ifndef __', header_name, '_HEADER\n',
 			'#define __', header_name, '_HEADER\n',
@@ -72,14 +61,14 @@ function Transform(nd_root, options) {
 		nd_header = depends.LoadFile(header_file);
 	}
 	//sync to header
-	let endifs = nd_header.FindAll(N_REF, '#endif');
+	let endifs = nd_header.FindAll(N_KEYWORD_STATEMENT, '#endif');
 	let nd_endif = undefined;
 	if (endifs.length) {
 		nd_endif = endifs.pop();
 	}
 	let changed = 0;
 	for (let nd_func of to_sync) {
-		let nd_name = GetFunctionNameNode(nd_func);
+		let nd_name = nd_func.GetFunctionNameNode();
 		let names = [];
 		while (nd_name.node_class == N_DOT) {
 			names.push(nd_name.data);
@@ -135,7 +124,7 @@ function Transform(nd_root, options) {
 					//sync to that private class instead
 					if (!nd_scope.Find(N_FUNCTION, names[0])) {
 						let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
-						GetFunctionNameNode(nd_forward).ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
+						nd_forward.GetFunctionNameNode().ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
 						nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
 						nd_forward = nSemicolon(nd_forward);
 						nd_scope.Insert(POS_BACK, nd_forward);
@@ -170,7 +159,7 @@ function Transform(nd_root, options) {
 			nd_scope = nd_namespace.LastChild();
 		}
 		let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
-		GetFunctionNameNode(nd_forward).ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
+		nd_forward.GetFunctionNameNode().ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
 		nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
 		nd_forward = nSemicolon(nd_forward);
 		if (!nd_insertion_root) {
