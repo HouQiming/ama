@@ -31,6 +31,7 @@ function ToCPP(nd_root,options){
 		.then(jsism.EnableConsole)
 		.then(jsism.EnableSingleQuotedStrings)
 		.then(require('cpp/auto_header'))
+		.then(require('cpp/asset'))
 	);
 }
 

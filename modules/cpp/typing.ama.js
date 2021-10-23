@@ -311,7 +311,7 @@ typing.LookupDottedName = function(nd_site, name, nd_scope) {
 typing.TryGettingClass = function(type_obj) {
 	if (type_obj && type_obj.node_class == N_POSTFIX && type_obj.data == '*') {
 		type_obj = typing.ComputeType(type_obj.c);
-	} else if (type_obj&&type_obj.node_class == N_CALL_TEMPLATE && (type_obj.GetName() == 'unique_ptr' || type_obj.GetName() == 'shared_ptr') && type_obj.c.s) {
+	} else if (type_obj && type_obj.node_class == N_CALL_TEMPLATE && (type_obj.GetName() == 'unique_ptr' || type_obj.GetName() == 'shared_ptr') && type_obj.c.s) {
 		type_obj = typing.ComputeType(type_obj.c.s);
 	}
 	while (type_obj && type_obj.node_class == N_POSTFIX && (type_obj.data == '&' || type_obj.data == 'const' || type_obj.data == 'volatile')) {
