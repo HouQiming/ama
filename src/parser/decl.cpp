@@ -181,7 +181,9 @@ namespace ama {
 							kw_mode = KW_CLASS;
 							continue;
 						} else if ( keywords_extension_clause--->get(name) ) {
-							if ( nd_last_scoped_stmt ) {
+							if (name == "while" && !(nd_last_scoped_stmt && nd_last_scoped_stmt->data == "do") && !(nd_keyword && nd_keyword->data == "do")) {
+								//fall through: a new `while` statement
+							} else if ( nd_last_scoped_stmt ) {
 								nd_pending_else = nullptr;
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
@@ -196,7 +198,7 @@ namespace ama {
 								kw_mode = KW_EXT;
 								continue;
 							} else {
-								//fallback: could be `while`
+								//fall through: could be `while`
 							}
 						}
 						if ( keywords_scoped_statement--->get(name) ) {
