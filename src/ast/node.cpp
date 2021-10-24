@@ -819,11 +819,9 @@ intptr_t ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 		}
 	}
 	if ( !quiet && error_count ) {
-		#if !defined(NDEBUG)
-			printf("=== AST %lld errors\n", ((long long)(error_count)));
-			ama::DumpASTAsJSON(this);
-			fflush(stdout);
-		#endif
+		printf("=== AST %lld errors\n", ((long long)(error_count)));
+		ama::DumpASTAsJSON(this);
+		fflush(stdout);
 		printf("=== source code\n");
 		fflush(stdout);
 		{

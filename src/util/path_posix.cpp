@@ -1,5 +1,5 @@
 #pragma no_auto_header()
-#if !defined(_WIN32)
+#ifndef _WIN32
 	#include "path.hpp"
 	#include "fs.hpp"
 	namespace path {
