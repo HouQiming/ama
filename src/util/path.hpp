@@ -42,7 +42,7 @@ namespace path {
 		}
 	};
 };
-#pragma gen_begin(JSON.stringify<path::CPathObject>)
+#pragma gen_begin(JSON::stringify<path::CPathObject>)
 namespace JSON {
 	template<>
 	struct StringifyToImpl<path::CPathObject> {
@@ -69,6 +69,6 @@ namespace JSON {
 		}
 	};
 }
-#pragma gen_end(JSON.stringify<path::CPathObject>)
+#pragma gen_end(JSON::stringify<path::CPathObject>)
 
 #endif

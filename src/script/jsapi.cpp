@@ -216,7 +216,7 @@ namespace ama {
 		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
 		nd_root->flags = (nd_root->flags & 0x10000) ? ama::FILE_SPACE_INDENT : 0;
 		ama::ParseDependency(nd_root, options);
-		ama::ParsePostfix(nd_root, ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1));
+		ama::ParsePostfix(nd_root, options);
 		ama::SanitizeCommentPlacement(nd_root);
 		ama::CleanupDummyRaws(nd_root);
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_keyword_statements"), 1) ) {
@@ -505,15 +505,15 @@ namespace ama {
 				JS_SetPropertyStr(ctx, ret, "size", JS_NewInt64(ctx, uint64_t(find_data.nFileSizeLow) + (uint64_t(find_data.nFileSizeHigh) << 32)));
 				JS_SetPropertyStr(
 					ctx, ret, "atimeMs",
-					JS_NewFloat64(ctx, toUnixTimestamp(find_data.ftLastAccessTime) * 1000.0)
+					JS_NewFloat64(ctx, ama::toUnixTimestamp(find_data.ftLastAccessTime) * 1000.0)
 				);
 				JS_SetPropertyStr(
 					ctx, ret, "mtimeMs",
-					JS_NewFloat64(ctx, toUnixTimestamp(find_data.ftLastWriteTime) * 1000.0)
+					JS_NewFloat64(ctx, ama::toUnixTimestamp(find_data.ftLastWriteTime) * 1000.0)
 				);
 				JS_SetPropertyStr(
 					ctx, ret, "ctimeMs",
-					JS_NewFloat64(ctx, toUnixTimestamp(find_data.ftCreationTime) * 1000.0)
+					JS_NewFloat64(ctx, ama::toUnixTimestamp(find_data.ftCreationTime) * 1000.0)
 				);
 				JS_SetPropertyStr(
 					ctx, ret, "is_file",

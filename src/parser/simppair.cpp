@@ -57,8 +57,7 @@ static ama::gcstring FormatComment(intptr_t& comment_indent_level0, int32_t tab_
 			}
 			///////////////
 			int32_t real_indent_level = current_indent_level;
-			char const* s1 = s;
-			while ( s1 != comment_end && ama::isInCharSet(g_spaces, uint32_t(uint8_t(s1[intptr_t(1L)]))) ) {
+			char const* s1 = s;while ( s1 != comment_end && ama::isInCharSet(g_spaces, uint32_t(uint8_t(s1[intptr_t(1L)]))) ) {
 				if ( s1[intptr_t(1L)] == ' ' ) {
 					real_indent_level += intptr_t(1L);
 				} else if ( s1[intptr_t(1L)] == '\t' ) {

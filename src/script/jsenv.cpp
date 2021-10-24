@@ -148,7 +148,7 @@ namespace ama {
 		return JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__InheritOptions"), 1, &options);
 	}
 };
-#pragma gen_begin(JSON.parse<PackageJSON>)
+#pragma gen_begin(JSON::parse<PackageJSON>)
 namespace JSON {
 	template<>
 	struct ParseFromImpl<PackageJSON> {
@@ -208,4 +208,4 @@ namespace JSON {
 		}
 	};
 }
-#pragma gen_end(JSON.parse<PackageJSON>)
+#pragma gen_end(JSON::parse<PackageJSON>)

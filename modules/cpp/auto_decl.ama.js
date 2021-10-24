@@ -54,12 +54,20 @@ function Transform(nd_root, options) {
 		}
 	}
 	//look up the never-writtens
+	let keywords_class = new Set(default_options.keywords_class.split(' '));
 	let all_possible_names = undefined;
 	for (let nd_ref of locally_undeclared) {
-		if (nd_ref.flags & REF_WRITTEN) {continue;}
+		if (nd_ref.flags & (REF_WRITTEN | REF_DECLARED)) {continue;}
 		let nd_owner = nd_ref.Owner();
 		let ctx = owner_to_context.get(nd_owner);
 		if (ctx && ctx.writtens.has(nd_ref.data)) {continue;}
+		if (nd_ref.p) {
+			//check a few should-not-fix cases
+			if (nd_ref.p.node_class == N_KEYWORD_STATEMENT && nd_ref.p.c == nd_ref && keywords_class.has(nd_ref.p.data)) {
+				//struct forward decl
+				continue;
+			}
+		}
 		if (!all_possible_names) {
 			//collect names
 			const depends = require('depends');

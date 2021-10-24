@@ -2,8 +2,8 @@
 #include <vector>
 #include "../../modules/cpp/json/json.h"
 #include "../ast/node.hpp"
-#include "postfix.hpp"
 #include "../util/jc_array.h"
+#include "postfix.hpp"
 namespace ama {
 	static inline int isCPPLambda(ama::Node* ndi) {
 		return ndi->node_class == ama::N_CALL && ndi->c->isRawNode('[', ']');
@@ -95,8 +95,10 @@ namespace ama {
 		nd_arglist->c = nullptr;
 		return ndi;
 	}
-	ama::Node* ParsePostfix(ama::Node* nd_root, int parse_air_object) {
+	ama::Node* ParsePostfix(ama::Node* nd_root, JSValue options) {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
+		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
+		int32_t parse_air_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1);
 		std::vector<ama::Node*> a = std::vector<ama::Node*> {nd_root}--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
 		for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 			ama::Node* ndi = a[i]->c;
@@ -129,6 +131,15 @@ namespace ama {
 					continue;
 				} else if ( ndi->node_class == ama::N_SYMBOL ) {
 					//do nothing
+				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)) {
+					//postfix operator
+					ndi->MergeCommentsAfter(ndi_next);
+					ama::Node* nd_tmp = ama::GetPlaceHolder();
+					ndi->ReplaceUpto(ndi_next, nd_tmp);
+					ndi->BreakSibling();
+					ndi = nd_tmp->ReplaceWith(ama::nPostfix(ndi, ndi_next->data)->setCommentsAfter(ndi_next->comments_after));
+					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
+					continue;
 				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
 				(ndi_next->data == "." || (!isCPPLambda(ndi) && ndi_next->data == "->") || ndi_next->data == "::") && 
 				ndi_next->s && ndi_next->s->node_class == ama::N_REF ) {

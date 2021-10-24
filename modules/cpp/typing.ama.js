@@ -428,7 +428,7 @@ typing.ComputeType = function(nd_expr) {
 			let nd_owner = nd_expr.Owner();
 			if (nd_owner.node_class == N_FUNCTION) {
 				let nd_name = nd_owner.GetFunctionNameNode();
-				if (nd_name.node_class == N_DOT) {
+				if (nd_name && nd_name.node_class == N_DOT) {
 					type = typing.ComputeType(nd_name.c);
 				} else {
 					let nd_owner_owner = nd_owner.Owner();

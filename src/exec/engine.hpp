@@ -8,7 +8,7 @@
 #include "../util/mempool.hpp"
 #include "../ast/node.hpp"
 namespace ama {
-	struct ExecNode;
+	struct ama::ExecNode;
 };
 /*
 In general, we need to tolerate failures: we don't fully understand the code.
