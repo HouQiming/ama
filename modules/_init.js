@@ -250,12 +250,13 @@ __global.default_options = {
 	struct_can_be_type_prefix: 1,
 	parse_js_regexp: 1,
 	///////////
-	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
+	//the 'of' operator is a hack to improve JS for-of parsing
+	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in of instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
 	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
 	postfix_operators: 'const volatile ++ --',
 	cv_qualifiers: 'const volatile',
 	//void is too common in C/C++ to be treated as an operator by default
-	named_operators: 'typeof delete sizeof await co_await new in instanceof as const volatile',
+	named_operators: 'typeof delete sizeof await co_await new in of instanceof as const volatile',
 	//unlike general named_operators, c_type_prefix_operators only make sense when used before another identifier
 	c_type_prefix_operators: 'unsigned signed long short',
 	ambiguous_type_suffix: '* ** ^ & &&',

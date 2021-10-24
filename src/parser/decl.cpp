@@ -651,17 +651,20 @@ namespace ama {
 			(nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->s->isAncestorOf(nd_ref)) ) {
 				nd_ref->flags |= ama::REF_DECLARED;
 			}
-			if ( nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->isAncestorOf(nd_ref) ) {
+			if ( nd_asgn && nd_stmt->isAncestorOf(nd_asgn) && nd_asgn->c->isAncestorOf(nd_ref) ) {
 				//Go := operator or general assignment
-				if ( nd_stmt->data == ":" || nd_stmt->data == "" ) {
-					if ( nd_ref == nd_stmt->c ) {
-						if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_stmt->p->p->data == "enum" ) {
+				if ( nd_asgn->data == ":" || nd_asgn->data == "" ) {
+					if ( nd_ref == nd_asgn->c ) {
+						if ( nd_asgn->p && (
+							nd_asgn->p->node_class == ama::N_SCOPE && nd_asgn->p->p && nd_asgn->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_asgn->p->p->data == "enum" ||
+							nd_asgn->p->node_class == ama::N_PARAMETER_LIST
+						)) {
 							nd_ref->flags |= ama::REF_DECLARED;
 						} else {
 							nd_ref->flags |= ama::REF_WRITTEN;
 						}
 					}
-					if ( nd_stmt->data == ":" ) {
+					if ( nd_asgn->data == ":" ) {
 						//Go := operator
 						FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
 						nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
@@ -669,7 +672,7 @@ namespace ama {
 						//destructuring case: `[foo]=...`
 						ama::Node* nd_destructuring = nd_ref;
 						int destructured = 0;
-						while ( nd_destructuring != nd_stmt ) {
+						while ( nd_destructuring != nd_asgn ) {
 							if ( nd_destructuring->node_class == ama::N_SCOPE || nd_destructuring->isRawNode('[', ']') || nd_destructuring->isRawNode('{', '}') || nd_destructuring->isRawNode('(', ')') ) {
 								destructured = 1;
 								break;

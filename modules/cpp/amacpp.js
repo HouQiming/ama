@@ -11,6 +11,7 @@ function ToCPP(nd_root,options){
 	(nd_root
 		.StripRedundantPrefixSpace()
 		.then(require('auto_semicolon'))
+		.then(require('cpp/sane_for'))
 		.then(require('auto_paren'))
 		.then(sane_types.FixArrayTypes)
 		.then(require('cpp/auto_decl'))
