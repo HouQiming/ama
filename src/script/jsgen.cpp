@@ -509,6 +509,10 @@ namespace ama {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
 		return JS_NewInt32(jsctx, nd->isChildCFGDependent(ama::UnwrapNode((0 < argc ? argv[0L] : JS_UNDEFINED))));
 	}
+	JSValue NodeCall_dump(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
+		return ama::WrapString(nd->dump());
+	}
 	void GeneratedJSBindings() {
 		JS_DefinePropertyGetSet(jsctx, ama::g_node_proto, JS_NewAtom(jsctx, "node_class"), JS_NewCFunction2(jsctx, (JSCFunction*)(NodeGet_node_class), "get_node_class", 0, JS_CFUNC_getter, 0), JS_NewCFunction2(jsctx, (JSCFunction*)(NodeSet_node_class), "set_node_class", 1, JS_CFUNC_setter, 0), JS_PROP_C_W_E);
 		JS_DefinePropertyGetSet(jsctx, ama::g_node_proto, JS_NewAtom(jsctx, "indent_level"), JS_NewCFunction2(jsctx, (JSCFunction*)(NodeGet_indent_level), "get_indent_level", 0, JS_CFUNC_getter, 0), JS_NewCFunction2(jsctx, (JSCFunction*)(NodeSet_indent_level), "set_indent_level", 1, JS_CFUNC_setter, 0), JS_PROP_C_W_E);
@@ -578,6 +582,7 @@ namespace ama {
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "Unparse", JS_NewCFunction(jsctx, (NodeCall_Unparse), "Node.Unparse", 0));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "GetCFGRole", JS_NewCFunction(jsctx, (NodeCall_GetCFGRole), "Node.GetCFGRole", 0));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "isChildCFGDependent", JS_NewCFunction(jsctx, (NodeCall_isChildCFGDependent), "Node.isChildCFGDependent", 1));
+		JS_SetPropertyStr(jsctx, ama::g_node_proto, "dump", JS_NewCFunction(jsctx, (NodeCall_dump), "Node.dump", 0));
 		ama::g_node_class_names.resize(31);
 		ama::g_builder_names.resize(31);
 		JSValueConst global = JS_GetGlobalObject(ama::jsctx);

@@ -184,6 +184,10 @@ namespace ama {
 			}
 			case ama::N_PREFIX: {
 				this->code--->push(nd->data);
+				if (nd->data.size() > 0 && nd->data.back() >= 'a' && nd->data.back() <= 'z') {
+					//unsigned and stuff
+					this->GenerateSpaceBefore(nd->c);
+				}
 				this->Generate(nd->c);
 				break;
 			}
@@ -379,5 +383,22 @@ namespace ama {
 	}
 	std::string ama::Node::toSource() const {
 		return GenerateCode((ama::Node*)(this), JS_NULL);
+	}
+	static int DumpingHook(ama::CodeGenerator* ctx, ama::Node* nd) {
+		if (nd != (ama::Node*)ctx->opaque && nd->node_class == ama::N_SCOPE) {
+			ctx->code--->push("{...}");
+			return 1;
+		}
+		return 0;
+	}
+	std::string ama::Node::dump() const {
+		ama::CodeGenerator ctx{};
+		ctx.tab_width = 4;
+		ctx.auto_space = 1;
+		ctx.tab_indent = 1;
+		ctx.hook = DumpingHook;
+		ctx.opaque = this;
+		ctx.Generate((ama::Node*)this);
+		return std::move(ctx.code);
 	}
 };

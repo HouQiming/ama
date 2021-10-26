@@ -207,6 +207,7 @@ namespace ama {
 		ama::Node* Unparse();
 		uint8_t GetCFGRole()const;
 		int isChildCFGDependent(ama::Node const* nd_child)const;
+		std::string dump()const;
 	};
 	ama::Node* AllocNode();
 	extern ama::Node* g_placeholder;

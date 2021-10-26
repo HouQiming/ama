@@ -82,6 +82,9 @@ namespace ama{
 			assert(index < this->size());
 			return this->data()[index];
 		}
+		char back(){
+			return this->data()[this->size()-1];
+		}
 		char const* begin()const{return this->data();}
 		char const* end()const{return this->data()+this->size();}
 		//////////////

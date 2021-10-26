@@ -493,6 +493,11 @@ typing.ComputeType = function(nd_expr) {
 		break;
 	}
 	case N_ITEM: {
+		if (!nd_expr.c.s || nd_expr.c.s.node_class == N_SYMBOL) {
+			//self-representing array type
+			type = nd_expr;
+			break;
+		}
 		//we should do this before sane_types: we want the untranslated *sane* types
 		let type_obj = typing.ComputeType(nd_expr.c);
 		//recognize array and pointer
