@@ -182,8 +182,17 @@ Node.Save = function(options) {
 
 Node.StripRedundantPrefixSpace = function() {
 	for (let ndi = this; ndi; ndi = ndi.PreorderNext(this)) {
-		if (ndi.comments_before === ' ' && (ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || ndi.p.node_class === N_BINOP)) {
+		if (ndi.comments_before === ' ' && (
+			ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 
+			ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT
+		)) {
 			ndi.comments_before = '';
+		}
+		if (ndi.comments_after === ' ' && (
+			ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 
+			ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT
+		)) {
+			ndi.comments_after = '';
 		}
 	}
 	return this;

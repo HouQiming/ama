@@ -299,7 +299,7 @@ namespace ama {
 							a[i]->FreeASTStorage();
 						} else {
 							//we still have uninterpreted things, replace children
-							assert(stack.size() > 1);
+							assert(stack.size() > 0);
 							a[i]->c = nullptr;
 							a[i]->Insert(ama::POS_FRONT, ama::InsertMany(stack));
 						}

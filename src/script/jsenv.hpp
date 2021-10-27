@@ -54,17 +54,17 @@ namespace ama {
 		return (ama::Node*)(JS_GetOpaque(val, g_node_classid));
 	}
 	JSValueConst WrapNode(ama::Node const* nd);
-	static inline JSValueConst WrapNodeArray(std::span<ama::Node*> nds) {
+	static inline JSValueConst WrapNodeArray(std::span<ama::Node *> nds) {
 		JSValueConst ret = JS_NewArray(jsctx);
 		for (intptr_t i = intptr_t(0L); i < intptr_t(nds.size()); i += 1) {
 			JS_SetPropertyUint32(jsctx, ret, uint32_t(uintptr_t(i)), ama::WrapNode(nds[i]));
 		}
 		return ret;
 	}
-	static inline std::vector<ama::Node*> UnwrapNodeArray(JSValueConst val) {
+	static inline std::vector<ama::Node *> UnwrapNodeArray(JSValueConst val) {
 		int64_t lg = int64_t(0LL);
 		JS_ToInt64(jsctx, &lg, JS_GetPropertyStr(jsctx, val, "length"));
-		std::vector<ama::Node*> ret((intptr_t(lg)));
+		std::vector<ama::Node *> ret((intptr_t(lg)));
 		for (intptr_t i = intptr_t(0L); i < intptr_t(lg); i += 1) {
 			ret[i] = UnwrapNode(JS_GetPropertyUint32(jsctx, val, uint32_t(uintptr_t(i))));
 		}
@@ -72,11 +72,13 @@ namespace ama {
 	}
 	ama::gcstring FindCommonJSModuleByPath(std::span<char> fn);
 	ama::gcstring FindCommonJSModule(std::span<char> fn_required, std::span<char> dir_base);
-	extern std::vector<char const*> g_builder_names;
-	extern std::vector<char const*> g_node_class_names;
+	extern std::vector<char const *> g_builder_names;
+	extern std::vector<char const *> g_node_class_names;
 	std::unordered_map<ama::gcstring, int> GetPrioritizedList(JSValueConst options, char const* name);
 	extern std::string std_module_dir_global;
 	JSValue InheritOptions(JSValueConst options);
+	JSValue CallJSMethod(JSValue this_val, char const* name, std::span<JSValue> args);
+	JSValue RequireJSModule(char const* name);
 };
 
 #endif
