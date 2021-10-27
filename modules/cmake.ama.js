@@ -215,7 +215,7 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 	//insert files
 	let src_name_abs = path.resolve(this.data);
 	let dir_cmake = path.dirname(fn_cmake);
-	let our_files = depends.ListAllDependency(this, false);
+	let our_files = new Set(depends.ListAllDependency(this, false).map(nd_root=>__path_toAbsolute(nd_root.data)));
 	let our_files_filtered = [];
 	//our own file could be .ama.
 	let src_name_rel = TryRelative(dir_cmake, src_name_abs).replace('.ama.', '.');

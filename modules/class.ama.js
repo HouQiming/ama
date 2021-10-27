@@ -94,6 +94,7 @@ Node.ParseClass = function() {
 	let base_class_set = new Set();
 	for (let ndi = nd_after; ndi; ndi = PreorderNextSkipping(ndi, nd_after)) {
 		if ((ndi.node_class == N_REF || ndi.node_class == N_DOT) && !g_not_class.has(ndi.data)) {
+			//COULDDO: use typing: let type_obj = typing.TryGettingClass(typing.ComputeType(ndi))
 			for (let nd_class of ndi.LookupClass()) {
 				if (nd_class) {base_class_set.add(nd_class);}
 			}
@@ -142,9 +143,10 @@ function LookupClassInFile(ret, nd_root, nd_name) {
 ///look up a ref / dot node
 Node.LookupClass = function() {
 	let ret = [];
-	for (let fn of depends.ListAllDependency(this.Root(), true)) {
-		let nd_root = depends.LoadFile(fn);
-		LookupClassInFile(ret, nd_root, this);
+	for (let nd_root of depends.ListAllDependency(this.Root(), true)) {
+		if (nd_root) {
+			LookupClassInFile(ret, nd_root, this);
+		}
 	}
 	return ret;
 };

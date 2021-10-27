@@ -125,7 +125,7 @@ typing.GetDefs = function(nd_scope) {
 };
 
 typing.ListActiveScopes = function(nd_root) {
-	return depends.ListAllDependency(nd_root, true).map(fn=>depends.LoadFile(fn)).filter(nd=>nd);
+	return depends.ListAllDependency(nd_root, true);
 };
 
 //only the type system cares about declarations, put it here
@@ -250,7 +250,7 @@ function isNamespace(nd_class) {
 
 typing.LookupClassesByNames = function(nd_root, names, options) {
 	let all_scopes = [];
-	for (let nd_dep of [nd_root].concat(options.include_dependency ? depends.ListAllDependency(nd_root, true).map(fn=>depends.LoadFile(fn)).filter(nd_root=>nd_root) : [])) {
+	for (let nd_dep of options.include_dependency ? depends.ListAllDependency(nd_root, true) : [nd_root]) {
 		let scopes = [nd_dep];
 		for (let i = names.length - 1; i >= 0; i--) {
 			let new_scopes = [];

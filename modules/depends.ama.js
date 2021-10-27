@@ -35,9 +35,6 @@ depends.Resolve = function(nd) {
 };
 
 depends.cache = new Map();
-depends.DropCache = function() {
-	depends.cache = new Map();
-};
 
 depends.LoadFile = function(fn, options) {
 	fn = __path_toAbsolute(fn);
@@ -99,9 +96,9 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 			}
 		}
 	}
-	let qret = Q.map(ndi=>__path_toAbsolute(ndi.data));
-	cache.set(nd_root, qret);
-	return qret;
+	//let qret = Q.map(ndi=>__path_toAbsolute(ndi.data));
+	//cache.set(nd_root, qret);
+	return Q;
 };
 
 depends.ListLoadedFiles = function() {
@@ -113,4 +110,9 @@ depends.ListLoadedFiles = function() {
 		ret.push(path.resolve(name));
 	});
 	return ret;
+};
+
+depends.DropCache = function() {
+	depends.cache = new Map();
+	depends.dependency_cache = [new Map(), new Map()];
 };
