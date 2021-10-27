@@ -24,4 +24,7 @@ int main(){
 	};
 	return(a);
 	return -a;
+	return PredictionResult{
+		error:"not implemented"
+	}
 }

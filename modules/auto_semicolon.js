@@ -74,6 +74,7 @@ module.exports = function(nd_root) {
 				let nd_tmp = Node.GetPlaceHolder();
 				ndi.ReplaceWith(nd_tmp);
 				ndi = nd_tmp.ReplaceWith(nSemicolon(ndi));
+				ndi.c.AdjustIndentLevel(-ndi.indent_level);
 				//shove trailing comments after the ;
 				let all_comments = [];
 				for (let ndj = ndi; ; ndj = ndj.LastChild()) {
@@ -87,7 +88,7 @@ module.exports = function(nd_root) {
 						if (ndj.comments_after) {
 							ndj.comments_after = '';
 						}
-						if (!ndj.c) {break;}
+						if (ndj.node_class == N_SCOPE || ndj.node_class == N_CALL || ndj.node_class == N_CALL_TEMPLATE || ndj.node_class == N_SCOPED_STATEMENT || !ndj.c) {break;}
 					}
 					ndi.comments_after = all_comments.reverse().join('');
 				}
