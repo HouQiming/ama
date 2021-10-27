@@ -82,6 +82,7 @@ void ama::gcstring_gcsweep() {
 			} else {
 				//drop it
 				//fprintf(stderr,"dropped string %s\n",p->data());
+				g_n_elements-=1;
 				free(p);
 			}
 			p = p_next;

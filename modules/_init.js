@@ -187,13 +187,15 @@ Node.StripRedundantPrefixSpace = function(aggressive) {
 	for (let ndi = this; ndi; ndi = ndi.PreorderNext(this)) {
 		if (isSpace(ndi.comments_before) && ndi.p && (
 			ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 
-			ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT
+			ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT ||
+			ndi.node_class===N_PAREN||ndi.node_class===N_SCOPE||ndi.node_class===N_STRING
 		)) {
 			ndi.comments_before = '';
 		}
 		if (isSpace(ndi.comments_after) && ndi.p && (
 			ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 
-			ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT
+			ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT ||
+			ndi.node_class===N_PAREN||ndi.node_class===N_SCOPE||ndi.node_class===N_STRING
 		)) {
 			ndi.comments_after = '';
 		}

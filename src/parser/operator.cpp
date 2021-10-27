@@ -273,7 +273,7 @@ namespace ama {
 									break;
 								}
 								ama::Node* nd_prefix_operator = stack--->pop();
-								ndi = ama::nPrefix(nd_prefix_operator->data, ndi);
+								ndi = ama::nPrefix(nd_prefix_operator->data, ndi->MergeCommentsBefore(nd_prefix_operator))->setCommentsBefore(nd_prefix_operator->comments_before);
 								nd_prefix_operator->p = nullptr;
 								nd_prefix_operator->FreeASTStorage();
 								changed = 1;
