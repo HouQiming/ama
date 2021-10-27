@@ -116,7 +116,7 @@
 									//don't push last_levels
 									ret--->push("../");
 								}
-							} else {
+							} else{
 								need_trailing_slash = 0;
 								last_levels--->push(ret.size());
 								ret--->push(part);

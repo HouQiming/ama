@@ -121,7 +121,7 @@ namespace ama {
 		return "";
 	}
 	std::unordered_map<ama::gcstring, int> GetPrioritizedList(JSValueConst options, char const* name) {
-		ama::gcstring s_binops = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, name));
+		std::span<char> s_binops = ama::UnwrapStringSpan(JS_GetPropertyStr(ama::jsctx, options, name));
 		std::unordered_map<ama::gcstring, int> ret{};
 		int priority = 1;
 		//coulddo: SSE / NEON vectorization

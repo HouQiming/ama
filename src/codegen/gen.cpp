@@ -97,7 +97,7 @@ namespace ama {
 					this->code.push_back('<');
 				} else if ( nd->node_class == ama::N_ITEM ) {
 					this->code.push_back('[');
-				} else {
+				} else{
 					//if( nd.flags & ama::CALL_IS_UNARY_OPERATOR ) {
 					//	if( nd.c.s ) {
 					//		this.GenerateSpaceBefore(nd.c.s);
@@ -121,7 +121,7 @@ namespace ama {
 					this->code.push_back('>');
 				} else if ( nd->node_class == ama::N_ITEM ) {
 					this->code.push_back(']');
-				} else {
+				} else{
 					//if( nd.flags & ama::CALL_IS_UNARY_OPERATOR ) {
 					//	//do nothing
 					//} else {
@@ -215,7 +215,7 @@ namespace ama {
 				//N_CLASS: before, name, after, body
 				//N_FUNCTION: before, paramlist, after, body
 				//N_SCOPED_STATEMENT, N_EXTENSION_CLAUSE: arg, body
-				ama::Node* ndi_last{};
+				ama::Node* ndi_last = nullptr;
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					if ( ndi->node_class == ama::N_EXTENSION_CLAUSE || ndi->node_class == ama::N_SCOPE ) {
 						if ( ndi_last ) {

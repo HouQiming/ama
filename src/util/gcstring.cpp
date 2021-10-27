@@ -14,14 +14,14 @@ static inline uint64_t hash_string8(uint8_t const* str, size_t len, uint64_t h) 
 	return h;
 }
 
-ama::gcstring_long* ama::toGCStringLongCat(char const* data0, size_t length0, char const* data1, size_t length1) {
+ama::gcstring_long * ama::toGCStringLongCat(char const* data0, size_t length0, char const* data1, size_t length1) {
 	//printf("%p %d %p %d\n",data0,int(length0),data1,int(length1));
 	size_t length = length0 + length1;
-	assert(length>=8);
+	assert(length >= 8);
 	uint64_t h = hash_string8((uint8_t const*)data0, length0, 0uLL);
 	h = hash_string8((uint8_t const*)data1, length1, h);
 	for (ama::gcstring_long* p = g_hash[h & (g_hash_size - 1)]; p; p = p->next) {
-		if (p->length == length &&p->hash==h&& memcmp(p->data(), data0, length0) == 0 && memcmp(p->data() + length0, data1, length1) == 0) {
+		if (p->length == length && p->hash == h && memcmp(p->data(), data0, length0) == 0 && memcmp(p->data() + length0, data1, length1) == 0) {
 			return p;
 		}
 	}
@@ -64,6 +64,7 @@ ama::gcstring_long* ama::toGCStringLongCat(char const* data0, size_t length0, ch
 	memcpy(p_new->data(), data0, length0);
 	memcpy(p_new->data() + length0, data1, length1);
 	p_new->data()[length] = 0;
+	//fprintf(stderr,"alloc string %p %s\n",p_new,p_new->data());
 	return p_new;
 }
 
@@ -82,8 +83,8 @@ void ama::gcstring_gcsweep() {
 				pp_last = &p->next;
 			} else {
 				//drop it
-				//fprintf(stderr,"dropped string %s\n",p->data());
-				g_n_elements-=1;
+				//fprintf(stderr,"dropped string %p %s\n",p,p->data());
+				g_n_elements -= 1;
 				free(p);
 			}
 			p = p_next;

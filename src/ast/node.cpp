@@ -685,7 +685,7 @@ ama::Node * ama::Node::InsertCommentBefore(std::span<char> s) {
 }
 ///////////////////////////////////////
 ama::Node * ama::Node::MergeCommentsAfter(ama::Node* nd_after) {
-	this->comments_after = (this->comments_after+nd_after->comments_before);
+	this->comments_after = (this->comments_after + nd_after->comments_before);
 	nd_after->comments_before = "";
 	return this;
 }
@@ -701,7 +701,7 @@ ama::Node * ama::Node::MergeCommentsAndIndentAfter(ama::Node* nd_after) {
 	return this;
 }
 ama::Node * ama::Node::MergeCommentsBefore(ama::Node* nd_before) {
-	this->comments_before = (nd_before->comments_after+this->comments_before);
+	this->comments_before = (nd_before->comments_after + this->comments_before);
 	nd_before->comments_after = "";
 	return this;
 }

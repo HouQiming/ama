@@ -14,6 +14,17 @@ namespace ama {
 		}
 	}
 	intptr_t gc() {
+		#ifndef NDEBUG
+		do {
+			//check that we don't have premature TMPF_GC_MARKED
+			std::vector<ama::Node*> node_ranges = ama::GetAllPossibleNodeRanges();
+			for (int i = 0; i < node_ranges.size(); i += 2) {
+				for (ama::Node* nd = node_ranges[i]; nd != node_ranges[i + 1]; nd += 1) {
+					assert(!(nd->tmp_flags & ama::TMPF_GC_MARKED));
+				}
+			}
+		} while (0);
+		#endif
 		//mark: if nd is alive, so is nd.p
 		//so we only mark root nodes and only propagate along c / s
 		std::vector<ama::Node*> Q{};
@@ -38,6 +49,7 @@ namespace ama {
 				if ( (nd->tmp_flags & (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE)) == ama::TMPF_IS_NODE ) {
 					//unreachable but un-free, release
 					//console.log('freed node', nd.node_class, nd.data == NULL ? "NULL" : nd.data.c_str());
+					//fprintf(stderr,"free node %p\n",nd);
 					n_freed += 1;
 					//nd->data = ama::gcstring();
 					//nd->comments_before = ama::gcstring();
@@ -48,8 +60,9 @@ namespace ama {
 					nd->tmp_flags = 0;
 					nd->s = ama::g_free_nodes;
 					ama::g_free_nodes = nd;
-				} else if ( (nd->tmp_flags & (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE)) == (ama::TMPF_IS_NODE | ama::TMPF_IS_NODE) ) {
+				} else if ( (nd->tmp_flags & (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE)) == (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE) ) {
 					//clear the marked flag for the next gc
+					//fprintf(stderr,"keep node %p\n",nd);
 					nd->tmp_flags &= ~ama::TMPF_GC_MARKED;
 				}
 			}

@@ -28,7 +28,7 @@ namespace ama {
 				//strip trailing ','s
 				if ( ndi->isRawNode(0, 0) ) {
 					if ( comma_group.size() ) {
-						comma_group[comma_group.size() - 1]->comments_after = (comma_group[comma_group.size() - 1]->comments_after+ndi->comments_before);
+						comma_group[comma_group.size() - 1]->comments_after = (comma_group[comma_group.size() - 1]->comments_after + ndi->comments_before);
 					} else {
 						pending_comments_before--->push(ndi->comments_before);
 					}
@@ -36,7 +36,7 @@ namespace ama {
 						if ( ndk->isSymbol(",") ) {
 							ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
 							nd_arg->comments_before = (ama::gcscat(pending_comments_before, nd_arg->comments_before));
-							nd_arg->comments_after = (nd_arg->comments_after+ndk->comments_before);
+							nd_arg->comments_after = (nd_arg->comments_after + ndk->comments_before);
 							new_children.push_back(nd_arg);
 							pending_comments_before.clear();
 							pending_comments_before--->push(ndk->comments_after);
@@ -47,14 +47,14 @@ namespace ama {
 						}
 					}
 					if ( comma_group.size() ) {
-						comma_group[comma_group.size() - 1]->comments_after = (comma_group[comma_group.size() - 1]->comments_after+ndi->comments_after);
+						comma_group[comma_group.size() - 1]->comments_after = (comma_group[comma_group.size() - 1]->comments_after + ndi->comments_after);
 					} else {
 						pending_comments_before--->push(ndi->comments_after);
 					}
 				} else if ( ndi->isSymbol(",") ) {
 					ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
 					nd_arg->comments_before = (ama::gcscat(pending_comments_before, nd_arg->comments_before));
-					nd_arg->comments_after = (nd_arg->comments_after+ndi->comments_before);
+					nd_arg->comments_after = (nd_arg->comments_after + ndi->comments_before);
 					new_children.push_back(nd_arg);
 					pending_comments_before.clear();
 					pending_comments_before--->push(ndi->comments_after);
@@ -100,7 +100,7 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
 		int32_t parse_air_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1);
-		std::vector<ama::Node*> a = std::vector<ama::Node*> {nd_root}--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
+		std::vector<ama::Node*> a = std::vector<ama::Node*>{nd_root}--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
 		for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 			ama::Node* ndi = a[i]->c;
 			while ( ndi ) {
@@ -121,7 +121,7 @@ namespace ama {
 					//.setCommentsBefore(ndi.comments_before).setCommentsAfter(ndi_next.comments_after)
 					ama::Node* nd_dot = ndi->ReplaceUpto(
 						ndi_next,
-						ama::nAir()->setCommentsAfter(ndi->comments_after+ndi_next->comments_before)->dot(name)->setFlags(dot_flags)
+						ama::nAir()->setCommentsAfter(ndi->comments_after + ndi_next->comments_before)->dot(name)->setFlags(dot_flags)
 					);
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					ndi->p = nullptr; ndi->s = nullptr; ndi->FreeASTStorage();
@@ -132,9 +132,9 @@ namespace ama {
 					ndi_next->Unlink();
 					ndi = ndi->ReplaceWith(ama::nNodeof(ndi_next)->setIndent(ndi->indent_level));
 					continue;
-				} else if(ndi->node_class == ama::N_SYMBOL) {
+				} else if(ndi->node_class == ama::N_SYMBOL){
 					//do nothing
-				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)) {
+				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)){
 					//postfix operator
 					ndi->MergeCommentsAfter(ndi_next);
 					ama::Node* nd_tmp = ama::GetPlaceHolder();
@@ -145,7 +145,7 @@ namespace ama {
 					continue;
 				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
 				(ndi_next->data == "." || (!isCPPLambda(ndi) && ndi_next->data == "->") || ndi_next->data == "::") && 
-				ndi_next->s && ndi_next->s->node_class == ama::N_REF) {
+				ndi_next->s && ndi_next->s->node_class == ama::N_REF){
 					//dot
 					int dot_flags = 0;
 					if ( ndi_next->data == "->" ) {
@@ -165,7 +165,7 @@ namespace ama {
 					nd_name->p = nullptr; nd_name->FreeASTStorage();
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					continue;
-				} else if(ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()) {
+				} else if(ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()){
 					//call
 					ndi = TranslatePostfixCall(ndi);
 					continue;

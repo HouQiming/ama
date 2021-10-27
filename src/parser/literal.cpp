@@ -25,27 +25,27 @@ namespace ama {
 					ret--->push("\\u00", ama::g_hex[intptr_t(ch >> 4) & intptr_t(0xfL)], ama::g_hex[intptr_t(ch) & intptr_t(0xfL)]);
 					break;
 				}
-				case '\t': {
+				case'\t': {
 					ret--->push('\\', 't');
 					break;
 				}
-				case '\b': {
+				case'\b': {
 					ret--->push('\\', 'b');
 					break;
 				}
-				case '\r': {
+				case'\r': {
 					ret--->push('\\', 'r');
 					break;
 				}
-				case '\n': {
+				case'\n': {
 					ret--->push('\\', 'n');
 					break;
 				}
-				case '\\': {
+				case'\\': {
 					ret--->push('\\', '\\');
 					break;
 				}
-				case '\'': {
+				case'\'': {
 					ret--->push('\\', '\'');
 					break;
 				}
@@ -73,35 +73,35 @@ namespace ama {
 						}
 						break;
 					}
-					case 'a': {
+					case'a': {
 						ret--->push(char(7));
 						break;
 					}
-					case 'b': {
+					case'b': {
 						ret--->push('\b');
 						break;
 					}
-					case 't': {
+					case't': {
 						ret--->push('\t');
 						break;
 					}
-					case 'n': {
+					case'n': {
 						ret--->push('\n');
 						break;
 					}
-					case 'v': {
+					case'v': {
 						ret--->push(char(11));
 						break;
 					}
-					case 'f': {
+					case'f': {
 						ret--->push(char(12));
 						break;
 					}
-					case 'r': {
+					case'r': {
 						ret--->push('\r');
 						break;
 					}
-					case 'x': {
+					case'x': {
 						// x##'
 						if ( (s.size() - i) >= intptr_t(4L) ) {
 							std::array<char, intptr_t(3L)> tmp{};
@@ -112,7 +112,7 @@ namespace ama {
 						i += intptr_t(2L);
 						break;
 					}
-					case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': {
+					case'0': case'1': case'2': case'3': case'4': case'5': case'6': case'7': {
 						int oct = 0;
 						oct = oct * 8 + int(int(ch_next) - 48);
 						// ##'
@@ -127,7 +127,7 @@ namespace ama {
 						ret--->push(char(uint8_t(uint32_t(oct))));
 						break;
 					}
-					case 'u': {
+					case'u': {
 						// u{#}'
 						std::array<char, intptr_t(9L)> tmp{};
 						if ( (s.size() - i) >= intptr_t(5L) && s[i + intptr_t(1L)] == '{' ) {

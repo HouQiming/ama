@@ -51,7 +51,9 @@ namespace ama {
 	extern JSValue g_node_proto;
 	extern std::unordered_map<ama::Node const*, JSValue> g_js_node_map;
 	static inline ama::Node* UnwrapNode(JSValueConst val) {
-		return (ama::Node*)(JS_GetOpaque(val, g_node_classid));
+		ama::Node* nd = (ama::Node*)(JS_GetOpaque(val, g_node_classid));
+		if (nd) {assert(nd->tmp_flags & ama::TMPF_IS_NODE);}
+		return nd;
 	}
 	JSValueConst WrapNode(ama::Node const* nd);
 	static inline JSValueConst WrapNodeArray(std::span<ama::Node*> nds) {

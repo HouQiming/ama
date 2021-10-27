@@ -18,7 +18,7 @@ namespace ama {
 				nd_comma->Unlink();
 				ama::Node* nd_arg_last = ndi->LastChild();
 				nd_arg_last->MergeCommentsAndIndentAfter(nd_comma);
-				ndi->comments_after = (ndi->comments_after+nd_comma->comments_after);
+				ndi->comments_after = (ndi->comments_after + nd_comma->comments_after);
 				nd_comma->FreeASTStorage();
 				if ( !ndi->c->s ) {
 					ndi = ama::UnparseRaw(ndi);
@@ -197,7 +197,7 @@ namespace ama {
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
 								continue;
-							} else {
+							} else{
 								//fall through: could be `while`
 							}
 						}
@@ -260,7 +260,7 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
 					nd_keyword = nullptr;
-				} else if(ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi) {
+				} else if(ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi){
 					switch ( kw_mode ) {
 						case KW_CLASS: {
 							//search for the class name
@@ -517,7 +517,7 @@ namespace ama {
 				if ( nd_stmt->c ) {
 					nd_stmt->c->MergeCommentsBefore(nd_keyword);
 				} else {
-					nd_stmt->comments_after = (nd_keyword->comments_after+nd_stmt->comments_after);
+					nd_stmt->comments_after = (nd_keyword->comments_after + nd_stmt->comments_after);
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				ndi = nd_raw->Insert(ama::POS_BACK, nd_stmt);
@@ -595,7 +595,7 @@ namespace ama {
 				if ( nd_stmt->c ) {
 					nd_stmt->c->MergeCommentsBefore(nd_keyword);
 				} else {
-					nd_stmt->comments_after = (nd_keyword->comments_after+nd_stmt->comments_after);
+					nd_stmt->comments_after = (nd_keyword->comments_after + nd_stmt->comments_after);
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				nd_tmp->ReplaceWith(nd_stmt);

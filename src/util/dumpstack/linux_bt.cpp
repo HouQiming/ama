@@ -10,8 +10,8 @@
 #include <dlfcn.h>
 #include <sys/wait.h>
 #pragma no_auto_header()
-extern "C" char __executable_start;
-extern "C" char __etext;
+extern"C" char __executable_start;
+extern"C" char __etext;
 namespace DumpStack {
 	volatile int g_dump_all_threads = 0;
 	volatile int g_is_our_abort = 0;
@@ -129,43 +129,43 @@ namespace DumpStack {
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
-		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+		sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
 		sigaction(SIGSEGV, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
-		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+		sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
 		sigaction(SIGTRAP, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
-		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+		sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
 		sigaction(SIGABRT, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
-		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+		sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
 		sigaction(SIGBUS, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
-		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+		sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
 		sigaction(SIGPIPE, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
-		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+		sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
 		sigaction(SIGINT, &sa, nullptr);
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);
 		sa.sa_sigaction = StackDumper;
-		sa.sa_flags   = SA_SIGINFO | SA_RESETHAND;
+		sa.sa_flags = SA_SIGINFO | SA_RESETHAND;
 		sigaction(SIGFPE, &sa, nullptr);
 	}
 }

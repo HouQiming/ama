@@ -20,14 +20,15 @@ depends.Resolve = function(nd) {
 			}
 		}
 		for (let dir of depends.c_include_paths) {
-			let fn_test = path.resolve(dir, fn)
-				if (fs.existsSync(fn_test)) {
-					return fn_test;};
+			let fn_test = path.resolve(dir, fn);
+			if (fs.existsSync(fn_test)) {
+				return fn_test;
+			}
 		}
 	} else if ((nd.flags & DEP_TYPE_MASK) == DEP_JS_REQUIRE) {
 		//reuse the builtin searcher __ResolveJSRequire
 		if (nd.c && nd.c.node_class == N_STRING) {
-			return __ResolveJSRequire(__filename, nd.c.GetStringValue);
+			return __ResolveJSRequire(__filename, nd.c.GetStringValue());
 		}
 	}
 	return undefined;

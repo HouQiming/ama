@@ -441,7 +441,7 @@ ama::ExecRange NodeGraphContext::dfsCreateNodeGraph(ama::Node* nd) {
 				this->sess->AddEdge(ed, rg_yes.entry);
 				this->sess->AddEdge(rg_yes.exit, ed_phi);
 				this->sess->AddEdge(ed, ed_phi);
-			} else {
+			} else{
 				fprintf(stderr, "panic: unrecognized branch statement class:\n");
 				{
 					auto const& object0 = nd->toSource();
@@ -795,8 +795,8 @@ FValueFilter filter) {
 }
 
 ////////////////////////////
-static std::vector<char const*> g_superscript_digits{"⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"};
-static std::vector<char const*> g_subscript_digits{"₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"};
+static std::vector<char const*> g_superscript_digits{"⁰","¹","²","³","⁴","⁵","⁶","⁷","⁸","⁹"};
+static std::vector<char const*> g_subscript_digits{"₀","₁","₂","₃","₄","₅","₆","₇","₈","₉"};
 struct GraphvizDumpingContext {
 	ama::ExecSession* sess{};
 	std::unordered_map<void*, intptr_t> node_numbers{};
@@ -852,8 +852,8 @@ static int GraphvizGenerateNode(ama::CodeGenerator* gctx, ama::Node* nd) {
 	return 1;
 }
 
-static std::vector<char const*> g_enode_names{"nd", "after", "fork", "join", "br", "phi", "jump", "loop", "entry"};
-static std::vector<char const*> g_enode_shapes{"box", "invtrapezium", "triangle", "invtriangle", "diamond", "invhouse", "oval", "parallelogram", "hexagon"};
+static std::vector<char const*> g_enode_names{"nd","after","fork","join","br","phi","jump","loop","entry"};
+static std::vector<char const*> g_enode_shapes{"box","invtrapezium","triangle","invtriangle","diamond","invhouse","oval","parallelogram","hexagon"};
 std::string ama::ExecSession::DumpGraphviz(ama::ExecNode* extra_graph) {
 	std::string ret; {
 		

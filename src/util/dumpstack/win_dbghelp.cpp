@@ -24,13 +24,13 @@ namespace DumpStack {
 			frame.AddrFrame.Offset = ctx->Rbp; frame.AddrFrame.Mode = AddrModeFlat;
 			frame.AddrStack.Offset = ctx->Rsp; frame.AddrStack.Mode = AddrModeFlat;
 			#define MY_MACHINE_TYPE IMAGE_FILE_MACHINE_AMD64
-			#define PTR_FORMAT "%016llx"
+			#define PTR_FORMAT"%016llx"
 			fprintf(stderr,
-				"rax=" PTR_FORMAT " rcx=" PTR_FORMAT " rdx=" PTR_FORMAT " rbx=" PTR_FORMAT "\n"
-				"rsp=" PTR_FORMAT " rbp=" PTR_FORMAT " rsi=" PTR_FORMAT " rdi=" PTR_FORMAT "\n"
-				"r8 =" PTR_FORMAT " r9 =" PTR_FORMAT " r10=" PTR_FORMAT " r11=" PTR_FORMAT "\n"
-				"r12=" PTR_FORMAT " r13=" PTR_FORMAT " r14=" PTR_FORMAT " r15=" PTR_FORMAT "\n"
-				"rip=" PTR_FORMAT " eflags=%08x\n",
+				"rax=" PTR_FORMAT" rcx=" PTR_FORMAT" rdx=" PTR_FORMAT" rbx=" PTR_FORMAT"\n"
+				"rsp=" PTR_FORMAT" rbp=" PTR_FORMAT" rsi=" PTR_FORMAT" rdi=" PTR_FORMAT"\n"
+				"r8 =" PTR_FORMAT" r9 =" PTR_FORMAT" r10=" PTR_FORMAT" r11=" PTR_FORMAT"\n"
+				"r12=" PTR_FORMAT" r13=" PTR_FORMAT" r14=" PTR_FORMAT" r15=" PTR_FORMAT"\n"
+				"rip=" PTR_FORMAT" eflags=%08x\n",
 				ctx->Rax, ctx->Rcx, ctx->Rdx, ctx->Rbx,
 				ctx->Rsp, ctx->Rbp, ctx->Rsi, ctx->Rdi,
 				ctx->R8, ctx->R9, ctx->R10, ctx->R11,
@@ -43,7 +43,7 @@ namespace DumpStack {
 			frame.AddrFrame.Offset = ctx->Ebp; frame.AddrFrame.Mode = AddrModeFlat;
 			frame.AddrStack.Offset = ctx->Esp; frame.AddrStack.Mode = AddrModeFlat;
 			#define MY_MACHINE_TYPE IMAGE_FILE_MACHINE_I386
-			#define PTR_FORMAT "%08x"
+			#define PTR_FORMAT"%08x"
 		#endif
 		HANDLE hprocess = GetCurrentProcess();
 		int is_call = 0;
@@ -65,7 +65,7 @@ namespace DumpStack {
 					if (SymGetModuleInfoW64(hprocess, hmodule, &module)) {
 						fprintf(stderr, "module %S: " PTR_FORMAT, module.LoadedImageName, frame.AddrPC.Offset);
 					} else {
-						fprintf(stderr, " in module " PTR_FORMAT ": " PTR_FORMAT, hmodule, frame.AddrPC.Offset);
+						fprintf(stderr, " in module " PTR_FORMAT": " PTR_FORMAT, hmodule, frame.AddrPC.Offset);
 					}
 				} else {
 					fprintf(stderr, "(unknown file): " PTR_FORMAT, frame.AddrPC.Offset);
@@ -84,9 +84,9 @@ namespace DumpStack {
 					memset(&module, 0, sizeof(module));
 					module.SizeOfStruct = sizeof(IMAGEHLP_MODULE);
 					if (SymGetModuleInfoW64(hprocess, hmodule, &module)) {
-						fwprintf(stderr, L" in module %s (" PTR_FORMAT ")\n", module.LoadedImageName, hmodule);
+						fwprintf(stderr, L" in module %s (" PTR_FORMAT")\n", module.LoadedImageName, hmodule);
 					} else {
-						fprintf(stderr, " in module " PTR_FORMAT "\n", hmodule);
+						fprintf(stderr, " in module " PTR_FORMAT"\n", hmodule);
 					}
 				} else {
 					fprintf(stderr, " in unknown module\n");
