@@ -180,15 +180,18 @@ Node.Save = function(options) {
 	return this;
 }
 
-Node.StripRedundantPrefixSpace = function() {
+Node.StripRedundantPrefixSpace = function(aggressive) {
+	function isSpace(s){
+		return s&&!s.trim()&&(aggressive||s.indexOf('\n')<0);
+	}
 	for (let ndi = this; ndi; ndi = ndi.PreorderNext(this)) {
-		if (ndi.comments_before === ' ' && (
+		if (isSpace(ndi.comments_before) && ndi.p && (
 			ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 
 			ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT
 		)) {
 			ndi.comments_before = '';
 		}
-		if (ndi.comments_after === ' ' && (
+		if (isSpace(ndi.comments_after) && ndi.p && (
 			ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 
 			ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT
 		)) {

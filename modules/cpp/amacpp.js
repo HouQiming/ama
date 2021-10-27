@@ -39,7 +39,7 @@ function ToCPP(nd_root,options){
 function FromCPP(nd_root){
 	return (nd_root
 		.then(require('cpp/gentag').DropGeneratedCode)
-		.StripRedundantPrefixSpace()
+		.StripRedundantPrefixSpace(false)
 		.then(jsism.EnableJSLambdaSyntax.inverse)
 		.then(unified_null.inverse)
 		.then(move_operator.inverse)
