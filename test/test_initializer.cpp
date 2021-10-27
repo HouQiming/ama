@@ -6,7 +6,7 @@ console.log(JSON.stringify(nd_root,null,1));
 console.log(nd_root.then(amacpp).toSource());
 */
 int main(){
-	return PredictionResult{
+	a=PredictionResult{
 		items: {
 			PredictionItem{text:"if"},
 			PredictionItem{text:"for"},
@@ -22,4 +22,6 @@ int main(){
 			PredictionItem{text:"try"}
 		}
 	};
+	return(a);
+	return -a;
 }

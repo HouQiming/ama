@@ -49,7 +49,7 @@ namespace unicode {
 							//emit nothing if unpaired...
 							ch = -1;
 						}
-					} else if(ch >= 0x110000 ) {
+					} else if(ch >= 0x110000) {
 						//invalid encoding
 						ch = 0xfffd;
 					}

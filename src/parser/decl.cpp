@@ -260,7 +260,7 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
 					nd_keyword = nullptr;
-				} else if(ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi ) {
+				} else if(ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi) {
 					switch ( kw_mode ) {
 						case KW_CLASS: {
 							//search for the class name

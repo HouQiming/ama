@@ -214,15 +214,15 @@ namespace DumpStack {
 		// Take a snapshot of all running threads
 		if (g_dump_all_threads) {
 			THREADENTRY32 te32{};
-			HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0 );
+			HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 			int pid = GetProcessId(GetCurrentProcess());
 			int tid = GetThreadId(GetCurrentThread());
 			if ( hThreadSnap && hThreadSnap != INVALID_HANDLE_VALUE ) {
 				// Fill in the size of the structure before using it. 
-				te32.dwSize = sizeof(THREADENTRY32 ); 
+				te32.dwSize = sizeof(THREADENTRY32); 
 				// Retrieve information about the first thread,
 				// and exit if unsuccessful
-				if ( Thread32First(hThreadSnap, &te32 ) ) {
+				if ( Thread32First(hThreadSnap, &te32) ) {
 					do { 
 						if ( te32.th32OwnerProcessID == pid ) {
 							fprintf(stderr, "\nThread #%d\n", te32.th32ThreadID);
@@ -244,8 +244,8 @@ namespace DumpStack {
 								CloseHandle(hthread);
 							}
 						}
-					} while ( Thread32Next(hThreadSnap, &te32 ) );}
-				CloseHandle(hThreadSnap );
+					} while ( Thread32Next(hThreadSnap, &te32) );}
+				CloseHandle(hThreadSnap);
 			}
 		}
 		LeaveCriticalSection(&g_lock);

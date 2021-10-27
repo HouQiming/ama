@@ -98,13 +98,16 @@ namespace ama {
 	ama::Node* ParsePostfix(ama::Node* nd_root, JSValue options) {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
 		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
+		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
 		int32_t parse_air_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1);
 		std::vector<ama::Node*> a = std::vector<ama::Node*> {nd_root}--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
 		for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 			ama::Node* ndi = a[i]->c;
 			while ( ndi ) {
 				ama::Node* ndi_next = ndi->s;
-				if ( parse_air_object && 
+				if (ndi->node_class == ama::N_REF && keywords_statement--->get(ndi->data, 0)) {
+					//it's a statement keyword, do nothing: it cannot dot or call
+				} else if ( parse_air_object && 
 				ndi->node_class == ama::N_SYMBOL && (ndi->data == "." || ndi->data == "::") && 
 				ndi->s && ndi->s->node_class == ama::N_REF ) {
 					//dot
@@ -129,7 +132,7 @@ namespace ama {
 					ndi_next->Unlink();
 					ndi = ndi->ReplaceWith(ama::nNodeof(ndi_next)->setIndent(ndi->indent_level));
 					continue;
-				} else if ( ndi->node_class == ama::N_SYMBOL ) {
+				} else if(ndi->node_class == ama::N_SYMBOL) {
 					//do nothing
 				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)) {
 					//postfix operator
@@ -142,7 +145,7 @@ namespace ama {
 					continue;
 				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
 				(ndi_next->data == "." || (!isCPPLambda(ndi) && ndi_next->data == "->") || ndi_next->data == "::") && 
-				ndi_next->s && ndi_next->s->node_class == ama::N_REF ) {
+				ndi_next->s && ndi_next->s->node_class == ama::N_REF) {
 					//dot
 					int dot_flags = 0;
 					if ( ndi_next->data == "->" ) {
@@ -162,7 +165,7 @@ namespace ama {
 					nd_name->p = nullptr; nd_name->FreeASTStorage();
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					continue;
-				} else if(ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size() ) {
+				} else if(ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()) {
 					//call
 					ndi = TranslatePostfixCall(ndi);
 					continue;

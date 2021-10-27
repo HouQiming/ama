@@ -1,4 +1,4 @@
-#if (defined(__linux) || defined(__linux__) || defined(linux))&&!(defined(__ANDROID__) || defined(ANDROID) || defined(__EMSCRIPTEN__))
+#if (defined(__linux) || defined(__linux__) || defined(linux)) && !(defined(__ANDROID__) || defined(ANDROID) || defined(__EMSCRIPTEN__))
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
