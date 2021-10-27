@@ -43,23 +43,23 @@ namespace ama {
 		fflush(stderr);
 		JS_FreeValue(ctx, err_stack);
 	}
-	static ama::gcstring CommonJSLoadAsFile(std::span<char> fn) {
+	static std::string CommonJSLoadAsFile(std::span<char> fn) {
 		if ( fs::existsSync(fn) ) {
-			return fn;
+			return JC::array_cast<std::string>(fn);
 		}
 		if ( fs::existsSync(JC::string_concat(fn, ".ama.js")) ) {
-			return (ama::gcscat(fn, ".ama.js"));
+			return (JC::string_concat(fn, ".ama.js"));
 		}
 		if ( fs::existsSync(JC::string_concat(fn, ".js")) ) {
-			return (ama::gcscat(fn, ".js"));
+			return (JC::string_concat(fn, ".js"));
 		}
 		if ( fs::existsSync(JC::string_concat(fn, ".json")) ) {
-			return (ama::gcscat(fn, ".json"));
+			return (JC::string_concat(fn, ".json"));
 		}
 		//put native options last to minimize the hijacking risk
-		ama::gcstring fn_native{};
+		std::string fn_native{};
 		#if defined(_WIN32)
-			fn_native = (ama::gcscat(fn, ".dll"));
+			fn_native = (JC::string_concat(fn, ".dll"));
 		#elif defined(__APPLE__)
 			fn_native = (JC::string_concat(path::dirname(fn), "/lib", path::basename(fn), ".dylib"));
 		#else
@@ -71,21 +71,21 @@ namespace ama {
 		}
 		return "";
 	}
-	ama::gcstring FindCommonJSModuleByPath(std::span<char> fn) {
+	std::string FindCommonJSModuleByPath(std::span<char> fn) {
 		if ( fs::DirExists(fn) ) {
 			if ( fs::existsSync(JC::string_concat(fn, ".js")) ) {
-				return (ama::gcscat(fn, ".js"));
+				return (JC::string_concat(fn, ".js"));
 			}
 			if ( fs::existsSync(JC::string_concat(fn, ".json")) ) {
-				return (ama::gcscat(fn, ".json"));
+				return (JC::string_concat(fn, ".json"));
 			}
-			ama::gcstring fn_index = fn;
+			std::string fn_index = JC::array_cast<std::string>(fn);
 			JC::StringOrError s_package_json = fs::readFileSync(path::normalize(JC::string_concat(fn, path::sep, "package.json")));
 			if ( !!s_package_json ) {
 				PackageJSON package_json = JSON::parse<PackageJSON>(s_package_json.some);
 				if ( package_json.main.size() ) {
 					std::string fn_main = (path::normalize(JC::string_concat(fn, path::sep, package_json.main)));
-					ama::gcstring ret = CommonJSLoadAsFile(fn_main);
+					std::string ret = CommonJSLoadAsFile(fn_main);
 					if ( !ret.empty() ) {
 						return ret;
 					}
@@ -93,21 +93,21 @@ namespace ama {
 				}
 			}
 			if ( fs::existsSync(JC::string_concat(fn_index, "/index.js")) ) {
-				return (ama::gcscat(fn_index, "/index.js"));
+				return (JC::string_concat(fn_index, "/index.js"));
 			}
 			if ( fs::existsSync(JC::string_concat(fn_index, "/index.json")) ) {
-				return (ama::gcscat(fn_index, "/index.json"));
+				return (JC::string_concat(fn_index, "/index.json"));
 			}
 			return "";
 		}
 		return CommonJSLoadAsFile(fn);
 	}
-	ama::gcstring FindCommonJSModule(std::span<char> fn_required, std::span<char> dir_base) {
-		ama::gcstring ret{};
-		ama::gcstring dir = dir_base;
+	std::string FindCommonJSModule(std::span<char> fn_required, std::span<char> dir_base) {
+		std::string ret{};
+		std::string dir = JC::array_cast<std::string>(dir_base);
 		for (; ;) {
 			if ( path::basename(dir) != "node_modules" ) {
-				ret = FindCommonJSModuleByPath(ama::gcstring(path::normalize(JC::string_concat(dir, path::sep, "node_modules", path::sep, fn_required))));
+				ret = FindCommonJSModuleByPath(std::string(path::normalize(JC::string_concat(dir, path::sep, "node_modules", path::sep, fn_required))));
 				if ( !ret.empty() ) {
 					return ret;
 				}
@@ -116,7 +116,7 @@ namespace ama {
 			if ( dir == dir_upper ) {
 				break;
 			}
-			dir = ama::gcstring(dir_upper);
+			dir = std::string(dir_upper);
 		}
 		return "";
 	}

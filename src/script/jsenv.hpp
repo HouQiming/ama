@@ -70,8 +70,8 @@ namespace ama {
 		}
 		return std::move(ret);
 	}
-	ama::gcstring FindCommonJSModuleByPath(std::span<char> fn);
-	ama::gcstring FindCommonJSModule(std::span<char> fn_required, std::span<char> dir_base);
+	std::string FindCommonJSModuleByPath(std::span<char> fn);
+	std::string FindCommonJSModule(std::span<char> fn_required, std::span<char> dir_base);
 	extern std::vector<char const*> g_builder_names;
 	extern std::vector<char const*> g_node_class_names;
 	std::unordered_map<ama::gcstring, int> GetPrioritizedList(JSValueConst options, char const* name);

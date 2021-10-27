@@ -38,7 +38,7 @@ namespace ama {
 			nd->node_class == ama::N_LABELED || nd->node_class == ama::N_SEMICOLON || 
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
 				if ( nd->c->comments_before.size() ) {
-					nd->comments_before = (ama::gcscat(nd->comments_before, nd->c->comments_before));
+					nd->comments_before = (nd->comments_before+nd->c->comments_before);
 					nd->c->comments_before = "";
 				}
 			}
@@ -50,7 +50,7 @@ namespace ama {
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
 				ama::Node* nd_last = nd->LastChild();
 				if ( nd_last->comments_after.size() ) {
-					nd->comments_after = (ama::gcscat(nd->comments_after, nd_last->comments_after));
+					nd->comments_after = (nd->comments_after+nd_last->comments_after);
 					nd_last->comments_after = "";
 				}
 			}

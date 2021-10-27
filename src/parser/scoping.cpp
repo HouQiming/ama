@@ -40,9 +40,9 @@ namespace ama {
 					ama::Node* ndj = lines_out[j];
 					if ( ndj->isRawNode(0, 0) ) {
 						if ( ndj->c ) {
-							ndj->c->comments_before = (ama::gcscat(ndj->comments_before, ndj->c->comments_before));
+							ndj->c->comments_before = (ndj->comments_before+ndj->c->comments_before);
 							ama::Node* ndj_last = ndj->LastChild();
-							ndj_last->comments_after = (ama::gcscat(ndj_last->comments_after, ndj->comments_after));
+							ndj_last->comments_after = (ndj_last->comments_after+ndj->comments_after);
 						}
 						for (ama::Node* ndi = ndj->c; ndi; ndi = ndi->s) {
 							{
@@ -110,7 +110,7 @@ namespace ama {
 				//need to do it in reverse order so that we kick out ; before getting to the parent
 				ama::Node* nd_last = nd_raw->LastChild();
 				if ( nd_last && nd_last->isSymbol(";") && nd_raw->p && (nd_raw->p->node_class == ama::N_SCOPE || nd_raw->p->node_class == ama::N_RAW) ) {
-					nd_last->comments_after = (ama::gcscat(nd_last->comments_after, nd_raw->comments_after));
+					nd_last->comments_after = (nd_last->comments_after+nd_raw->comments_after);
 					nd_last->AdjustIndentLevel(nd_raw->indent_level);
 					nd_raw->comments_after = "";
 					nd_last->Unlink();

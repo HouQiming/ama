@@ -111,22 +111,17 @@ namespace ama {
 		char const* feed_all_begin = feed;
 		ama::gcstring s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, "symbols"));
 		std::vector<std::span<char>> symbol_array{};
-		{
-			{
-				//coulddo: SSE / NEON vectorization
-				size_t I0 = intptr_t(0L);
-				for (size_t I = 0; I <= s_symbols.size(); ++I) {
-					//char ch=(I<str.size()?str[I]:0)
-					if ( I >= s_symbols.size() || s_symbols[I] == ' ' ) {
-						//this scope will be if-wrapped
-						size_t I00 = I0;
-						I0 = I + 1;
-						//the return will be replaced
-						std::span<char> s_symbol(s_symbols.data() + I00, I - I00);
-						if ( s_symbol.size() > 0 ) {
-							symbol_array.push_back(s_symbol);
-						}
-					}
+		size_t I0 = intptr_t(0L);
+		for (size_t I = 0; I <= s_symbols.size(); ++I) {
+			//char ch=(I<str.size()?str[I]:0)
+			if ( I >= s_symbols.size() || s_symbols[I] == ' ' ) {
+				//this scope will be if-wrapped
+				size_t I00 = I0;
+				I0 = I + 1;
+				//the return will be replaced
+				std::span<char> s_symbol(s_symbols.data() + I00, I - I00);
+				if ( s_symbol.size() > 0 ) {
+					symbol_array.push_back(s_symbol);
 				}
 			}
 		}
@@ -302,7 +297,7 @@ namespace ama {
 						comment_begin = feed;
 						comment_end = feed;
 						break;
-					} else {
+					} else{
 						goto handle_symbol;
 					}
 				}
@@ -511,6 +506,12 @@ namespace ama {
 				}
 				case CHAR_TYPE_ZERO: {
 					if ( finish_incomplete_code ) {
+						ama::Node* nd_last = state_stack.back().nd_parent;
+						if (nd_last->c) {nd_last = nd_last->LastChildSP();}
+						nd_last->comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+						comment_indent_level = current_indent_level;
+						comment_begin = feed;
+						comment_end = feed;
 						while ( state_stack.size() > intptr_t(1L) ) {
 							ama::Node* nd = state_stack.back().nd_parent;
 							uint32_t ch = nd->flags & 0xffu;

@@ -18,7 +18,7 @@ namespace ama {
 				nd_comma->Unlink();
 				ama::Node* nd_arg_last = ndi->LastChild();
 				nd_arg_last->MergeCommentsAndIndentAfter(nd_comma);
-				ndi->comments_after = (ama::gcscat(ndi->comments_after, nd_comma->comments_after));
+				ndi->comments_after = (ndi->comments_after+nd_comma->comments_after);
 				nd_comma->FreeASTStorage();
 				if ( !ndi->c->s ) {
 					ndi = ama::UnparseRaw(ndi);
@@ -517,7 +517,7 @@ namespace ama {
 				if ( nd_stmt->c ) {
 					nd_stmt->c->MergeCommentsBefore(nd_keyword);
 				} else {
-					nd_stmt->comments_after = (ama::gcscat(nd_keyword->comments_after, nd_stmt->comments_after));
+					nd_stmt->comments_after = (nd_keyword->comments_after+nd_stmt->comments_after);
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				ndi = nd_raw->Insert(ama::POS_BACK, nd_stmt);
@@ -595,7 +595,7 @@ namespace ama {
 				if ( nd_stmt->c ) {
 					nd_stmt->c->MergeCommentsBefore(nd_keyword);
 				} else {
-					nd_stmt->comments_after = (ama::gcscat(nd_keyword->comments_after, nd_stmt->comments_after));
+					nd_stmt->comments_after = (nd_keyword->comments_after+nd_stmt->comments_after);
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				nd_tmp->ReplaceWith(nd_stmt);

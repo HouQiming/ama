@@ -26,6 +26,7 @@ namespace ama {
 		} else {
 			ret = (ama::Node*)(ama::poolAlloc(&g_node_pool, sizeof(ama::Node), NODE_BLOCK_SIZE));
 		}
+		assert(!(ret->tmp_flags & ama::TMPF_IS_NODE));
 		ret->tmp_flags = ama::TMPF_IS_NODE;
 		//non-NULL guarantee for comments
 		ret->comments_before = g_empty_comment;
@@ -575,12 +576,12 @@ ama::gcstring ama::Node::GetName() const {
 		}
 	} else if ( this->node_class == ama::N_ASSIGNMENT || this->node_class == ama::N_DEPENDENCY ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
 		return this->c->GetName();
-	} else if(this->node_class == ama::N_CLASS) {
+	} else if(this->node_class == ama::N_CLASS){
 		return this->c->s->GetName();
-	} else if(this->node_class == ama::N_STRING) {
+	} else if(this->node_class == ama::N_STRING){
 		ama::Node* nd_hack = (ama::Node*)(this);
 		return nd_hack->GetStringValue();
-	} else {
+	} else{
 		return this->data;
 	}
 }
@@ -628,7 +629,7 @@ static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t bou
 				my_boundary |= ama::BOUNDARY_CLASS;
 			} else if ( int(nd->node_class) == ama::N_NODEOF ) {
 				my_boundary |= ama::BOUNDARY_NODEOF;
-			} else if(int(nd->node_class) == ama::N_SCOPE) {
+			} else if(int(nd->node_class) == ama::N_SCOPE){
 				my_boundary |= ama::BOUNDARY_SCOPE;
 			}
 			//} else if( int(nd.node_class) == ama::N_CALL && nd.p && nd.p.node_class == ama::N_RAW_DECLARATION ) {
@@ -684,7 +685,7 @@ ama::Node * ama::Node::InsertCommentBefore(std::span<char> s) {
 }
 ///////////////////////////////////////
 ama::Node * ama::Node::MergeCommentsAfter(ama::Node* nd_after) {
-	this->comments_after = (ama::gcscat(this->comments_after, nd_after->comments_before));
+	this->comments_after = (this->comments_after+nd_after->comments_before);
 	nd_after->comments_before = "";
 	return this;
 }
@@ -700,7 +701,7 @@ ama::Node * ama::Node::MergeCommentsAndIndentAfter(ama::Node* nd_after) {
 	return this;
 }
 ama::Node * ama::Node::MergeCommentsBefore(ama::Node* nd_before) {
-	this->comments_before = (ama::gcscat(nd_before->comments_after, this->comments_before));
+	this->comments_before = (nd_before->comments_after+this->comments_before);
 	nd_before->comments_after = "";
 	return this;
 }

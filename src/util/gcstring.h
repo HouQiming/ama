@@ -95,7 +95,7 @@ namespace ama{
 		}
 		//////////////
 		//yes, we are copying the argument, it's free anyway
-		gcstring operator+(gcstring b){
+		gcstring operator+(gcstring b)const{
 			size_t length_a=this->size();
 			size_t length=length_a+b.size();
 			uint64_t val_new{};

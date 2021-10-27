@@ -5,6 +5,7 @@
 namespace ama {
 	static inline void mark(std::vector<ama::Node*>& Q, ama::Node* nd) {
 		if ( nd && !(nd->tmp_flags & ama::TMPF_GC_MARKED) ) {
+			assert(nd->tmp_flags & ama::TMPF_IS_NODE);
 			nd->tmp_flags |= ama::TMPF_GC_MARKED;
 			Q--->push(nd);
 			nd->data.gcmark();
@@ -17,7 +18,9 @@ namespace ama {
 		//so we only mark root nodes and only propagate along c / s
 		std::vector<ama::Node*> Q{};
 		for ( auto&& pair_nd_v: ama::g_js_node_map ) {
+			//we could have hacky ->p which screws up rooting
 			ama::Node const* nd = pair_nd_v.first;
+			mark(Q, (ama::Node*)nd);
 			mark(Q, nd->Root());
 		}
 		ama::mark(Q, ama::GetPlaceHolder());
@@ -36,9 +39,9 @@ namespace ama {
 					//unreachable but un-free, release
 					//console.log('freed node', nd.node_class, nd.data == NULL ? "NULL" : nd.data.c_str());
 					n_freed += 1;
-					nd->data = ama::gcstring();
-					nd->comments_before = ama::gcstring();
-					nd->comments_after = ama::gcstring();
+					//nd->data = ama::gcstring();
+					//nd->comments_before = ama::gcstring();
+					//nd->comments_after = ama::gcstring();
 					////////////
 					memset((void*)(nd), 0, sizeof(ama::Node));
 					////////////

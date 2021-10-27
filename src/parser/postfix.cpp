@@ -28,7 +28,7 @@ namespace ama {
 				//strip trailing ','s
 				if ( ndi->isRawNode(0, 0) ) {
 					if ( comma_group.size() ) {
-						comma_group[comma_group.size() - 1]->comments_after = (ama::gcscat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_before));
+						comma_group[comma_group.size() - 1]->comments_after = (comma_group[comma_group.size() - 1]->comments_after+ndi->comments_before);
 					} else {
 						pending_comments_before--->push(ndi->comments_before);
 					}
@@ -36,7 +36,7 @@ namespace ama {
 						if ( ndk->isSymbol(",") ) {
 							ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
 							nd_arg->comments_before = (ama::gcscat(pending_comments_before, nd_arg->comments_before));
-							nd_arg->comments_after = (ama::gcscat(nd_arg->comments_after, ndk->comments_before));
+							nd_arg->comments_after = (nd_arg->comments_after+ndk->comments_before);
 							new_children.push_back(nd_arg);
 							pending_comments_before.clear();
 							pending_comments_before--->push(ndk->comments_after);
@@ -47,14 +47,14 @@ namespace ama {
 						}
 					}
 					if ( comma_group.size() ) {
-						comma_group[comma_group.size() - 1]->comments_after = (ama::gcscat(comma_group[comma_group.size() - 1]->comments_after, ndi->comments_after));
+						comma_group[comma_group.size() - 1]->comments_after = (comma_group[comma_group.size() - 1]->comments_after+ndi->comments_after);
 					} else {
 						pending_comments_before--->push(ndi->comments_after);
 					}
 				} else if ( ndi->isSymbol(",") ) {
 					ama::Node* nd_arg = ama::toSingleNode(ama::InsertMany(comma_group));
 					nd_arg->comments_before = (ama::gcscat(pending_comments_before, nd_arg->comments_before));
-					nd_arg->comments_after = (ama::gcscat(nd_arg->comments_after, ndi->comments_before));
+					nd_arg->comments_after = (nd_arg->comments_after+ndi->comments_before);
 					new_children.push_back(nd_arg);
 					pending_comments_before.clear();
 					pending_comments_before--->push(ndi->comments_after);
@@ -121,7 +121,7 @@ namespace ama {
 					//.setCommentsBefore(ndi.comments_before).setCommentsAfter(ndi_next.comments_after)
 					ama::Node* nd_dot = ndi->ReplaceUpto(
 						ndi_next,
-						ama::nAir()->setCommentsAfter((ama::gcscat(ndi->comments_after, ndi_next->comments_before)))->dot(name)->setFlags(dot_flags)
+						ama::nAir()->setCommentsAfter(ndi->comments_after+ndi_next->comments_before)->dot(name)->setFlags(dot_flags)
 					);
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					ndi->p = nullptr; ndi->s = nullptr; ndi->FreeASTStorage();
