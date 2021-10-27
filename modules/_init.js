@@ -290,18 +290,12 @@ __global.default_options = {
 	auto_space: 1,
 };
 
-let g_jc_options = Object.assign(Object.create(__global.default_options), {
-	ambiguous_type_suffix: '* ** ^ & && ! +',
-	parse_js_regexp: 0
-});
 __global.extension_specific_options = {
 	'.py': Object.assign(Object.create(__global.default_options), {
 		enable_hash_comment: 1,
 		parse_indent_as_scope: 1,
 		parse_js_regexp: 0
 	}),
-	'.jc': g_jc_options,
-	'.jch': g_jc_options
 }
 
 __global.__PrepareOptions = function(filename, options) {
@@ -319,6 +313,7 @@ __global.__PrepareOptions = function(filename, options) {
 	return options;
 }
 
+//for instanceof
 function fake_options_ctor() {}
 fake_options_ctor.prototype = __global.default_options;
 

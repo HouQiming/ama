@@ -95,7 +95,7 @@ Node.ParseClass = function() {
 	for (let ndi = nd_after; ndi; ndi = PreorderNextSkipping(ndi, nd_after)) {
 		if ((ndi.node_class == N_REF || ndi.node_class == N_DOT) && !g_not_class.has(ndi.data)) {
 			for (let nd_class of ndi.LookupClass()) {
-				base_class_set.add(nd_class);
+				if (nd_class) {base_class_set.add(nd_class);}
 			}
 		}
 	}
@@ -146,25 +146,5 @@ Node.LookupClass = function() {
 		let nd_root = depends.LoadFile(fn);
 		LookupClassInFile(ret, nd_root, this);
 	}
-	return ret.map(nd=>nd.ParseClass()).filter(desc=>desc.properties.length > 0);
-};
-
-///we return the core class and ignore other modifiers
-Node.LookupVariableClass = function() {
-	assert(this.node_class == N_REF && (this.flags & REF_DECLARED));
-	let nd_def = this;
-	let nd_stmt = this.ParentStatement();
-	for (let ndi = nd_stmt; ndi; ndi = ndi.PreorderNext(nd_stmt)) {
-		if (ndi == nd_def) {break;}
-		if (ndi.node_class == N_DOT || ndi.node_class == N_REF) {
-			let ret = ndi.LookupClass();
-			if (ret.length) {
-				return ret;
-			}
-			//skip the entire dot
-			ndi = ndi.PreorderLastInside(ndi);
-			continue;
-		}
-	}
-	return [];
+	return ret;
 };

@@ -5,9 +5,11 @@ const assert = require('assert');
 let typing = module.exports;
 
 typing.type_cache = new Map();
+typing.def_cache = new Map();
 
 typing.DropCache = function() {
 	typing.type_cache = new Map();
+	typing.def_cache = new Map();
 };
 
 function BasicType(name) {
@@ -94,7 +96,7 @@ function ComputeOperandTypePriority(type) {
 }
 
 typing.GetDefs = function(nd_scope) {
-	let defs = typing.type_cache.get(nd_scope);
+	let defs = typing.def_cache.get(nd_scope);
 	if (!defs) {
 		defs = new Map();
 		//console.log('---')
@@ -117,9 +119,13 @@ typing.GetDefs = function(nd_scope) {
 				}
 			}
 		}
-		typing.type_cache.set(nd_scope, defs);
+		typing.def_cache.set(nd_scope, defs);
 	}
 	return defs;
+};
+
+typing.ListActiveScopes = function(nd_root) {
+	return depends.ListAllDependency(nd_root, true).map(fn=>depends.LoadFile(fn)).filter(nd=>nd);
 };
 
 //only the type system cares about declarations, put it here
@@ -148,7 +154,7 @@ typing.LookupSymbol = function(nd_ref, want_all) {
 		}
 	}
 	//not found: we have to load dependencies
-	for (let nd_dep of depends.ListAllDependency(nd_ref.Root(), true).map(fn=>depends.LoadFile(fn)).filter(nd=>nd)) {
+	for (let nd_dep of typing.ListActiveScopes(nd_ref.Root())) {
 		let nd_def = typing.GetDefs(nd_dep).get(nd_ref.data);
 		if (nd_def) {
 			if (want_all) {
@@ -158,7 +164,32 @@ typing.LookupSymbol = function(nd_ref, want_all) {
 			}
 		}
 	}
+	//COULDDO: `using` handling
 	return want_all ? ret : undefined;
+};
+
+typing.CreateSymbolTable = function(nd_site) {
+	//look up local scopes
+	let names = new Map();
+	for (let ndi = nd_site; ndi; ndi = ndi.p) {
+		if (ndi.node_class == N_SCOPE || ndi.node_class == N_FILE) {
+			for (let item of typing.GetDefs(ndi)) {
+				if (!names.get(item[0])) {
+					names.set(item[0], item[1]);
+				}
+			}
+		}
+	}
+	//not found: we have to load dependencies
+	for (let nd_dep of typing.ListActiveScopes(nd_site.Root())) {
+		for (let item of typing.GetDefs(nd_dep)) {
+			if (!names.get(item[0])) {
+				names.set(item[0], item[1]);
+			}
+		}
+	}
+	//COULDDO: `using` handling
+	return names;
 };
 
 typing.ComputeDeclaredType = function(nd_def) {
@@ -338,13 +369,16 @@ typing.ComputeType = function(nd_expr) {
 			return type;
 		}
 	}
+	//avoid infinite recursion
+	typing.type_cache.set(nd_expr, nd_expr);
 	switch (nd_expr.node_class) {
 	case N_RAW:
 	case N_SYMBOL:
 	case N_AIR: {
 		//we don't really understand these, so we can't compute a type
 		//and it's not worth caching
-		return undefined;
+		type = undefined;
+		break;
 	}
 	case N_FILE:
 	case N_SCOPE:
@@ -358,25 +392,30 @@ typing.ComputeType = function(nd_expr) {
 	case N_DEPENDENCY: {
 		//don't have a type in C++, but could generalize a bit to return something
 		//COULDDO: generalize
-		return undefined;
+		type = undefined;
+		break;
 	}
 	case N_FUNCTION:
 	case N_CLASS: {
 		//they are self-representing, don't cache
-		return nd_expr;
+		type = nd_expr;
+		break;
 	}
 	case N_PAREN: {
 		type = typing.ComputeType(nd_expr.c);
 		break;
 	}
 	case N_STRING: {
-		return typing.options.string_type;
+		type = typing.options.string_type;
+		break;
 	}
 	case N_JS_REGEXP: {
-		return typing.options.regexp_type;
+		type = typing.options.regexp_type;
+		break;
 	}
 	case N_NODEOF: {
-		return typing.options.node_type;
+		type = typing.options.node_type;
+		break;
 	}
 	case N_NUMBER: {
 		type = typing.options.ComputeNumberType(nd_expr);
@@ -407,7 +446,8 @@ typing.ComputeType = function(nd_expr) {
 	case N_BINOP: {
 		if (nd_expr.data == '||' || nd_expr.data == '&&') {
 			if (typing.options.bool_type) {
-				return typing.options.bool_type;
+				type = typing.options.bool_type;
+				break;
 			}
 		}
 		//COULDDO: try to find overloaded operators
