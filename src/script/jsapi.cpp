@@ -135,10 +135,10 @@ namespace ama {
 		/////////////
 		JSValueConst obj_module = JS_GetPropertyStr(ctx, g_require_cache, fn_final.c_str());
 		if ( JS_IsUndefined(obj_module) ) {
-			obj_module = JS_NewObject(ama::jsctx);
+			obj_module = JS_NewObject(ctx);
 			JSValueConst obj_exports = JS_NewObject(ctx);
-			JS_SetPropertyStr(ctx, obj_module, "exports", obj_exports);
-			JS_SetPropertyStr(ctx, g_require_cache, fn_final.c_str(), obj_module);
+			JS_SetPropertyStr(ctx, obj_module, "exports", JS_DupValue(ama::jsctx, obj_exports));
+			JS_SetPropertyStr(ctx, g_require_cache, fn_final.c_str(), JS_DupValue(ama::jsctx, obj_module));
 			JS_SetPropertyStr(ctx, obj_module, "filename", ama::WrapString(fn_final));
 			//////////////
 			//char[+]! loader_key = path.extname(fn_final) + ' loader';
@@ -150,7 +150,10 @@ namespace ama {
 			};
 			if ( ext == ".so" || ext == ".dll" || ext == ".dylib" || ext == ".amaso" ) {
 				JSValue js_fn_final = ama::WrapString(fn_final);
-				JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__RequireNativeLibrary"), 4, module_args.data());
+				JSValueConst ret = JS_Invoke(ctx, JS_GetGlobalObject(ctx), JS_NewAtom(ctx, "__RequireNativeLibrary"), 4, module_args.data());
+				for (intptr_t i = 0; i < 4; i++) {
+					JS_FreeValue(ctx, module_args[i]);
+				}
 				if ( JS_IsException(ret) ) {
 					JS_SetPropertyStr(ctx, g_require_cache, fn_final.c_str(), JS_UNDEFINED);
 					return ret;
@@ -172,7 +175,10 @@ namespace ama {
 					JS_SetPropertyStr(ctx, g_require_cache, fn_final.c_str(), JS_UNDEFINED);
 					return ret;
 				}
-				JSValueConst ret_module = JS_Call(ctx, JS_DupValue(ctx, ret), JS_GetGlobalObject(ctx), 4, module_args.data());
+				JSValueConst ret_module = JS_Call(ctx, ret, JS_GetGlobalObject(ctx), 4, module_args.data());
+				for (intptr_t i = 0; i < 4; i++) {
+					JS_FreeValue(ctx, module_args[i]);
+				}
 				if ( JS_IsException(ret_module) ) {
 					JS_SetPropertyStr(ctx, g_require_cache, fn_final.c_str(), JS_UNDEFINED);
 					return ret_module;
@@ -256,8 +262,8 @@ namespace ama {
 		}
 		//extension-aware option preparation, default inheritance if necessary
 		std::array<JSValueConst, intptr_t(2L)> prepare_option_args{
-			JS_DupValue(ama::jsctx, func_data[1]),
-			JS_DupValue(ama::jsctx, options)
+			func_data[1],
+			options
 		};
 		options = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__PrepareOptions"), 2, prepare_option_args.data());
 		options = ama::InheritOptions(options);
@@ -318,7 +324,11 @@ namespace ama {
 				1, 0, 2, func_data.data()
 			)
 		};
-		JSValueConst ret_script = JS_Call(ama::jsctx, JS_DupValue(ama::jsctx, ret), JS_GetGlobalObject(ama::jsctx), 3, module_args.data());
+		JSValueConst ret_script = JS_Call(ama::jsctx, ret, JS_GetGlobalObject(ama::jsctx), 3, module_args.data());
+		for (intptr_t i = 0; i < 3; i++) {
+			JS_FreeValue(ama::jsctx, module_args[i]);
+		}
+		JS_FreeValue(ama::jsctx, ret);
 		if ( JS_IsException(ret_script) ) {
 			ama::DumpError(ama::jsctx);
 			return 0;
@@ -435,6 +445,7 @@ namespace ama {
 	}
 	static void NodeFinalizer(JSRuntime* rt, JSValueConst val) {
 		ama::Node* nd = ama::UnwrapNode(val);
+		assert(nd->tmp_flags & ama::TMPF_IS_NODE);
 		ama::g_js_node_map.erase(nd);
 	}
 	typedef ama::Node * (*NodeFilter)(ama::Node*);

@@ -72,7 +72,7 @@ function Transform(nd_root, options) {
 			//collect names
 			const depends = require('depends');
 			all_possible_names = new Map();
-			for (let nd_root_i of depends.ListAllDependency(nd_root, true) {
+			for (let nd_root_i of depends.ListAllDependency(nd_root, true)) {
 				for (let ndi = nd_root_i; ndi; ndi = ndi.PreorderNext(nd_root_i)) {
 					if (ndi.node_class == N_SCOPE && ndi.p && (ndi.p.node_class == N_FUNCTION || ndi.p.node_class == N_CLASS && ndi.p.data != 'namespace')) {
 						ndi = ndi.PreorderLastInside();

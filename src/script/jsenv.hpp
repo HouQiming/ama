@@ -80,6 +80,7 @@ namespace ama {
 	extern std::string std_module_dir_global;
 	JSValue InheritOptions(JSValueConst options);
 	JSValue CallJSMethod(JSValue this_val, char const* name, std::span<JSValue> args);
+	JSValue CallJSMethodFree(JSValue this_val, char const* name, std::span<JSValue> args);
 	JSValue RequireJSModule(char const* name);
 };
 

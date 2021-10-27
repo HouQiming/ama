@@ -46,7 +46,7 @@ depends.LoadFile = function(fn, options) {
 		} catch (err) {
 			//do nothing
 		};
-		if (!data) {return null;}
+		if (!data) {return undefined;}
 		nd_cached = ParseCode(data, options || __PrepareOptions(fn));
 		nd_cached.data = fn;
 		depends.cache.set(fn, nd_cached);
@@ -72,9 +72,10 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 			let fn_dep = depends.Resolve(ndi);
 			if (fn_dep && !ret.has(fn_dep)) {
 				ret.add(fn_dep);
-				let nd_root_dep = depends.LoadFile(fn_dep)
-					if (nd_root_dep) {
-						Q.push(nd_root_dep);};
+				let nd_root_dep = depends.LoadFile(fn_dep);
+				if (nd_root_dep) {
+					Q.push(nd_root_dep);
+				}
 			}
 		}
 		for (let match of nd_root.MatchAll(nd_add_template)) {
@@ -97,7 +98,7 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 		}
 	}
 	//let qret = Q.map(ndi=>__path_toAbsolute(ndi.data));
-	//cache.set(nd_root, qret);
+	cache.set(nd_root, Q);
 	return Q;
 };
 

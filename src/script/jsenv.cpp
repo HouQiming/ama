@@ -151,6 +151,15 @@ namespace ama {
 		JSAtom atom = JS_NewAtom(ama::jsctx, name);
 		JSValue ret = JS_Invoke(jsctx, this_val, atom, args.size(), args.data());
 		JS_FreeAtom(ama::jsctx, atom);
+		for (JSValue &val: args) {
+			JS_FreeValue(ama::jsctx, val);
+			val = JS_UNDEFINED;
+		}
+		return ret;
+	}
+	JSValue CallJSMethodFree(JSValue this_val, char const* name, std::span<JSValue> args) {
+		JSValue ret = CallJSMethod(this_val, name, args);
+		JS_FreeValue(ama::jsctx, this_val);
 		return ret;
 	}
 	JSValue RequireJSModule(char const* name) {
