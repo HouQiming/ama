@@ -102,114 +102,115 @@ namespace ama {
 	}
 	ama::Node* DelimitCLikeStatements(ama::Node* nd_root, JSValue options) {
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
-		{
-			std::vector<ama::Node*> a = nd_root->FindAllWithin(0, ama::N_RAW);
-			for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
-				{
-					if ( !(a[i]->flags & 0xffff) && a[i]->p ) {
-						//move out trailing ;
-						//need to do it in reverse order so that we kick out ; before getting to the parent
-						ama::Node* nd_last = a[i]->LastChild();
-						if ( nd_last && nd_last->isSymbol(";") && a[i]->p && (a[i]->p->node_class == ama::N_SCOPE || a[i]->p->node_class == ama::N_RAW) ) {
-							nd_last->comments_after = (ama::gcscat(nd_last->comments_after, a[i]->comments_after));
-							nd_last->AdjustIndentLevel(a[i]->indent_level);
-							a[i]->comments_after = "";
-							nd_last->Unlink();
-							a[i]->Insert(ama::POS_AFTER, nd_last);
-						}
+		std::vector<ama::Node*> all_raws = nd_root->FindAllWithin(0, ama::N_RAW);
+		for (intptr_t i = intptr_t(all_raws.size()) - 1; i >= 0; --i) {
+			ama::Node* nd_raw = all_raws[i];
+			if ( !(nd_raw->flags & 0xffff) && nd_raw->p ) {
+				//move out trailing ;
+				//need to do it in reverse order so that we kick out ; before getting to the parent
+				ama::Node* nd_last = nd_raw->LastChild();
+				if ( nd_last && nd_last->isSymbol(";") && nd_raw->p && (nd_raw->p->node_class == ama::N_SCOPE || nd_raw->p->node_class == ama::N_RAW) ) {
+					nd_last->comments_after = (ama::gcscat(nd_last->comments_after, nd_raw->comments_after));
+					nd_last->AdjustIndentLevel(nd_raw->indent_level);
+					nd_raw->comments_after = "";
+					nd_last->Unlink();
+					nd_raw->Insert(ama::POS_AFTER, nd_last);
+				}
+				continue;
+			}
+			std::vector<ama::Node*> new_children{};
+			ama::Node* ndi = nd_raw->c;
+			new_children.push_back(ndi);
+			char changed = 0;
+			int after_cpp_macro = 0;
+			while ( ndi ) {
+				ama::Node* ndi_next = ndi->s;
+				if ( ndi->isRawNode(0, 0) || (ndi_next && ndi_next->isRawNode(0, 0)) ) {
+					//already delimited, keep it
+					if ( !changed ) { changed = ','; }
+					ndi->BreakSibling();
+					if ( ndi_next ) {
+						new_children.push_back(ndi_next);
+					}
+				} else if ( (ndi->isSymbol(";") && !
+				(ndi_next && ndi_next->node_class == ama::N_REF && keywords_extension_clause--->get(ndi_next->data))) || 
+				(ndi_next && ndi_next->isSymbol(";") && !
+				(ndi_next->s && ndi_next->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi_next->s->data))) ) {
+					//after_cpp_macro=0
+					//separate ; into its own statement
+					changed = ';';
+					ndi->BreakSibling();
+					if ( ndi_next ) {
+						new_children.push_back(ndi_next);
+					}
+				} else if ( ndi->isRawNode('{', '}') || ndi->node_class == ama::N_SCOPE ) {
+					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || ndi->s->isSymbol("=")) ) {
+						ndi = ndi_next;
 						continue;
 					}
-					std::vector<ama::Node*> new_children{};
-					ama::Node* ndi = a[i]->c;
-					new_children.push_back(ndi);
-					char changed = 0;
-					int after_cpp_macro = 0;
+					//after_cpp_macro=0
+					if ( !changed ) { changed = ','; }
+					ndi->BreakSibling();
+					if ( ndi_next ) {
+						new_children.push_back(ndi_next);
+					}
+				} else if(ndi->node_class == ama::N_REF && ndi->data--->startsWith('#')) {
+					changed = ';';
+					if ( !new_children.size() && new_children.back() == ndi ) {
+						ndi->BreakSelf();
+						new_children.push_back(ndi);
+					}
+					after_cpp_macro = 1;
+				}
+				if ( after_cpp_macro && ndi->s != nullptr && ndi->s->comments_before--->indexOf('\n') >= 0 ) {
+					after_cpp_macro = 0;
+					changed = ';';
+					ndi->BreakSibling();
+					if ( ndi_next ) {
+						new_children.push_back(ndi_next);
+					}
+				}
+				//COULDDO: case:, default:
+				ndi = ndi_next;
+			}
+			if ( changed != ';' ) {
+				std::vector<ama::Node*> comma_children{};
+				for ( ama::Node* ndj: new_children ) {
+					ndi = ndj;
+					comma_children.push_back(ndi);
 					while ( ndi ) {
 						ama::Node* ndi_next = ndi->s;
-						if ( ndi->isRawNode(0, 0) || (ndi_next && ndi_next->isRawNode(0, 0)) ) {
-							//already delimited, keep it
-							if ( !changed ) { changed = ','; }
-							ndi->BreakSibling();
-							if ( ndi_next ) {
-								new_children.push_back(ndi_next);
-							}
-						} else if ( (ndi->isSymbol(";") && !
-						(ndi_next && ndi_next->node_class == ama::N_REF && keywords_extension_clause--->get(ndi_next->data))) || 
-						(ndi_next && ndi_next->isSymbol(";") && !
-						(ndi_next->s && ndi_next->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi_next->s->data))) ) {
+						if ( ndi->isSymbol(",") ) {
 							//after_cpp_macro=0
-							//separate ; into its own statement
-							changed = ';';
+							changed = ',';
 							ndi->BreakSibling();
+							ndi->BreakSelf();
+							if ( ndi != comma_children.back() ) {
+								comma_children.push_back(ndi);
+							}
 							if ( ndi_next ) {
-								new_children.push_back(ndi_next);
-							}
-						} else if ( ndi->isRawNode('{', '}') || ndi->node_class == ama::N_SCOPE ) {
-							if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || ndi->s->isSymbol("=")) ) {
-								ndi = ndi_next;
-								continue;
-							}
-							//after_cpp_macro=0
-							if ( !changed ) { changed = ','; }
-							ndi->BreakSibling();
-							if ( ndi_next ) {
-								new_children.push_back(ndi_next);
-							}
-						} else if(ndi->node_class == ama::N_REF && ndi->data--->startsWith('#') ) {
-							changed = ';';
-							if ( !new_children.size() && new_children.back() == ndi ) {
-								ndi->BreakSelf();
-								new_children.push_back(ndi);
-							}
-							after_cpp_macro = 1;
-						}
-						if ( after_cpp_macro && ndi->s != nullptr && ndi->s->comments_before--->indexOf('\n') >= 0 ) {
-							after_cpp_macro = 0;
-							changed = ';';
-							ndi->BreakSibling();
-							if ( ndi_next ) {
-								new_children.push_back(ndi_next);
+								comma_children.push_back(ndi_next);
 							}
 						}
-						//COULDDO: case:, default:
 						ndi = ndi_next;
 					}
-					if ( changed != ';' ) {
-						std::vector<ama::Node*> comma_children{};
-						for ( ama::Node* ndj: new_children ) {
-							ndi = ndj;
-							comma_children.push_back(ndi);
-							while ( ndi ) {
-								ama::Node* ndi_next = ndi->s;
-								if ( ndi->isSymbol(",") ) {
-									//after_cpp_macro=0
-									changed = ',';
-									ndi->BreakSibling();
-									ndi->BreakSelf();
-									if ( ndi != comma_children.back() ) {
-										comma_children.push_back(ndi);
-									}
-									if ( ndi_next ) {
-										comma_children.push_back(ndi_next);
-									}
-								}
-								ndi = ndi_next;
-							}
-						}
-						std::swap(new_children, comma_children);
-					}
-					if ( changed || (!a[i]->isRawNode('{', '}') && a[i]->c && a[i]->c->s) ) {
-						for (int i = 0; i < new_children.size(); i += 1) {
-							ama::Node* nd_inner = ama::toSingleNode(new_children[i]);
-							new_children[i] = nd_inner;
-						}
-						a[i]->c = nullptr;
-						a[i]->Insert(ama::POS_FRONT, ama::InsertMany(new_children));
-					}
-					//if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
-					if ( a[i]->isRawNode('{', '}') ) {
-						ConvertToScope(a[i]);
-					}
+				}
+				std::swap(new_children, comma_children);
+			}
+			if ( changed || (!nd_raw->isRawNode('{', '}') && nd_raw->c && nd_raw->c->s) ) {
+				for (int i = 0; i < new_children.size(); i += 1) {
+					ama::Node* nd_inner = ama::toSingleNode(new_children[i]);
+					new_children[i] = nd_inner;
+				}
+				nd_raw->c = nullptr;
+				nd_raw->Insert(ama::POS_FRONT, ama::InsertMany(new_children));
+			}
+			//if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
+			if ( nd_raw->isRawNode('{', '}') ) {
+				ConvertToScope(nd_raw);
+				if (!changed && nd_raw->c) {
+					ama::Node* nd_child = nd_raw->BreakChild();
+					nd_raw->Insert(ama::POS_BACK, nd_child->toSingleNode());
 				}
 			}
 		}

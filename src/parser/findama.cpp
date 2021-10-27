@@ -9,7 +9,7 @@ namespace ama {
 			intptr_t p_line0 = input--->indexOf('\n');
 			if (p_line0 >= 0 && input--->subarray(0, p_line0)--->endsWith("ama")) {
 				char ch = input[p_line0 - 4];
-				if (ch == '#' || ch == '/' || uint8_t(ch) <= uint8_t(' ')) {
+				if (ch == '#' || ch == '/' || ch == '!' || uint8_t(ch) <= uint8_t(' ')) {
 					//we have an ama hashbang, run the entire file
 					ret--->push(input--->subarray(p_line0 + 1));
 					return std::move(ret);
@@ -17,7 +17,7 @@ namespace ama {
 			}
 		}
 		//note: we don't want to see the trigger string in our own file
-		intptr_t p_ama = input--->indexOf("@a""ma");
+		intptr_t p_ama = input--->indexOf("@""ama");
 		if ( p_ama < intptr_t(0L) ) { return std::move(ret); }
 		auto p_prefix = input--->subarray(intptr_t(0L), p_ama)--->lastIndexOf('\n') + intptr_t(1L);
 		std::span<char> prefix = input--->subarray(p_prefix, p_ama - p_prefix);
