@@ -3,9 +3,10 @@ cmake_minimum_required (VERSION 3.0)
 project(entry)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-delete-null-pointer-checks")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks")
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LIBCPP_DEBUG=0 -D_GLIBCXX_DEBUG")
-endif()
+string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
+#if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LIBCPP_DEBUG=0 -D_GLIBCXX_DEBUG")
+#endif()
 add_executable(ama
 	"src/util/dumpstack/linux_bt.cpp"
 	"src/util/dumpstack/win_dbghelp.cpp"

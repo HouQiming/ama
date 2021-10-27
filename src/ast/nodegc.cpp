@@ -34,16 +34,16 @@ namespace ama {
 			mark(Q, (ama::Node*)nd);
 			mark(Q, nd->Root());
 			/////////
-			if (!nd->p && nd->node_class == ama::N_FILE) {
-				fprintf(stderr, "marked root %s\n", nd->data.data());
-			} else {
-				ama::Node* nd_root = nd->Root();
-				if (nd_root->node_class == ama::N_FILE) {
-					fprintf(stderr, "marked child of %s\n", nd_root->data.data());
-				} else {
-					fprintf(stderr, "marked middle-node %d %s\n", int(nd->node_class), nd->data.data());
-				}
-			}
+			//if (!nd->p && nd->node_class == ama::N_FILE) {
+			//	fprintf(stderr, "marked root %s\n", nd->data.data());
+			//} else {
+			//	ama::Node* nd_root = nd->Root();
+			//	if (nd_root->node_class == ama::N_FILE) {
+			//		fprintf(stderr, "marked child of %s\n", nd_root->data.data());
+			//	} else {
+			//		fprintf(stderr, "marked middle-node %d %s\n", int(nd->node_class), nd->data.data());
+			//	}
+			//}
 		}
 		ama::mark(Q, ama::GetPlaceHolder());
 		//recursion
@@ -55,7 +55,7 @@ namespace ama {
 		//sweep
 		std::vector<ama::Node*> node_ranges = ama::GetAllPossibleNodeRanges();
 		intptr_t n_freed = intptr_t(0L);
-		intptr_t n_kept = intptr_t(0L);
+		//iptr n_kept = iptr(0L);
 		for (int i = 0; i < node_ranges.size(); i += 2) {
 			for (ama::Node* nd = node_ranges[i]; nd != node_ranges[i + 1]; nd += 1) {
 				if ( (nd->tmp_flags & (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE)) == ama::TMPF_IS_NODE ) {
@@ -75,15 +75,15 @@ namespace ama {
 				} else if ( (nd->tmp_flags & (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE)) == (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE) ) {
 					//clear the marked flag for the next gc
 					//fprintf(stderr,"keep node %p\n",nd);
-					n_kept += 1;
+					//n_kept += 1;
 					nd->tmp_flags &= ~ama::TMPF_GC_MARKED;
-					if (!nd->p && nd->node_class == ama::N_FILE) {
-						fprintf(stderr, "keep file %s\n", nd->data.data());
-					}
+					//if (!nd->p && nd->node_class == ama::N_FILE) {
+					//	fprintf(stderr, "keep file %s\n", nd->data.data());
+					//}
 				}
 			}
 		}
-		fprintf(stderr, "n_kept = %d\n", int(n_kept));
+		//fprintf(stderr, "n_kept = %d\n", int(n_kept));
 		ama::gcstring_gcsweep();
 		return n_freed;
 	}
