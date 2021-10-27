@@ -317,16 +317,47 @@ typing.ComputeReturnType = function(type_func) {
 	return type;
 };
 
-typing.LookupDottedName = function(nd_site, name, nd_scope) {
+typing.LookupDottedName = function(nd_site, name, nd_class) {
 	let nd_def = undefined;
-	if (nd_scope) {
-		nd_def = typing.GetDefs(nd_scope).get(name);
+	if (nd_class) {
+		//base class: should use ParseClass
+		//nd_def = typing.GetDefs(nd_class.LastChild()).get(name);
+		let class_defs = typing.def_cache.get(nd_class);
+		if (!class_defs) {
+			class_defs = new Map();
+			typing.def_cache.set(nd_class, class_defs);
+			let desc = nd_class.ParseClass();
+			for (let ppt of desc.properties) {
+				let nd_def = ppt.node;
+				if (!nd_def) {continue;}
+				if (nd_def.node_class == N_CLASS) {
+					nd_def = nd_def.c.s;
+				} else if (nd_def.node_class == N_FUNCTION) {
+					let nd_func = nd_def;
+					nd_def = undefined;
+					for (let ndi = nd_func; ndi; ndi = ndi.PreorderNext(nd_func)) {
+						if (ndi.node_class == N_SCOPE || ndi.node_class == N_PARAMETER_LIST) {
+							ndi = ndi.PreorderLastInside();
+							continue;
+						}
+						if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
+							nd_def = ndi;
+							break;
+						}
+					}
+				}
+				if (nd_def && nd_def.node_class == N_REF && (nd_def.flags & REF_DECLARED)) {
+					class_defs.set(ppt.name, nd_def);
+				}
+			}
+		}
+		nd_def = class_defs.get(name);
 	}
-	if (!nd_def && isNamespace(nd_scope)) {
+	if (!nd_def && isNamespace(nd_class)) {
 		//it got ugly: we need to search ALL same-named namespaces
 		//don't merge namespaces internally: each file "sees" a different version of the same namespace
 		let names = [];
-		for (let ndi = nd_scope; ndi; ndi = ndi.p) {
+		for (let ndi = nd_class; ndi; ndi = ndi.p) {
 			if (ndi.node_class == N_CLASS) {names.push(ndi.GetName());}
 		}
 		for (let nd_scope of typing.LookupClassesByNames(nd_site.Root(), names, {must_be: 'namespace',include_dependency: 1})) {
@@ -500,7 +531,7 @@ typing.ComputeType = function(nd_expr) {
 		//COULDDO: substitute template parameters
 		let type_obj = typing.TryGettingClass(typing.ComputeType(nd_expr.c));
 		if (type_obj && type_obj.node_class == N_CLASS) {
-			let nd_def = typing.LookupDottedName(nd_expr, nd_expr.data, type_obj.LastChild());
+			let nd_def = typing.LookupDottedName(nd_expr, nd_expr.data, type_obj);
 			if (nd_def) {
 				type = typing.ComputeDeclaredType(nd_def);
 			}

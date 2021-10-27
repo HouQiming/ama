@@ -84,7 +84,7 @@ Node.ParseClass = function() {
 	let nd_after = this.c.s.s;
 	function PreorderNextSkipping(nd_self, nd_root) {
 		if (nd_self.node_class == N_CALL || nd_self.node_class == N_CALL_TEMPLATE ||
-		nd_self.node_class == N_RAW || nd_self.node_class == N_SCOPE ||
+		nd_self.node_class == N_RAW && (nd_self.flags & 0xffff) || nd_self.node_class == N_SCOPE ||
 		nd_self.node_class == N_DOT || nd_self.node_class == N_ITEM) {
 			return nd_self.PreorderSkipChildren(nd_root);
 		} else {
