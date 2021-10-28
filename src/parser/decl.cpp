@@ -589,12 +589,22 @@ namespace ama {
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				nd_tmp->ReplaceWith(nd_stmt);
-				//if( !nd_raw.c && nd_raw.isRawNode(0, 0) ) {
-				//	nd_raw.ReplaceWith(nd_stmt);
-				//	nd_raw.c = NULL; nd_raw.FreeASTStorage();
-				//} else {
-				//	nd_raw.Insert(ama::POS_BACK, nd_stmt);
-				//}
+				if (nd_stmt->data == "#define" && nd_stmt->c->node_class == ama::N_RAW) {
+					//#define argument special handling: break the argument part
+					ama::Node* nd_define_args = nd_stmt->c;
+					ama::Node* nd_breakpt = nd_define_args->c;
+					if (nd_breakpt && nd_breakpt->node_class == ama::N_REF) {
+						nd_breakpt->flags |= ama::REF_DECLARED;
+					}
+					if (nd_breakpt && nd_breakpt->node_class == ama::N_REF && nd_breakpt->s && nd_breakpt->s->isRawNode('(', ')')) {
+						nd_breakpt = nd_breakpt->s;
+					}
+					if (nd_breakpt) {
+						ama::Node* nd_value = nd_breakpt->BreakSibling()->toSingleNode();
+						nd_define_args->Insert(ama::POS_BACK, nd_value);
+						nd_value->AdjustIndentLevel(-nd_define_args->indent_level);
+					}
+				}
 			}
 		}
 		return nd_root;

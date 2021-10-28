@@ -114,7 +114,7 @@ jsism.EnableConsole = function(nd_root, options) {
 			} else if (options.separator) {
 				nd_stream = nBinop(nd_stream, '<<', nString(options.separator));  
 			}
-			let nd_value = ndi
+			let nd_value = ndi;
 			if (nd_value.isMethodCall('padStart') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				need_iomanip = 1;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('right').setFlags(DOT_CLASS))  ;
