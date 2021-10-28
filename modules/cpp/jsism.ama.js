@@ -131,7 +131,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
 					nd_value = nd_value.c.c;
 				}
-			};
+			}
 			if (nd_value.isMethodCall('toExponential') && !nd_value.c.s) {
 				need_iomanip = 1;
 				need_ios = 1

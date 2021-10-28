@@ -245,6 +245,15 @@ namespace ama {
 					}
 					passed_newline = 0;
 				}
+				if (ndi->s && (ndi->s->comments_before--->startsWith("\n ") || ndi->s->comments_before--->startsWith("\n\t"))) {
+					//last comment in an indent group, it should have been our comment
+					ndi->MergeCommentsAfter(ndi->s);
+					//if (ndi->comments_after--->endsWith('\n')) {
+					//ndi->comments_after = ndi->comments_after--->subarray(0, ndi->comments_after.size() - 1);
+					//leave them a newline for sanity
+					ndi->s->comments_before = "\n";
+					//}
+				}
 				if ( ndi->comments_after--->indexOf('\n') >= 0 ) {
 					passed_newline = 1;
 				}

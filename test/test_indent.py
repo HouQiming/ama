@@ -18,6 +18,7 @@ def main(
 	else:
 			bad_indent=0
 		normal_indent=1
+		# comment at the end of some indent
 	long_string='''
 		comment
 			not a scope
