@@ -210,12 +210,16 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> is_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
 		std::unordered_map<ama::gcstring, int> cv_qualifiers = ama::GetPrioritizedList(options, "cv_qualifiers");
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
+		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
 		//treat statement keywords as named ops: they cannot be operands
 		for (auto iter: keywords_statement) {
 			named_ops--->set(iter.first, 1);
 		}
+		for (auto iter: keywords_scoped_statement) {
+			named_ops--->set(iter.first, 1);
+		}
 		//named operators: convert refs to symbols
-		for ( ama::Node* const &nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
+		for ( ama::Node* nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( named_ops--->get(nd_ref->data) || (c_type_prefix_operators--->get(nd_ref->data) && nd_ref->s && nd_ref->s->node_class == ama::N_REF && nd_ref->p && nd_ref->p->node_class == ama::N_RAW) ) {
 				nd_ref->node_class = ama::N_SYMBOL;
 			}
