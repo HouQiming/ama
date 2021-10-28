@@ -344,7 +344,7 @@ namespace ama {
 		}
 		std::string script_i = ama::FindAma(file_data.some);
 		if ( extra_script.size() ) {
-			script_i = std::move(JC::string_concat(extra_script, script_i));
+			script_i = JC::string_concat(extra_script, script_i);
 		}
 		//allow .(foo) in ama code
 		if ( script_i--->indexOf(".(") >= 0 || script_i--->indexOf(".{") >= 0 ) {
@@ -696,13 +696,13 @@ namespace ama {
 		if ( !home_dir ) {
 			home_dir = "/";
 		}
-		ama::std_module_dir = std::move(path::normalize(JC::string_concat(home_dir, path::sep, ".ama_modules")));
+		ama::std_module_dir = path::normalize(JC::string_concat(home_dir, path::sep, ".ama_modules"));
 		#if defined(_WIN32)
 			char const* program_files = getenv("ProgramFiles");
 			if ( !program_files ) {
 				program_files = "\\";
 			}
-			ama::std_module_dir_global = std::move(path::normalize(JC::string_concat(program_files, path::sep, "ama\\ama_modules")));
+			ama::std_module_dir_global = path::normalize(JC::string_concat(program_files, path::sep, "ama\\ama_modules"));
 		#else
 			ama::std_module_dir_global = "/usr/share/ama_modules";
 		#endif
