@@ -417,7 +417,7 @@ namespace ama {
 								nd_paramlist_start = nd_keyword->s;
 								if ( nd_keyword->node_class == ama::N_CALL ) {
 									//the unparsing always creates a paramlist
-									int start_was_paramlist = nd_keyword == nd_keyword;
+									int start_was_paramlist = nd_keyword == nd_prototype_start;
 									nd_keyword = ama::UnparseCall(nd_keyword);
 									if ( start_was_paramlist ) {
 										nd_prototype_start = nd_keyword;
