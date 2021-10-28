@@ -32,6 +32,11 @@ namespace ama {
 		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
 		return ama::gcstring(ptr, intptr_t(len));
 	}
+	static inline std::string UnwrapStringResizable(JSValueConst val) {
+		size_t len = int64_t(0uLL);
+		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
+		return std::string(ptr, intptr_t(len));
+	}
 	static inline std::span<char> UnwrapStringSpan(JSValueConst val) {
 		size_t len = int64_t(0uLL);
 		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);

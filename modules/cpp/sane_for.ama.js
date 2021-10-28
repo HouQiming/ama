@@ -9,6 +9,13 @@ module.exports = function Transform(nd_root) {
 		if (nd_range.node_class == N_BINOP && (nd_range.data == 'in' || nd_range.data == 'of')) {
 			nd_range.node_class = N_LABELED;
 			nd_range.data = '';
+		} else if (nd_range.node_class == N_BINOP && (nd_range.data == '<' || nd_range.data == '<=')) {
+			let nd_i = nd_range.c;
+			let nd_n = nd_range.c.s;
+			let nd_tmp = Node.GetPlaceHolder();
+			nd_range.ReplaceWith(nd_tmp);
+			nd_tmp.ReplaceWith(.((auto .(nd_i.Clone()) = 0; .(nd_range); .(nd_i.Clone())++)));
+			continue;
 		}
 		//parse for(:) as declaration
 		if (nd_range.node_class == N_LABELED) {

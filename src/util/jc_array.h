@@ -344,8 +344,8 @@ public:
 		return std::move(ret);
 	}
 	inline ArrayExtension<Base,T>& set(std::span<T> b){
-		T* src=this->data();
-		T const* tar=b.data();
+		T* tar=this->data();
+		T const* src=b.data();
 		size_t size_tar = this->size();
 		size_t size_src = b.size();
 		std::copy(src, src+std::min(size_tar, size_src), tar);
