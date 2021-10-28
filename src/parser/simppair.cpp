@@ -297,7 +297,7 @@ namespace ama {
 						comment_begin = feed;
 						comment_end = feed;
 						break;
-					} else{
+					} else {
 						goto handle_symbol;
 					}
 				}

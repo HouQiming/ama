@@ -97,7 +97,7 @@ namespace ama {
 					this->code.push_back('<');
 				} else if ( nd->node_class == ama::N_ITEM ) {
 					this->code.push_back('[');
-				} else{
+				} else {
 					//if( nd.flags & ama::CALL_IS_UNARY_OPERATOR ) {
 					//	if( nd.c.s ) {
 					//		this.GenerateSpaceBefore(nd.c.s);
@@ -121,7 +121,7 @@ namespace ama {
 					this->code.push_back('>');
 				} else if ( nd->node_class == ama::N_ITEM ) {
 					this->code.push_back(']');
-				} else{
+				} else {
 					//if( nd.flags & ama::CALL_IS_UNARY_OPERATOR ) {
 					//	//do nothing
 					//} else {

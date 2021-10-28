@@ -216,7 +216,7 @@ typing.ComputeDeclaredType = function(nd_def) {
 		} else if (ndi.node_class == N_CLASS || ndi.node_class == N_FUNCTION) {
 			type = ndi;
 			break;
-		} else if(ndi.node_class == N_SEMICOLON || ndi.node_class == N_SCOPE) {
+		} else if (ndi.node_class == N_SEMICOLON || ndi.node_class == N_SCOPE) {
 			break;
 		}
 	}

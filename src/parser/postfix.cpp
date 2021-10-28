@@ -136,9 +136,9 @@ namespace ama {
 					ndi_next->Unlink();
 					ndi = ndi->ReplaceWith(ama::nNodeof(ndi_next)->setIndent(ndi->indent_level));
 					continue;
-				} else if(ndi->node_class == ama::N_SYMBOL){
+				} else if (ndi->node_class == ama::N_SYMBOL) {
 					//do nothing
-				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)){
+				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)) {
 					//postfix operator
 					ndi->MergeCommentsAfter(ndi_next);
 					ama::Node* nd_tmp = ama::GetPlaceHolder();
@@ -147,9 +147,9 @@ namespace ama {
 					ndi = nd_tmp->ReplaceWith(ama::nPostfix(ndi, ndi_next->data)->setCommentsAfter(ndi_next->comments_after));
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					continue;
-				} else if(ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
+				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
 				(ndi_next->data == "." || (!isCPPLambda(ndi) && ndi_next->data == "->") || ndi_next->data == "::") && 
-				ndi_next->s && ndi_next->s->node_class == ama::N_REF){
+				ndi_next->s && ndi_next->s->node_class == ama::N_REF) {
 					//dot
 					int dot_flags = 0;
 					if ( ndi_next->data == "->" ) {
@@ -169,7 +169,7 @@ namespace ama {
 					nd_name->p = nullptr; nd_name->FreeASTStorage();
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					continue;
-				} else if(ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()){
+				} else if (ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()) {
 					//call
 					ndi = TranslatePostfixCall(ndi);
 					continue;

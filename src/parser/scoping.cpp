@@ -154,7 +154,7 @@ namespace ama {
 					if ( ndi_next ) {
 						new_children.push_back(ndi_next);
 					}
-				} else if(ndi->node_class == ama::N_REF && ndi->data--->startsWith('#')){
+				} else if (ndi->node_class == ama::N_REF && ndi->data--->startsWith('#')) {
 					changed = ';';
 					if ( !new_children.size() && new_children.back() == ndi ) {
 						ndi->BreakSelf();

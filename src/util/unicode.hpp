@@ -49,7 +49,7 @@ namespace unicode {
 							//emit nothing if unpaired...
 							ch = -1;
 						}
-					} else if(ch >= 0x110000){
+					} else if (ch >= 0x110000) {
 						//invalid encoding
 						ch = 0xfffd;
 					}
@@ -89,7 +89,7 @@ namespace unicode {
 			return 3;
 		} else if ( chi >= 128 ) {
 			return 2;
-		} else{
+		} else {
 			return 1;
 		}
 	}
@@ -106,7 +106,7 @@ namespace unicode {
 		} else if ( chi >= 128 ) {
 			output--->push(char((chi >> 6) + 0xc0));
 			output--->push(char(0x80 + (chi & 63)));
-		} else{
+		} else {
 			output--->push(char(chi));
 		}
 	}

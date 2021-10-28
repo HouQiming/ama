@@ -137,7 +137,7 @@
 									//don't push last_levels
 									ret--->push("..\\");
 								}
-							} else{
+							} else {
 								if ( is_first && part.size() >= 2 && part[1] == ':' && ((part[0] >= 'A' && part[0] <= 'Z') || (part[0] >= 'a' && part[0] <= 'z')) ) {
 									//we got a drive letter WITHOUT // or \\, it's drive-current-relative s_path, pull the drive letter out
 									is_first = 0;

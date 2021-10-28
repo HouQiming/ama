@@ -576,12 +576,12 @@ ama::gcstring ama::Node::GetName() const {
 		}
 	} else if ( this->node_class == ama::N_ASSIGNMENT || this->node_class == ama::N_DEPENDENCY ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
 		return this->c->GetName();
-	} else if(this->node_class == ama::N_CLASS){
+	} else if (this->node_class == ama::N_CLASS) {
 		return this->c->s->GetName();
-	} else if(this->node_class == ama::N_STRING){
+	} else if (this->node_class == ama::N_STRING) {
 		ama::Node* nd_hack = (ama::Node*)(this);
 		return nd_hack->GetStringValue();
-	} else{
+	} else {
 		return this->data;
 	}
 }
@@ -629,7 +629,7 @@ static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t bou
 				my_boundary |= ama::BOUNDARY_CLASS;
 			} else if ( int(nd->node_class) == ama::N_NODEOF ) {
 				my_boundary |= ama::BOUNDARY_NODEOF;
-			} else if(int(nd->node_class) == ama::N_SCOPE){
+			} else if (int(nd->node_class) == ama::N_SCOPE) {
 				my_boundary |= ama::BOUNDARY_SCOPE;
 			}
 			//} else if( int(nd.node_class) == ama::N_CALL && nd.p && nd.p.node_class == ama::N_RAW_DECLARATION ) {

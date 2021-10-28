@@ -38,12 +38,15 @@ namespace ama {
 	static const int KW_FUNC = 4;
 	static const int KW_NOT_FUNC = 5;
 	//void! DumpASTAsJSON(ama::Node*+! nd);
-	static ama::Node* TranslateCUnscopedStatement(ama::Node* nd_keyword, ama::Node* nd_end) {
+	static ama::Node* TranslateCUnscopedStatement(ama::Node* nd_keyword, ama::Node* nd_end, int is_elseif) {
 		ama::Node* nd_tmp = ama::GetPlaceHolder();
 		nd_keyword->ReplaceUpto(nd_end, nd_tmp);
-		ama::Node* nd_arg{};
 		ama::Node* nd_body = nd_keyword->BreakSibling();
-		if ( nd_keyword->node_class == ama::N_CALL ) {
+		ama::Node* nd_arg = nullptr;
+		if (is_elseif) {
+			//there is no arg
+			nd_arg = nullptr;
+		} else if ( nd_keyword->node_class == ama::N_CALL ) {
 			nd_keyword = ama::UnparseCall(nd_keyword);
 			nd_arg = nd_keyword->BreakSibling();
 		} else if ( nd_body && nd_body->isRawNode('(', ')') ) {
@@ -64,24 +67,27 @@ namespace ama {
 		}
 		ama::Node* nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
 		nd_body = ama::toSingleNode(nd_body);
-		ama::Node* nd_scoped_body = ama::CreateNode(ama::N_SCOPE, nd_body);
-		if ( nd_body->comments_before--->indexOf('\n') < 0 ) {
-			std::swap(nd_scoped_body->comments_before, nd_body->comments_before);
+		if (!is_elseif) {
+			ama::Node* nd_scoped_body = ama::CreateNode(ama::N_SCOPE, nd_body);
+			if ( nd_body->comments_before--->indexOf('\n') < 0 ) {
+				std::swap(nd_scoped_body->comments_before, nd_body->comments_before);
+			}
+			if ( nd_body->comments_after--->indexOf('\n') < 0 ) {
+				std::swap(nd_scoped_body->comments_after, nd_body->comments_after);
+			}
+			nd_scoped_body->indent_level = nd_keyword->indent_level;
+			if ( nd_body->comments_after--->indexOf('\n') >= 0 && nd_stmt->comments_after--->indexOf('\n') < 0 ) {
+				nd_stmt->comments_after = (ama::gcscat(nd_stmt->comments_after, "\n"));
+			}
+			if ( nd_body->comments_before--->indexOf('\n') >= 0 && nd_body->comments_after--->indexOf('\n') < 0 ) {
+				nd_body->comments_after = (ama::gcscat(nd_body->comments_after, "\n"));
+			}
+			nd_body->AdjustIndentLevel(-nd_scoped_body->indent_level);
+			nd_body = nd_scoped_body;
 		}
-		if ( nd_body->comments_after--->indexOf('\n') < 0 ) {
-			std::swap(nd_scoped_body->comments_after, nd_body->comments_after);
-		}
-		nd_scoped_body->indent_level = nd_keyword->indent_level;
-		if ( nd_body->comments_after--->indexOf('\n') >= 0 && nd_stmt->comments_after--->indexOf('\n') < 0 ) {
-			nd_stmt->comments_after = (ama::gcscat(nd_stmt->comments_after, "\n"));
-		}
-		if ( nd_body->comments_before--->indexOf('\n') >= 0 && nd_body->comments_after--->indexOf('\n') < 0 ) {
-			nd_body->comments_after = (ama::gcscat(nd_body->comments_after, "\n"));
-		}
-		nd_body->AdjustIndentLevel(-nd_scoped_body->indent_level);
 		nd_stmt->Insert(
 			ama::POS_FRONT,
-			ama::cons(ama::toSingleNode(nd_arg)->MergeCommentsBefore(nd_keyword), nd_scoped_body)
+			ama::cons(ama::toSingleNode(nd_arg)->MergeCommentsBefore(nd_keyword), nd_body)
 		);
 		nd_tmp->ReplaceWith(nd_stmt);
 		nd_keyword->s = nullptr;
@@ -147,7 +153,9 @@ namespace ama {
 		int32_t parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_forward_declarations"), 1);
 		int32_t parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp11_lambda"), 1);
 		int32_t struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "struct_can_be_type_prefix"), 1);
-		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+		std::vector<ama::Node*> Q = nd_root->FindAllWithin(0, ama::N_RAW);
+		for ( intptr_t qi = 0; qi < Q.size(); qi++ ) {
+			ama::Node* nd_raw = Q[qi];
 			if ( !nd_raw->p ) { continue; }
 			if ( nd_raw->p->node_class == ama::N_KEYWORD_STATEMENT && nd_raw->p->data--->startsWith('#') ) {
 				//the `defined()` in #if defined(){}
@@ -157,26 +165,21 @@ namespace ama {
 			ama::Node* nd_prototype_start = ndi;
 			ama::Node* nd_last_scoped_stmt{};
 			ama::Node* nd_keyword{};
-			ama::Node* nd_pending_else{};
-			ama::Node* nd_if_of_pending_else{};
 			int kw_mode = KW_NONE;
+			int is_elseif = 0;
 			while ( ndi ) {
 				ama::Node* ndi_next = ndi->s;
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && ndi == nd_keyword->s && 
 				(ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL) && keywords_scoped_statement--->get(ndi->GetName()) ) {
-					//`else if` case
-					nd_pending_else = nd_keyword;
-					nd_if_of_pending_else = nd_last_scoped_stmt;
-					nd_keyword = ndi;
-					kw_mode = KW_STMT;
-					continue;
+					//`else if` case: translate if into N_RAW and queue it
+					is_elseif = 1;
+					break;
 				}
 				if ( !nd_keyword && (ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL) ) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
 					ama::gcstring name = ndi->GetName();
 					if ( !name.empty() ) {
 						if ( keywords_class--->get(name) ) {
-							nd_pending_else = nullptr;
 							nd_keyword = ndi;
 							kw_mode = KW_CLASS;
 							continue;
@@ -184,20 +187,19 @@ namespace ama {
 							if (name == "while" && !(nd_last_scoped_stmt && nd_last_scoped_stmt->data == "do") && !(nd_keyword && nd_keyword->data == "do")) {
 								//fall through: a new `while` statement
 							} else if ( nd_last_scoped_stmt ) {
-								nd_pending_else = nullptr;
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
 								continue;
 							} else if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 								//extension of unscoped statement
 								//ama::Node*+! nd_ext_keyword = ndi.BreakSelf();
-								ama::Node* nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi->Prev());
+								ama::Node* nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi->Prev(), 0);
 								//nd_stmt.Insert(ama::POS_AFTER, nd_ext_keyword);
 								nd_last_scoped_stmt = nd_stmt;
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
 								continue;
-							} else{
+							} else {
 								//fall through: could be `while`
 							}
 						}
@@ -206,12 +208,10 @@ namespace ama {
 							kw_mode = KW_STMT;
 							continue;
 						} else if ( keywords_function--->get(name) ) {
-							nd_pending_else = nullptr;
 							nd_keyword = ndi;
 							kw_mode = KW_FUNC;
 							continue;
 						} else if ( keywords_not_a_function--->get(name) ) {
-							nd_pending_else = nullptr;
 							nd_keyword = ndi;
 							kw_mode = KW_NOT_FUNC;
 							continue;
@@ -229,7 +229,7 @@ namespace ama {
 						if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
 							nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
 						} else {
-							nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi);
+							nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi, 0);
 						}
 						if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 							nd_stmt->node_class = ama::N_EXTENSION_CLAUSE;
@@ -260,7 +260,7 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
 					nd_keyword = nullptr;
-				} else if(ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi){
+				} else if (ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi) {
 					switch ( kw_mode ) {
 						case KW_CLASS: {
 							//search for the class name
@@ -355,22 +355,6 @@ namespace ama {
 							}
 							////////
 							nd_last_scoped_stmt = nd_stmt;
-							////////
-							//`else if(){}` case: we just translated the if part, now do the else
-							if ( nd_pending_else ) {
-								//do not wrap an additional scope: else {if(){}} is too ugly
-								nd_pending_else->Unlink();
-								nd_stmt->Unlink();
-								nd_if_of_pending_else->Insert(
-									ama::POS_BACK,
-									ama::nExtensionClause(
-										nd_pending_else->data, ama::nAir(), nd_stmt
-									)->setCommentsBefore(nd_pending_else->comments_before)->setIndent(nd_pending_else->indent_level)
-								);
-								ndi = nd_if_of_pending_else;
-								nd_pending_else = nullptr;
-								nd_if_of_pending_else = nullptr;
-							}
 							////////
 							ndi = ndi->s;
 							kw_mode = KW_NONE;
@@ -496,7 +480,13 @@ namespace ama {
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
 					nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
 				} else {
-					nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi);
+					nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi, is_elseif);
+					if (is_elseif) {
+						//re-queue the if part
+						ama::Node* nd_elseif = nd_stmt->LastChild();
+						assert(nd_elseif->node_class == ama::N_RAW);
+						Q.push_back(nd_elseif);
+					}
 				}
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 					nd_stmt->node_class = ama::N_EXTENSION_CLAUSE;
