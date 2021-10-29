@@ -104,7 +104,7 @@ namespace ama {
 	//try to fit into a 64 byte cacheline
 	struct Node {
 		uint8_t node_class{};
-		//store delta w.r.t. parent N_RAW
+		//stores delta w.r.t. parent
 		int8_t indent_level{};
 		uint16_t tmp_flags{};
 		uint32_t flags{};
@@ -119,7 +119,7 @@ namespace ama {
 		Node* s{};
 		//parent
 		Node* p{};
-		//last sibling
+		//previous sibling, or PackTailPointer(tail sibling) if this==this->p->c
 		Node* v{};
 		/////////////
 		inline ama::Node* setData(ama::gcstring data) {

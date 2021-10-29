@@ -189,7 +189,9 @@ Node.StripRedundantPrefixSpace = function(aggressive) {
 			if(ndi.p && (
 				ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 
 				ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT ||
-				ndi.node_class===N_PAREN||ndi.node_class===N_SCOPE||ndi.node_class===N_STRING
+				ndi.p.node_class === N_PARAMETER_LIST ||
+				ndi.node_class===N_PAREN||ndi.node_class===N_SCOPE||ndi.node_class===N_STRING||
+				ndi.node_class===N_EXTENSION_CLAUSE
 			)) {
 				ndi.comments_before = '';
 			}else if(aggressive){
@@ -200,6 +202,7 @@ Node.StripRedundantPrefixSpace = function(aggressive) {
 			if(ndi.p && (
 				ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 
 				ndi.p.node_class === N_BINOP || ndi.p.node_class === N_ASSIGNMENT ||
+				ndi.p.node_class === N_PARAMETER_LIST ||
 				ndi.node_class===N_PAREN||ndi.node_class===N_SCOPE||ndi.node_class===N_STRING
 			)) {
 				ndi.comments_after = '';
