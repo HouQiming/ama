@@ -384,7 +384,7 @@ jsism.EnableJSON = function(nd_root) {
 			//no-switch special case
 			let nd_switch = undefined;
 			if (properties.length == 1) {
-				nd_switch = .(
+				nd_switch = .({
 					ctx.SkipColon();
 					if ( ctx.error ) {
 						return std::move(ret);
@@ -394,7 +394,7 @@ jsism.EnableJSON = function(nd_root) {
 						return std::move(ret);
 					}
 					goto done;
-				);
+				});
 			} else {
 				//there cannot be a directly-return case: quotes should ensure that for us
 				//first-byte switch
