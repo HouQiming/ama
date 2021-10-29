@@ -168,30 +168,6 @@ typing.LookupSymbol = function(nd_ref, want_all) {
 	return want_all ? ret : undefined;
 };
 
-typing.CreateSymbolTable = function(nd_site) {
-	//look up local scopes
-	let names = new Map();
-	for (let ndi = nd_site; ndi; ndi = ndi.p) {
-		if (ndi.node_class == N_SCOPE || ndi.node_class == N_FILE) {
-			for (let item of typing.GetDefs(ndi)) {
-				if (!names.get(item[0])) {
-					names.set(item[0], item[1]);
-				}
-			}
-		}
-	}
-	//not found: we have to load dependencies
-	for (let nd_dep of typing.ListActiveScopes(nd_site.Root())) {
-		for (let item of typing.GetDefs(nd_dep)) {
-			if (!names.get(item[0])) {
-				names.set(item[0], item[1]);
-			}
-		}
-	}
-	//COULDDO: `using` handling
-	return names;
-};
-
 typing.ComputeDeclaredType = function(nd_def) {
 	//COULDDO: non-C++ forms of declaration
 	//COULDDO: handle destructuring and other weird forms
@@ -378,11 +354,10 @@ typing.TryGettingClass = function(type_obj) {
 	}
 	//we could enter an infinite loop here for:
 	//`const Multilib &Multilib;`
-	let dedup = new Set();
-	while (type_obj && !dedup.has(type_obj) && type_obj.node_class == N_POSTFIX && (type_obj.data == '&' || type_obj.data == 'const' || type_obj.data == 'volatile')) {
+	let dedup = new Set();while (type_obj && !dedup.has(type_obj) && type_obj.node_class == N_POSTFIX && (type_obj.data == '&' || type_obj.data == 'const' || type_obj.data == 'volatile')) {
 		dedup.add(type_obj);
 		type_obj = typing.ComputeType(type_obj.c);
-	};
+	}
 	while (type_obj && !dedup.has(type_obj) && type_obj.node_class == N_CALL_TEMPLATE) {
 		dedup.add(type_obj);
 		type_obj = typing.ComputeType(type_obj.c);
@@ -542,7 +517,9 @@ typing.ComputeType = function(nd_expr) {
 			}
 		}
 		//assume self-representing type name when we fail to find the def
-		if (!type) {type = nd_expr;}
+		if (!type && nd_expr.flags == DOT_CLASS) {
+			type = nd_expr;
+		}
 		break;
 	}
 	case N_CALL: {

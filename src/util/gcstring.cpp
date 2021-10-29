@@ -20,8 +20,11 @@ ama::gcstring_long * ama::toGCStringLongCat(char const* data0, size_t length0, c
 	assert(length >= 8);
 	uint64_t h = hash_string8((uint8_t const*)data0, length0, 0uLL);
 	h = hash_string8((uint8_t const*)data1, length1, h);
+	//the single instruction loading the pointer is slower than std::string construction
+	//it's faster without the hash test
+	//p->hash == h && 
 	for (ama::gcstring_long* p = g_hash[h & (g_hash_size - 1)]; p; p = p->next) {
-		if (p->length == length && p->hash == h && memcmp(p->data(), data0, length0) == 0 && memcmp(p->data() + length0, data1, length1) == 0) {
+		if (p->length == length && memcmp(p->data(), data0, length0) == 0 && memcmp(p->data() + length0, data1, length1) == 0) {
 			return p;
 		}
 	}

@@ -4,7 +4,7 @@ const path = require('path');
 const assert = require('assert');
 let depends = module.exports;
 
-depends.oracle=function nullOracle(name,referrer){
+depends.oracle = function nullOracle(name, referrer) {
 	return /*full path or undefined*/;
 };
 depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':').filter(s=> s);
@@ -28,11 +28,11 @@ depends.Resolve = function(nd) {
 				return fn_test;
 			}
 		}
-		return depends.oracle(fn,nd.Root().data);
+		return depends.oracle(fn, nd.Root().data);
 	} else if ((nd.flags & DEP_TYPE_MASK) == DEP_JS_REQUIRE) {
 		//reuse the builtin searcher __ResolveJSRequire
 		if (nd.c && nd.c.node_class == N_STRING) {
-			return __ResolveJSRequire(__filename, nd.c.GetStringValue())||depends.oracle(nd.c.GetStringValue(),nd.Root().data);
+			return __ResolveJSRequire(__filename, nd.c.GetStringValue()) || depends.oracle(nd.c.GetStringValue(), nd.Root().data);
 		}
 	}
 	return undefined;

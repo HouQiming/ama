@@ -132,7 +132,7 @@ Node.Match = function(nd_pattern) {
 }
 
 Node.MatchAll = function(nd_pattern) {
-	return this.FindAll(nd_pattern.node_class, null).map(nd=>nd.Match(nd_pattern)).filter(ret=>ret);
+	return this.FindAll(nd_pattern.node_class, nd_pattern.data).map(nd=>nd.Match(nd_pattern)).filter(ret=>ret);
 }
 
 Node.Subst = function(match) {
