@@ -13,7 +13,8 @@ module.exports = function Transform(nd_root) {
 			let nd_i = nd_range.c;
 			let nd_n = nd_range.c.s;
 			let nd_tmp = Node.GetPlaceHolder();
-			nd_range.ReplaceWith(nd_tmp);
+			nd_for.c.ReplaceWith(nd_tmp);
+			nd_range.BreakSibling();
 			nd_tmp.ReplaceWith(.((auto .(nd_i.Clone()) = 0; .(nd_range); .(nd_i.Clone())++)));
 			continue;
 		}

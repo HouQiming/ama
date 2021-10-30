@@ -7,3 +7,5 @@ console.log(JSON.stringify(nd_root,null,1));
 #define B()
 #define C 1
 #define D -1
+#define E (3)
+#define F (a)(b)

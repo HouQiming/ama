@@ -9,6 +9,7 @@
 #ifndef NDEBUG
 #include <stdio.h>
 #endif
+#pragma add("c_files","./json.cpp")
 
 namespace JSON{
 	/////////////

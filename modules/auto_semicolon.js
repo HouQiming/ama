@@ -41,6 +41,7 @@ module.exports = function(nd_root) {
 	}
 	for (let nd of nd_root.FindAll(N_SCOPE, null).concat([nd_root])) {
 		if (nd.Owning(N_NODEOF)) {continue;}
+		if(nd.p&&nd.p.node_class===N_SCOPED_STATEMENT&&nd.p.data==='enum'){continue;}
 		let found_semic=0;
 		for(let ndi=nd.c;ndi;ndi=ndi.s){
 			if(ndi.node_class===N_SEMICOLON){

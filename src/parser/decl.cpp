@@ -589,20 +589,55 @@ namespace ama {
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				nd_tmp->ReplaceWith(nd_stmt);
-				if (nd_stmt->data == "#define" && nd_stmt->c->node_class == ama::N_RAW) {
-					//#define argument special handling: break the argument part
-					ama::Node* nd_define_args = nd_stmt->c;
-					ama::Node* nd_breakpt = nd_define_args->c;
-					if (nd_breakpt && nd_breakpt->node_class == ama::N_REF) {
-						nd_breakpt->flags |= ama::REF_DECLARED;
+				if (nd_stmt->data == "#define" ) {
+					if (nd_stmt->c->node_class != ama::N_RAW) {
+						ama::Node* nd_breakpt = nd_stmt->c;
+						for (; ;) {
+							if (!nd_breakpt || nd_breakpt->node_class == ama::N_REF || (
+								nd_breakpt->node_class == ama::N_CALL &&
+								nd_breakpt->c->node_class == ama::N_REF &&
+								nd_breakpt->c->comments_after == ""
+							)) {
+								break;
+							}
+							ama::Node* nd_breakpt_unparsed = nd_breakpt->Unparse();
+							if (nd_breakpt_unparsed == nd_breakpt) {
+								//can't unparse anymore
+								break;
+							}
+							nd_breakpt = nd_breakpt_unparsed;
+						}
 					}
-					if (nd_breakpt && nd_breakpt->node_class == ama::N_REF && nd_breakpt->s && nd_breakpt->s->isRawNode('(', ')')) {
-						nd_breakpt = nd_breakpt->s;
-					}
-					if (nd_breakpt) {
-						ama::Node* nd_value = nd_breakpt->BreakSibling()->toSingleNode();
-						nd_define_args->Insert(ama::POS_BACK, nd_value);
-						nd_value->AdjustIndentLevel(-nd_define_args->indent_level);
+					if (nd_stmt->c->node_class == ama::N_RAW) {
+						//#define argument special handling: break the argument part
+						ama::Node* nd_define_args = nd_stmt->c;
+						ama::Node* nd_breakpt = nd_define_args->c;
+						for (; ;) {
+							if (!nd_breakpt || nd_breakpt->node_class == ama::N_REF || (
+								nd_breakpt->node_class == ama::N_CALL &&
+								nd_breakpt->c->node_class == ama::N_REF &&
+								nd_breakpt->c->comments_after == ""
+							)) {
+								break;
+							}
+							ama::Node* nd_breakpt_unparsed = nd_breakpt->Unparse();
+							if (nd_breakpt_unparsed == nd_breakpt) {
+								//can't unparse anymore
+								break;
+							}
+							nd_breakpt = nd_breakpt_unparsed;
+						}
+						if (nd_breakpt && nd_breakpt->node_class == ama::N_REF) {
+							nd_breakpt->flags |= ama::REF_DECLARED;
+						}
+						if (nd_breakpt && nd_breakpt->node_class == ama::N_REF && nd_breakpt->s && nd_breakpt->s->isRawNode('(', ')')) {
+							nd_breakpt = nd_breakpt->s;
+						}
+						if (nd_breakpt) {
+							ama::Node* nd_value = nd_breakpt->BreakSibling()->toSingleNode();
+							nd_define_args->Insert(ama::POS_BACK, nd_value);
+							nd_value->AdjustIndentLevel(-nd_define_args->indent_level);
+						}
 					}
 				}
 			}

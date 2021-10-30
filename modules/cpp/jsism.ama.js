@@ -435,10 +435,11 @@ jsism.EnableJSON = function(nd_root) {
 					} else {
 						nd_char = nNumber(cases[i].indicator.toString());
 					}
+					//we must not have ; after the .(): it screws up multi-node insertion
 					nd_body.Insert(POS_BACK, .(
 						case .(nd_char): {
 							ctx.begin += 1;
-							.(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten + 1));
+							.(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten + 1))
 							break;
 						}
 					));
