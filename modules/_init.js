@@ -295,7 +295,8 @@ __global.default_options = {
 	keywords_not_a_function: 'switch case #define #if #else #elif return',
 	keywords_not_variable_name: 'static const volatile private public protected final noexcept throw override virtual',
 	//case is better treated as a part of a label
-	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif break continue',
+	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
+	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif break continue template',
 	///////////
 	//codegen
 	tab_width: 4,

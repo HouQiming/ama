@@ -171,11 +171,11 @@ namespace ama {
 };
 #pragma gen_begin(JSON::parse<PackageJSON>)
 namespace JSON {
-	template<>
+	template <>
 	struct ParseFromImpl<PackageJSON> {
 		//`type` is only used for SFINAE
 		typedef void type;
-		template<typename T = PackageJSON>
+		template <typename T = PackageJSON>
 		static PackageJSON parseFrom(JSONParserContext& ctx, PackageJSON**) {
 			T ret{};
 			if ( ctx.begin == ctx.end ) {
@@ -194,15 +194,17 @@ namespace JSON {
 				if ( !ctx.TrySkipName("\"main\"") ) {
 					goto skip;
 				} else {
-					ctx.SkipColon();
-					if ( ctx.error ) {
-						return std::move(ret);
+					{
+						ctx.SkipColon();
+						if ( ctx.error ) {
+							return std::move(ret);
+						}
+						ret.main = JSON::parseFrom(ctx, (std::string**)(NULL));
+						if ( ctx.error ) {
+							return std::move(ret);
+						}
+						goto done;
 					}
-					ret.main = JSON::parseFrom(ctx, (std::string**)(NULL));
-					if ( ctx.error ) {
-						return std::move(ret);
-					}
-					goto done;
 				}
 				skip:
 				ctx.SkipStringBody();

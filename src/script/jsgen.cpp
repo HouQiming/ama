@@ -662,6 +662,7 @@ namespace ama {
 		JS_SetPropertyStr(ama::jsctx, global, "DEP_JS_REQUIRE", JS_NewInt32(ama::jsctx, DEP_JS_REQUIRE));
 		JS_SetPropertyStr(ama::jsctx, global, "DEP_TYPE_MASK", JS_NewInt32(ama::jsctx, DEP_TYPE_MASK));
 		JS_SetPropertyStr(ama::jsctx, global, "DEPF_C_INCLUDE_NONSTR", JS_NewInt32(ama::jsctx, DEPF_C_INCLUDE_NONSTR));
+		JS_SetPropertyStr(ama::jsctx, global, "PARAMLIST_TEMPLATE", JS_NewInt32(ama::jsctx, PARAMLIST_TEMPLATE));
 		JS_SetPropertyStr(ama::jsctx, global, "MAX_INDENT", JS_NewInt32(ama::jsctx, MAX_INDENT));
 		JS_SetPropertyStr(ama::jsctx, global, "POS_BEFORE", JS_NewInt32(ama::jsctx, POS_BEFORE));
 		JS_SetPropertyStr(ama::jsctx, global, "POS_AFTER", JS_NewInt32(ama::jsctx, POS_AFTER));

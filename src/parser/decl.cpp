@@ -9,7 +9,11 @@
 #include "../util/jc_array.h"
 namespace ama {
 	static ama::Node* ConvertToParameterList(ama::Node* nd_raw) {
-		assert(nd_raw->isRawNode('(', ')'));
+		assert(nd_raw->isRawNode('(', ')') || nd_raw->isRawNode('<', '>'));
+		uint32_t flags = 0;
+		if (nd_raw->isRawNode('<', '>')) {
+			flags = ama::PARAMLIST_TEMPLATE;
+		}
 		std::vector<ama::Node*> params{};
 		for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
 			if ( ndi->isSymbol(",") ) { continue; }
@@ -26,7 +30,7 @@ namespace ama {
 			}
 			params--->push(ndi);
 		}
-		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params)->setIndent(nd_raw->indent_level)->setCommentsBefore(nd_raw->comments_before)->setCommentsAfter(nd_raw->comments_after);
+		return ama::CreateNodeFromChildren(ama::N_PARAMETER_LIST, params)->setFlags(flags)->setIndent(nd_raw->indent_level)->setCommentsBefore(nd_raw->comments_before)->setCommentsAfter(nd_raw->comments_after);
 	}
 	//detects: N_FUNCTION and N_CLASS
 	//also parses if / else / ...
@@ -161,6 +165,18 @@ namespace ama {
 				//the `defined()` in #if defined(){}
 				continue;
 			}
+			//int in_paramlist = 0;
+			//ama::Node* nd_paramlist = nd_raw->Owning(ama::N_PARAMETER_LIST);
+			//if (nd_paramlist) {
+			//	//ignore `class foo` in parameter lists
+			//	in_paramlist = 1;
+			//	for (ama::Node* ndj = nd_raw; ndj != nd_paramlist; ndj = ndj.p) {
+			//		if (ndj.node_class == ama::N_SCOPE) {
+			//			in_paramlist = 0;
+			//			break;
+			//		}
+			//	}
+			//}
 			ama::Node* ndi = nd_raw->c;
 			ama::Node* nd_prototype_start = ndi;
 			ama::Node* nd_last_scoped_stmt{};
@@ -572,6 +588,30 @@ namespace ama {
 				nd_keyword->node_class = ama::N_KEYWORD_STATEMENT;
 				nd_keyword->Insert(ama::POS_FRONT, ama::nAir());
 			} else if ( nd_parent->node_class == ama::N_RAW ) {
+				if ( nd_keyword->data == "template" && nd_keyword->s && nd_keyword->s->isRawNode('<', '>') ) {
+					//template<foo>bar => nScopedStatement('template',nParameterList(foo),bar)
+					//we haven't parsed assignment yet so template alias will be seen as N_RAW
+					ama::Node* nd_paramlist = nd_keyword->s;
+					ama::Node* nd_last = nd_paramlist;
+					while ( nd_last->s && !nd_last->s->isSymbol(";") && !nd_last->s->isSymbol(",") && nd_last->node_class != ama::N_SCOPE ) {
+						nd_last = nd_last->s;
+					}
+					ama::Node* nd_tmp = ama::GetPlaceHolder();
+					nd_keyword->ReplaceUpto(nd_last, nd_tmp);
+					//////////
+					ama::Node* nd_body = ama::toSingleNode(nd_paramlist->BreakSibling());
+					ama::Node* nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, ama::cons(ConvertToParameterList(nd_paramlist), nd_body));
+					nd_stmt->indent_level = nd_keyword->indent_level;
+					nd_stmt->comments_before = nd_keyword->comments_before;
+					if ( nd_stmt->c ) {
+						nd_stmt->c->MergeCommentsBefore(nd_keyword);
+					} else {
+						nd_stmt->comments_after = (nd_keyword->comments_after + nd_stmt->comments_after);
+					}
+					nd_stmt->data = nd_keyword->DestroyForSymbol();
+					nd_tmp->ReplaceWith(nd_stmt);
+					continue;
+				}
 				ama::Node* nd_raw = nd_parent;
 				ama::Node* nd_tmp = ama::GetPlaceHolder();
 				ama::Node* nd_last = nd_keyword;
@@ -670,12 +710,18 @@ namespace ama {
 		//find declaratives and set REF_DECLARED
 		//also find writes and set REF_WRITTEN
 		std::unordered_map<ama::gcstring, int> ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		std::unordered_map<ama::gcstring, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		std::unordered_map<ama::gcstring, int> keywords_not_variable_name = ama::GetPrioritizedList(options, "keywords_not_variable_name");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
 		for ( ama::Node* nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( nd_ref->p->node_class == ama::N_CLASS && nd_ref->p->c->s == nd_ref ) {
 				//class, just declared and nothing else
+				nd_ref->flags |= ama::REF_DECLARED;
+				continue;
+			}
+			if (nd_ref->p->node_class == ama::N_KEYWORD_STATEMENT && nd_ref->p->c == nd_ref && keywords_class--->get(nd_ref->p->data, 0)) {
+				//forward declaration
 				nd_ref->flags |= ama::REF_DECLARED;
 				continue;
 			}

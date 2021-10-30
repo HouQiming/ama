@@ -106,8 +106,8 @@ ama::gcstring ama::gcscat(std::span<char> a, std::span<char> b) {
 		u.v = 0;
 		memcpy(u.s, a.data(), a.size());
 		memcpy(u.s + a.size(), b.data(), b.size());
-		return ama::gcstring(u.v, (raw_construction*)nullptr);
+		return ama::gcstring(u.v, (ama::raw_construction*)nullptr);
 	} else {
-		return ama::gcstring(ama::toGCStringLongCat(a.data(), a.size(), b.data(), b.size()), (raw_construction*)nullptr);
+		return ama::gcstring(ama::toGCStringLongCat(a.data(), a.size(), b.data(), b.size()), (ama::raw_construction*)nullptr);
 	}
 }

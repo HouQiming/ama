@@ -44,11 +44,11 @@ namespace path {
 };
 #pragma gen_begin(JSON::stringify<path::CPathObject>)
 namespace JSON {
-	template<>
+	template <>
 	struct StringifyToImpl<path::CPathObject> {
 		//`type` is only used for SFINAE
 		typedef void type;
-		template<typename T = path::CPathObject>
+		template <typename T = path::CPathObject>
 		static void stringifyTo(std::string& buf, path::CPathObject const& a) {
 			buf.push_back('{');
 			buf.append("\"root\":");

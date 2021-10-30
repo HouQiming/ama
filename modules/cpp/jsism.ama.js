@@ -253,11 +253,11 @@ jsism.EnableJSON = function(nd_root) {
 		let desc = type.ParseClass();
 		let nd_generated = .(
 			namespace JSON {
-				template<>
+				template <>
 				struct StringifyToImpl<.(typing.AccessTypeAt(type, match.gentag))> {
 					//`type` is only used for SFINAE
 					typedef void type;
-					template<typename T = .(typing.AccessTypeAt(type, match.gentag))>
+					template <typename T = .(typing.AccessTypeAt(type, match.gentag))>
 					static void stringifyTo(std::string& buf, .(typing.AccessTypeAt(type, match.gentag)) const& a) {
 						buf.push_back('{');
 						__INSERT_HERE;
@@ -296,11 +296,11 @@ jsism.EnableJSON = function(nd_root) {
 		let desc = type.ParseClass();
 		let nd_generated = .(
 			namespace JSON {
-				template<>
+				template <>
 				struct ParseFromImpl<.(typing.AccessTypeAt(type, match.gentag))> {
 					//`type` is only used for SFINAE
 					typedef void type;
-					template<typename T = .(typing.AccessTypeAt(type, match.gentag))>
+					template <typename T = .(typing.AccessTypeAt(type, match.gentag))>
 					static .(typing.AccessTypeAt(type, match.gentag)) parseFrom(JSONParserContext& ctx, .(typing.AccessTypeAt(type, match.gentag))**) {
 						T ret{};
 						if ( ctx.begin == ctx.end ) {

@@ -25,7 +25,7 @@ cmake.options = cmake_options;
 
 cmake.LoadCMakeFile = function(fn, template) {
 	let flags = 0;
-	let nd_root = ParseCode((fs.readFileSync(fn) || (flags = CMAKE_CHANGED, typeof(template) == 'function' ? template() : template) || '').toString(), cmake_options);
+	let nd_root = ParseCode((fs.readFileSync(fn) || (flags = CMAKE_CHANGED, typeof(template) == 'function' ? template () : template) || '').toString(), cmake_options);
 	//if-endif pairing
 	while (nd_root.c && !nd_root.c.s && nd_root.c.node_class == N_RAW && !(nd_root.c.flags & 0xffff) && nd_root.c.c) {
 		nd_root.c.ReplaceWith(nd_root.c.c);

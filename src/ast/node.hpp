@@ -67,6 +67,7 @@ namespace ama {
 	static const uint32_t DEP_JS_REQUIRE = 1u;
 	static const uint32_t DEP_TYPE_MASK = 31u;
 	static const uint32_t DEPF_C_INCLUDE_NONSTR = 32u;
+	static const uint32_t PARAMLIST_TEMPLATE = 1u;
 	//reserve 1 bit
 	static const intptr_t MAX_INDENT = 63;
 	/////////////////

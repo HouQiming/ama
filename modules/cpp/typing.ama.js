@@ -107,15 +107,24 @@ typing.GetDefs = function(nd_scope) {
 			}
 			if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
 				//console.log(ndi.data)
+				if (ndi.p.node_class == N_KEYWORD_STATEMENT && defs.get(ndi.data)) {
+					//let non-forward declarations override forward ones
+					continue;
+				}
 				defs.set(ndi.data, ndi);
 			}
 		}
-		if (nd_scope.p && nd_scope.p.node_class == N_FUNCTION) {
-			let nd_paramlist = nd_scope.p.c.s;
-			for (let ndi = nd_paramlist; ndi; ndi = ndi.PreorderNext(nd_paramlist)) {
-				if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
-					//console.log(ndi.data)
-					defs.set(ndi.data, ndi);
+		if (nd_scope.p && (nd_scope.p.node_class == N_FUNCTION || nd_scope.p.node_class == N_PARAMETER_LIST)) {
+			let nd_paramlist = nd_scope.p.c;
+			if (nd_scope.p.node_class == N_FUNCTION) {
+				nd_paramlist = nd_paramlist.s;
+			}
+			if (nd_paramlist.node_class == N_PARAMETER_LIST) {
+				for (let ndi = nd_paramlist; ndi; ndi = ndi.PreorderNext(nd_paramlist)) {
+					if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
+						//console.log(ndi.data)
+						defs.set(ndi.data, ndi);
+					}
 				}
 			}
 		}
@@ -171,6 +180,10 @@ typing.LookupSymbol = function(nd_ref, want_all) {
 typing.ComputeDeclaredType = function(nd_def) {
 	//COULDDO: non-C++ forms of declaration
 	//COULDDO: handle destructuring and other weird forms
+	if (nd_def.p && nd_def.p.node_class == N_KEYWORD_STATEMENT && nd_def.p.c == nd_def) {
+		//forward declaration: self-representing
+		return nd_def;
+	}
 	let modifiers = [];
 	let type = undefined;
 	let nd_owner = nd_def.Owner();
@@ -493,16 +506,23 @@ typing.ComputeType = function(nd_expr) {
 				break;
 			}
 		}
-		let nd_def = typing.LookupSymbol(nd_expr, false);
-		if (!nd_def) {
+		let all_defs = typing.LookupSymbol(nd_expr, true);
+		for (let nd_def of all_defs) {
+			let type_def = typing.ComputeDeclaredType(nd_def);
+			if (!type_def) {continue;}
+			//try to find a non-self-representing def
+			type = type_def;
+			if (type != nd_def) {
+				break;
+			}
+		}
+		if (!type) {
 			//assume self-representing
 			if (typing.options.nulls.has(nd_expr.data)) {
 				type = typing.null_type;
 			} else {
 				type = nd_expr;
 			}
-		} else {
-			type = typing.ComputeDeclaredType(nd_def);
 		}
 		break;
 	}

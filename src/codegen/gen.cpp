@@ -131,7 +131,7 @@ namespace ama {
 				break;
 			}
 			case ama::N_PARAMETER_LIST: {
-				this->code.push_back('(');
+				this->code.push_back(nd->flags & ama::PARAMLIST_TEMPLATE ? '<' : '(');
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					this->Generate(ndi);
 					if ( ndi->s ) {
@@ -139,7 +139,7 @@ namespace ama {
 						this->GenerateSpaceBefore(ndi->s);
 					}
 				}
-				this->code.push_back(')');
+				this->code.push_back(nd->flags & ama::PARAMLIST_TEMPLATE ? '>' : ')');
 				break;
 			}
 			//case ama::N_RAW_DECLARATION: {
@@ -206,7 +206,10 @@ namespace ama {
 			}
 			case ama::N_CLASS: case ama::N_KEYWORD_STATEMENT: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: {
 				this->code--->push(nd->data);
-				if ( nd->c && !(nd->c->node_class == ama::N_EXTENSION_CLAUSE || nd->c->node_class == ama::N_SCOPE || nd->c->node_class == ama::N_AIR) ) {
+				if ( nd->c && !(
+					nd->c->node_class == ama::N_EXTENSION_CLAUSE || nd->c->node_class == ama::N_SCOPE || 
+					nd->c->node_class == ama::N_AIR || nd->c->node_class == ama::N_PARAMETER_LIST
+				) ) {
 					this->GenerateSpaceBefore(nd->c);
 				}
 				//*** PASS THROUGH ***
