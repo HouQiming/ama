@@ -500,8 +500,15 @@ namespace ama {
 					if (is_elseif) {
 						//re-queue the if part
 						ama::Node* nd_elseif = nd_stmt->LastChild();
-						assert(nd_elseif->node_class == ama::N_RAW);
-						Q.push_back(nd_elseif);
+						//if (nd_elseif->node_class != ama::N_RAW) {
+						//	console.log(nd_root->toSource());
+						//	console.log(nd_stmt->toSource());
+						//}
+						//assert(nd_elseif->node_class == ama::N_RAW);
+						//the counter-example where it's not N_RAW: `#define for if (0) {} else for`
+						if (nd_elseif->node_class == ama::N_RAW) {
+							Q.push_back(nd_elseif);
+						}
 					}
 				}
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
