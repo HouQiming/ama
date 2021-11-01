@@ -14,7 +14,8 @@ namespace ama {
 		char* front{};
 		intptr_t sz_free{};
 	};
-	void const* poolAlloc(ama::TMemoryPool* ppool, intptr_t sz, intptr_t BLOCK_SIZE);
+	void* poolAlloc(ama::TMemoryPool* ppool, intptr_t sz, intptr_t BLOCK_SIZE);
+	void* poolAllocAligned(ama::TMemoryPool* ppool, intptr_t sz, intptr_t align, intptr_t BLOCK_SIZE);
 	void poolRelease(ama::TMemoryPool* ppool);
 };
 

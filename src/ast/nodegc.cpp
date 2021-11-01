@@ -83,7 +83,7 @@ namespace ama {
 					//	fprintf(stderr, "keep file %s\n", nd->data.data());
 					//}
 				} else {
-					//it's free, put into the (now reorganized) list
+					//it's free, put into the (now reorganized) free list
 					nd->s = ama::g_free_nodes;
 					ama::g_free_nodes = nd;
 				}

@@ -3,9 +3,12 @@
 #include <memory.h>
 #include "mempool.hpp"
 namespace ama {
-	void const* poolAlloc(ama::TMemoryPool* ppool, intptr_t sz, intptr_t BLOCK_SIZE) {
+	void* poolAlloc(ama::TMemoryPool* ppool, intptr_t sz, intptr_t BLOCK_SIZE) {
 		intptr_t align = sz & -sz;
 		if ( align > 16 ) { align = 16; } else if ( align < 1 ) { align = 1; }
+		return poolAllocAligned(ppool, sz, align, BLOCK_SIZE);
+	}
+	void* poolAllocAligned(ama::TMemoryPool* ppool, intptr_t sz, intptr_t align, intptr_t BLOCK_SIZE) {
 		intptr_t align_offset = -intptr_t(ppool->front) & (align - 1);
 		if ( ppool->sz_free < (align_offset + sz) ) {
 			if ( !ppool->block_size ) {
@@ -23,7 +26,7 @@ namespace ama {
 		char* ret = ppool->front + align_offset;
 		ppool->front = ret + sz;
 		ppool->sz_free -= align_offset + sz;
-		return (void const*)(ret);
+		return (void*)(ret);
 	}
 	void poolRelease(ama::TMemoryPool* ppool) {
 		for (ama::TBlockHeader* i = ppool->block; i;) {

@@ -58,7 +58,8 @@ function dfsGenFlow(nd, options) {
 		});
 	}
 	if (nd.node_class == N_CLASS) {
-		!? //TODO: fields, base class, resolve methods using or-on-Assign
+		//fields, base class, resolve methods using or-on-Assign
+		//all those are handled under nd_body
 		let nd_body = nd.LastChild();
 		return .({
 			let f = function(ctx_outer, params) {
@@ -71,7 +72,7 @@ function dfsGenFlow(nd, options) {
 	}
 	if (nd.node_class == N_SCOPED_STATEMENT) {
 		if (nd.data == 'if') {
-			//TODO
+			//TODO: fork / join
 		}
 		//TODO: LazyClone
 	}

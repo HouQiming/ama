@@ -24,7 +24,7 @@ namespace ama {
 			g_free_nodes = ret->s;
 			memset((void*)(ret), 0, sizeof(ama::Node));
 		} else {
-			ret = (ama::Node*)(ama::poolAlloc(&g_node_pool, sizeof(ama::Node), NODE_BLOCK_SIZE));
+			ret = (ama::Node*)(ama::poolAllocAligned(&g_node_pool, sizeof(ama::Node), sizeof(void*), NODE_BLOCK_SIZE));
 		}
 		assert(!(ret->tmp_flags & ama::TMPF_IS_NODE));
 		ret->tmp_flags = ama::TMPF_IS_NODE;
@@ -49,7 +49,11 @@ namespace ama {
 		std::vector<ama::Node*> ret{};
 		for (ama::TBlockHeader const* block = g_node_pool.block; block; block = block->next) {
 			ret.push_back((ama::Node*)(uintptr_t(block) + sizeof(ama::TBlockHeader)));
-			ret.push_back((ama::Node*)(uintptr_t(block) + sizeof(ama::TBlockHeader) + (block->size - sizeof(ama::TBlockHeader)) / sizeof(ama::Node) * sizeof(ama::Node)));
+			if (block == g_node_pool.block) {
+				ret.push_back((ama::Node*)g_node_pool.front);
+			} else {
+				ret.push_back((ama::Node*)(uintptr_t(block) + sizeof(ama::TBlockHeader) + (block->size - sizeof(ama::TBlockHeader)) / sizeof(ama::Node) * sizeof(ama::Node)));
+			}
 		}
 		return std::move(ret);
 	}
