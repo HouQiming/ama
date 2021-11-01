@@ -288,6 +288,10 @@ namespace ama {
 	static JSValueConst JSGenerateCode(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		return ama::WrapString(ama::GenerateCode(ama::UnwrapNode(this_val), argc > 0 ? argv[0] : JS_NULL));
 	}
+	static JSValueConst JSGetUniqueTag(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
+		ama::Node* nd = ama::UnwrapNode(this_val);
+		return ama::WrapString(JSON::stringify(uintptr_t(nd)));
+	}
 	static JSValueConst JSConsoleFlush(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		fflush(stdout);
 		fflush(stderr);
@@ -758,6 +762,66 @@ namespace ama {
 		int32_t ret_code = NativeLibraryFunction(addr)(argc < 2 ? JS_UNDEFINED : argv[1]);
 		return JS_NewInt32(ctx, ret_code);
 	}
+	static JSContext* g_sandbox_base_context = nullptr;
+	static JSRuntime* g_sandbox_runtime = nullptr;
+	static JSValue g_sandbox_object = JS_UNDEFINED;
+	static JSValueConst JSRunInSandbox(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
+		if (argc < 1 || !JS_IsString(argv[0])) {
+			return JS_ThrowReferenceError(ctx, "need script code");
+		}
+		if (!g_sandbox_runtime) {
+			//initialize the sandbox
+			g_sandbox_runtime = JS_NewRuntime();
+			g_sandbox_base_context = JS_NewContext(g_sandbox_runtime);
+			JSValueConst global = JS_GetGlobalObject(g_sandbox_base_context);
+			JS_SetPropertyStr(g_sandbox_base_context, global, "__global", global);
+			/////
+			ama::gcstring fn_initjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir, path::sep, "_sandbox.js"))));
+			if ( fn_initjs.empty() ) {
+				fn_initjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir_global, path::sep, "_sandbox.js"))));
+			}
+			if ( fn_initjs.empty() ) {
+				//we NEED that
+				fprintf(stderr, "panic: failed to find ${AMA_MODULES}/_sandbox.js, sandbox could break\n");
+			} else {
+				JC::StringOrError bootstrap_code = fs::readFileSync(fn_initjs);
+				JSValueConst ret = JS_Eval(
+					g_sandbox_base_context, bootstrap_code->c_str(),
+					bootstrap_code->size(), fn_initjs.c_str(), JS_EVAL_TYPE_GLOBAL
+				);
+				if ( JS_IsException(ret) ) {
+					ama::DumpError(g_sandbox_base_context);
+				}
+				JS_FreeValue(g_sandbox_base_context, ret);
+			}
+			g_sandbox_object = JS_GetPropertyStr(g_sandbox_base_context, global, "Sandbox");
+		}
+		//run the script in a temporary context
+		JSContext* sbctx = JS_NewContext(g_sandbox_runtime);
+		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "Sandbox", JS_DupValue(sbctx, g_sandbox_object));
+		std::span<char> code = ama::UnwrapStringSpan(argv[0]);
+		JSValueConst ret = JS_Eval(
+			g_sandbox_base_context, code.c_str(),
+			code.size(), "sandboxed code", JS_EVAL_TYPE_GLOBAL
+		);
+		if (JS_IsFunction(sbctx, ret)) {
+			JSValue ret2 = JS_Call(sbctx, ret, JS_GetGlobalObject(sbctx), 0, nullptr);
+			JS_FreeValue(sbctx, ret);
+			ret = ret2;
+		}
+		JSValue my_ret = JS_UNDEFINED;
+		if ( JS_IsException(ret) ) {
+			ama::DumpError(sbctx);
+		} else {
+			//UnwrapString is tied to our own ctx so don't use it
+			size_t len = 0;
+			const char *s = JS_ToCStringLen(sbctx, &len, ret);
+			my_ret = JS_NewStringLen(ama::jsctx, s, len);
+			JS_FreeValue(sbctx, ret);
+		}
+		JS_FreeContext(sbctx);
+		return my_ret;
+	}
 	void InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
@@ -944,6 +1008,12 @@ namespace ama {
 				"ProcessAmaFile", 1
 			)
 		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, "__RunInSandbox", JS_NewCFunction(
+				ama::jsctx, JSRunInSandbox,
+				"__RunInSandbox", 1
+			)
+		);
 		JS_SetPropertyStr(ama::jsctx, global, "Node", ama::g_node_proto);
 		JS_SetPropertyStr(
 			ama::jsctx, ama::g_node_proto, "GetPlaceHolder", JS_NewCFunction(
@@ -961,6 +1031,12 @@ namespace ama {
 			ama::jsctx, ama::g_node_proto, "toSource", JS_NewCFunction(
 				ama::jsctx, JSGenerateCode,
 				"toSource", 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, ama::g_node_proto, "GetUniqueTag", JS_NewCFunction(
+				ama::jsctx, JSGetUniqueTag,
+				"GetUniqueTag", 0
 			)
 		);
 		for (int i = 0; i < g_filters.size(); i += 1) {

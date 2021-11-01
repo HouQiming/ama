@@ -16,6 +16,8 @@ function BidirTransform(nd_root, is_forward) {
 		if (nd_ref.p.node_class != N_RAW) {continue;}
 		let nd_stmt = nd_ref.ParentStatement();
 		if (nd_stmt.node_class != N_SEMICOLON || nd_stmt.c != nd_ref.p) {continue;}
+		let nd_owner = nd_stmt.Owner();
+		if (nd_owner.node_class == N_CLASS && nd_owner.data == 'union') {continue;}
 		if (is_forward) {
 			if (!nd_ref.s && !nd_stmt.Find(N_REF, 'extern') && !nd_stmt.Find(N_REF, 'struct') && !nd_stmt.Find(N_REF, 'class')) {
 				nd_ref.Insert(POS_AFTER, nScope());
