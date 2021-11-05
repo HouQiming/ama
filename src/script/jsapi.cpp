@@ -209,11 +209,11 @@ namespace ama {
 		LazyInitScriptEnv();
 		options = ama::InheritOptions(options);
 		ama::Node* nd_root = ama::ParseSimplePairing(code, options);
-		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_pointed_brackets"), 1) ) {
-			ama::ParsePointedBrackets(nd_root);
-		}
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_indent_as_scope"), 0) ) {
 			ama::ConvertIndentToScope(nd_root, options);
+		}
+		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_pointed_brackets"), 1) ) {
+			ama::ParsePointedBrackets(nd_root);
 		}
 		ama::DelimitCLikeStatements(nd_root, options);
 		//from here on, N_RAW no longer includes the root scope
