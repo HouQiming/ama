@@ -17,6 +17,22 @@ __global.Sandbox={
 	LazyClone:function(base){
 		return Object.create(base);
 	},
+	LazyChildScope:function(parent,addr){
+		let ret=parent[addr];
+		if(ret===undefined){
+			ret=Object.create(parent);
+			parent[name]=ret;
+		}
+		this.node_to_context_path[addr]=ret;
+		return ret;
+	},
+	Declare:function(parent,name,addr){
+		//it's always a new value
+		let ret={addr_declared:addr};
+		parent[name]=ret;
+		this.MergePossibility(this.node_to_context_path,addr,ret);
+		return ret;
+	},
 	Assign:function(ctx,name,value,addr){
 		if(name){
 			//TODO: function overloading, other value merging
@@ -45,7 +61,7 @@ __global.Sandbox={
 	MergeContext:function(ctx,ctx_others){
 		//TODO: vars, return, element
 	},
-	Call:function(ctx,addr,...values){
+	Call:function(ctx,addr,values){
 		//expandable-later, function-indexible list of calls
 		let value_func=values[0];
 		//COULDDO: better function resolution
