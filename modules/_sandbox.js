@@ -10,7 +10,7 @@ __global.Sandbox={
 			parent[name]=ret;
 		}
 		if(addr){
-			this.MergePossibility(this.node_to_context_path,addr,ret);
+			this.MergePossibility(this.node_to_value,addr,ret);
 		}
 		return ret;
 	},
@@ -23,14 +23,14 @@ __global.Sandbox={
 			ret=Object.create(parent);
 			parent[name]=ret;
 		}
-		this.node_to_context_path[addr]=ret;
+		this.node_to_value[addr]=ret;
 		return ret;
 	},
 	Declare:function(parent,name,addr){
 		//it's always a new value
 		let ret={addr_declared:addr};
 		parent[name]=ret;
-		this.MergePossibility(this.node_to_context_path,addr,ret);
+		this.MergePossibility(this.node_to_value,addr,ret);
 		return ret;
 	},
 	Assign:function(ctx,name,value,addr){
@@ -39,7 +39,7 @@ __global.Sandbox={
 			ctx[name]=value;
 		}
 		if(addr){
-			this.MergePossibility(this.node_to_context_path,addr,value);
+			this.MergePossibility(this.node_to_value,addr,value);
 		}
 		return value;
 	},
@@ -56,10 +56,28 @@ __global.Sandbox={
 		return {};
 	},
 	MergePossibility:function(ctx,name,value){
-		//TODO
+		if(!value){return;}
+		let value0=ctx[name];
+		if(!value0){
+			ctx[name]=value;
+			return value;
+		}
+		if(!Array.isArray(value0)){
+			value0=[value0];
+			ctx[name]=value0;
+		}
+		//collapse them later
+		value0.push(value);
 	},
 	MergeContext:function(ctx,ctx_others){
-		//TODO: vars, return, element
+		if(ctx_others.vars){
+			let vars=this.LazyChild(ctx,'vars');
+			for(let name in ctx_others.vars){
+				this.MergePossibility(vars,name,ctx_others.vars[name]);
+			}
+		}
+		this.MergePossibility(ctx,'return',ctx_others['return']);
+		this.MergePossibility(ctx,'element',ctx_others['element']);
 	},
 	Call:function(ctx,addr,values){
 		//expandable-later, function-indexible list of calls
@@ -74,8 +92,8 @@ __global.Sandbox={
 		let params=values.slice(1);
 		for(let f of funcs){
 			let ctx_f=f(ctx,params);
-			this.MergePossibility(this.node_to_context_path,addr,this.LazyChild(ctx_f,'return'));
+			this.MergePossibility(this.node_to_value,addr,this.LazyChild(ctx_f,'return'));
 		}
-		return this.node_to_context_path[addr];
+		return this.node_to_value[addr];
 	}
 };

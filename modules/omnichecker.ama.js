@@ -19,17 +19,10 @@ function dfsGenerate(nd, options) {
 			return nd_ret;
 		}
 	}
-	//just treat scopes and air as dummy values
-	//if (nd.node_class == N_SCOPE || nd.node_class == N_FILE) {
-	//	let children = [];
-	//	for (let ndi = nd.c; ndi; ndi = ndi.s) {
-	//		children.push(dfsGenerate(ndi, options));
-	//	}
-	//	return nScope.apply(null, children);
-	//}
-	//if (nd.node_class == N_AIR) {
-	//	return nAir();
-	//}
+	return dfsGenerateDefault(nd,options);
+}
+
+function dfsGenerateDefault(nd, options) {
 	if (nd.node_class == N_FUNCTION) {
 		//we need to test the function with "default" bindings, as well as the non-default ones
 		//calls become call validations
@@ -178,77 +171,7 @@ function dfsGenerate(nd, options) {
 			return .(Sandbox.Assign(ctx, 'return', .(nd_value), .(nString(nd.GetUniqueTag()))));
 		}
 	}
-	if (nd.node_class == N_RAW) {
-		let nd_type=undefined;
-		let nd_def=undefined;
-		let nd_init=undefined;
-		let defs=[];
-		let children = [];
-		let to_gen=new Map();
-		for (let ndi = nd.c; ndi; ndi = ndi.s) {
-			let nd_gen=dfsGenerate(ndi, options);
-			children.push(nd_gen);
-			to_gen.set(ndi,nd_gen);
-			if(!nd_def&&ndi.node_class==N_REF&&(ndi.flags & REF_DECLARED)){
-				nd_def=ndi;
-			}else if(nd_def&&!nd_init&&ndi.node_class==N_SCOPE){
-				nd_init=ndi;
-			}else if(!nd_def&&!nd_init&&!defs.length&&
-			(ndi.node_class==N_REF&&!(ndi.flags & REF_DECLARED)||ndi.node_class==N_DOT||ndi.node_class==N_CALL_TEMPLATE)){
-				nd_type=ndi;
-			}else if(!nd_def){
-				//[] suffix
-				let ndj=ndi;
-				while(ndj.node_class==N_ITEM){
-					ndj=ndj.c;
-				}
-				if(ndj.node_class==N_REF&&(ndj.flags & REF_DECLARED)){
-					nd_def=ndj;
-				}
-			}else if(ndi.isSymbol(',')&&nd_def){
-				defs.push({
-					nd_type:nd_type,
-					nd_def:nd_def,
-					nd_init:nd_init,
-				});
-				nd_def=undefined;
-				nd_init=undefined;
-			}
-		}
-		if(nd_def){
-			defs.push({
-				nd_type:nd_type,
-				nd_def:nd_def,
-				nd_init:nd_init,
-			});
-			nd_def=undefined;
-			nd_init=undefined;
-		}
-		let initializer_code=undefined;
-		for(let def_i of defs){
-			//create a call for C++ constructor and parse C++ {} initializers
-			//the def would have already been initialized with a freshly-declared value
-			if(def_i.nd_type){
-				if(!initializer_code){
-					initializer_code=[];
-				}
-				let nd_type_gen=to_gen.get(def_i.nd_type);
-				if(nd_type_gen){
-					//TODO: remove nd_type_gen from children
-					initializer_code.push
-				}
-				//TODO: save to_gen.get(def_i.nd_type) somewhere
-				let values=[]
-				if(def_i.nd_init){
-				}else{ 
-				}
-				//TODO: Sandbox.Call(ctx,nd.GetUniqueTag(),values)
-			}else if(def_i.nd_init){
-				//TODO
-			}
-		}
-		return nCall.apply(null, [.(Sandbox.DummyValue), nString(nd.GetUniqueTag())].concat(children));
-	}
+	//just treat scopes and air as dummy values
 	//it's just {} so no point recording, but we need {}
 	//it's pointless to record node-level information at run time then associate it back with a node
 	let children = [.(Sandbox.DummyValue), nString(nd.GetUniqueTag())];
@@ -265,15 +188,17 @@ omnichecker.RunGeneratedCode = function(nd_generated, options) {
 }
 
 //don't over-generalize: dedicated dataflow generator first
-omnichecker.GenerateChecker = function(nd_root, options) {
+omnichecker.Check = function(nd_root, options) {
 	options = Object.create(options || null);
 	let nd_flowcode = dfsGenerate(nd_root, options);
 	let df_tree = omnichecker.RunGeneratedCode(.({
-		Sandbox.node_to_context_path = Object.create(null);
+		Sandbox.node_to_value = Object.create(null);
 		let ctx = Object.create(null);
 		let vars = Sandbox.LazyChild(ctx, 'vars');
 		.(nd_flowcode)/*no `;`*/
 		return JSON.stringify(ctx);
 	}), options);
+	//TODO
+	console.log(df_tree);
 	//TODO: parse df_tree: the node addrs
 }
