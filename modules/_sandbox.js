@@ -6,6 +6,8 @@ __global.Sandbox={
 	default_value:{},
 	errors:[],
 	ctx_map:[],
+	log:console.log,
+	error:console.error,
 	LazyChild:function(parent,name,addr){
 		let ret=parent[name];
 		if(ret===undefined){
@@ -26,15 +28,16 @@ __global.Sandbox={
 		this.ctx_map.push(ret);
 		return ret;
 	},
-	LazyChildScope:function(parent,addr){
-		let ret=parent[addr];
+	LazyChildScope:function(ctx,addr){
+		let ret=this.LazyChild(ctx,'children')[addr];
 		if(ret===undefined){
-			ret=Object.create(parent);
+			ret=Object.create(ctx);
+			ret.vars=Object.create(ctx.vars);
 			ret.utag=this.ctx_map.length;
-			ret.utag_parent=parent.utag;
+			ret.utag_parent=ctx.utag;
 			ret.utag_addr=addr;
 			this.ctx_map.push(ret);
-			parent[addr]=ret;
+			ctx.children[addr]=ret;
 			this.node_to_value[addr]={ctx_utag:ret.utag};
 		}
 		return ret;
@@ -47,10 +50,7 @@ __global.Sandbox={
 		return ret;
 	},
 	Assign:function(ctx,name,value,addr){
-		if(name){
-			//TODO: function overloading, other value merging
-			ctx[name]=value;
-		}
+		ctx[name]=value;
 		if(addr){
 			this.MergePossibility(this.node_to_value,addr,value);
 		}
@@ -65,8 +65,15 @@ __global.Sandbox={
 		}
 		return ctx;
 	},
-	FunctionValue:function(f){
+	FunctionValue:function(addr,f){
 		let ret=Object.create(this.default_value);
+		ret.addr_declared=addr;
+		ret.as_function=f;
+		return ret;
+	},
+	ClassValue:function(addr,f){
+		let ret=f();
+		ret.addr_declared=addr;
 		ret.as_function=f;
 		return ret;
 	},
@@ -101,7 +108,7 @@ __global.Sandbox={
 			let children=this.LazyChild(ctx,'children');
 			for(let addr in ctx_others.children){
 				this.MergeContext(
-					this.LazyChildScope(children,addr),
+					this.LazyChildScope(ctx,addr),
 					ctx_others.children[addr]
 				);
 			}
@@ -120,7 +127,7 @@ __global.Sandbox={
 		}
 		let params=values.slice(1);
 		for(let f of funcs){
-			let ctx_f=f(ctx,params);
+			let ctx_f=f(params);
 			this.MergePossibility(this.node_to_value,addr,this.LazyChild(ctx_f,'return'));
 		}
 		return this.node_to_value[addr];
@@ -129,39 +136,42 @@ __global.Sandbox={
 		Object.assign(value,ppts);
 		return value;
 	},
-	CheckProperties:function(ctx,value,ppts){
-		for(let key in ppts){
-			if(key==='__addr'){continue;}
-			let vals=value[key];
-			if(!Array.isArray(vals)){
-				if(vals===undefined){
-					vals=[];
-				}else{
-					vals=[vals];
+	CheckProperties:function(ctx,value,addr,all_ppts){
+		for(let ppt of all_ppts){
+			for(let key in ppt){
+				let vals=value[key];
+				if(!Array.isArray(vals)){
+					if(vals===undefined){
+						vals=[];
+					}else{
+						vals=[vals];
+					}
 				}
-			}
-			let expected=ppts[key];
-			if(expected.not!==undefined&&vals.indexOf(expected.not)>=0){
-				this.errors.push({
-					msg:expected.msg,
-					property:key,
-					origin:ctx.utag,
-					addr:ppts.__addr
-				})
-			}else if(expected.must_be!==undefined&&(vals.filter(val=>val!==expected.must_be).length>0||vals.length===0)){
-				this.errors.push({
-					msg:expected.msg,
-					property:key,
-					origin:ctx.utag,
-					addr:ppts.__addr
-				})
-			}else if(expected.not_empty!==undefined&&vals.length===0){
-				this.errors.push({
-					msg:expected.msg,
-					property:key,
-					origin:ctx.utag,
-					addr:ppts.__addr
-				})
+				let expected=ppt[key];
+				let failed=0;
+				if(expected.not!==undefined){
+					failed=vals.indexOf(expected.not)>=0;
+				}else if(expected.must_be!==undefined){
+					failed=(vals.filter(val=>val!==expected.must_be).length>0||vals.length===0);
+				}else if(expected.not_empty){
+					failed=(vals.length===0);
+				}else if(expected.empty){
+					failed=(vals.length>0);
+				}
+				if(expected.action){
+					if(!failed){
+						if(expected.action==='skip'){
+							break;
+						}
+					}
+				}else if(failed){
+					this.errors.push({
+						msg:expected.msg,
+						property:key,
+						origin:ctx.utag,
+						addr:addr
+					})
+				}
 			}
 		}
 		return value;

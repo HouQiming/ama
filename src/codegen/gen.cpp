@@ -389,6 +389,14 @@ namespace ama {
 		return GenerateCode((ama::Node*)(this), JS_NULL);
 	}
 };
+static int DumpingHookComment(ama::CodeGenerator* ctx, const char* data, intptr_t size, int is_after, intptr_t expected_indent_level) {
+	if (ctx->nd_current == (ama::Node*)ctx->opaque) {
+		//drop the comment
+		return 1;
+	} else {
+		return 0;
+	}
+}
 static int DumpingHook(ama::CodeGenerator* ctx, ama::Node* nd) {
 	if (nd != (ama::Node*)ctx->opaque && nd->node_class == ama::N_SCOPE) {
 		ctx->code--->push("{...}");
@@ -402,6 +410,7 @@ std::string ama::Node::dump() const {
 	ctx.tab_width = 4;
 	ctx.auto_space = 1;
 	ctx.tab_indent = 1;
+	ctx.hook_comment = DumpingHookComment;
 	ctx.hook = DumpingHook;
 	ctx.opaque = this;
 	ctx.Generate((ama::Node*)this);

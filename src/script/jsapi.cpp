@@ -789,6 +789,20 @@ namespace ama {
 			g_sandbox_base_context = JS_NewContext(g_sandbox_runtime);
 			JSValueConst global = JS_GetGlobalObject(g_sandbox_base_context);
 			JS_SetPropertyStr(g_sandbox_base_context, global, "__global", global);
+			JSValueConst obj_console = JS_NewObject(ama::jsctx);
+			JS_SetPropertyStr(g_sandbox_base_context, global, "console", obj_console);
+			JS_SetPropertyStr(
+				g_sandbox_base_context, obj_console, "log", JS_NewCFunctionMagic(
+					g_sandbox_base_context, JSConsoleWrite,
+					"log", 0, JS_CFUNC_generic_magic, 1
+				)
+			);
+			JS_SetPropertyStr(
+				g_sandbox_base_context, obj_console, "error", JS_NewCFunctionMagic(
+					g_sandbox_base_context, JSConsoleWrite,
+					"error", 0, JS_CFUNC_generic_magic, 0
+				)
+			);
 			/////
 			ama::gcstring fn_initjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir, path::sep, "_sandbox.js"))));
 			if ( fn_initjs.empty() ) {
