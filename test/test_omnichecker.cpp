@@ -1,16 +1,17 @@
 /*
 @ama
 const checker=require('omnichecker');
-checker.Check(ParseCurrentFile());
+let ret=checker.Check(ParseCurrentFile(),require('check/uninit'),require('check/undecl'));
+//console.log(JSON.stringify(ret,null,1));
 */
 #include "../src/ast/node.hpp"
 
-namespace not_here{
+namespace NS{
 	int foo=3;
 }
 
 int main() {
 	int uninitialized;
-	int b=foo+undeclared+uninitialized;
+	int b=NS::foo+undeclared+uninitialized;
 	return b;
 }

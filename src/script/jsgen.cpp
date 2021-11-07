@@ -513,6 +513,23 @@ namespace ama {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
 		return ama::WrapString(nd->dump());
 	}
+	JSValue NodeCall_FormatFancyMessage(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
+		if (argc > 0 && !JS_IsNull(argv[0L])) {
+			if (!JS_IsString((0 < argc ? argv[0L] : JS_UNDEFINED))) {
+				return JS_ThrowTypeError(jsctx, "string expected for `(0<argc?argv[0L]:JS_UNDEFINED)`");
+			}
+		}
+		int32_t res22 = 0;
+		if (JS_ToInt32(jsctx, &res22, (1 < argc ? argv[1L] : JS_UNDEFINED)) < 0) {
+			return JS_ThrowTypeError(jsctx, "int expected for `(1<argc?argv[1L]:JS_UNDEFINED)`");
+		}
+		return ama::WrapString(nd->FormatFancyMessage(argc > 0 && !JS_IsNull(argv[0L]) ? ama::UnwrapString((0 < argc ? argv[0L] : JS_UNDEFINED)) : "", res22));
+	}
+	JSValue NodeCall_ComputeLineNumber(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
+		return JS_NewInt32(jsctx, nd->ComputeLineNumber());
+	}
 	void GeneratedJSBindings() {
 		JS_DefinePropertyGetSet(jsctx, ama::g_node_proto, JS_NewAtom(jsctx, "node_class"), JS_NewCFunction2(jsctx, (JSCFunction*)(NodeGet_node_class), "get_node_class", 0, JS_CFUNC_getter, 0), JS_NewCFunction2(jsctx, (JSCFunction*)(NodeSet_node_class), "set_node_class", 1, JS_CFUNC_setter, 0), JS_PROP_C_W_E);
 		JS_DefinePropertyGetSet(jsctx, ama::g_node_proto, JS_NewAtom(jsctx, "indent_level"), JS_NewCFunction2(jsctx, (JSCFunction*)(NodeGet_indent_level), "get_indent_level", 0, JS_CFUNC_getter, 0), JS_NewCFunction2(jsctx, (JSCFunction*)(NodeSet_indent_level), "set_indent_level", 1, JS_CFUNC_setter, 0), JS_PROP_C_W_E);
@@ -583,6 +600,8 @@ namespace ama {
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "GetCFGRole", JS_NewCFunction(jsctx, (NodeCall_GetCFGRole), "Node.GetCFGRole", 0));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "isChildCFGDependent", JS_NewCFunction(jsctx, (NodeCall_isChildCFGDependent), "Node.isChildCFGDependent", 1));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "dump", JS_NewCFunction(jsctx, (NodeCall_dump), "Node.dump", 0));
+		JS_SetPropertyStr(jsctx, ama::g_node_proto, "FormatFancyMessage", JS_NewCFunction(jsctx, (NodeCall_FormatFancyMessage), "Node.FormatFancyMessage", 2));
+		JS_SetPropertyStr(jsctx, ama::g_node_proto, "ComputeLineNumber", JS_NewCFunction(jsctx, (NodeCall_ComputeLineNumber), "Node.ComputeLineNumber", 0));
 		ama::g_node_class_names.resize(31);
 		ama::g_builder_names.resize(31);
 		JSValueConst global = JS_GetGlobalObject(ama::jsctx);
@@ -682,6 +701,8 @@ namespace ama {
 		JS_SetPropertyStr(ama::jsctx, global, "CFG_LOOP", JS_NewInt32(ama::jsctx, CFG_LOOP));
 		JS_SetPropertyStr(ama::jsctx, global, "CFG_JUMP", JS_NewInt32(ama::jsctx, CFG_JUMP));
 		JS_SetPropertyStr(ama::jsctx, global, "CFG_DECL", JS_NewInt32(ama::jsctx, CFG_DECL));
+		JS_SetPropertyStr(ama::jsctx, global, "MSG_COLORED", JS_NewInt32(ama::jsctx, MSG_COLORED));
+		JS_SetPropertyStr(ama::jsctx, global, "MSG_WARNING", JS_NewInt32(ama::jsctx, MSG_WARNING));
 	}
 }
 #pragma gen_end(js_bindings)

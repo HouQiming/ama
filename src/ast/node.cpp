@@ -1020,3 +1020,28 @@ int ama::Node::isChildCFGDependent(ama::Node const* nd_child) const {
 	}
 	return 0;
 }
+
+int32_t ama::Node::ComputeLineNumber() const {
+	int32_t ret = 0;
+	for (ama::Node* ndi = this->Root(); ndi;) {
+		for (char ch: ndi->comments_before) {
+			if (ch == '\n') {
+				ret += 1;
+			}
+		}
+		if (ndi == this) {break;}
+		if (ndi->c) {
+			ndi = ndi->c;
+		} else {
+			for (; ndi; ndi = ndi->p) {
+				for (char ch: ndi->comments_after) {
+					if (ch == '\n') {
+						ret += 1;
+					}
+				}
+				if ( ndi->s ) { ndi = ndi->s;break; }
+			}
+		}
+	}
+	return ret;
+}

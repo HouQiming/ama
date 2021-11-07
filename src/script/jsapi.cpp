@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -292,6 +293,17 @@ namespace ama {
 		ama::Node* nd = ama::UnwrapNode(this_val);
 		return ama::WrapString(JSON::stringify(uintptr_t(nd)));
 	}
+	static JSValueConst JSGetNodeFromUniqueTag(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
+		if (argc < 1) {
+			return JS_ThrowReferenceError(ctx, "need a tag");
+		}
+		ama::Node* addr = (ama::Node*)(JSON::parse<intptr_t>(ama::UnwrapStringSpan(argv[0])));
+		if (ama::isValidNodePointer(addr)) {
+			return ama::WrapNode(addr);
+		} else {
+			return JS_ThrowReferenceError(ctx, "invalid tag");
+		}
+	}
 	static JSValueConst JSConsoleFlush(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		fflush(stdout);
 		fflush(stderr);
@@ -414,7 +426,7 @@ namespace ama {
 	//COULDDO: move to JS, base on process.stdfoo.write instead
 	static JSValueConst JSConsoleWrite(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv, int magic) {
 		for (intptr_t i = intptr_t(0L); i < intptr_t(argc); i += 1) {
-			if ( magic == 1 ) {
+			if ( magic & 1 ) {
 				if ( i ) {
 					printf(" ");
 				}
@@ -434,16 +446,18 @@ namespace ama {
 				return str;
 			}
 			char const* s = JS_ToCString(ctx, str);
-			if ( magic == 1 ) {
+			if ( magic & 1 ) {
 				printf("%s", s);
 			} else {
 				fprintf(stderr, "%s", s);
 			}
 		}
-		if ( magic == 1 ) {
-			printf("\n");
-		} else {
-			fprintf(stderr, "\n");
+		if (!(magic & 2)) {
+			if ( magic & 1 ) {
+				printf("\n");
+			} else {
+				fprintf(stderr, "\n");
+			}
 		}
 		return JS_UNDEFINED;
 	}
@@ -801,7 +815,7 @@ namespace ama {
 		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "Sandbox", JS_DupValue(sbctx, g_sandbox_object));
 		std::span<char> code = ama::UnwrapStringSpan(argv[0]);
 		JSValueConst ret = JS_Eval(
-			g_sandbox_base_context, code.c_str(),
+			sbctx, code.c_str(),
 			code.size(), "sandboxed code", JS_EVAL_TYPE_GLOBAL
 		);
 		if (JS_IsFunction(sbctx, ret)) {
@@ -812,6 +826,10 @@ namespace ama {
 		JSValue my_ret = JS_UNDEFINED;
 		if ( JS_IsException(ret) ) {
 			ama::DumpError(sbctx);
+			std::cerr << ("failed to run sandboxed code:") << std::endl;
+			std::cerr << (code) << std::endl;
+			JS_FreeContext(sbctx);
+			return JS_ThrowReferenceError(ctx, "failed to run sandboxed code");
 		} else {
 			//UnwrapString is tied to our own ctx so don't use it
 			size_t len = 0;
@@ -1039,6 +1057,12 @@ namespace ama {
 				"GetUniqueTag", 0
 			)
 		);
+		JS_SetPropertyStr(
+			ama::jsctx, ama::g_node_proto, "GetNodeFromUniqueTag", JS_NewCFunction(
+				ama::jsctx, JSGetNodeFromUniqueTag,
+				"GetNodeFromUniqueTag", 1
+			)
+		);
 		for (int i = 0; i < g_filters.size(); i += 1) {
 			JS_SetPropertyStr(
 				ama::jsctx, ama::g_node_proto, g_filters[i].name, JS_NewCFunctionMagic(
@@ -1063,7 +1087,19 @@ namespace ama {
 		JS_SetPropertyStr(
 			ama::jsctx, obj_console, "error", JS_NewCFunctionMagic(
 				ama::jsctx, JSConsoleWrite,
-				"error", 0, JS_CFUNC_generic_magic, 2
+				"error", 0, JS_CFUNC_generic_magic, 0
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, obj_console, "write", JS_NewCFunctionMagic(
+				ama::jsctx, JSConsoleWrite,
+				"write", 0, JS_CFUNC_generic_magic, 3
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, obj_console, "writeError", JS_NewCFunctionMagic(
+				ama::jsctx, JSConsoleWrite,
+				"writeError", 0, JS_CFUNC_generic_magic, 2
 			)
 		);
 		JS_SetPropertyStr(

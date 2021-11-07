@@ -3,6 +3,9 @@
 //@ama ParseCurrentFile().Save()
 //convention: sandbox objects should be dumb, the shouldn't have methods
 __global.Sandbox={
+	default_value:{},
+	errors:[],
+	ctx_map:[],
 	LazyChild:function(parent,name,addr){
 		let ret=parent[name];
 		if(ret===undefined){
@@ -14,16 +17,26 @@ __global.Sandbox={
 		}
 		return ret;
 	},
-	LazyClone:function(base){
-		return Object.create(base);
+	LazyCloneScope:function(base,addr,clause){
+		let ret=Object.create(base);
+		ret.utag=this.ctx_map.length;
+		ret.utag_parent=base.utag;
+		ret.utag_addr=addr;
+		ret.utag_clause=clause;
+		this.ctx_map.push(ret);
+		return ret;
 	},
 	LazyChildScope:function(parent,addr){
 		let ret=parent[addr];
 		if(ret===undefined){
 			ret=Object.create(parent);
-			parent[name]=ret;
+			ret.utag=this.ctx_map.length;
+			ret.utag_parent=parent.utag;
+			ret.utag_addr=addr;
+			this.ctx_map.push(ret);
+			parent[addr]=ret;
+			this.node_to_value[addr]={ctx_utag:ret.utag};
 		}
-		this.node_to_value[addr]=ret;
 		return ret;
 	},
 	Declare:function(parent,name,addr){
@@ -52,13 +65,18 @@ __global.Sandbox={
 		}
 		return ctx;
 	},
+	FunctionValue:function(f){
+		let ret=Object.create(this.default_value);
+		ret.as_function=f;
+		return ret;
+	},
 	DummyValue:function(addr){
-		return {};
+		return Object.create(this.default_value);
 	},
 	MergePossibility:function(ctx,name,value){
 		if(!value){return;}
 		let value0=ctx[name];
-		if(!value0){
+		if(value0===undefined){
 			ctx[name]=value;
 			return value;
 		}
@@ -70,6 +88,7 @@ __global.Sandbox={
 		value0.push(value);
 	},
 	MergeContext:function(ctx,ctx_others){
+		if(ctx===ctx_others){return;}
 		if(ctx_others.vars){
 			let vars=this.LazyChild(ctx,'vars');
 			for(let name in ctx_others.vars){
@@ -78,6 +97,16 @@ __global.Sandbox={
 		}
 		this.MergePossibility(ctx,'return',ctx_others['return']);
 		this.MergePossibility(ctx,'element',ctx_others['element']);
+		if(ctx_others.children){
+			let children=this.LazyChild(ctx,'children');
+			for(let addr in ctx_others.children){
+				this.MergeContext(
+					this.LazyChildScope(children,addr),
+					ctx_others.children[addr]
+				);
+			}
+		}
+		//TODO: child contexts
 	},
 	Call:function(ctx,addr,values){
 		//expandable-later, function-indexible list of calls
@@ -95,5 +124,46 @@ __global.Sandbox={
 			this.MergePossibility(this.node_to_value,addr,this.LazyChild(ctx_f,'return'));
 		}
 		return this.node_to_value[addr];
-	}
+	},
+	SetProperties:function(value,ppts){
+		Object.assign(value,ppts);
+		return value;
+	},
+	CheckProperties:function(ctx,value,ppts){
+		for(let key in ppts){
+			if(key==='__addr'){continue;}
+			let vals=value[key];
+			if(!Array.isArray(vals)){
+				if(vals===undefined){
+					vals=[];
+				}else{
+					vals=[vals];
+				}
+			}
+			let expected=ppts[key];
+			if(expected.not!==undefined&&vals.indexOf(expected.not)>=0){
+				this.errors.push({
+					msg:expected.msg,
+					property:key,
+					origin:ctx.utag,
+					addr:ppts.__addr
+				})
+			}else if(expected.must_be!==undefined&&(vals.filter(val=>val!==expected.must_be).length>0||vals.length===0)){
+				this.errors.push({
+					msg:expected.msg,
+					property:key,
+					origin:ctx.utag,
+					addr:ppts.__addr
+				})
+			}else if(expected.not_empty!==undefined&&vals.length===0){
+				this.errors.push({
+					msg:expected.msg,
+					property:key,
+					origin:ctx.utag,
+					addr:ppts.__addr
+				})
+			}
+		}
+		return value;
+	},
 };

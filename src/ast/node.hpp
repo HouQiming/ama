@@ -101,6 +101,9 @@ namespace ama {
 	static const uint8_t CFG_JUMP = 3;
 	//decl is different from basic since we never get into them from the outside
 	static const uint8_t CFG_DECL = 4;
+	/////////////////
+	static const int MSG_COLORED = 1;
+	static const int MSG_WARNING = 2;
 	//we don't track original code locations, just report errors into the generated code using #error and stuff
 	//try to fit into a 64 byte cacheline
 	struct Node {
@@ -209,6 +212,8 @@ namespace ama {
 		uint8_t GetCFGRole()const;
 		int isChildCFGDependent(ama::Node const* nd_child)const;
 		std::string dump()const;
+		std::string FormatFancyMessage(std::span<char> msg, int flags)const;
+		int32_t ComputeLineNumber() const;
 	};
 	ama::Node* AllocNode();
 	extern ama::Node* g_placeholder;
