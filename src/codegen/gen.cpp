@@ -506,11 +506,7 @@ static void FlushTilde(std::string &ret, intptr_t ofs_newline, intptr_t ofs0_til
 		int ch = filter.NextByte(i, ret[i]);
 		int w = ch >= 0 ? wcwidth(ch) : 0;
 		if (i == ofs0_tilde) {
-			if (ofs0_tilde == ofs1_tilde) {
-				ch_current = '^';
-			} else {
-				ch_current = '~';
-			}
+			ch_current = '^';
 			if (colored) {
 				ret--->push("\033[32;1m");
 			}
