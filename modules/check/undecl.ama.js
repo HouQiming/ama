@@ -7,6 +7,7 @@ module.exports = {
 				let nd_ref = match.foo;
 				if (g_builtin_names.has(nd_ref.data)) {return 0;}
 				if (nd_ref.flags & REF_DECLARED) {return 0;}
+				if (nd_ref.flags & REF_WRITTEN) {return 0;}
 				return 1;
 			},
 			check: {

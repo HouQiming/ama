@@ -419,6 +419,7 @@ std::string ama::Node::dump() const {
 
 /////////////
 struct FancyDumpContext {
+	ama::Node* nd_dumped{};
 	ama::Node* nd{};
 	intptr_t ofs0{};
 	intptr_t ofs1{};
@@ -440,8 +441,8 @@ static int FancyHook(ama::CodeGenerator* ctx, ama::Node* nd) {
 }
 
 static int FancyHookComment(ama::CodeGenerator* ctx, const char* data, intptr_t size, int is_after, intptr_t expected_indent_level) {
-	//FancyDumpContext* fdctx = (FancyDumpContext*)ctx->opaque;
-	if (!ctx->code.size()) {
+	FancyDumpContext* fdctx = (FancyDumpContext*)ctx->opaque;
+	if (!ctx->code.size() || fdctx->nd_dumped == ctx->nd_current) {
 		//drop the comment
 		return 1;
 	} else {
@@ -522,6 +523,7 @@ static void FlushTilde(std::string &ret, intptr_t ofs_newline, intptr_t ofs0_til
 		if (w >= 1) {ret.push_back(ch_current);}
 		if (w >= 2) {ret.push_back(ch_current);}
 	}
+	//we always have a \n in the input `ret`
 	ret.push_back('\n');
 }
 
@@ -548,8 +550,9 @@ std::string ama::Node::FormatFancyMessage(std::span<char> msg, int flags)const {
 	ctx.hook_comment = FancyHookComment;
 	ctx.hook = FancyHook;
 	ctx.opaque = &fdctx;
+	fdctx.nd_dumped = ((ama::Node*)this)->ParentStatement();
 	fdctx.nd = (ama::Node*)this;
-	ctx.Generate(((ama::Node*)this)->ParentStatement());
+	ctx.Generate(fdctx.nd_dumped);
 	intptr_t ofs_newline = ret.size();
 	intptr_t ofs0_tilde = -1L;
 	intptr_t ofs1_tilde = -1L;

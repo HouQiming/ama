@@ -3,11 +3,15 @@
 //@ama ParseCurrentFile().Save()
 //convention: sandbox objects should be dumb, the shouldn't have methods
 __global.Sandbox={
-	default_value:{},
-	errors:[],
-	ctx_map:[],
 	log:console.log,
 	error:console.error,
+	Reset:function(){
+		this.default_value={};
+		this.errors=[];
+		this.ctx_map=[];
+		this.error_dedup=new Set();
+		Sandbox.node_to_value = Object.create(null);
+	},
 	LazyChild:function(parent,name,addr){
 		let ret=parent[name];
 		if(ret===undefined){
@@ -25,6 +29,8 @@ __global.Sandbox={
 		ret.utag_parent=base.utag;
 		ret.utag_addr=addr;
 		ret.utag_clause=clause;
+		ret.vars=Object.create(base.vars||null);
+		ret.children=undefined;
 		this.ctx_map.push(ret);
 		return ret;
 	},
@@ -32,22 +38,26 @@ __global.Sandbox={
 		let ret=this.LazyChild(ctx,'children')[addr];
 		if(ret===undefined){
 			ret=Object.create(ctx);
-			ret.vars=Object.create(ctx.vars);
 			ret.utag=this.ctx_map.length;
 			ret.utag_parent=ctx.utag;
 			ret.utag_addr=addr;
+			ret.vars=Object.create(ctx.vars||null);
+			ret.children=undefined;
 			this.ctx_map.push(ret);
 			ctx.children[addr]=ret;
 			this.node_to_value[addr]={ctx_utag:ret.utag};
 		}
 		return ret;
 	},
-	Declare:function(parent,name,addr){
+	Declare:function(ctx,name,addr,value){
 		//it's always a new value
-		let ret={addr_declared:addr};
-		parent[name]=ret;
-		this.MergePossibility(this.node_to_value,addr,ret);
-		return ret;
+		if(!value){
+			value=this.DummyValue(ctx,addr);
+		}
+		value.addr_declared=addr;
+		ctx.vars[name]=value;
+		this.MergePossibility(this.node_to_value,addr,value);
+		return value;
 	},
 	Assign:function(ctx,name,value,addr){
 		ctx[name]=value;
@@ -65,24 +75,29 @@ __global.Sandbox={
 		}
 		return ctx;
 	},
-	FunctionValue:function(addr,f){
-		let ret=Object.create(this.default_value);
+	FunctionValue:function(ctx,addr,f){
+		let ret=this.DummyValue(ctx,addr);
 		ret.addr_declared=addr;
 		ret.as_function=f;
 		return ret;
 	},
-	ClassValue:function(addr,f){
+	ClassValue:function(ctx,addr,f){
 		let ret=f();
+		ret.ctx_utag=ctx.utag;
 		ret.addr_declared=addr;
 		ret.as_function=f;
 		return ret;
 	},
-	DummyValue:function(addr){
-		return Object.create(this.default_value);
+	DummyValue:function(ctx,addr){
+		let ret=Object.create(this.default_value);
+		ret.ctx_utag=ctx.utag;
+		ret.addr_origin=addr;
+		return ret;
 	},
 	MergePossibility:function(ctx,name,value){
 		if(!value){return;}
 		let value0=ctx[name];
+		if(value0===value){return;}
 		if(value0===undefined){
 			ctx[name]=value;
 			return value;
@@ -94,26 +109,25 @@ __global.Sandbox={
 		//collapse them later
 		value0.push(value);
 	},
-	MergeContext:function(ctx,ctx_others){
-		if(ctx===ctx_others){return;}
-		if(ctx_others.vars){
-			let vars=this.LazyChild(ctx,'vars');
-			for(let name in ctx_others.vars){
-				this.MergePossibility(vars,name,ctx_others.vars[name]);
+	MergeContext:function(ctx,all_other_ctxs){
+		for(let ctx_other of all_other_ctxs){
+			if(ctx===ctx_other){continue;}
+			let vars=ctx.vars;
+			for(let name in ctx_other.vars){
+				this.MergePossibility(vars,name,ctx_other.vars[name]);
+			}
+			this.MergePossibility(ctx,'return',ctx_other['return']);
+			this.MergePossibility(ctx,'element',ctx_other['element']);
+			if(ctx_other.children){
+				let children=this.LazyChild(ctx,'children');
+				for(let addr in ctx_other.children){
+					this.MergeContext(
+						this.LazyChildScope(ctx,addr),
+						[ctx_other.children[addr]]
+					);
+				}
 			}
 		}
-		this.MergePossibility(ctx,'return',ctx_others['return']);
-		this.MergePossibility(ctx,'element',ctx_others['element']);
-		if(ctx_others.children){
-			let children=this.LazyChild(ctx,'children');
-			for(let addr in ctx_others.children){
-				this.MergeContext(
-					this.LazyChildScope(ctx,addr),
-					ctx_others.children[addr]
-				);
-			}
-		}
-		//TODO: child contexts
 	},
 	Call:function(ctx,addr,values){
 		//expandable-later, function-indexible list of calls
@@ -137,26 +151,32 @@ __global.Sandbox={
 		return value;
 	},
 	CheckProperties:function(ctx,value,addr,all_ppts){
+		if(!Array.isArray(value)){
+			value=[value];
+		}
 		for(let ppt of all_ppts){
 			for(let key in ppt){
-				let vals=value[key];
-				if(!Array.isArray(vals)){
-					if(vals===undefined){
-						vals=[];
-					}else{
-						vals=[vals];
-					}
-				}
+				let vals=value.map(v=>v[key]).filter(v=>v!==undefined);
 				let expected=ppt[key];
 				let failed=0;
+				let offending_value=undefined;
 				if(expected.not!==undefined){
-					failed=vals.indexOf(expected.not)>=0;
+					if(vals.indexOf(expected.not)>=0){
+						failed=1;
+						offending_value=(value.filter(v=>v[key]===expected.not)[0]);
+					}
 				}else if(expected.must_be!==undefined){
-					failed=(vals.filter(val=>val!==expected.must_be).length>0||vals.length===0);
+					if(vals.filter(val=>val!==expected.must_be).length>0||vals.length===0){
+						failed=1;
+						offending_value=(value.filter(v=>v[key]!==expected.must_be)[0]);
+					}
 				}else if(expected.not_empty){
 					failed=(vals.length===0);
 				}else if(expected.empty){
-					failed=(vals.length>0);
+					if(vals.length>0){
+						failed=1;
+						offending_value=vals[0];
+					}
 				}
 				if(expected.action){
 					if(!failed){
@@ -165,12 +185,18 @@ __global.Sandbox={
 						}
 					}
 				}else if(failed){
-					this.errors.push({
-						msg:expected.msg,
-						property:key,
-						origin:ctx.utag,
-						addr:addr
-					})
+					let key=[addr,expected.msg].join('_');
+					if(!this.error_dedup.has(key)){
+						this.error_dedup.add(key);
+						this.errors.push({
+							msg:expected.msg,
+							property:key,
+							origin:offending_value&&offending_value.ctx_utag,
+							origin_addr:offending_value&&offending_value.addr_origin,
+							site:ctx.utag,
+							addr:addr
+						});
+					}
 				}
 			}
 		}
