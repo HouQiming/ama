@@ -28,7 +28,7 @@ module.exports = function Bisync(options) {
 	let script_cpp2ama = options.script_backward || fs.readFileSync(path.join(__dirname, 'cpp/to_ama.js')).toString();
 	let all_cpp_files = new Set();
 	let mext_dot = middle_extension + '.';
-	let exts = options.processed_extensions || ['.cpp', '.hpp'];
+	let exts = options.processed_extensions || ['.cpp', '.hpp', '.cu'];
 	for (let ext of exts) {
 		for (let fn_rel_cpp of pipe.runPiped(process.platform == 'win32' ? 'dir /s /b *' + ext : "find -iname '*" + ext + "'").stdout.split('\n')) {
 			if (!fn_rel_cpp) {continue;}

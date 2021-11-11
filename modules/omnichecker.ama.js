@@ -82,7 +82,7 @@ function dfsGenerateDefault(nd, options) {
 		assert(nd_paramlist.node_class == N_PARAMETER_LIST);
 		//generate the testing code
 		let param_names = [];
-		let default_params = [];
+		let default_params = [nAir()];
 		for (let ndi = nd_paramlist.c; ndi; ndi = ndi.s) {
 			let nd_defroot = ndi;
 			if (nd_defroot.node_class == N_ASSIGNMENT) {nd_defroot = nd_defroot.c;}
@@ -104,7 +104,7 @@ function dfsGenerateDefault(nd, options) {
 				.(dfsGenerate(nd_body, options))/*no `;`*/
 				return ctx;
 			}
-			f(ctx, .(nRaw.apply(null, default_params).setFlags(0x5D5B/*[]*/)));
+			f(ctx, .(nItem.apply(null, default_params)));
 			let value = Sandbox.FunctionValue(ctx, .(nString(nd.GetUniqueTag())), f.bind(null, ctx));
 			return .(
 				nd.GetName() ? 
@@ -193,11 +193,11 @@ function dfsGenerateDefault(nd, options) {
 		return .(Sandbox.DummyValue(ctx, .(nString(nd.GetUniqueTag())), .(nd_lhs), .(nd_rhs)));
 	}
 	if (nd.node_class == N_CALL) {
-		let children = [];
+		let children = [nAir()];
 		for (let ndi = nd.c; ndi; ndi = ndi.s) {
 			children.push(dfsGenerate(ndi, options));
 		}
-		return .(Sandbox.Call(ctx, .(nString(nd.GetUniqueTag())), .(nRaw.apply(null, children).setFlags(0x5d5b))));
+		return .(Sandbox.Call(ctx, .(nString(nd.GetUniqueTag())), .(nItem.apply(null, children))));
 	}
 	if (nd.node_class == N_SCOPED_STATEMENT) {
 		if (nd.data == 'if') {

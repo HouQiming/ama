@@ -134,7 +134,7 @@ __global.Sandbox={
 		let value_func=values[0];
 		//COULDDO: better function resolution
 		let funcs=value_func.as_function;
-		if(!f){
+		if(!funcs){
 			funcs=[];
 		}else if(!Array.isArray(funcs)){
 			funcs=[funcs];
