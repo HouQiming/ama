@@ -18,7 +18,7 @@ module.exports = {
 				let bad_values = values.filter(v=>!v.initialized);
 				if (bad_values.length) {
 					return {
-						message: 'uninitialized variable `{code}`',
+						error: 'uninitialized variable `{code}`',
 						value: bad_values[0]
 					}
 				}

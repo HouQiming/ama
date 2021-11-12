@@ -1,13 +1,35 @@
 module.exports = {
-	//TODO: address-taking vs const address taking
-	//need to track *outstanding pointers*
-	//it's a value-carried *relationship* that should be tracked from both ends
-	//and the relationship can *die*: when a pointer gets overwritten
-	//needs different codegen mechanism: death tracking requires RC
-	//we can manually generate the scope-killing and assign-killing... but we can't really kill sth in a fork
-	//rely on gc? we want to know "at point A, is there any B alive which has a relationship R with C", A could be in a fork
-	//could solve with active context enumeration? scrub context in A's fork, don't store relationship on C, store on B
-	//B could be buried in a field... well, we try our best to find
-	//FindValue
-	//should improve checker QoL: use QuickJS toString() to move code into the sandboxed checker
+	templates: [
+		{
+			pattern: .(&.(Node.MatchAny('foo'))),
+			nd: (values, vars, name)=>{
+				//console.log(vars['<utag>'], name)
+				return values.map(v=>Sandbox.set(v, {
+					ref_vars_utag: vars['<utag>'],
+					ref_name: name,
+					ref_mutable: 1,
+				}))
+			}
+		}
+		//TODO: assign-to-const: reset ref_mutable
+	],
+	destructors: [
+		(values, vars, name)=> {
+			let utag = vars['<utag>'];
+			let utag_parent = Sandbox.ctx_map[utag].utag_parent;
+			if (utag_parent == undefined) {return;}
+			let ctx_parent = Sandbox.ctx_map[utag_parent];
+			let dangling_pointers = Sandbox.FindValues(ctx_parent.vars, value=>{
+				return value.ref_vars_utag == utag && value.ref_name == name;
+			});
+			if (dangling_pointers.length) {
+				return dangling_pointers.map(value_ptr=>{
+					return {
+						error: 'dangling pointer to',
+						value: value_ptr
+					}
+				});
+			}
+		}
+	]
 };

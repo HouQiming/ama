@@ -10,7 +10,8 @@ __global.Sandbox={
 		this.errors=[];
 		this.ctx_map=[];
 		this.error_dedup=new Set();
-		Sandbox.node_to_value = Object.create(null);
+		this.destructors=[];
+		//Sandbox.node_to_value = Object.create(null);
 	},
 	LazyChild:function(parent,name,addr){
 		let ret=parent[name];
@@ -18,10 +19,22 @@ __global.Sandbox={
 			ret=Object.create(null);
 			parent[name]=ret;
 		}
-		if(addr){
-			this.MergePossibility(this.node_to_value,addr,ret);
-		}
+		//if(addr){
+		//	this.MergePossibility(this.node_to_value,addr,ret);
+		//}
 		return ret;
+	},
+	GetVarsContainer:function(addr,parent){
+		if(!parent.vars){
+			if(parent.utag===undefined){
+				parent.utag=this.ctx_map.length;
+				parent.utag_addr=addr;
+				parent.utag_clause='members';
+				this.ctx_map.push(parent);
+			}
+			parent.vars={'<utag>':parent.utag,'<addrs>':Object.create(null)};
+		}
+		return parent.vars;
 	},
 	LazyCloneScope:function(base,addr,clause){
 		let ret=Object.create(base);
@@ -30,6 +43,8 @@ __global.Sandbox={
 		ret.utag_addr=addr;
 		ret.utag_clause=clause;
 		ret.vars=Object.create(base.vars||null);
+		ret.vars['<utag>']=ret.utag;
+		ret.vars['<addrs>']=Object.create(null);
 		ret.children=undefined;
 		this.ctx_map.push(ret);
 		return ret;
@@ -42,10 +57,11 @@ __global.Sandbox={
 			ret.utag_parent=ctx.utag;
 			ret.utag_addr=addr;
 			ret.vars=Object.create(ctx.vars||null);
+			ret.vars['<utag>']=ret.utag;
 			ret.children=undefined;
 			this.ctx_map.push(ret);
 			ctx.children[addr]=ret;
-			this.node_to_value[addr]={ctx_utag:ret.utag};
+			//this.node_to_value[addr]={ctx_utag:ret.utag};
 		}
 		return ret;
 	},
@@ -56,14 +72,23 @@ __global.Sandbox={
 		}
 		value.addr_declared=addr;
 		ctx.vars[name]=value;
-		this.MergePossibility(this.node_to_value,addr,value);
+		ctx.vars['<addrs>'][name]=addr;
+		//this.MergePossibility(this.node_to_value,addr,value);
 		return value;
 	},
-	Assign:function(ctx,name,value,addr){
-		ctx[name]=value;
-		if(addr){
-			this.MergePossibility(this.node_to_value,addr,value);
+	Assign:function(vars,name,value,addr){
+		if(name in vars){
+			while(vars&&!Object.prototype.hasOwnProperty.call(vars,name)){
+				vars=vars.__proto__;
+			}
 		}
+		vars[name]=value;
+		if(addr&&!vars['<addrs>'][name]){
+			vars['<addrs>'][name]=addr;
+		}
+		//if(addr){
+		//	this.MergePossibility(this.node_to_value,addr,value);
+		//}
 		return value;
 	},
 	AssignMany:function(ctx,names,values){
@@ -147,16 +172,50 @@ __global.Sandbox={
 			funcs=[funcs];
 		}
 		let params=values.slice(1);
+		let ret={};
 		for(let f of funcs){
 			let ctx_f=f(params);
-			this.MergePossibility(this.node_to_value,addr,this.LazyChild(ctx_f,'return'));
+			//this.MergePossibility(this.node_to_value,addr,this.LazyChild(ctx_f,'return'));
+			this.MergePossibility(ret,'return',this.LazyChild(ctx_f,'return'));
 		}
-		return this.node_to_value[addr];
+		//return this.node_to_value[addr];
+		return ret.return;
 	},
-	CallActions:function(ctx,addr,value,...cbs){
+	ArrayWrap:function(value){
+		return Array.isArray(value)?value:(value==undefined?[]:[value]);
+	},
+	FilterErrors:function(ctx,addr,ret){
+		if(!ret){return ret;}
+		if(ret.error!==undefined){
+			let err=ret;
+			let msg=err.error;
+			let offending_value=err.value;
+			let key=[addr,msg].join('_');
+			if(!this.error_dedup.has(key)){
+				this.error_dedup.add(key);
+				this.errors.push({
+					msg:msg,
+					property:key,
+					origin:offending_value&&offending_value.ctx_utag,
+					origin_addr:offending_value&&offending_value.addr_origin,
+					site:ctx.utag,
+					addr:addr
+				});
+			}
+			return;
+		}
+		if(Array.isArray(ret)){
+			for(let err of ret.filter(err=>err.error!==undefined)){
+				this.FilterErrors(ctx,addr,err)
+			}
+			return ret.filter(err=>err.error==undefined);
+		}
+		return ret
+	},
+	CallActions:function(value,ref_vars,ref_name,ctx,addr,...cbs){
 		let value_a=Array.isArray(value)?value:(value==undefined?[]:[value]);
 		for(let cb of cbs){
-			let ret=cb(value_a,addr);
+			let ret=this.FilterErrors(ctx,addr,cb(value_a,ref_vars,ref_name,ctx,addr));
 			if(Array.isArray(ret)){
 				value_a=ret;
 				if(value_a.length===0){
@@ -166,27 +225,40 @@ __global.Sandbox={
 				}else{
 					value=value_a;
 				}
-			}else if(typeof(ret)==='object'){
-				let err=ret;
-				let msg=err.message;
-				let offending_value=err.value;
-				let key=[addr,msg].join('_');
-				if(!this.error_dedup.has(key)){
-					this.error_dedup.add(key);
-					this.errors.push({
-						msg:msg,
-						property:key,
-						origin:offending_value&&offending_value.ctx_utag,
-						origin_addr:offending_value&&offending_value.addr_origin,
-						site:ctx.utag,
-						addr:addr
-					});
-				}
-			}
+			} 
 		}
 		return value;
 	},
 	set:function(obj0,obj1){
 		return Object.assign(Object.create(obj0),obj1);
+	},
+	EnumVars:function(vars,ret){
+		if(!ret){ret=[];}
+		for(let name in vars){
+			if(name.startsWith('<')){continue;}
+			ret.push({vars:vars,name:name,addr:vars['<addrs>'][name]});
+			for(let value of this.ArrayWrap(vars[name])){
+				if(!value.as_function&&value.vars){
+					this.EnumVars(value.vars,ret);
+				}
+			}
+		}
+		return ret;
+	},
+	FindValues:function(vars,filter){
+		let ret=[];
+		for(let desc of this.EnumVars(vars)){
+			for(let value of this.ArrayWrap(desc.vars[desc.name])){
+				if(filter(value)){ret.push(value);}
+			}
+		}
+		return ret;
+	},
+	EndScope:function(ctx){
+		for(let desc of this.EnumVars(ctx.vars)){
+			for(let dtor of this.destructors){
+				this.FilterErrors(ctx,desc.addr,dtor(desc.vars[desc.name],desc.vars,desc.name));
+			}
+		}
 	}
 };

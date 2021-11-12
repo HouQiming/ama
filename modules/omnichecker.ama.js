@@ -35,7 +35,7 @@ function dfsGenerate(nd, options) {
 		let match = nd.Match(t.pattern);
 		if (match && (!t.filter || t.filter(match))) {
 			for (let key in t) {
-				if (key == 'pattern' || key == 'filter') {continue;}
+				if (key == 'pattern' || key == 'filter' ) {continue;}
 				if (!match[key]) {
 					throw new Error(['invalid action: ', JSON.stringify(key), ' not found on `', match.nd.dump(), '`'].join(''));
 				}
@@ -45,23 +45,35 @@ function dfsGenerate(nd, options) {
 	}
 	let nd_ret = dfsGenerateDefault(nd, options);
 	let cb_dedup = new Set();
-	let array_wrapped = 0;
+	let call_wrapped = 0;
 	let jobs = (options._deferred_jobs.get(nd) || []);
 	jobs.sort((a, b)=>a.priority - b.priority);
 	for (let job_nd of jobs) {
-		job_nd = job_nd.action;
-		if (typeof(job_nd) == 'function') {job_nd = job_nd.toString();}
-		let name = options._named_callbacks.get(job_nd);
+		let action = job_nd.action;
+		if (typeof(action) == 'function') {action = action.toString();}
+		let name = options._named_callbacks.get(action);
 		if (!name) {
 			name = '_cb' + options._callback_name.toString();
 			options._callback_name += 1;
-			options._named_callbacks.set(job_nd, name);
+			options._named_callbacks.set(action, name);
 		}
 		if (!cb_dedup.has(name)) {
 			cb_dedup.add(name);
-			if (!array_wrapped) {
-				array_wrapped = 1;
-				nd_ret = .(Sandbox.CallActions(ctx, .(nString(nd.GetUniqueTag())), .(nd_ret)));
+			if (!call_wrapped) {
+				call_wrapped = 1;
+				let nd_core = nd_ret;
+				if (nd_core.node_class == N_CALL && nd_core.GetName() == 'DummyValue') {
+					let nd_var = nd_core.Find(N_CALL, 'LazyChild');
+					if (nd_var) {
+						nd_core = nd_var;
+					}
+				}
+				let match = nd_core.Match(g_ptn_lazychild);
+				if (match) {
+					nd_ret = .(Sandbox.CallActions(.(nd_ret), .(match.ctx.Clone()), .(nString(match.name.GetName())), ctx, .(nString(nd.GetUniqueTag()))));
+				} else {
+					nd_ret = .(Sandbox.CallActions(.(nd_ret), vars, .(nString(nd.GetName())), ctx, .(nString(nd.GetUniqueTag()))));
+				}
 			}
 			//nd_ret=nCall(nRef(name),nd_ret);
 			nd_ret.Insert(POS_BACK, nRef(name));
@@ -140,7 +152,7 @@ function dfsGenerateDefault(nd, options) {
 		}
 	}
 	if (nd.node_class == N_DOT) {
-		return .(Sandbox.LazyChild(Sandbox.LazyChild(.(dfsGenerate(nd.c, options)), 'vars'), .(nString(nd.GetName())), .(nString(nd.GetUniqueTag()))));
+		return .(Sandbox.LazyChild(Sandbox.GetVarsContainer(.(nString(nd.GetUniqueTag())), .(dfsGenerate(nd.c, options))), .(nString(nd.GetName())), .(nString(nd.GetUniqueTag()))));
 	}
 	if (nd.node_class == N_ITEM) {
 		//generate subscript values without using them: redundant args
@@ -157,7 +169,7 @@ function dfsGenerateDefault(nd, options) {
 		while (nd_var.node_class == N_CALL) {
 			let name = nd_var.GetName();
 			if (name == 'CallActions') {
-				nd_var = nd_var.c.s.s.s;
+				nd_var = nd_var.c.s;
 			} else if (name == 'DummyValue') {
 				let nd_decl = nd_var.Find(N_CALL, 'Declare');
 				if (nd_decl) {
@@ -208,14 +220,16 @@ function dfsGenerateDefault(nd, options) {
 				let ctx_then = Sandbox.LazyCloneScope(ctx_if, .(nString(nd.GetUniqueTag())), 'in the then-clause', .(nd_cond));
 				{
 					let ctx = ctx_then;
-					let vars = Sandbox.LazyChild(ctx, 'vars');
+					let vars = ctx.vars;
 					.(nd_then);
+					Sandbox.EndScope(ctx);
 				}
 				let ctx_else = Sandbox.LazyCloneScope(ctx_if, .(nString(nd.GetUniqueTag())), 'in the else-clause');
 				{
 					let ctx = ctx_else;
-					let vars = Sandbox.LazyChild(ctx, 'vars');
+					let vars = ctx.vars;
 					.(nd_else);
+					Sandbox.EndScope(ctx);
 				}
 				Sandbox.MergeContext(ctx_if, [ctx_then, ctx_else]);
 			})(ctx));
@@ -237,12 +251,14 @@ function dfsGenerateDefault(nd, options) {
 					let ctx = ctx_loop;
 					let vars = ctx.vars;
 					.(nScope.apply(null, children));
+					Sandbox.EndScope(ctx);
 				}
 				let iterations = [ctx_loop];
 				for (let i = 0; i < 2; i++) {
 					let ctx = Sandbox.LazyCloneScope(iterations[iterations.length - 1], .(nString(nd.GetUniqueTag())), i == 0 ? 'in the first iteration' : 'in subsequent iterations');
 					let vars = ctx.vars;
 					.(dfsGenerate(nd_loop_body, options));
+					Sandbox.EndScope(ctx);
 					iterations.push(ctx);
 				}
 				Sandbox.MergeContext(ctx_before, iterations);
@@ -252,12 +268,24 @@ function dfsGenerateDefault(nd, options) {
 	if (nd.node_class == N_KEYWORD_STATEMENT) {
 		if (nd.data == 'return') {
 			let nd_value = dfsGenerate(nd.c, options);
-			return .(Sandbox.Assign(ctx, 'return', .(nd_value), .(nString(nd.GetUniqueTag()))));
+			return .((ctx['return'] = .(nd_value)));
 		}
 	}
 	if (nd.node_class == N_PAREN || nd.node_class == N_SEMICOLON ) {
 		//avoid clutter
 		return dfsGenerate(nd.c, options);
+	}
+	if (nd.node_class == N_SCOPE) {
+		let children = [];
+		for (let ndi = nd.c; ndi; ndi = ndi.s) {
+			children.push(nSemicolon(dfsGenerate(ndi, options)));
+		}
+		return .((function(ctx_outer) {
+			let ctx = Sandbox.LazyCloneScope(ctx_outer, .(nString(nd.GetUniqueTag())), undefined);
+			let vars = ctx.vars;
+			.(nScope.apply(null, children).c)/*no ;*/
+			Sandbox.EndScope(ctx);
+		})(ctx));
 	}
 	//just treat scopes and air as dummy values
 	//it's just {} so no point recording, but we need {}
@@ -283,11 +311,16 @@ omnichecker.Check = function(nd_root, ...all_options) {
 	let options = Object.create(null);
 	options.default_value = {};
 	options.templates = [];
+	options.destructors = [];
 	for (let options_i of all_options) {
 		for (let key in options_i) {
 			if (key == 'templates') {
 				for (let t of options_i.templates) {
 					options.templates.push(Object.create(t));
+				}
+			} else if (key == 'destructors') {
+				for (let dtor of options_i.destructors) {
+					options.destructors.push(dtor);
 				}
 			} else if (key == 'default_value') {
 				Object.assign(options.default_value, options_i.default_value);
@@ -313,6 +346,9 @@ omnichecker.Check = function(nd_root, ...all_options) {
 	for (let cb_pair of options._named_callbacks) {
 		callback_defs.push('const ', cb_pair[1], '=', cb_pair[0], ';');
 	}
+	for (let cb of options.destructors) {
+		callback_defs.push('Sandbox.destructors.push(', cb.toString(), ');');
+	}
 	for (let nd_dummy of nd_flowcode.FindAll(N_CALL, 'DummyValue')) {
 		if (nd_dummy.p && (nd_dummy.p.node_class == N_SCOPE || nd_dummy.p.node_class == N_SEMICOLON)) {
 			let nd_src = (nd_dummy.p.node_class == N_SEMICOLON ? nd_dummy.p : nd_dummy);
@@ -335,14 +371,16 @@ omnichecker.Check = function(nd_root, ...all_options) {
 		ctx.utag_parent = -1;
 		ctx.utag_addr = .(nString(nd_root.GetUniqueTag()));
 		Sandbox.ctx_map.push(ctx);
-		let vars = Sandbox.LazyChild(ctx, 'vars');
+		let vars = Sandbox.GetVarsContainer(ctx.utag_addr, ctx);
+		vars['<utag>'] = ctx.utag;
 		.(nSymbol(callback_defs.join('')));
 		.(nd_flowcode);
 		return JSON.stringify({
-			node_to_value: Sandbox.node_to_value,
+			//node_to_value: Sandbox.node_to_value,
 			errors: Sandbox.errors,
 			ctx_map: Sandbox.ctx_map
 		});
+		//the root context destruction is currently skipped
 	}), options);
 	if (options.dump_errors) {
 		for (let err of ret.errors) {
@@ -363,24 +401,22 @@ omnichecker.Check = function(nd_root, ...all_options) {
 				let utag = site_path.pop();
 				origin_path.pop();
 				//only keep the last level
-				message_parts.length = 0;
 				let ctx = ret.ctx_map[utag];
-				let nd_here = Node.GetNodeFromUniqueTag(ctx.utag_addr);
-				let msg = 'in';
 				if (ctx.utag_clause != undefined) {
-					msg = ctx.utag_clause;
+					message_parts.length = 0;
+					let nd_here = Node.GetNodeFromUniqueTag(ctx.utag_addr);
+					let msg = ctx.utag_clause;
+					message_parts.push(nd_here.FormatFancyMessage(msg, options.colored ? MSG_COLORED : 0));
 				}
-				message_parts.push(nd_here.FormatFancyMessage(msg, options.colored ? MSG_COLORED : 0));
 			}
 			while (origin_path.length) {
 				let utag = origin_path.pop();
 				let ctx = ret.ctx_map[utag];
 				let nd_here = Node.GetNodeFromUniqueTag(ctx.utag_addr);
-				let msg = 'from';
 				if (ctx.utag_clause != undefined) {
-					msg = 'from ' + ctx.utag_clause;
+					let msg = 'from ' + ctx.utag_clause;
+					message_parts.push(nd_here.FormatFancyMessage(msg, options.colored ? MSG_COLORED : 0));
 				}
-				message_parts.push(nd_here.FormatFancyMessage(msg, options.colored ? MSG_COLORED : 0));
 			}
 			if (err.origin_addr != undefined) {
 				let nd_here = Node.GetNodeFromUniqueTag(err.origin_addr);
