@@ -107,7 +107,14 @@ __global.Sandbox={
 			ctx[name]=value0;
 		}
 		//collapse them later
-		value0.push(value);
+		if(Array.isArray(value)){
+			for(let v of value){
+				value0.push(v);
+			}
+		}else{
+			value0.push(value);
+		}
+		//this.log(name,value0,value);
 	},
 	MergeContext:function(ctx,all_other_ctxs){
 		for(let ctx_other of all_other_ctxs){
@@ -146,60 +153,40 @@ __global.Sandbox={
 		}
 		return this.node_to_value[addr];
 	},
-	SetProperties:function(value,ppts){
-		Object.assign(value,ppts);
-		return value;
-	},
-	CheckProperties:function(ctx,value,addr,all_ppts){
-		if(!Array.isArray(value)){
-			value=[value];
-		}
-		for(let ppt of all_ppts){
-			for(let key in ppt){
-				let vals=value.map(v=>v[key]).filter(v=>v!==undefined);
-				let expected=ppt[key];
-				let failed=0;
-				let offending_value=undefined;
-				if(expected.not!==undefined){
-					if(vals.indexOf(expected.not)>=0){
-						failed=1;
-						offending_value=(value.filter(v=>v[key]===expected.not)[0]);
-					}
-				}else if(expected.must_be!==undefined){
-					if(vals.filter(val=>val!==expected.must_be).length>0||vals.length===0){
-						failed=1;
-						offending_value=(value.filter(v=>v[key]!==expected.must_be)[0]);
-					}
-				}else if(expected.not_empty){
-					failed=(vals.length===0);
-				}else if(expected.empty){
-					if(vals.length>0){
-						failed=1;
-						offending_value=vals[0];
-					}
+	CallActions:function(ctx,addr,value,...cbs){
+		let value_a=Array.isArray(value)?value:(value==undefined?[]:[value]);
+		for(let cb of cbs){
+			let ret=cb(value_a,addr);
+			if(Array.isArray(ret)){
+				value_a=ret;
+				if(value_a.length===0){
+					value=undefined;
+				}else if(value_a.length===1){
+					value=value_a[0];
+				}else{
+					value=value_a;
 				}
-				if(expected.action){
-					if(!failed){
-						if(expected.action==='skip'){
-							break;
-						}
-					}
-				}else if(failed){
-					let key=[addr,expected.msg].join('_');
-					if(!this.error_dedup.has(key)){
-						this.error_dedup.add(key);
-						this.errors.push({
-							msg:expected.msg,
-							property:key,
-							origin:offending_value&&offending_value.ctx_utag,
-							origin_addr:offending_value&&offending_value.addr_origin,
-							site:ctx.utag,
-							addr:addr
-						});
-					}
+			}else if(typeof(ret)==='object'){
+				let err=ret;
+				let msg=err.message;
+				let offending_value=err.value;
+				let key=[addr,msg].join('_');
+				if(!this.error_dedup.has(key)){
+					this.error_dedup.add(key);
+					this.errors.push({
+						msg:msg,
+						property:key,
+						origin:offending_value&&offending_value.ctx_utag,
+						origin_addr:offending_value&&offending_value.addr_origin,
+						site:ctx.utag,
+						addr:addr
+					});
 				}
 			}
 		}
 		return value;
 	},
+	set:function(obj0,obj1){
+		return Object.assign(Object.create(obj0),obj1);
+	}
 };

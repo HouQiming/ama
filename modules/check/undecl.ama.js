@@ -10,10 +10,12 @@ module.exports = {
 				if (nd_ref.flags & REF_WRITTEN) {return 0;}
 				return 1;
 			},
-			check: {
-				foo: {
-					as_function: {not_empty: 1,action: 'skip'},
-					addr_declared: {not_empty: 1,msg: 'undeclared identifier `{code}`'}
+			foo: values=>{
+				if (values.filter(v=>v.as_function).length) {return;}
+				if (!values.filter(v=>v.addr_declared).length) {
+					return {
+						message: 'undeclared identifier `{code}`',
+					};
 				}
 			}
 		}

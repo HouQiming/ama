@@ -29,49 +29,49 @@ function dfsGenerate(nd, options) {
 			return nd_ret;
 		}
 	}
-	for (let t of options.templates) {
+	let actions = [];
+	for (let i = 0; i < options.templates.length; i++) {
+		let t = options.templates[i];
 		let match = nd.Match(t.pattern);
 		if (match && (!t.filter || t.filter(match))) {
-			//defer on-child flagging to child: options._deferred_jobs
-			if (t.set) {
-				for (let key in t.set) {
-					if (!match[key]) {
-						throw new Error(['invalid set-job: ', JSON.stringify(key), ' not found on `', match.nd.dump(), '`'].join(''));
-					}
-					DeferJob(options._deferred_jobs, match[key], {set: t.set[key]});
+			for (let key in t) {
+				if (key == 'pattern' || key == 'filter') {continue;}
+				if (!match[key]) {
+					throw new Error(['invalid action: ', JSON.stringify(key), ' not found on `', match.nd.dump(), '`'].join(''));
 				}
-			}
-			if (t.check) {
-				for (let key in t.check) {
-					if (!match[key]) {
-						throw new Error(['invalid check-job: ', JSON.stringify(key), ' not found on `', match.nd.dump(), '`'].join(''));
-					}
-					DeferJob(options._deferred_jobs, match[key], {check: t.check[key]});
-				}
+				DeferJob(options._deferred_jobs, match[key], {action: t[key],priority: i});
 			}
 		}
 	}
 	let nd_ret = dfsGenerateDefault(nd, options);
-	let all_sets = undefined;
-	let all_checks = undefined;
-	for (let job_nd of (options._deferred_jobs.get(nd) || [])) {
-		if (job_nd.set) {
-			if (!all_sets) {all_sets = {};}
-			Object.assign(all_sets, job_nd.set);
-		} else if (job_nd.check) {
-			if (!all_checks) {all_checks = [];}
-			//Object.assign(all_checks, job_nd.check);
-			all_checks.push(job_nd.check);
+	let cb_dedup = new Set();
+	let array_wrapped = 0;
+	let jobs = (options._deferred_jobs.get(nd) || []);
+	jobs.sort((a, b)=>a.priority - b.priority);
+	for (let job_nd of jobs) {
+		job_nd = job_nd.action;
+		if (typeof(job_nd) == 'function') {job_nd = job_nd.toString();}
+		let name = options._named_callbacks.get(job_nd);
+		if (!name) {
+			name = '_cb' + options._callback_name.toString();
+			options._callback_name += 1;
+			options._named_callbacks.set(job_nd, name);
+		}
+		if (!cb_dedup.has(name)) {
+			cb_dedup.add(name);
+			if (!array_wrapped) {
+				array_wrapped = 1;
+				nd_ret = .(Sandbox.CallActions(ctx, .(nString(nd.GetUniqueTag())), .(nd_ret)));
+			}
+			//nd_ret=nCall(nRef(name),nd_ret);
+			nd_ret.Insert(POS_BACK, nRef(name));
 		}
 	}
-	if (all_sets) {
-		//all_sets.__addr=nd.GetUniqueTag();
-		nd_ret = .(Sandbox.SetProperties(.(nd_ret), .(ParseCode(JSON.stringify(all_sets)))));
+	//inherit comments for debugging
+	if (options.inherit_comments) {
+		nd_ret.setCommentsBefore(nd.comments_before);
 	}
-	if (all_checks) {
-		nd_ret = .(Sandbox.CheckProperties(ctx, .(nd_ret), .(nString(nd.GetUniqueTag())), .(ParseCode(JSON.stringify(all_checks)))));
-	}
-	return nd_ret.setCommentsBefore(nd.comments_before);
+	return nd_ret;
 }
 
 function dfsGenerateDefault(nd, options) {
@@ -101,7 +101,7 @@ function dfsGenerateDefault(nd, options) {
 				let ctx = Sandbox.LazyChildScope(ctx_outer, .(nString(nd.GetUniqueTag())));
 				let vars = ctx.vars;
 				Sandbox.AssignMany(vars, .(ParseCode(JSON.stringify(param_names))), params);
-				.(dfsGenerate(nd_body, options))/*no `;`*/
+				.(dfsGenerate(nd_body, options));
 				return ctx;
 			}
 			f(ctx, .(nItem.apply(null, default_params)));
@@ -123,7 +123,7 @@ function dfsGenerateDefault(nd, options) {
 			Sandbox.Assign(vars, .(nString(nd.GetName())), Sandbox.ClassValue(ctx, .(nString(nd.GetUniqueTag())), function(ctx_outer) {
 				let ctx = Sandbox.LazyChildScope(ctx_outer, .(nString(nd.GetUniqueTag())));
 				let vars = ctx.vars;
-				.(dfsGenerate(nd_body, options))/*no `;`*/
+				.(dfsGenerate(nd_body, options));
 				return ctx;
 			}.bind(null, ctx)))
 		);
@@ -156,10 +156,8 @@ function dfsGenerateDefault(nd, options) {
 		let nd_var = nd_lhs;
 		while (nd_var.node_class == N_CALL) {
 			let name = nd_var.GetName();
-			if (name == 'CheckProperties') {
-				nd_var = nd_var.c.s.s;
-			} else if (name == 'SetProperties') {
-				nd_var = nd_var.c.s;
+			if (name == 'CallActions') {
+				nd_var = nd_var.c.s.s.s;
 			} else if (name == 'DummyValue') {
 				let nd_decl = nd_var.Find(N_CALL, 'Declare');
 				if (nd_decl) {
@@ -211,13 +209,13 @@ function dfsGenerateDefault(nd, options) {
 				{
 					let ctx = ctx_then;
 					let vars = Sandbox.LazyChild(ctx, 'vars');
-					.(nd_then)/*no `;`*/
+					.(nd_then);
 				}
 				let ctx_else = Sandbox.LazyCloneScope(ctx_if, .(nString(nd.GetUniqueTag())), 'in the else-clause');
 				{
 					let ctx = ctx_else;
 					let vars = Sandbox.LazyChild(ctx, 'vars');
-					.(nd_else)/*no `;`*/
+					.(nd_else);
 				}
 				Sandbox.MergeContext(ctx_if, [ctx_then, ctx_else]);
 			})(ctx));
@@ -233,19 +231,21 @@ function dfsGenerateDefault(nd, options) {
 				}
 			}
 			//loops: change to for-twice
-			return .((function(ctx_loop) {
+			return .((function(ctx_before) {
+				let ctx_loop = Sandbox.LazyCloneScope(ctx_before, .(nString(nd.GetUniqueTag())), 'loop initialization');
 				{
 					let ctx = ctx_loop;
+					let vars = ctx.vars;
 					.(nScope.apply(null, children));
 				}
 				let iterations = [ctx_loop];
 				for (let i = 0; i < 2; i++) {
 					let ctx = Sandbox.LazyCloneScope(iterations[iterations.length - 1], .(nString(nd.GetUniqueTag())), i == 0 ? 'in the first iteration' : 'in subsequent iterations');
-					let vars = Sandbox.LazyChild(ctx, 'vars');
-					.(dfsGenerate(nd_loop_body, options))/*no `;`*/
+					let vars = ctx.vars;
+					.(dfsGenerate(nd_loop_body, options));
 					iterations.push(ctx);
 				}
-				Sandbox.MergeContext(ctx_loop, iterations);
+				Sandbox.MergeContext(ctx_before, iterations);
 			})(ctx));
 		}
 	}
@@ -254,6 +254,10 @@ function dfsGenerateDefault(nd, options) {
 			let nd_value = dfsGenerate(nd.c, options);
 			return .(Sandbox.Assign(ctx, 'return', .(nd_value), .(nString(nd.GetUniqueTag()))));
 		}
+	}
+	if (nd.node_class == N_PAREN || nd.node_class == N_SEMICOLON ) {
+		//avoid clutter
+		return dfsGenerate(nd.c, options);
 	}
 	//just treat scopes and air as dummy values
 	//it's just {} so no point recording, but we need {}
@@ -283,7 +287,7 @@ omnichecker.Check = function(nd_root, ...all_options) {
 		for (let key in options_i) {
 			if (key == 'templates') {
 				for (let t of options_i.templates) {
-					options.templates.push(t);
+					options.templates.push(Object.create(t));
 				}
 			} else if (key == 'default_value') {
 				Object.assign(options.default_value, options_i.default_value);
@@ -302,7 +306,27 @@ omnichecker.Check = function(nd_root, ...all_options) {
 		options.colored = 1;
 	}
 	options._deferred_jobs = new Map();
+	options._named_callbacks = new Map();
+	options._callback_name = 0;
 	let nd_flowcode = dfsGenerate(nd_root, options);
+	let callback_defs = [];
+	for (let cb_pair of options._named_callbacks) {
+		callback_defs.push('const ', cb_pair[1], '=', cb_pair[0], ';');
+	}
+	for (let nd_dummy of nd_flowcode.FindAll(N_CALL, 'DummyValue')) {
+		if (nd_dummy.p && (nd_dummy.p.node_class == N_SCOPE || nd_dummy.p.node_class == N_SEMICOLON)) {
+			let nd_src = (nd_dummy.p.node_class == N_SEMICOLON ? nd_dummy.p : nd_dummy);
+			let level = nd_src.indent_level;
+			for (let ndi = nd_dummy.c.s.s.s; ndi; ) {
+				let ndi_next = ndi.s;
+				ndi.Unlink();
+				ndi.AdjustIndentLevel(level);
+				nd_src.Insert(POS_BEFORE, nSemicolon(ndi));
+				ndi = ndi_next;
+			}
+			nd_src.Unlink();
+		}
+	}
 	let ret = omnichecker.RunGeneratedCode(.({
 		Sandbox.Reset();
 		Sandbox.default_value = .(ParseCode(JSON.stringify(options.default_value || {})));
@@ -312,7 +336,8 @@ omnichecker.Check = function(nd_root, ...all_options) {
 		ctx.utag_addr = .(nString(nd_root.GetUniqueTag()));
 		Sandbox.ctx_map.push(ctx);
 		let vars = Sandbox.LazyChild(ctx, 'vars');
-		.(nd_flowcode)/*no `;`*/
+		.(nSymbol(callback_defs.join('')));
+		.(nd_flowcode);
 		return JSON.stringify({
 			node_to_value: Sandbox.node_to_value,
 			errors: Sandbox.errors,

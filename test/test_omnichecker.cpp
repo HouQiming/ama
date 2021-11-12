@@ -1,7 +1,7 @@
 /*
 @ama
 const checker=require('omnichecker');
-let ret=checker.Check(ParseCurrentFile(),require('check/uninit'),require('check/undecl'),{dump_code:1});
+let ret=checker.Check(ParseCurrentFile(),require('check/uninit'),require('check/undecl'),{inherit_comments:1,dump_code:1});
 //console.log(JSON.stringify(ret,null,1));
 */
 #include "../src/ast/node.hpp"
