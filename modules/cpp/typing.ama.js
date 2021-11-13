@@ -396,7 +396,16 @@ typing.ComputeType = function(nd_expr) {
 	//avoid infinite recursion
 	typing.type_cache.set(nd_expr, nd_expr);
 	switch (nd_expr.node_class) {
-	case N_RAW:
+	case N_RAW: {
+		//QoL: return declared type on parent N_RAW
+		for (let ndi = nd_expr.c; ndi; ndi = ndi.s) {
+			if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
+				type = typing.ComputeDeclaredType(ndi);
+				break;
+			}
+		}
+		break;
+	}
 	case N_SYMBOL:
 	case N_AIR: {
 		//we don't really understand these, so we can't compute a type

@@ -1,7 +1,7 @@
 /*
 @ama
 const checker=require('omnichecker');
-checker.Check(ParseCurrentFile(),require('check/borrow'),{dump_code:1});
+checker.Check(ParseCurrentFile(),require('check/cpp/borrow'),{dump_code:1});
 */
 int main(){
 	int* y;
@@ -9,6 +9,7 @@ int main(){
 		int x = 5;
 		y = &x;
 		console.log(x);
+		int const* z = &x;
 	}
 	*y += 1;
 	return 0;

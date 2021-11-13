@@ -731,8 +731,8 @@ namespace ama {
 			ama::Node* nd_stmt = nd_ref->ParentStatement();
 			ama::Node* nd_asgn = nd_ref->Owning(ama::N_ASSIGNMENT);
 			ama::Node* nd_owner = nd_ref->Owner();
-			if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_stmt->p->p->data == "enum" && !
-			(nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->s->isAncestorOf(nd_ref)) ) {
+			if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_stmt->p->p->data == "enum" && 
+			!(nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->s->isAncestorOf(nd_ref)) ) {
 				nd_ref->flags |= ama::REF_DECLARED;
 			}
 			if ( nd_asgn && nd_stmt->isAncestorOf(nd_asgn) && nd_asgn->c->isAncestorOf(nd_ref) ) {
@@ -778,7 +778,7 @@ namespace ama {
 					//updating assignment
 					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_RW;
 				}
-			} else if ( nd_stmt->p->node_class == ama::N_SCOPE && nd_owner && nd_asgn && nd_owner->isAncestorOf(nd_asgn) && nd_asgn->c->isAncestorOf(nd_stmt) ) {
+			} else if ( nd_stmt->p->node_class == ama::N_SCOPE && nd_owner && nd_asgn && nd_asgn->data.empty() && nd_owner->isAncestorOf(nd_asgn) && nd_asgn->c->isAncestorOf(nd_stmt) ) {
 				//could be {} nd_destructuring, here nd_stmt is BS
 				//`type {...,foo,...}=...; {"bar":foo}=...;`
 				ama::Node* nd_destructuring = nd_ref;
@@ -840,8 +840,10 @@ namespace ama {
 				if ( nd_cdecl == nd_stmt ) {
 					//foo in `type foo;` or `type bar,*foo[8];`
 					is_ok = 1;
-				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_ASSIGNMENT && nd_cdecl->p->c == nd_cdecl ) {
+				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_ASSIGNMENT && nd_cdecl->p->c == nd_cdecl &&
+				nd_cdecl->p->data.empty() && nd_cdecl->node_class != ama::N_PREFIX) {
 					//foo in `type foo=bar;` or `type bar,*foo[8],baz=...;`
+					//exclude *y+=1; / *y=1;
 					is_ok = 1;
 				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_FUNCTION && nd_cdecl->p->c == nd_cdecl ) {
 					//non-dotted function declaration, handle it here, also name the function

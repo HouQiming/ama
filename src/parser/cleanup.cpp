@@ -70,9 +70,26 @@ namespace ama {
 	//	}
 	//	return nd_root;
 	//}
+	static void TrimComment(ama::gcstring& comment) {
+		intptr_t p0 = 0L;
+		auto p1 = comment.size();
+		while (p0 < p1 && uint8_t(comment[p0]) <= uint8_t(' ')) {
+			p0++;
+		}
+		while (p0 < p1 && uint8_t(comment[p1 - 1]) <= uint8_t(' ')) {
+			p1--;
+		}
+		if (p0 > 0 || p1 < comment.size()) {
+			comment = comment--->subarray(p0, p1 - p0);
+		}
+	}
 	ama::Node* AutoFormat(ama::Node* nd_root) {
 		for (ama::Node* ndi = nd_root->PostorderFirst(); ndi; ndi = ndi->PostorderNext(nd_root)) {
 			ndi->indent_level = 0;
+			//if (!(ndi->p && ndi->p->node_class == ama::N_RAW)) {
+			//	TrimComment(ndi->comments_before);
+			//	TrimComment(ndi->comments_after);
+			//}
 		}
 		for (ama::Node* ndi = nd_root->PostorderFirst(); ndi; ndi = ndi->PostorderNext(nd_root)) {
 			ama::Node* nd = ndi->p;
@@ -92,9 +109,9 @@ namespace ama {
 					ndi->comments_before = " ";
 				}
 			}
-			if ( ndi->node_class == ama::N_SCOPE && ndi->c ) {
-				if ( !ndi->LastChild()->comments_after.size() ) { ndi->LastChild()->comments_after = "\n"; }
-			}
+			//if ( ndi->node_class == ama::N_SCOPE && ndi->c ) {
+			//	if ( !ndi->LastChild()->comments_after.size() ) { ndi->LastChild()->comments_after = "\n"; }
+			//}
 		}
 		if ( nd_root->p ) {
 			//sane new line before / after

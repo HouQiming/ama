@@ -40,7 +40,7 @@ function dfsGenerate(nd, options) {
 					throw new Error(['invalid action: ', JSON.stringify(key), ' not found on `', match.nd.dump(), '`'].join(''));
 				}
 				let key_extra_args = key + '_extra_args';
-				let nd_extra_args = t[key_extra_args] ? t[key_extra_args](match) : nNumber('0');
+				let nd_extra_args = t[key_extra_args] ? ParseCode(JSON.stringify(t[key_extra_args](match))) : nNumber('0');
 				DeferJob(options._deferred_jobs, match[key], {action: t[key],nd_extra_args: nd_extra_args,priority: i});
 			}
 		}
@@ -426,9 +426,10 @@ omnichecker.Check = function(nd_root, ...all_options) {
 					message_parts.push(nd_here.FormatFancyMessage(msg, options.colored ? MSG_COLORED : 0));
 				}
 			}
+			let nd_origin = undefined;
 			if (err.origin_addr != undefined) {
-				let nd_here = Node.GetNodeFromUniqueTag(err.origin_addr);
-				message_parts.push(nd_here.FormatFancyMessage('originated from', options.colored ? MSG_COLORED : 0));
+				nd_origin = Node.GetNodeFromUniqueTag(err.origin_addr);
+				message_parts.push(nd_origin.FormatFancyMessage('originated from', options.colored ? MSG_COLORED : 0));
 			} 
 			while (site_path.length) {
 				let utag = site_path.pop();
@@ -440,10 +441,11 @@ omnichecker.Check = function(nd_root, ...all_options) {
 				}
 				message_parts.push(nd_here.FormatFancyMessage(msg, options.colored ? MSG_COLORED : 0));
 			}
-			for (let utag = err.site; utag > 0; utag = ret.ctx_map[utag].utag_parent) {
-				let ctx = ret.ctx_map[utag];
+			let msg = err.msg.replace(/\{code\}/g, nd_loc.dump());
+			if (nd_origin) {
+				msg = msg.replace(/\{origin\}/g, nd_origin.dump());
 			}
-			message_parts.push(nd_loc.FormatFancyMessage(err.msg.replace(/\{code\}/g, nd_loc.dump()), options.colored ? MSG_COLORED | MSG_WARNING : MSG_WARNING))
+			message_parts.push(nd_loc.FormatFancyMessage(msg, options.colored ? MSG_COLORED | MSG_WARNING : MSG_WARNING))
 			console.write(message_parts.join(''));
 		}
 	}
