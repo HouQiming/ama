@@ -15,16 +15,9 @@ module.exports = {
 					for (let value of other_pointers) {
 						if (value.ref_mutable || extra_args.ref_mutable) {
 							errors.push({
-								error: [
-									'`', name, '` is already borrowed ', value.ref_mutable ? 'mutably' : 'immutably',
-									' and cannot be borrowed again ', extra_args.ref_mutable ? 'mutably' : 'immutably'
-								].join(''),
-								value: value
-							});
-						} else if (!value.ref_mutable && extra_args.ref_mutable) {
-							errors.push({
-								error: ['`', name, '` is already borrowed immutably'].join(''),
-								value: value
+								value: value,
+								value_message: ['`', name, '` is already borrowed ', value.ref_mutable ? 'mutably' : 'immutably'].join(''),
+								error: ['and cannot be borrowed again ', extra_args.ref_mutable ? 'mutably' : 'immutably'].join('')
 							});
 						}
 					}
@@ -94,8 +87,9 @@ module.exports = {
 			if (dangling_pointers.length) {
 				return dangling_pointers.map(value_ptr=>{
 					return {
-						error: 'dangling pointer to `{code}`',
-						value: value_ptr
+						error: 'to `{code}`',
+						value: value_ptr,
+						value_message: 'found dangling pointer'
 					}
 				});
 			}

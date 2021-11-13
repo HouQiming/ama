@@ -3,8 +3,6 @@
 //@ama ParseCurrentFile().Save()
 //convention: sandbox objects should be dumb, the shouldn't have methods
 __global.Sandbox={
-	log:console.log,
-	error:console.error,
 	Reset:function(){
 		this.default_value={};
 		this.errors=[];
@@ -137,7 +135,6 @@ __global.Sandbox={
 		}else{
 			value0.push(value);
 		}
-		//this.log(name,value0,value);
 	},
 	MergeContext:function(ctx,all_other_ctxs){
 		for(let ctx_other of all_other_ctxs){
@@ -195,6 +192,7 @@ __global.Sandbox={
 					property:key,
 					origin:offending_value&&offending_value.ctx_utag,
 					origin_addr:offending_value&&offending_value.addr_origin,
+					origin_msg:offending_value&&err.value_message,
 					site:ctx.utag,
 					addr:addr
 				});

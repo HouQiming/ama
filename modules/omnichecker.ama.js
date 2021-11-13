@@ -429,7 +429,11 @@ omnichecker.Check = function(nd_root, ...all_options) {
 			let nd_origin = undefined;
 			if (err.origin_addr != undefined) {
 				nd_origin = Node.GetNodeFromUniqueTag(err.origin_addr);
-				message_parts.push(nd_origin.FormatFancyMessage('originated from', options.colored ? MSG_COLORED : 0));
+				let msg = 'originated from';
+				if (err.origin_msg) {
+					msg = err.origin_msg.replace(/\{origin\}/g, nd_origin.dump());
+				}
+				message_parts.push(nd_origin.FormatFancyMessage(msg, options.colored ? MSG_COLORED : 0));
 			} 
 			while (site_path.length) {
 				let utag = site_path.pop();
