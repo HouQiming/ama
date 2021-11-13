@@ -268,6 +268,7 @@ function dfsGenerateDefault(nd, options) {
 	if (nd.node_class == N_KEYWORD_STATEMENT) {
 		if (nd.data == 'return') {
 			let nd_value = dfsGenerate(nd.c, options);
+			//yes, we need a second level of ()
 			return .((ctx['return'] = .(nd_value)));
 		}
 	}

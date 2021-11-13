@@ -100,7 +100,11 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
+		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		for (auto iter: keywords_scoped_statement) {
+			keywords_statement--->set(iter.first, 1);
+		}
+		for (auto iter: keywords_operator_escape) {
 			keywords_statement--->set(iter.first, 1);
 		}
 		int32_t parse_air_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1);
@@ -111,6 +115,7 @@ namespace ama {
 				ama::Node* ndi_next = ndi->s;
 				if (ndi->node_class == ama::N_REF && keywords_statement--->get(ndi->data, 0)) {
 					//it's a statement keyword, do nothing: it cannot dot or call
+					//the C++ 'operator' keyword also ends here
 				} else if ( parse_air_object && 
 				ndi->node_class == ama::N_SYMBOL && (ndi->data == "." || ndi->data == "::") && 
 				ndi->s && ndi->s->node_class == ama::N_REF ) {

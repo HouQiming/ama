@@ -25,7 +25,7 @@ module.exports = {
 			if (dangling_pointers.length) {
 				return dangling_pointers.map(value_ptr=>{
 					return {
-						error: 'dangling pointer to',
+						error: 'dangling pointer to `{code}`',
 						value: value_ptr
 					}
 				});

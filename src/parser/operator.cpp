@@ -211,11 +211,15 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> cv_qualifiers = ama::GetPrioritizedList(options, "cv_qualifiers");
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
-		//treat statement keywords as named ops: they cannot be operands
+		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
+		//treat statement / escape keywords as named ops: they cannot be operands
 		for (auto iter: keywords_statement) {
 			named_ops--->set(iter.first, 1);
 		}
 		for (auto iter: keywords_scoped_statement) {
+			named_ops--->set(iter.first, 1);
+		}
+		for (auto iter: keywords_operator_escape) {
 			named_ops--->set(iter.first, 1);
 		}
 		//named operators: convert refs to symbols

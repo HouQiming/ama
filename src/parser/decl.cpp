@@ -429,7 +429,7 @@ namespace ama {
 							for (ama::Node* ndj = nd_paramlist_start; ndj != ndi; ndj = ndj->s) {
 								if ( ndj->isRawNode('(', ')') || ndj->node_class == ama::N_CALL ) {
 									nd_paramlist = ndj;
-								} else if ( (ndj->node_class == ama::N_SYMBOL || (ndj->node_class == ama::N_REF && nd_paramlist)) && keywords_after_prototype--->get(ndj->data) ) {
+								} else if ( (ndj->node_class == ama::N_SYMBOL || ndj->node_class == ama::N_REF) && nd_paramlist && keywords_after_prototype--->get(ndj->data) ) {
 									break;
 								} else if ( parse_cpp11_lambda && ndj->isRawNode('[', ']') && ndj->s->isRawNode('(', ')') ) {
 									nd_paramlist = ndj->s;
@@ -715,6 +715,7 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		std::unordered_map<ama::gcstring, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		std::unordered_map<ama::gcstring, int> keywords_not_variable_name = ama::GetPrioritizedList(options, "keywords_not_variable_name");
+		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
 		for ( ama::Node* nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( nd_ref->p->node_class == ama::N_CLASS && nd_ref->p->c->s == nd_ref ) {
@@ -875,6 +876,23 @@ namespace ama {
 					//the starting keyword doesn't count
 					//if it appears after a non-key word, we are likely in the wrong language so take the name
 					if ( !found && keywords_function--->get(ndj->data) ) { continue; }
+					if (keywords_operator_escape--->get(ndj->data, 0) && ndj->s) {
+						//it's `operator`, check for symbol / brackets
+						if (ndj->s->node_class == ama::N_SYMBOL && ndj->s->data != "::") {
+							nd_func->data = ndj->s->data;
+							found = 1;
+							continue;
+						}
+						if (ndj->s->node_class == ama::N_RAW && !ndj->s->c) {
+							//operator() / operator[]
+							std::array<char, 2> buf{};
+							buf[0] = char(ndj->s->flags & 0xff);
+							buf[1] = char((ndj->s->flags >> 8) & 0xff);
+							nd_func->data = ama::gcstring(buf.data(), 2);
+							found = 1;
+							continue;
+						}
+					}
 					nd_func->data = ndj->data;
 					found = 1;
 				}
