@@ -11,7 +11,6 @@ __global.Sandbox={
 		this.ctx_map=[];
 		this.error_dedup=new Set();
 		this.destructors=[];
-		//Sandbox.node_to_value = Object.create(null);
 	},
 	LazyChild:function(parent,name,addr){
 		let ret=parent[name];
@@ -19,9 +18,13 @@ __global.Sandbox={
 			ret=Object.create(null);
 			parent[name]=ret;
 		}
-		//if(addr){
-		//	this.MergePossibility(this.node_to_value,addr,ret);
-		//}
+		return ret;
+	},
+	ReadName:function(parent,name,addr){
+		let ret=parent[name];
+		if(ret===undefined){
+			return [];
+		}
 		return ret;
 	},
 	GetVarsContainer:function(addr,parent){
@@ -61,7 +64,6 @@ __global.Sandbox={
 			ret.children=undefined;
 			this.ctx_map.push(ret);
 			ctx.children[addr]=ret;
-			//this.node_to_value[addr]={ctx_utag:ret.utag};
 		}
 		return ret;
 	},
@@ -73,22 +75,18 @@ __global.Sandbox={
 		value.addr_declared=addr;
 		ctx.vars[name]=value;
 		ctx.vars['<addrs>'][name]=addr;
-		//this.MergePossibility(this.node_to_value,addr,value);
 		return value;
 	},
 	Assign:function(vars,name,value,addr){
-		if(name in vars){
-			while(vars&&!Object.prototype.hasOwnProperty.call(vars,name)){
-				vars=vars.__proto__;
-			}
-		}
+		//if(name in vars){
+		//	while(vars&&!Object.prototype.hasOwnProperty.call(vars,name)){
+		//		vars=vars.__proto__;
+		//	}
+		//}
 		vars[name]=value;
 		if(addr&&!vars['<addrs>'][name]){
 			vars['<addrs>'][name]=addr;
 		}
-		//if(addr){
-		//	this.MergePossibility(this.node_to_value,addr,value);
-		//}
 		return value;
 	},
 	AssignMany:function(ctx,names,values){
@@ -146,10 +144,11 @@ __global.Sandbox={
 			if(ctx===ctx_other){continue;}
 			let vars=ctx.vars;
 			for(let name in ctx_other.vars){
+				if(name.startsWith('<')){continue;}
 				this.MergePossibility(vars,name,ctx_other.vars[name]);
 			}
 			this.MergePossibility(ctx,'return',ctx_other['return']);
-			this.MergePossibility(ctx,'element',ctx_other['element']);
+			//this.MergePossibility(ctx,'element',ctx_other['element']);
 			if(ctx_other.children){
 				let children=this.LazyChild(ctx,'children');
 				for(let addr in ctx_other.children){
@@ -175,10 +174,8 @@ __global.Sandbox={
 		let ret={};
 		for(let f of funcs){
 			let ctx_f=f(params);
-			//this.MergePossibility(this.node_to_value,addr,this.LazyChild(ctx_f,'return'));
 			this.MergePossibility(ret,'return',this.LazyChild(ctx_f,'return'));
 		}
-		//return this.node_to_value[addr];
 		return ret.return;
 	},
 	ArrayWrap:function(value){
@@ -208,14 +205,14 @@ __global.Sandbox={
 			for(let err of ret.filter(err=>err.error!==undefined)){
 				this.FilterErrors(ctx,addr,err)
 			}
-			return ret.filter(err=>err.error==undefined);
+			return ret.filter(err=>err.error===undefined);
 		}
 		return ret
 	},
-	CallActions:function(value,ref_vars,ref_name,ctx,addr,...cbs){
-		let value_a=Array.isArray(value)?value:(value==undefined?[]:[value]);
+	RunHooks:function(value,extra_args,ref_vars,ref_name,ctx,addr,...cbs){
+		let value_a=Array.isArray(value)?value:(value===undefined?[]:[value]);
 		for(let cb of cbs){
-			let ret=this.FilterErrors(ctx,addr,cb(value_a,ref_vars,ref_name,ctx,addr));
+			let ret=this.FilterErrors(ctx,addr,cb(value_a,extra_args,ref_vars,ref_name,ctx,addr));
 			if(Array.isArray(ret)){
 				value_a=ret;
 				if(value_a.length===0){
@@ -255,6 +252,7 @@ __global.Sandbox={
 		return ret;
 	},
 	EndScope:function(ctx){
+		if(!this.destructors.length){return;}
 		for(let desc of this.EnumVars(ctx.vars)){
 			for(let dtor of this.destructors){
 				this.FilterErrors(ctx,desc.addr,dtor(desc.vars[desc.name],desc.vars,desc.name));
