@@ -79,7 +79,7 @@ namespace ama {
 		while (p0 < p1 && uint8_t(comment[p1 - 1]) <= uint8_t(' ')) {
 			p1--;
 		}
-		if (p0 > 0 || p1 < comment.size()) {
+		if (p0 > 0 || p1 < intptr_t(comment.size())) {
 			comment = comment--->subarray(p0, p1 - p0);
 		}
 	}

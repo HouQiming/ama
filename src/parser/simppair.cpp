@@ -28,13 +28,14 @@ struct ParserState {
 	intptr_t indent_level{};
 };
 //updates comment_indent_level0 to the minimum indent inside the comment, which could be larger than its original value
-static ama::gcstring FormatComment(intptr_t& comment_indent_level0, int32_t tab_width, char const* comment_begin, char const* comment_end) {
+static ama::gcstring FormatComment(std::vector<char>& tmp, intptr_t& comment_indent_level0, int32_t tab_width, char const* comment_begin, char const* comment_end) {
 	intptr_t& comment_indent_level = comment_indent_level0;
 	//if( !comment_indent_level || !memchr(comment_begin, '\n', comment_end - comment_begin) ) {
 	//	return new char[|]!(comment_begin, comment_end - comment_begin);
 	//}
-	std::string tmp{};
-	tmp.reserve(comment_end - comment_begin);
+	//std::string tmp;
+	//tmp.reserve(comment_end - comment_begin);
+	tmp.clear();
 	retry:
 	int32_t min_indent_level = 0x7fffffff;
 	for (char const* s = comment_begin; s != comment_end; s++) {
@@ -108,7 +109,9 @@ namespace ama {
 	//start with comments_before almost everywhere
 	ama::Node* ParseSimplePairing(char const* feed, JSValueConst options) {
 		//for debugging
-		char const* feed_all_begin = feed;
+		//char const* feed_all_begin = feed;
+		//use a shared buffer to avoid excessive allocations
+		std::vector<char> comment_buffer{};
 		ama::gcstring s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, "symbols"));
 		std::vector<std::span<char>> symbol_array{};
 		size_t I0 = intptr_t(0L);
@@ -270,7 +273,7 @@ namespace ama {
 						//search flags
 						char const* feed_end = ama::SkipChars(feed + lg, cset_regexp_flags);
 						nd = ama::CreateNode(ama::N_JS_REGEXP, nullptr);
-						nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+						nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 						nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 						if ( premature_close && finish_incomplete_code ) {
 							std::string tmp_buffer(feed, feed_end - feed);
@@ -312,7 +315,7 @@ namespace ama {
 						}
 					}
 					nd = ama::CreateNode(ama::N_SYMBOL, nullptr);
-					nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd->data = ama::gcstring(feed, lg);
 					*state_stack.back().p_nd_next = nd;
@@ -325,7 +328,7 @@ namespace ama {
 				}
 				case CHAR_TYPE_OPENING: {
 					ama::Node* nd = ama::CreateNode(ama::N_RAW, nullptr);
-					nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd->flags = uint32_t(ch);
 					*state_stack.back().p_nd_next = nd;
@@ -343,7 +346,7 @@ namespace ama {
 					if ( state_stack.size() > intptr_t(1L) ) {
 						ama::Node* nd = state_stack.back().nd_parent;
 						if ( (comment_end - comment_begin) > 0 ) {
-							ama::gcstring trailing_comment = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+							ama::gcstring trailing_comment = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 							if ( !nd->c ) {
 								nd->Insert(ama::POS_FRONT, ama::nAir()->setIndent(
 									ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level)
@@ -400,7 +403,7 @@ namespace ama {
 					char const* feed0 = feed;
 					feed = ama::SkipChars(feed, cset_identifier);
 					nd = ama::CreateNode(ama::N_REF, nullptr);
-					nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd->data = ama::gcstring(feed0, feed - feed0);
 					*state_stack.back().p_nd_next = nd;
@@ -427,7 +430,7 @@ namespace ama {
 					}
 					assert(feed != feed0);
 					nd = ama::CreateNode(ama::N_NUMBER, nullptr);
-					nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd->data = ama::gcstring(feed0, feed - feed0);
 					*state_stack.back().p_nd_next = nd;
@@ -459,7 +462,7 @@ namespace ama {
 						}
 					}
 					nd = ama::CreateNode(ama::N_STRING, nullptr);
-					nd->comments_before = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					if ( premature_close && finish_incomplete_code ) {
 						std::string tmp_buffer(feed, lg);
@@ -508,7 +511,7 @@ namespace ama {
 					if ( finish_incomplete_code ) {
 						ama::Node* nd_last = state_stack.back().nd_parent;
 						if (nd_last->c) {nd_last = nd_last->LastChildSP();}
-						nd_last->comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+						nd_last->comments_after = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 						comment_indent_level = current_indent_level;
 						comment_begin = feed;
 						comment_end = feed;
@@ -527,7 +530,7 @@ namespace ama {
 						}
 					}
 					ama::FixParents(nullptr, nd_root);
-					nd_root->comments_after = FormatComment(comment_indent_level, tab_width, comment_begin, comment_end);
+					nd_root->comments_after = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					if ( tab_indent == 2 ) {
 						//auto tab-indent: update the root flag
 						if ( vote_spaceness > vote_tabness ) {

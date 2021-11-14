@@ -18,19 +18,11 @@ function RecursiveFileSearch(ret,dir){
 }
 
 fsext.FindAllFiles=function(dir){
-	//if(!__global.__readdirSync){
-	//	//old version migration
-	//	const pipe=require('pipe');
-	//	return pipe.runPiped(process.platform == 'win32' ? 'dir /s /b "'+dir+'\\*"' + ext : "find '" + dir+"'").stdout.split('\n').filter(fn=>fn);
-	//}
 	return RecursiveFileSearch([],dir);
 }
 
+//bidirectional synchronization will only stop when the timestamps are exactly equal
+//so we need SyncTimestamp to achieve that
 fsext.SyncTimestamp=function(fn_src,fn_tar){
-	//if(!__global.__SyncTimestamp){
-	//	const pipe=require('pipe');
-	//	pipe.run(['touch -r ', JSON.stringify(fn_src), ' ', JSON.stringify(fn_tar)].join(''));
-	//	return;
-	//}
 	__global.__SyncTimestamp(fn_src,fn_tar);
 }

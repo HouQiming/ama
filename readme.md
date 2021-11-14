@@ -48,7 +48,7 @@ Please refer to `script/sync.js` and the relevant module code for details.
 
 ### API Reference
 
-TODO: ParseCode, Node, node-like modules
+TODO: ParseCurrentFile, ParseCode, Node, node-like modules
 
 ## Contributing
 
