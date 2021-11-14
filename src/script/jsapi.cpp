@@ -693,7 +693,7 @@ namespace ama {
 		size_t len = 0;
 		char const* s = JS_ToCStringLen(ctx, &len, argv[0]);
 		int32_t index = ama::UnwrapInt32(argv[1], -1);
-		int32_t length = argc < 3 ? (len - index) : ama::UnwrapInt32(argv[2], -1);
+		int32_t length = argc < 3 ? int32_t(len - index) : ama::UnwrapInt32(argv[2], -1);
 		if ( !s || size_t(index) > len || size_t(index + length) > len || size_t(index) > size_t(index + length) ) {
 			return JS_UNDEFINED;
 		}
@@ -710,18 +710,23 @@ namespace ama {
 	}
 	static void SetupConfigDirs() {
 		///////////
-		char const* home_dir = getenv("HOME");
-		if ( !home_dir ) {
-			home_dir = "/";
-		}
-		ama::std_module_dir = path::normalize(JC::string_concat(home_dir, path::sep, ".ama_modules"));
 		#if defined(_WIN32)
+			char const* home_dir = getenv("USERPROFILE");
+			if ( !home_dir ) {
+				home_dir = "c:\\";
+			}
+			ama::std_module_dir = path::normalize(JC::string_concat(home_dir, path::sep, ".ama_modules"));
 			char const* program_files = getenv("ProgramFiles");
 			if ( !program_files ) {
 				program_files = "\\";
 			}
 			ama::std_module_dir_global = path::normalize(JC::string_concat(program_files, path::sep, "ama\\ama_modules"));
 		#else
+			char const* home_dir = getenv("HOME");
+			if ( !home_dir ) {
+				home_dir = "/";
+			}
+			ama::std_module_dir = path::normalize(JC::string_concat(home_dir, path::sep, ".ama_modules"));
 			ama::std_module_dir_global = "/usr/share/ama_modules";
 		#endif
 	}
@@ -749,7 +754,7 @@ namespace ama {
 		if ( hmodule ) {
 			JS_SetOpaque(val, nullptr);
 			#if defined(_WIN32)
-				FreeLibrary(hmodule);
+				FreeLibrary((HMODULE)hmodule);
 			#else
 				dlclose(hmodule);
 			#endif
@@ -1142,7 +1147,8 @@ namespace ama {
 		}
 		if ( fn_initjs.empty() ) {
 			//we NEED that
-			fprintf(stderr, "panic: failed to find ${AMA_MODULES}/_init.js, things could break\n");
+			fprintf(stderr, "panic: failed to find ${AMA_MODULES}/_init.js\n");
+			abort();
 		} else {
 			JC::StringOrError bootstrap_code = fs::readFileSync(fn_initjs);
 			JSValueConst ret = JS_Eval(

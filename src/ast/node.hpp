@@ -132,7 +132,7 @@ namespace ama {
 			int main(){
 				return 0;
 			}
-		The `return 0;` node has .indent_level=4 (default tab indent) while
+		The `return 0;` node has .indent_level=4 (default tab width) while
 		all other nodes have .indent_level=0
 		*/
 		int8_t indent_level{};
@@ -140,6 +140,8 @@ namespace ama {
 		//They must not affect code generation
 		uint16_t tmp_flags{};
 		//flags are persistent flags affecting code generation
+		//The flags of N_RAW is `opening_char|closing_char<<8`, for example:
+		//    .([]) is nRaw().setFlags(0x5d5b)
 		uint32_t flags{};
 		//The associated string for leaf nodes
 		ama::gcstring data{};
@@ -252,7 +254,7 @@ namespace ama {
 		//there's any error, it prints some messages and aborts 
 		void Validate();
 		//ValidateEx returns the errors count instead of aborting if quiet==1
-		intptr_t ValidateEx(intptr_t max_depth, int quiet);
+		int ValidateEx(intptr_t max_depth, int quiet);
 		int ValidateChildCount(int n_children);
 		ama::Node* ParentStatement();
 		ama::Node* Prev();

@@ -149,7 +149,7 @@ namespace ama {
 	}
 	JSValue CallJSMethod(JSValue this_val, char const* name, std::span<JSValue> args) {
 		JSAtom atom = JS_NewAtom(ama::jsctx, name);
-		JSValue ret = JS_Invoke(jsctx, this_val, atom, args.size(), args.data());
+		JSValue ret = JS_Invoke(jsctx, this_val, atom, int(args.size()), args.data());
 		JS_FreeAtom(ama::jsctx, atom);
 		for (JSValue &val: args) {
 			JS_FreeValue(ama::jsctx, val);

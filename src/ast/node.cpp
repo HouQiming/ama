@@ -739,7 +739,7 @@ int ama::Node::ValidateChildCount(int n_children) {
 	}
 	return 1;
 }
-intptr_t ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
+int ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 	intptr_t error_count = intptr_t(0L);
 	std::unordered_map<ama::Node*, int> g_validate_dedup{};
 	g_validate_dedup.clear();
@@ -757,9 +757,9 @@ intptr_t ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 			error_count += 1;
 			continue;
 		}
-		int depth = (nd->p ? g_validate_dedup--->get(nd->p) : 0) + 1;
+		intptr_t depth = (nd->p ? g_validate_dedup--->get(nd->p) : 0) + 1;
 		g_validate_dedup--->set(nd, depth);
-		if ( stack.size() >= max_depth || depth >= max_depth ) {
+		if ( intptr_t(stack.size()) >= max_depth || depth >= max_depth ) {
 			if ( !quiet ) {
 				printf("node too deep\n");
 			}

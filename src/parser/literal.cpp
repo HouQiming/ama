@@ -60,7 +60,7 @@ namespace ama {
 			return JC::array_cast<std::string>(s);
 		}
 		std::string ret{};
-		for (intptr_t i = intptr_t(1L); i < (s.size() - intptr_t(1L)); ++i) {
+		for (intptr_t i = intptr_t(1L); i < intptr_t(s.size() - intptr_t(1L)); ++i) {
 			char ch = s[i];
 			if ( ch == '\\' ) {
 				i += intptr_t(1L);

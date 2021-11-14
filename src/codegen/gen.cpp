@@ -286,7 +286,8 @@ namespace ama {
 			return;
 		}
 		intptr_t p_last_line = this->p_last_indent;
-		int end_last_indent = p_last_line;while ( end_last_indent < this->code.size() && (this->code[end_last_indent] == ' ' || this->code[end_last_indent] == '\t') ) {
+		intptr_t end_last_indent = p_last_line;
+		while ( end_last_indent < this->code.size() && (this->code[end_last_indent] == ' ' || this->code[end_last_indent] == '\t') ) {
 			end_last_indent += 1;
 		}
 		while ( current_indent_level < expected_indent_level ) {
@@ -314,14 +315,14 @@ namespace ama {
 		//	this.code.push(comment);
 		//	return;
 		//}
-		for (intptr_t i = 0; i < comment.size(); i++) {
+		for (intptr_t i = 0; i < intptr_t(comment.size()); i++) {
 			char ch = comment[i];
 			if ( ch == '\n' ) {
 				this->code--->push(ch);
 				//unify in-comment indent
 				intptr_t indent_level = expected_indent_level;
 				i += 1;
-				while ( i < comment.size() ) {
+				while ( i < intptr_t(comment.size()) ) {
 					if ( comment[i] == ' ' ) {
 						indent_level += 1;
 					} else if ( comment[i] == '\t' ) {
@@ -553,7 +554,7 @@ std::string ama::Node::FormatFancyMessage(std::span<char> msg, int flags)const {
 	intptr_t ofs0_tilde = -1L;
 	intptr_t ofs1_tilde = -1L;
 	ret--->push("    ");
-	for (intptr_t ofs = 0; ofs < ctx.code.size(); ofs++) {
+	for (intptr_t ofs = 0; ofs < intptr_t(ctx.code.size()); ofs++) {
 		auto ch = ctx.code[ofs];
 		if (ofs == fdctx.ofs0) {
 			ofs0_tilde = ret.size();

@@ -243,7 +243,7 @@
 				if ( !real_root_env || !real_root_env->size() ) {
 					real_root = JC::string_concat(parts.root, '\\');
 				} else {
-					real_root = JC::string_concat(real_root_env, "");
+					real_root = JC::string_concat(real_root_env.some, "");
 				}
 			}
 			if ( !real_root.size() ) {

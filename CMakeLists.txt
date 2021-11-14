@@ -1,12 +1,12 @@
-#note: use `cmake -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE` to build on Windows
 cmake_minimum_required (VERSION 3.0)
 project(entry)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-delete-null-pointer-checks")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks")
-string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
-#if(CMAKE_BUILD_TYPE_UPPER MATCHES DEBUG)
-#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LIBCPP_DEBUG=0 -D_GLIBCXX_DEBUG")
-#endif()
+if(MSVC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4068 /D_CRT_SECURE_NO_WARNINGS")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4068 /EHsc /std:c++latest /D_CRT_SECURE_NO_WARNINGS")
+else()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-delete-null-pointer-checks")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks")
+endif()
 add_executable(ama
 	"src/util/dumpstack/linux_bt.cpp"
 	"src/util/dumpstack/win_dbghelp.cpp"
@@ -56,6 +56,9 @@ if(WIN32)
 		TARGET amal
 		APPEND PROPERTY LINK_LIBRARIES
 		kernel32.lib user32.lib)
+	if(MSVC)
+		set_target_properties(amal PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
+	endif()
 else()
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funwind-tables")

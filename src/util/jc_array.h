@@ -456,7 +456,7 @@ public:
 	inline intptr_t lastIndexOf(char b)const{
 		#ifdef _MSC_VER
 			for(intptr_t i=(intptr_t)this->size()-1;i>=0;--i){
-				if(a[i]==b){return i;}
+				if(this->data()[i]==b){return i;}
 			}
 			return -1L;
 		#else

@@ -24,7 +24,7 @@ namespace DumpStack {
 			frame.AddrFrame.Offset = ctx->Rbp; frame.AddrFrame.Mode = AddrModeFlat;
 			frame.AddrStack.Offset = ctx->Rsp; frame.AddrStack.Mode = AddrModeFlat;
 			#define MY_MACHINE_TYPE IMAGE_FILE_MACHINE_AMD64
-			#define PTR_FORMAT"%016llx"
+			#define PTR_FORMAT "%016llx"
 			fprintf(stderr,
 				"rax=" PTR_FORMAT" rcx=" PTR_FORMAT" rdx=" PTR_FORMAT" rbx=" PTR_FORMAT"\n"
 				"rsp=" PTR_FORMAT" rbp=" PTR_FORMAT" rsi=" PTR_FORMAT" rdi=" PTR_FORMAT"\n"
@@ -43,7 +43,7 @@ namespace DumpStack {
 			frame.AddrFrame.Offset = ctx->Ebp; frame.AddrFrame.Mode = AddrModeFlat;
 			frame.AddrStack.Offset = ctx->Esp; frame.AddrStack.Mode = AddrModeFlat;
 			#define MY_MACHINE_TYPE IMAGE_FILE_MACHINE_I386
-			#define PTR_FORMAT"%08x"
+			#define PTR_FORMAT "%08x"
 		#endif
 		HANDLE hprocess = GetCurrentProcess();
 		int is_call = 0;

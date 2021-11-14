@@ -116,7 +116,7 @@ namespace ama {
 	ama::Node* ParseAssignment(ama::Node* nd_root, JSValueConst options) {
 		std::unordered_map<ama::gcstring, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
 		std::vector<ama::Node*> Q = nd_root->FindAllWithin(0, ama::N_RAW);
-		for (intptr_t i = 0; i < Q.size(); i++) {
+		for (intptr_t i = 0; i < intptr_t(Q.size()); i++) {
 			ama::Node* nd_raw = Q[i];
 			ama::Node* ndi = nd_raw->c;
 			while ( ndi ) {

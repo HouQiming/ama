@@ -5,7 +5,7 @@
 #include "../util/jc_array.h"
 /*#pragma add("jc_files", "./gen.jc");*/
 namespace ama {
-	class CodeGenerator;
+	struct CodeGenerator;
 	typedef int(*FGeneratorHook)(ama::CodeGenerator*, ama::Node*);
 	typedef int(*FGeneratorHookComment)(ama::CodeGenerator*, const char*, intptr_t, int, intptr_t);
 	struct CodeGenerator {

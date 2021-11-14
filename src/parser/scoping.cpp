@@ -69,7 +69,7 @@ namespace ama {
 	static void FoldIndentGroup(
 	std::unordered_map<ama::gcstring, int> const& keywords_extension_clause,
 	std::vector<ama::Node*>& lines_out, int32_t level, intptr_t lineno, ama::Node* nd_nextline) {
-		for (intptr_t i = lineno; i < lines_out.size(); i += 1) {
+		for (intptr_t i = lineno; i < intptr_t(lines_out.size()); i += 1) {
 			lines_out[i]->AdjustIndentLevel(-level);
 		}
 		ama::Node* nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(keywords_extension_clause, lines_out--->subarray(lineno))));

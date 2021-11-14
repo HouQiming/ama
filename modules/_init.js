@@ -247,15 +247,18 @@ Node.GetFunctionNameNode=function() {
 }
 
 
-//__global.c_include_paths=['/usr/include','/usr/local/include']
+//The default_options tries to be generic enough for any language.
 __global.default_options = {
 	enable_hash_comment: 0,
 	symbols: '!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->*',
+	//we treat # as an identifier character to make C stuff like `#define` more idiosyncratic
 	identifier_charset: '0-9A-Za-z_$#',
 	number_charset: '0-9bouUlLfFn.eE',
 	hex_number_charset: '0-9A-Fa-fx.pPuUlLn',
 	exponent_charset: '0-9f',
+	//could use 'dgimsuy', but a later JS standard could extend it
 	regexp_flags_charset: 'A-Za-z',
+	//we don't really look up the Unicode tables: enable_unicode_identifiers means "all high bytes are treated as identifiers"
 	enable_unicode_identifiers: 1,
 	finish_incomplete_code: 0,
 	///////////
@@ -276,11 +279,12 @@ __global.default_options = {
 	parse_js_regexp: 1,
 	///////////
 	//the 'of' operator is a hack to improve JS for-of parsing
+	//each \n denotes a change of priority level, it must be followed by a ' '
 	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in of instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
 	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
 	postfix_operators: 'const volatile ++ --',
 	cv_qualifiers: 'const volatile',
-	//void is too common in C/C++ to be treated as an operator by default
+	//the JS `void` is too common in C/C++ to be treated as an operator by default
 	named_operators: 'typeof delete sizeof await co_await new in of instanceof as const volatile',
 	//unlike general named_operators, c_type_prefix_operators only make sense when used before another identifier
 	c_type_prefix_operators: 'unsigned signed long short',
@@ -301,7 +305,7 @@ __global.default_options = {
 	///////////
 	//codegen
 	tab_width: 4,
-	tab_indent: 2, //2 for auto, will be *updated* by ParseSimpPairing to reflect what the original source did
+	tab_indent: 2, //2 for auto
 	auto_space: 1,
 };
 
@@ -332,6 +336,7 @@ __global.__PrepareOptions = function(filename, options) {
 function fake_options_ctor() {}
 fake_options_ctor.prototype = __global.default_options;
 
+//__InheritOptions is called from native code to sanitize option objects
 __global.__InheritOptions = function(options) {
 	if (!options || options === __global.default_options) {return Object.create(__global.default_options);}
 	if (options instanceof fake_options_ctor) {

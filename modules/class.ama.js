@@ -135,7 +135,7 @@ function LookupClassInFile(ret, nd_root, nd_name) {
 	}
 }
 
-///look up a ref / dot node
+//look up a ref / dot node
 Node.LookupClass = function() {
 	let ret = [];
 	for (let nd_root of depends.ListAllDependency(this.Root(), true)) {
