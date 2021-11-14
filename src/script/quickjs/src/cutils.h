@@ -25,26 +25,28 @@
 #ifndef CUTILS_H
 #define CUTILS_H
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <stdlib.h>
 #include <inttypes.h>
 
 /* set if CPU is big endian */
 #undef WORDS_BIGENDIAN
 
-#ifdef _MSC_VER
-#include <windows.h>
-#define likely(x)       x
-#define unlikely(x)     x
-#define force_inline __forceinline
-#define no_inline __declspec(noinline)
-#define __maybe_unused
-#define alloca _alloca
-#else
+#if defined(__GNUC__) || defined(__clang__)
 #define likely(x)       __builtin_expect(!!(x), 1)
 #define unlikely(x)     __builtin_expect(!!(x), 0)
 #define force_inline inline __attribute__((always_inline))
 #define no_inline __attribute__((noinline))
 #define __maybe_unused __attribute__((unused))
+#else
+#define likely(x)       x
+#define unlikely(x)     x
+#define force_inline
+#define no_inline
+#define __maybe_unused
 #endif
 
 #define xglue(x, y) x ## y
@@ -121,7 +123,6 @@ static inline int64_t min_int64(int64_t a, int64_t b)
         return b;
 }
 
-/* WARNING: undefined if a = 0 */
 static inline int clz32(unsigned int a)
 {
 #ifdef _MSC_VER
@@ -139,45 +140,49 @@ static inline int clz32(unsigned int a)
 #endif
 }
 
-/* WARNING: undefined if a = 0 */
-static inline int clz64(uint64_t a)
-{
-    return __builtin_clzll(a);
-}
+///* WARNING: undefined if a = 0 */
+//static inline int clz32(unsigned int a)
+//{
+//    return __builtin_clz(a);
+//}
 
-/* WARNING: undefined if a = 0 */
-static inline int ctz32(unsigned int a)
-{
-    return __builtin_ctz(a);
-}
+///* WARNING: undefined if a = 0 */
+//static inline int clz64(uint64_t a)
+//{
+//    return __builtin_clzll(a);
+//}
 
-/* WARNING: undefined if a = 0 */
-static inline int ctz64(uint64_t a)
-{
-    return __builtin_ctzll(a);
-}
+///* WARNING: undefined if a = 0 */
+//static inline int ctz32(unsigned int a)
+//{
+//    return __builtin_ctz(a);
+//}
+
+///* WARNING: undefined if a = 0 */
+//static inline int ctz64(uint64_t a)
+//{
+//    return __builtin_ctzll(a);
+//}
 
 #ifdef _MSC_VER
-#pragma pack(push,1)
-#define PACKED
-#else
-#define PACKED __attribute__((packed))
+#define alloca _alloca
+#define __attribute__(foo)
+#pragma pack(push, 1)
 #endif
-struct PACKED packed_u64 {
+struct __attribute__((packed)) packed_u64 {
     uint64_t v;
 };
 
-struct PACKED packed_u32 {
+struct __attribute__((packed)) packed_u32 {
     uint32_t v;
 };
 
-struct PACKED packed_u16 {
+struct __attribute__((packed)) packed_u16 {
     uint16_t v;
 };
 #ifdef _MSC_VER
 #pragma pack(pop)
 #endif
-#undef PACKED
 
 static inline uint64_t get_u64(const uint8_t *tab)
 {
@@ -294,17 +299,14 @@ static inline int dbuf_put_u64(DynBuf *s, uint64_t val)
 {
     return dbuf_put(s, (uint8_t *)&val, 8);
 }
-#if defined(__GNUC__) || defined(__clang__)
-#define FMT_HACK __attribute__((format(printf, 2, 3)))
-#else
-#define FMT_HACK
-#endif
-int FMT_HACK dbuf_printf(DynBuf *s,const char *fmt, ...);
-#undef FMT_HACK
-
+int __attribute__((format(printf, 2, 3))) dbuf_printf(DynBuf *s, const char *fmt, ...);
 void dbuf_free(DynBuf *s);
 static inline BOOL dbuf_error(DynBuf *s) {
     return s->error;
+}
+static inline void dbuf_set_error(DynBuf *s)
+{
+    s->error = TRUE;
 }
 
 #define UTF8_CHAR_LEN_MAX 6

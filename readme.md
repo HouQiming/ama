@@ -26,6 +26,6 @@ cd build
 cmake ..
 cmake --build .
 cd ..
-xcopy /e modules %USERPROFILE%\.ama_modules
+xcopy /e /y modules %USERPROFILE%\.ama_modules
 build\ama script\sync.js
 ```

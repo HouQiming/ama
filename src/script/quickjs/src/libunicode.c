@@ -541,7 +541,8 @@ static int unicode_decomp_entry(uint32_t *res, uint32_t c,
                     return 0;
             }
             return l;
-        case DECOMP_TYPE_LL1:case DECOMP_TYPE_LL2:
+        case DECOMP_TYPE_LL1:
+        case DECOMP_TYPE_LL2:
             {
                 uint32_t k, p;
                 l = type - DECOMP_TYPE_LL1 + 1;
