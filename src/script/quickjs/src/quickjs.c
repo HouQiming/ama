@@ -30,6 +30,10 @@
 #include <assert.h>
 #ifdef _WIN32
 #include <windows.h>
+#pragma warning(disable: 4018)
+#pragma warning(disable: 4146)
+#pragma warning(disable: 4244)
+#pragma warning(disable: 4267)
 #else
 #include <sys/time.h>
 #endif
@@ -41910,12 +41914,28 @@ static JSValue js_math_random(JSContext *ctx, JSValueConst this_val,
     return __JS_NewFloat64(ctx, u.d - 1.0);
 }
 
+#ifdef _MSC_VER
+static double js_fabs(double a){
+	return fabs(a);
+}
+static double js_floor(double a){
+	return floor(a);
+}
+static double js_ceil(double a){
+	return ceil(a);
+}
+#else
+#define js_fabs fabs
+#define js_floor floor
+#define js_ceil ceil
+#endif
+
 static const JSCFunctionListEntry js_math_funcs[] = {
     JS_CFUNC_MAGIC_DEF("min", 2, js_math_min_max, 0 ),
     JS_CFUNC_MAGIC_DEF("max", 2, js_math_min_max, 1 ),
-    JS_CFUNC_SPECIAL_DEF("abs", 1, f_f, fabs ),
-    JS_CFUNC_SPECIAL_DEF("floor", 1, f_f, floor ),
-    JS_CFUNC_SPECIAL_DEF("ceil", 1, f_f, ceil ),
+    JS_CFUNC_SPECIAL_DEF("abs", 1, f_f, js_fabs ),
+    JS_CFUNC_SPECIAL_DEF("floor", 1, f_f, js_floor ),
+    JS_CFUNC_SPECIAL_DEF("ceil", 1, f_f, js_ceil ),
     JS_CFUNC_SPECIAL_DEF("round", 1, f_f, js_math_round ),
     JS_CFUNC_SPECIAL_DEF("sqrt", 1, f_f, sqrt ),
 
@@ -51614,7 +51634,7 @@ JSValue JS_GetTypedArrayBuffer(JSContext *ctx, JSValueConst obj,
     if (pbyte_length)
         *pbyte_length = ta->length;
     if (pbytes_per_element) {
-        *pbytes_per_element = 1 << typed_array_size_log2(p->class_id);
+        *pbytes_per_element = (size_t)(1 << typed_array_size_log2(p->class_id));
     }
     return JS_DupValue(ctx, JS_MKPTR(JS_TAG_OBJECT, ta->buffer));
 }
@@ -52825,7 +52845,7 @@ static JSValue js_typed_array_sort(JSContext *ctx, JSValueConst this_val,
             abort();
         }
         array_ptr = p->u.array.u.ptr;
-        elt_size = 1 << typed_array_size_log2(p->class_id);
+        elt_size = (size_t)(1 << typed_array_size_log2(p->class_id));
         if (!JS_IsUndefined(tsc.cmp)) {
             uint32_t *array_idx;
             void *array_tmp;
