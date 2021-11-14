@@ -185,6 +185,10 @@ Node.StripRedundantPrefixSpace = function(aggressive) {
 		return s&&!s.trim()&&(aggressive||s.indexOf('\n')<0);
 	}
 	for (let ndi = this; ndi; ndi = ndi.PreorderNext(this)) {
+		if(ndi.node_class===N_KEYWORD_STATEMENT&&ndi.data==='#define'){
+			ndi=ndi.PreorderSkip();
+			continue;
+		}
 		if (isSpace(ndi.comments_before)){
 			if(ndi.p && (
 				ndi.p.node_class === N_CALL || ndi.p.node_class === N_CALL_TEMPLATE || 

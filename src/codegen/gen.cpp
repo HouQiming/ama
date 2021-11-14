@@ -287,7 +287,7 @@ namespace ama {
 		}
 		intptr_t p_last_line = this->p_last_indent;
 		intptr_t end_last_indent = p_last_line;
-		while ( end_last_indent < this->code.size() && (this->code[end_last_indent] == ' ' || this->code[end_last_indent] == '\t') ) {
+		for (; end_last_indent < this->code.size() && (this->code[end_last_indent] == ' ' || this->code[end_last_indent] == '\t');) {
 			end_last_indent += 1;
 		}
 		while ( current_indent_level < expected_indent_level ) {

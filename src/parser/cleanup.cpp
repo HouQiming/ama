@@ -73,7 +73,7 @@ namespace ama {
 	static void TrimComment(ama::gcstring& comment) {
 		intptr_t p0 = 0L;
 		intptr_t p1 = comment.size();
-		while (p0 < p1 && uint8_t(comment[p0]) <= uint8_t(' ')) {
+		for (; p0 < p1 && uint8_t(comment[p0]) <= uint8_t(' ');) {
 			p0++;
 		}
 		while (p0 < p1 && uint8_t(comment[p1 - 1]) <= uint8_t(' ')) {
