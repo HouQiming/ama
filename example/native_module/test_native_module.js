@@ -1,5 +1,4 @@
-/*
-@ama//*/
+#!/usr/bin/env ama
 
 let native_module=require('./build/linux_debug/native_module');
 

@@ -727,7 +727,7 @@ namespace ama {
 				home_dir = "/";
 			}
 			ama::std_module_dir = path::normalize(JC::string_concat(home_dir, path::sep, ".ama_modules"));
-			ama::std_module_dir_global = "/usr/share/ama_modules";
+			ama::std_module_dir_global = "/usr/local/share/ama_modules";
 		#endif
 	}
 	static uint32_t g_native_library_classid = 0u;

@@ -1,6 +1,5 @@
 #!/usr/bin/env ama
-//starting the line with a quote will terminate the @ama
-//'use strict' is the default setting anyway
+'use strict';
 const pipe=require('pipe');
 const path=require('path');
 const fs=require('fs');

@@ -1,5 +1,5 @@
 #include <math.h>
-#include "../src/script/jsapi.hpp"
+#include "../../src/script/jsapi.hpp"
 
 static JSValueConst JSerf(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 	if(argc < 1){
