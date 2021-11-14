@@ -3,6 +3,7 @@
 const pipe = require('pipe');
 const path = require('path');
 const fs = require('fs');
+const fsext = require('fsext');
 
 /**
 @param options Options and default values:
@@ -29,9 +30,12 @@ module.exports = function Bisync(options) {
 	let all_cpp_files = new Set();
 	let mext_dot = middle_extension + '.';
 	let exts = options.processed_extensions || ['.cpp', '.hpp', '.cu'];
+	let all_files = fsext.FindAllFiles(dir_src);
 	for (let ext of exts) {
-		for (let fn_rel_cpp of pipe.runPiped(process.platform == 'win32' ? 'dir /s /b *' + ext : "find -iname '*" + ext + "'").stdout.split('\n')) {
-			if (!fn_rel_cpp) {continue;}
+		//for (let fn_rel_cpp of pipe.runPiped(process.platform == 'win32' ? 'dir /s /b *' + ext : "find -iname '*" + ext + "'").stdout.split('\n')) 
+		for (let fn_rel_cpp of all_files) {
+			//if (!fn_rel_cpp) {continue;}
+			if (path.extname(fn_rel_cpp) != ext) {continue;}
 			all_cpp_files.add(path.resolve(dir_src, fn_rel_cpp.replace(mext_dot, '.')));
 		}
 	}
@@ -46,14 +50,14 @@ module.exports = function Bisync(options) {
 		if (t_ama < t_cpp || process.aba || process[rebuild_ama]) {
 			//cpp to ama
 			if (process.dry_run || ProcessAmaFile(fn_cpp, script_cpp2ama) == 1) {
-				if (!process.dry_run) {pipe.run(['touch -r ', JSON.stringify(fn_cpp), ' ', JSON.stringify(fn_ama_cpp)].join(''));}
+				if (!process.dry_run) {fsext.SyncTimestamp(fn_cpp, fn_ama_cpp);}
 				console.log(process.dry_run ? 'will update' : 'updated', fn_ama_cpp);
 			}
 		}
 		if (t_cpp < t_ama || process.aba || process[rebuild_cpp]) {
 			//ama to cpp
 			if (process.dry_run || ProcessAmaFile(fn_ama_cpp, script_ama2cpp) == 1) {
-				if (!process.dry_run) {pipe.run(['touch -r ', JSON.stringify(fn_ama_cpp), ' ', JSON.stringify(fn_cpp)].join(''));}
+				if (!process.dry_run) {fsext.SyncTimestamp(fn_ama_cpp, fn_cpp);}
 				console.log(process.dry_run ? 'will update' : 'updated', fn_cpp);
 			}
 		}

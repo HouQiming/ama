@@ -591,6 +591,18 @@ namespace ama {
 			return ret;
 		#endif
 	}
+	static JSValueConst JSReaddirSync(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
+		if ( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a path");
+		}
+		return ama::WrapString(JSON::stringify(fs::readdirSync(ama::UnwrapStringSpan(argv[0]))));
+	}
+	static JSValueConst JSSyncTimestamp(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
+		if ( argc < 2 ) {
+			return JS_ThrowReferenceError(ctx, "need two file names");
+		}
+		return JS_NewBool(ctx, fs::SyncTimestamp(ama::UnwrapStringSpan(argv[0]), ama::UnwrapStringSpan(argv[1])));
+	}
 	static JSValueConst JSPathNormalize(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a path");
@@ -960,6 +972,18 @@ namespace ama {
 			ama::jsctx, global, "__statSync", JS_NewCFunction(
 				ama::jsctx, JSStatSync,
 				"statSync", 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, "__readdirSync", JS_NewCFunction(
+				ama::jsctx, JSReaddirSync,
+				"readdirSync", 1
+			)
+		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, "__SyncTimestamp", JS_NewCFunction(
+				ama::jsctx, JSSyncTimestamp,
+				"SyncTimestamp", 2
 			)
 		);
 		JS_SetPropertyStr(

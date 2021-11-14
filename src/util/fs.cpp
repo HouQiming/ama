@@ -4,6 +4,8 @@
 #else
 	#include <unistd.h>
 	#include <fcntl.h>
+	#include <dirent.h>
+	#include <utime.h>
 	#include <sys/types.h>
 	#include <sys/stat.h>
 #endif
@@ -30,7 +32,7 @@ typedef struct stat stat_t;
 				ch &= 0x3ff;
 				ch += 0xdc00;
 			} else if ( ch == '/' ) {
-				ch = '/';
+				ch = '\\';
 			}
 			ret--->push(uint16_t(uint32_t(ch)));
 		}
@@ -220,4 +222,86 @@ intptr_t fs::appendFileSync(std::span<char> fn, std::span<char> content) {
 	size_t n_written = fwrite(content.data(), 1, content.size(), f);
 	fclose(f);
 	return n_written;
+}
+std::vector<fs::Dirent> fs::readdirSync(std::span<char> dir) {
+	std::vector<fs::Dirent> ret{};
+	#if defined(_WIN32)
+		std::vector<uint16_t> su = fs::PathToWindows(dir);
+		su.pop_back();
+		su.push_back(uint16_t('\\'));
+		su.push_back(uint16_t('*'));
+		su.push_back(uint16_t(0));
+		WIN32_FIND_DATAW fdata{};
+		HANDLE hdir = FindFirstFileW(LPCWSTR(su.data()), &fdata);
+		if (hdir && hdir != INVALID_HANDLE_VALUE) {
+			for (; ;) {
+				intptr_t wslen = 0;
+				while (wslen < MAX_PATH) {
+					if (!fdata.cFileName[wslen]) {break;}
+					wslen++;
+				}
+				ret.push_back(fs::Dirent{
+					.name = unicode::UTF16ToUTF8(std::span<uint16_t>((uint16_t*)fdata.cFileName, wslen)),
+					.is_file = uint8_t(!(fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)),
+					.is_dir = uint8_t(!!(fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				});
+				if (!FindNextFileW(hdir, &fdata)) {
+					break;
+				}
+			}
+			FindClose(hdir);
+		}
+	#else
+		std::string sdir = JC::array_cast<std::string>(dir);
+		DIR* hdir = opendir(sdir.c_str());
+		if (hdir) {
+			for (; ;) {
+				struct dirent *entry = readdir(hdir);
+				if (!entry) {break;}
+				ret.push_back(fs::Dirent{
+					.name = entry->d_name,
+					.is_file = uint8_t(entry->d_type == DT_REG),
+					.is_dir = uint8_t(entry->d_type == DT_DIR)
+				});
+			}
+			closedir(hdir);
+		}
+	#endif
+	return std::move(ret);
+}
+
+int fs::SyncTimestamp(std::span<char> fn_src, std::span<char> fn_tar) {
+	#if defined(_WIN32)
+		std::vector<uint16_t> fn_srcu = fs::PathToWindows(fn_src);
+		std::vector<uint16_t> fn_taru = fs::PathToWindows(fn_tar);
+		HANDLE hsrc = CreateFileW(LPCWSTR(fn_srcu.data()), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+		if (!hsrc || hsrc == INVALID_HANDLE_VALUE) {return 0;}
+		HANDLE htar = CreateFileW(LPCWSTR(fn_taru.data()), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+		if (!htar || htar == INVALID_HANDLE_VALUE) {
+			CloseHandle(hsrc);
+			return 0;
+		}
+		int ret = 0;
+		FILETIME ctime{};
+		FILETIME atime{};
+		FILETIME mtime{};
+		if (GetFileTime(hsrc, &ctime, &atime, &mtime)) {
+			SetFileTime(htar, &ctime, &atime, &mtime);
+			ret = 1;
+		}
+		CloseHandle(hsrc);
+		CloseHandle(htar);
+		return ret;
+	#else
+		std::string fn_srcz = JC::array_cast<std::string>(fn_src);
+		std::string fn_tarz = JC::array_cast<std::string>(fn_tar);
+		struct stat sb;
+		if ( stat(fn_srcz.c_str(), &sb) != 0 ) {
+			return 0;
+		}
+		struct timespec times[2];
+		times[0] = sb.st_atim;
+		times[1] = sb.st_mtim;
+		return utimensat(AT_FDCWD, fn_tarz.c_str(), times, 0) == 0;
+	#endif
 }

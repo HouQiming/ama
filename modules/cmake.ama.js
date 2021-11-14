@@ -290,14 +290,14 @@ Node.CMakeBuild = function(options) {
 	process.chdir(path.dirname(path.resolve(this.data)));
 	let build = (options.build || process.build || 'Debug');
 	let ret_code = pipe.run([
-		'mkdir -p build/', process.platform, '_', build.toLowerCase(), ' && ',
-		'cd build/', process.platform, '_', build.toLowerCase(), ' && ',
+		__platform == 'win32' ? 'md build\\' : 'mkdir -p build/', process.platform, '_', build.toLowerCase(), ' && ',
+		__platform == 'win32' ? 'cd build\\' : 'cd build/', process.platform, '_', build.toLowerCase(), ' && ',
 		'cmake -DCMAKE_BUILD_TYPE=', build, ' ../.. && ',
 		'cmake --build .', options.target ? ' --target ' + options.target : '', ' --config ', build, options.rebuild || process.rebuild ? ' --clean-first' : ''
 	].join(''));
 	if (ret_code == 0 && (options.run || process.run) && options.target) {
 		pipe.run([
-			'build/', process.platform, '_', build.toLowerCase(), '/', options.target, ' ',
+			__platform == 'win32' ? 'build\\' : 'build/', process.platform, '_', build.toLowerCase(), __platform == 'win32' ? '\\' : '/', options.target, ' ',
 			options.run.map(s=>s.indexOf(' ') >= 0 ? JSON.stringify(s) : s).join(' ')
 		].join(''));
 	}

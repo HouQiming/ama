@@ -7,7 +7,12 @@ path.join = function(...args) {
 }
 
 path.resolve = function(...args) {
-	return __path_toAbsolute(args.join('/'));
+	let ret=[];
+	for(let fn of args){
+		if(__path_isAbsolute(fn)){ret.length=0;}
+		ret.push(fn);
+	}
+	return __path_toAbsolute(ret.join('/'));
 }
 
 path.parse = function(s) {

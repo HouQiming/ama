@@ -17,3 +17,17 @@ fs.readFileSync = function(fn) {
 fs.existsSync = __existsSync;
 fs.writeFileSync = __writeFileSync;
 fs.statSync = __statSync;
+
+fs.Dirent=function(item){
+	Object.assign(this,item);
+}
+
+fs.Dirent.prototype.isDirectory=function(){return this.is_dir;}
+fs.Dirent.prototype.isFile=function(){return this.is_file;}
+
+fs.readdirSync=function(dir,options){
+	if(!options||options.withFileTypes!==true){
+		throw new Error('{withFileTypes:true} is mandatory');
+	}
+	return JSON.parse(__readdirSync(dir)).map(item=>new fs.Dirent(item));
+}

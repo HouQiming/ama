@@ -31,7 +31,9 @@ module.exports = function(nd_root) {
 				}
 				if (nd_test.node_class !== N_SCOPE && (ndi.node_class === N_KEYWORD_STATEMENT && !ndi.data.startsWith('#') || 
 					ndi.node_class === N_ASSIGNMENT || 
-					ndi.node_class === N_CALL
+					ndi.node_class === N_CALL ||
+					ndi.node_class === N_POSTFIX ||
+					ndi.node_class === N_PREFIX
 				)) {
 					new_children[i] = nSemicolon(ndi.toSingleNode());
 				}
