@@ -4,8 +4,7 @@ module.exports = {
 	templates: [
 		{
 			pattern: .(&.(Node.MatchAny('foo'))),
-			nd: (values, extra_args, vars, name, ctx)=>{
-				//console.log(vars['<utag>'], name)
+			nd: (values, extra_args, vars, name, ctx)=> {
 				let utag = vars['<utag>'];
 				let other_pointers = Sandbox.FindValues(ctx.vars, value=>{
 					return value.ref_vars_utag == utag && value.ref_name == name;
@@ -69,7 +68,6 @@ module.exports = {
 					}
 					type_test = type_test.c;
 				}
-				//console.log(type_test ? type_test.dump() : '<none>', match.nd.dump());
 				return {ref_mutable: ref_mutable};
 			}
 		}
@@ -81,7 +79,6 @@ module.exports = {
 			if (utag_parent == undefined) {return;}
 			let ctx_parent = Sandbox.ctx_map[utag_parent];
 			let dangling_pointers = Sandbox.FindValues(ctx_parent.vars, value=>{
-				//console.log(utag,name,value);
 				return value.ref_vars_utag == utag && value.ref_name == name;
 			});
 			if (dangling_pointers.length) {

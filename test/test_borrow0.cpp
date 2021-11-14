@@ -8,7 +8,6 @@ int main(){
 	{
 		int x = 5;
 		y = &x;
-		console.log(x);
 		int const* z = &x;
 	}
 	*y += 1;

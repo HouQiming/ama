@@ -505,7 +505,7 @@ ama::Node * ama::Node::CommonAncestor(ama::Node const* b) const {
 	}
 	return ret;
 }
-ama::gcstring ama::Node::GetStringValue() const {
+ama::gcstring ama::Node::GetStringValue() {
 	ama::Node* nd_this = (ama::Node*)(this);
 	assert(nd_this->node_class == ama::N_STRING);
 	if ( nd_this->node_class != ama::N_STRING || nd_this->data.empty() || (nd_this->flags & ama::LITERAL_PARSED) ) {
@@ -589,6 +589,13 @@ ama::gcstring ama::Node::GetName() const {
 		return this->data;
 	}
 }
+static ama::Node* PreorderSkipChildren(ama::Node* nd_self, ama::Node* nd_root) {
+	for (ama::Node* ndi = nd_self; ndi && ndi != nd_root; ndi = ndi->p) {
+		if ( ndi->s ) { return ndi->s; }
+	}
+	return nullptr;
+}
+
 static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t boundary, int node_class, ama::gcstring data, std::vector<ama::Node*>* ret) {
 	ama::Node* nd_ret{};
 	for (ama::Node* nd = nd_root; nd; nd = nd->PreorderNext(nd_root)) {
@@ -608,7 +615,7 @@ static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t bou
 					ret->push_back(nd);
 					if ( boundary & ama::BOUNDARY_MATCH ) {
 						//note: if we stop at a match, we SHOULD stop at the root, unlike the other boundary types
-						nd = nd->PreorderSkipChildren(nd_root);
+						nd = PreorderSkipChildren(nd, nd_root);
 						goto skip_children;
 					}
 				} else {
@@ -639,7 +646,7 @@ static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t bou
 			//} else if( int(nd.node_class) == ama::N_CALL && nd.p && nd.p.node_class == ama::N_RAW_DECLARATION ) {
 			//	my_boundary |= ama::BOUNDARY_PROTOTYPE;
 			if ( boundary & my_boundary ) {
-				nd = nd->PreorderSkipChildren(nd_root);
+				nd = PreorderSkipChildren(nd, nd_root);
 				goto skip_children;
 			}
 		}
@@ -840,61 +847,10 @@ intptr_t ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 void ama::Node::Validate() {
 	this->ValidateEx(intptr_t(0x3fffffffL), 0);
 }
-int ama::Node::NeedTrailingSemicolon() const {
-	switch ( this->node_class ) {
-		default: {
-			return 1;
-		}
-		case ama::N_RAW: {
-			if ( this->isRawNode('{', '}') ) { return 0; }
-			if ( this->flags & 0xffff ) { return 1; }
-		}
-		case ama::N_KEYWORD_STATEMENT: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: case ama::N_FUNCTION: case ama::N_CLASS: {
-			if ( this->c ) { return this->LastChild()->NeedTrailingSemicolon(); }
-			return 1;
-		}
-		case ama::N_DEPENDENCY: case ama::N_FILE: case ama::N_SCOPE: case ama::N_SEMICOLON: {
-			return 0;
-		}
-		case ama::N_SYMBOL: {
-			return this->data != ";" && this->data != ",";
-		}
-	}
-}
-int8_t ama::Node::GetCommentedIndentLevel(int32_t tab_width) const {
-	intptr_t indent_level = this->indent_level;
-	int p_newline = this->comments_before--->lastIndexOf('\n');
-	if ( p_newline >= 0 ) {
-		for (int i = p_newline + intptr_t(1L); i < this->comments_before.size(); i += 1) {
-			char ch = this->comments_before[i];
-			if ( ch == '\t' ) {
-				indent_level /= tab_width;
-				indent_level += intptr_t(1L);
-				indent_level *= tab_width;
-			} else if ( ch == ' ' ) {
-				indent_level += intptr_t(1L);
-			} else {
-				indent_level = this->indent_level;
-				break;
-			}
-		}
-	}
-	return ama::ClampIndentLevel(indent_level);
-}
 ama::Node * ama::Node::PreorderNext(ama::Node* nd_root) {
-	if ( this->c ) { return this->c; } else { return this->PreorderSkipChildren(nd_root); }
+	if ( this->c ) { return this->c; } else { return PreorderSkipChildren(this, nd_root); }
 }
-ama::Node * ama::Node::PreorderSkipChildren(ama::Node* nd_root) {
-	ama::Node* ndi{};
-	for (ndi = this; ndi && ndi != nd_root; ndi = ndi->p) {
-		if ( ndi->s ) { return ndi->s; }
-	}
-	//if( nd_root && nd_root.p && !ndi ) {
-	//	console.log('warning: PreorderNext leaked for', nd_root.toSource());
-	//}
-	return nullptr;
-}
-ama::Node * ama::Node::PreorderLastInside() {
+ama::Node * ama::Node::PreorderSkip() {
 	ama::Node* ndi = this;
 	while ( ndi && ndi->c ) {
 		ndi = ndi->LastChild();

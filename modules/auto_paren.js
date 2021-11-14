@@ -5,7 +5,7 @@ function Transform(nd_root) {
 	for (let ndi of nd_root.FindAll(N_SCOPED_STATEMENT, null)) {
 		if(ndi.data==='template'){continue;}
 		if(ndi.data==='for'&&ndi.c.node_class === N_AIR&&ndi.c.s.node_class===N_SCOPE&&ndi.p&&ndi.p.isRawNode(0,0)){
-			//relaxed for syntax
+			//relaxed for syntax: `for i=0;i<n;i++{...}`
 			let nd_container=ndi.p;
 			let nd_init=ndi.c.s.c||nAir();
 			nd_body=nd_container.LastChild();

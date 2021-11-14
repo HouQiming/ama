@@ -12,6 +12,14 @@ namespace ama {
 namespace ama {
 	static const uint8_t N_NONE = 0;
 	/////////////////
+	//The node classes are designed for .FindAll ergonomy: if we process two
+	//types of nodes more often then not, they're the same class, and vice
+	//versa. For example, `#include <foo>` and `#include "foo"` and 
+	//`require('foo')` are all N_DEPENDENCY, only differentiated by flags.
+	//While the relatively minor CUDA `foo<<<grid,block>>>` has its own node
+	//class: because it requires different treatment than both template
+	//substitution and function call.
+	/////////////////
 	//raw nodes
 	static const uint8_t N_RAW = 1;
 	static const uint8_t N_SYMBOL = 2;
@@ -19,7 +27,11 @@ namespace ama {
 	static const uint8_t N_NUMBER = 4;
 	static const uint8_t N_STRING = 5;
 	/////////////////
-	//structured nodes
+	//"parsed" nodes
+	//N_NODEOF is our own extension to switch between source code and ama code.
+	//The syntax is `.(foo)`. Example uses:
+	//    nd.Match(.(JSON.parse<.(Node.MatchAny('foo'))>)))
+	//    nd_root.Insert(POS_FRONT, .(#include <stdio.h>))
 	static const uint8_t N_NODEOF = 6;
 	static const uint8_t N_SCOPE = 7;
 	static const uint8_t N_FUNCTION = 8;
@@ -39,19 +51,24 @@ namespace ama {
 	static const uint8_t N_PARAMETER_LIST = 22;
 	static const uint8_t N_CONDITIONAL = 23;
 	static const uint8_t N_LABELED = 24;
-	//we don't want to process N_AIR / N_FILE when finding N_RAW
+	//N_AIR is a node that stands for something but generates no code, like
+	//the namespace in `::foo` and the undefined initial value of `int bar;`
 	static const uint8_t N_AIR = 25;
 	static const uint8_t N_FILE = 26;
 	static const uint8_t N_SEMICOLON = 27;
 	static const uint8_t N_PAREN = 28;
 	static const uint8_t N_KEYWORD_STATEMENT = 29;
-	/////////////////
 	static const uint8_t N_JS_REGEXP = 30;
-	//don't start any other constant with N_
 	/////////////////
+	//don't start any other constant with "N_", jsgen.cpp depends on this
+	/////////////////
+	//for Node::tmp_flags
+	//all valid nodes should have TMPF_IS_NODE set
 	static const uint16_t TMPF_IS_NODE = 32768u;
+	//you should never set TMPF_GC_MARKED or see it set
 	static const uint16_t TMPF_GC_MARKED = 16384u;
 	/////////////////
+	//for Node::flags
 	static const uint32_t FILE_SPACE_INDENT = 1u;
 	static const uint32_t REF_WRITTEN = 1u;
 	//REF_RW is only set for REF_WRITTEN nodes: non-written nodes are trivially read 
@@ -68,50 +85,63 @@ namespace ama {
 	static const uint32_t DEP_TYPE_MASK = 31u;
 	static const uint32_t DEPF_C_INCLUDE_NONSTR = 32u;
 	static const uint32_t PARAMLIST_TEMPLATE = 1u;
-	//reserve 1 bit
+	//for Node::indent_level, reserve 1 bit for future use
 	static const intptr_t MAX_INDENT = 63;
 	/////////////////
-	struct TCloneResult {
-		Node* nd{};
-		std::unordered_map<Node const*, Node*> mapping{};
-	};
+	//for Node::Insert
 	static const int POS_BEFORE = 0;
 	static const int POS_AFTER = 1;
 	static const int POS_FRONT = 2;
 	static const int POS_BACK = 3;
 	static const int POS_REPLACE = 4;
 	/////////////////
+	//for Node::FindAllWithin 
 	static const int32_t BOUNDARY_FUNCTION = 1;
 	static const int32_t BOUNDARY_CLASS = 2;
-	//const int32_t! BOUNDARY_LOOP = 4;
-	//const int32_t! BOUNDARY_SWITCH = 8;
-	//we no longer have macro decls
-	//const int32_t! BOUNDARY_MACRO_DECL = 16;
-	static const int32_t BOUNDARY_NODEOF = 32;
-	static const int32_t BOUNDARY_SCOPE = 64;
-	static const int32_t BOUNDARY_MATCH = 128;
-	static const int32_t BOUNDARY_ONE_LEVEL = 256;
-	//const int32_t! BOUNDARY_PROTOTYPE = 512;
+	static const int32_t BOUNDARY_NODEOF = 4;
+	static const int32_t BOUNDARY_SCOPE = 8;
+	static const int32_t BOUNDARY_MATCH = 16;
+	static const int32_t BOUNDARY_ONE_LEVEL = 32;
 	static const int32_t BOUNDARY_ANY = 0x7fffffff;
 	static const int32_t BOUNDARY_DEFAULT = BOUNDARY_NODEOF;
 	/////////////////
+	//return values of GetCFGRole()
 	static const uint8_t CFG_BASIC = 0;
 	static const uint8_t CFG_BRANCH = 1;
 	static const uint8_t CFG_LOOP = 2;
 	static const uint8_t CFG_JUMP = 3;
-	//decl is different from basic since we never get into them from the outside
 	static const uint8_t CFG_DECL = 4;
 	/////////////////
+	//for FormatFancyMessage
 	static const int MSG_COLORED = 1;
 	static const int MSG_WARNING = 2;
-	//we don't track original code locations, just report errors into the generated code using #error and stuff
-	//try to fit into a 64 byte cacheline
+	/////////////////
+	struct TCloneResult {
+		Node* nd{};
+		std::unordered_map<Node const*, Node*> mapping{};
+	};
+	//The AST node, we don't track original code locations, if you want to
+	//report something, try putting them into the generated comments using 
+	//`#error` and stuff.
+	//Try to fit each Node into a 64-byte cacheline
 	struct Node {
 		uint8_t node_class{};
-		//stores delta w.r.t. parent
+		/*
+		indent_level stores delta-indent w.r.t. parent
+		For example, in:
+			int main(){
+				return 0;
+			}
+		The `return 0;` node has .indent_level=4 (default tab indent) while
+		all other nodes have .indent_level=0
+		*/
 		int8_t indent_level{};
+		//tmp_flags are caller-saved temporaries
+		//They must not affect code generation
 		uint16_t tmp_flags{};
+		//flags are persistent flags affecting code generation
 		uint32_t flags{};
+		//The associated string for leaf nodes
 		ama::gcstring data{};
 		/////////////
 		ama::gcstring comments_before{};
@@ -119,13 +149,17 @@ namespace ama {
 		/////////////
 		//child
 		Node* c{};
-		//sibling
+		//next sibling
 		Node* s{};
 		//parent
 		Node* p{};
 		//previous sibling, or PackTailPointer(tail sibling) if this==this->p->c
 		Node* v{};
 		/////////////
+		//LastChildSP is for internal use only in simppair.cpp (SP stands for simppair)
+		ama::Node* LastChildSP()const;
+		/////////////
+		//These setters are also available in JS
 		inline ama::Node* setData(ama::gcstring data) {
 			this->data = data;
 			return this;
@@ -149,75 +183,126 @@ namespace ama {
 			return this;
 		}
 		/////////////
+		//Nodes are garbage-collected by ama::gc(), but you can also
+		//free them manually with Node::FreeASTStorage();
+		//Debug build checks for double-frees, but no guarantees.
+		//Note that FreeASTStorage() frees the entire tree under `this`.
+		void FreeASTStorage();
 		ama::TCloneResult CloneEx()const;
 		ama::Node* Clone()const;
-		//auto ReplaceLinkToThis(ama::Node*+! this, ama::Node*+! nd_new);
+		//ReplaceWith has a quirk -- you can't directly replace a node with
+		//something that parents it. For example, this is invalid:
+		//    nd.ReplaceWith(nParen(nd)); //will fail!
+		//Instead, use GetPlaceHolder():
+		//    Node* nd_tmp=GetPlaceHolder();
+		//    nd.ReplaceWith(nd_tmp);
+		//    nd_tmp.ReplaceWith(nParen(nd));
 		ama::Node* ReplaceWith(ama::Node* nd_new);
 		ama::Node* Unlink();
 		ama::Node* Insert(int pos, ama::Node* nd_new);
 		ama::Node* Root()const;
 		ama::Node* RootStatement()const;
-		int isAncestorOf(ama::Node const* nd)const;
-		ama::Node* Owning(int nc)const;
-		ama::Node* Owner()const;
-		//LastChildSP is for internal use only in simppair.jc (SP stands for simppair)
-		ama::Node* LastChildSP()const;
 		ama::Node* LastChild()const;
+		int isAncestorOf(ama::Node const* nd)const;
+		//Find an ancestor node with node_class nc
+		//Returns NULL if not found
+		ama::Node* Owning(int nc)const;
+		//Find the owning N_CLASS or N_FILE
+		//Returns this->Root() if neither is found
+		ama::Node* Owner()const;
 		ama::Node* CommonAncestor(ama::Node const* b)const;
-		ama::gcstring GetStringValue()const;
+		//Returns the string content for N_STRING
+		//The default parser keeps quotes around source code strings, so
+		//parsing "hello world" gives a node with .data="\"hello world\""
+		//You need GetStringValue() to get the content "hello world".
+		//Once you call GetStringValue() though, the original textual form
+		//is no longer preserved. For example, "hello \u0077orld" becomes
+		//"hello world". That's why this function is not `const`. 
+		ama::gcstring GetStringValue();
+		//Create N_DOT with this node as the object
 		ama::Node* dot(ama::gcstring name);
-		void FreeASTStorage();
 		ama::Node* Find(int node_class, ama::gcstring data)const;
 		std::vector<ama::Node*> FindAll(int node_class, ama::gcstring data = ama::gcstring())const;
 		std::vector<ama::Node*> FindAllWithin(int32_t boundary, int node_class, ama::gcstring data = ama::gcstring())const;
 		std::vector<ama::Node*> FindAllBefore(ama::Node const* nd_before, int32_t boundary, int node_class, ama::gcstring data = ama::gcstring())const;
 		int isRawNode(char ch_open, char ch_close)const;
+		//Best effort "name" getter
+		//For example, .(this->FindAll(N_CALL,'test')).data is "",
+		//but .GetName() on the same node returns "FindAll".
 		ama::gcstring GetName()const;
 		/////////////
-		//src/codegen/gen.jc
+		//toSource() returns the full source code of a node
+		//The results are production-ready
+		//Implemented in src/codegen/gen.jc
 		std::string toSource()const;
+		//dump() returns an abbreviated string dump useful in error messages
+		//The result may not be useful as code
+		//Implemented in src/codegen/gen.jc
+		std::string dump()const;
 		int isMethodCall(ama::gcstring name)const;
+		int isSymbol(std::span<char> name)const;
+		int isRef(std::span<char> name)const;
 		ama::Node* InsertDependency(uint32_t flags, ama::gcstring name);
 		ama::Node* InsertCommentBefore(std::span<char> s);
-		//ama::Node*! Save(ama::Node*! this, char[|]! change_ext);
 		ama::Node* MergeCommentsBefore(ama::Node* nd_before);
 		ama::Node* MergeCommentsAfter(ama::Node* nd_after);
 		ama::Node* MergeCommentsAndIndentAfter(ama::Node* nd_after);
 		ama::gcstring DestroyForSymbol();
-		//expr is ill-defined once detached from a base language
-		//NeedTrailingSemicolon is more practical
-		//int! isExpr(ama::Node*! this);
-		int isSymbol(std::span<char> name)const;
-		int isRef(std::span<char> name)const;
+		//Validate() is purely for debugging: it validates the tree and when
+		//there's any error, it prints some messages and aborts 
 		void Validate();
+		//ValidateEx returns the errors count instead of aborting if quiet==1
 		intptr_t ValidateEx(intptr_t max_depth, int quiet);
-		int NeedTrailingSemicolon()const;
-		int8_t GetCommentedIndentLevel(int32_t tab_width)const;
+		int ValidateChildCount(int n_children);
 		ama::Node* ParentStatement();
 		ama::Node* Prev();
+		//Each BreakFoo function unlinks the foo node and returns it
+		//Unlike Unlink(), BreakSibling() keeps the .s pointer of the
+		//broken-off sibling
 		ama::Node* BreakSibling();
 		ama::Node* BreakChild();
 		ama::Node* BreakSelf();
-		///nd_upto is inclusive
+		//Replace all nodes between this and nd_upto with nd_new
+		//nd_upto is inclusive, use nd_new==NULL to delete the nodes instead
 		ama::Node* ReplaceUpto(ama::Node* nd_upto, ama::Node* nd_new);
-		int ValidateChildCount(int n_children);
 		void AdjustIndentLevel(intptr_t delta);
+		/*
+		For a recursion-free preorder traversal of nd:
+			for(Node* ndi=nd;ndi;ndi=ndi->PreorderNext(nd)){
+				if we want to skip ndi's children {
+					ndi=ndi->PreorderSkip();
+					continue;
+				}
+			}
+		*/
 		ama::Node* PreorderNext(ama::Node* nd_root);
-		ama::Node* PreorderSkipChildren(ama::Node* nd_root);
-		ama::Node* PreorderLastInside();
+		ama::Node* PreorderSkip();
 		ama::Node* PostorderFirst();
 		ama::Node* PostorderNext(ama::Node* nd_root);
+		//toSingleNode() converts a node with possible sibling chain into
+		//a single node.
+		//With -fno-delete-null-pointer-checks, NULL->toSingleNode()
+		//returns nAir()
 		ama::Node* toSingleNode();
+		//Unparse turns a node back to a less-parsed state (usually N_RAW)
+		//It's mainly used to correct over-eager mistakes in an earlier pass
 		ama::Node* Unparse();
 		uint8_t GetCFGRole()const;
 		int isChildCFGDependent(ama::Node const* nd_child)const;
-		std::string dump()const;
+		//Format a clang-style message, referencing `this`
+		//We intentionally limit our messages to warnings and notes
 		std::string FormatFancyMessage(std::span<char> msg, int flags)const;
+		//ComputeLineNumber currently traverses the entire AST up to `this`
 		int32_t ComputeLineNumber() const;
 	};
-	ama::Node* AllocNode();
 	extern ama::Node* g_placeholder;
+	ama::Node* AllocNode();
+	//All nodes are allocated from a dedicated pool, as a side effect, we can
+	//check whether an arbitrary pointer is a valid Node in O(1).
 	int isValidNodePointer(ama::Node const* nd_tentative);
+	//The garbage collector also utilizes this pool to get all possible node
+	//pointers.
+	std::vector<ama::Node*> GetAllPossibleNodeRanges();
 	ama::Node* CreateNode(uint8_t node_class, ama::Node* child);
 	ama::Node* FixParents(ama::Node* nd_parent, ama::Node* nd);
 	static inline ama::Node* cons(ama::Node* a, ama::Node* b) {
@@ -269,9 +354,6 @@ namespace ama {
 	static inline ama::Node* nExtensionClause(ama::gcstring keyword, Node* nd_arg, Node* nd_scope) {
 		return ama::CreateNode(N_EXTENSION_CLAUSE, cons(nd_arg, nd_scope))->setData(keyword);
 	}
-	//inline ama::Node*+! nTypedVar(Node*+! nd_type, Node*+! nd_def) {
-	//	return ama::CreateNode(N_TYPED_VAR, cons(nd_type, cons(nd_def, NULL)));
-	//}
 	//the namespace in `::foo`, the initial value in `int bar;`
 	static inline ama::Node* nAir() {
 		return ama::CreateNode(N_AIR, nullptr);
@@ -302,11 +384,6 @@ namespace ama {
 		g_placeholder->c = nullptr;
 		return g_placeholder;
 	}
-	//inline ama::Node*+! BreakLink(Node*+*+! pndi) {
-	//	ama::Node*+! ret = *pndi;
-	//	*pndi = NULL;
-	//	return ret;
-	//}
 	static inline int isValidPreviousSibling(Node const* v) {
 		return v && !(intptr_t(v) & 1);
 	}
@@ -321,9 +398,9 @@ namespace ama {
 	ama::Node* CreateNodeFromChildren(uint8_t node_class, std::span<ama::Node*> children);
 	///////////////
 	int8_t ClampIndentLevel(intptr_t level);
+	//the non-method toSingleNode doesn't need -fno-delete-null-pointer-checks
 	ama::Node* toSingleNode(ama::Node* nd_child);
 	ama::Node* UnparseRaw(ama::Node* nd_raw);
-	std::vector<ama::Node*> GetAllPossibleNodeRanges();
 	extern ama::Node* g_free_nodes;
 	int ValidateChildRange(ama::Node* p0, ama::Node* p1);
 	void DeleteChildRange(ama::Node* nd0, ama::Node* nd1);

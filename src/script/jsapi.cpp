@@ -332,7 +332,7 @@ namespace ama {
 		if (!dirname.size()) {
 			dirname.push_back('.');
 		}
-		std::array<JSValueConst, intptr_t(3L)> module_args{
+		std::array<JSValueConst, 3> module_args{
 			JS_NewString(ama::jsctx, file_name),
 			ama::WrapString(path::toAbsolute(dirname)),
 			JS_NewCFunctionData(

@@ -102,7 +102,7 @@ typing.GetDefs = function(nd_scope) {
 		//console.log('---')
 		for (let ndi = nd_scope; ndi; ndi = ndi.PreorderNext(nd_scope)) {
 			if (ndi.node_class == N_SCOPE && ndi != nd_scope || ndi.node_class == N_PARAMETER_LIST) {
-				ndi = ndi.PreorderLastInside();
+				ndi = ndi.PreorderSkip();
 				continue;
 			}
 			if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
@@ -271,7 +271,7 @@ typing.MatchTemplateType = function(type_in, type_template, names) {
 			if (was_pattern) {
 				nd_pattern = ndi;
 			}
-			ndi = ndi.PreorderLastInside();
+			ndi = ndi.PreorderSkip();
 		}
 	}
 	return type_in.Match(nd_pattern);
@@ -326,7 +326,7 @@ typing.LookupDottedName = function(nd_site, name, nd_class) {
 					nd_def = undefined;
 					for (let ndi = nd_func; ndi; ndi = ndi.PreorderNext(nd_func)) {
 						if (ndi.node_class == N_SCOPE || ndi.node_class == N_PARAMETER_LIST) {
-							ndi = ndi.PreorderLastInside();
+							ndi = ndi.PreorderSkip();
 							continue;
 						}
 						if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {

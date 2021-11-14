@@ -11,7 +11,7 @@ function ListOwnProperties(properties, nd_class) {
 	let nd_scope = nd_class.LastChild();
 	let last_appearance = {};
 	let lingering_protection = nd_class.data == 'class' ? 'private' : 'public';
-	for (let ndi = nd_scope; ndi;) {
+	for (let ndi = nd_scope; ndi; ndi = ndi.PreorderNext(nd_scope)) {
 		if (ndi.node_class == N_REF && g_not_class.has(ndi.data)) {
 			if (ndi.p && ndi.p.node_class == N_LABELED && ndi.p.c == ndi) {
 				//it's lingering
@@ -54,7 +54,7 @@ function ListOwnProperties(properties, nd_class) {
 					name: ndi.data
 				});
 			}
-			ndi = ndi.PreorderSkipChildren(nd_class);
+			ndi = ndi.PreorderSkip();
 			continue;
 		} else if (ndi.node_class == N_CLASS) {
 			properties.push({
@@ -68,10 +68,9 @@ function ListOwnProperties(properties, nd_class) {
 				node: ndi,
 				name: ndi.GetName()
 			});
-			ndi = ndi.PreorderSkipChildren(nd_class);
+			ndi = ndi.PreorderSkip();
 			continue;
 		}
-		ndi = ndi.PreorderNext(nd_scope);
 	}
 }
 
@@ -82,22 +81,18 @@ Node.ParseClass = function() {
 	//children: before, name, after, scope
 	//base classes
 	let nd_after = this.c.s.s;
-	function PreorderNextSkipping(nd_self, nd_root) {
-		if (nd_self.node_class == N_CALL || nd_self.node_class == N_CALL_TEMPLATE ||
-		nd_self.node_class == N_RAW && (nd_self.flags & 0xffff) || nd_self.node_class == N_SCOPE ||
-		nd_self.node_class == N_DOT || nd_self.node_class == N_ITEM) {
-			return nd_self.PreorderSkipChildren(nd_root);
-		} else {
-			return nd_self.PreorderNext(nd_root);
-		}
-	}
 	let base_class_set = new Set();
-	for (let ndi = nd_after; ndi; ndi = PreorderNextSkipping(ndi, nd_after)) {
+	for (let ndi = nd_after; ndi; ndi = ndi.PreorderNext(nd_after)) {
 		if ((ndi.node_class == N_REF || ndi.node_class == N_DOT) && !g_not_class.has(ndi.data)) {
 			//COULDDO: use typing: let type_obj = typing.TryGettingClass(typing.ComputeType(ndi))
 			for (let nd_class of ndi.LookupClass()) {
 				if (nd_class) {base_class_set.add(nd_class);}
 			}
+		}
+		if (ndi.node_class == N_CALL || ndi.node_class == N_CALL_TEMPLATE ||
+		ndi.node_class == N_RAW && (ndi.flags & 0xffff) || ndi.node_class == N_SCOPE ||
+		ndi.node_class == N_DOT || ndi.node_class == N_ITEM) {
+			ndi = ndi.PreorderSkip();
 		}
 	}
 	let base_classes = [];
@@ -118,7 +113,7 @@ Node.ParseClass = function() {
 	for (let i = properties.length - 1; i >= 0; i--) {
 		if (shadows.has(properties[i].name)) {
 			properties[i].enumerable = 0;
-			properties[i].shadow = 1;
+			properties[i].shadowed = 1;
 		}
 		shadows.add(properties[i].name);
 	}

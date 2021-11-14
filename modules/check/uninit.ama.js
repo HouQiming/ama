@@ -12,7 +12,7 @@ module.exports = {
 				if (nd_ref.flags & REF_DECLARED) {return 0;}
 				return 1;
 			},
-			foo: (values, extra_args, vars, name)=>{
+			foo: (values, extra_args, vars, name)=> {
 				if (values.filter(v=>v.as_function).length) {return;}
 				//if (!values.filter(v=>v.addr_declared).length) {return;}
 				let bad_values = values.filter(v=>!v.initialized);
