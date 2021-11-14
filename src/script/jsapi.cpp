@@ -271,7 +271,7 @@ namespace ama {
 		//JS_DupValue(ama::jsctx, func_data[1])
 		char const* file_data = (char const*)(JSON::parse<uintptr_t>(ama::UnwrapString(func_data[0])));
 		ama::Node* nd_root = ParseCode(file_data, options);
-		nd_root->data = ama::UnwrapString(func_data[1]);
+		nd_root->data = path::toAbsolute(ama::UnwrapString(func_data[1]));
 		return ama::WrapNode(nd_root);
 	}
 	static JSValueConst JSParseCode(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
@@ -720,7 +720,7 @@ namespace ama {
 			if ( !program_files ) {
 				program_files = "\\";
 			}
-			ama::std_module_dir_global = path::normalize(JC::string_concat(program_files, path::sep, "ama\\ama_modules"));
+			ama::std_module_dir_global = path::normalize(JC::string_concat(program_files, path::sep, "ama\\share\\ama_modules"));
 		#else
 			char const* home_dir = getenv("HOME");
 			if ( !home_dir ) {

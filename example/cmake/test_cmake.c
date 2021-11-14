@@ -1,14 +1,14 @@
+//Quality-of-life script: automatically create a cmake project for this file
+//and its dependencies, then build and run
+//////////
+//@ama
+//require('cmake');
+//const path=require('path');
+//ParseCurrentFile().CreateCXXCMakeTarget(path.resolve(__dirname,'./CMakeLists.txt'),{build:"debug",run:[]});
 #include <stdio.h>
-
-#if 0
-	@ama
-	let nd_cmake=require('cmake').LoadCMakeFile('/home/hqm/tp/ama/src/entry/CMakeLists.txt');
-	//console.log(JSON.stringify(nd_cmake,null,1))
-	//console.log(nd_cmake.toSource())
-	console.log(nd_cmake.CMakeFindTarget('ama').toSource())
-#endif
+#include "func.h"
 
 int main(){
-	printf("hello world\n");
+	printf("hello world #%d\n", ComputeSomeNumber());
 	return 0;
 }

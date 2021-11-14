@@ -1,8 +1,7 @@
-/*
-@ama
-const checker=require('omnichecker');
-checker.Check(ParseCurrentFile(),require('check/cpp/borrow'),{dump_code:1});
-*/
+//Rust-like borrow checking
+//@ama
+//const checker=require('omnichecker');
+//checker.Check(ParseCurrentFile(),require('check/cpp/borrow'));
 int main(){
 	int* y;
 	{

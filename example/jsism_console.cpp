@@ -1,15 +1,13 @@
+//A simple language feature: convert JS-like console.log to C++ iostream
+//See ../modules/cpp/jsism.ama.js for the implementation
 #include <stdio.h>
 
-/*
-@ama
-let nd_root=ParseCurrentFile();
-//console.log(JSON.stringify(nd_root,null,2))
-//console.log(nd_root.toSource())
-nd_root
-	.then(require('cpp/jsism').EnableConsole)
-	.InsertCommentBefore('//ama output\n')
-	.Save('.audit.cpp')
-*/
+//@ama
+//let nd_root=ParseCurrentFile();
+//nd_root
+//	.then(require('cpp/jsism').EnableConsole)
+//	.InsertCommentBefore('//ama output\n')
+//	.Save('.audit.cpp')
 
 int main(){
 	console.log(

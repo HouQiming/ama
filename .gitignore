@@ -6,5 +6,4 @@ build/
 /default.qpad_notebook
 a.out
 /test/test_tmp.*
-/test/cmake/CMakeLists.txt
-/test/cmake/test_cmake.cpp
+/example/cmake/CMakeLists.txt
