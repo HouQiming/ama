@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#if defined(_WIN32)
+	#include <windows.h>
+#endif
 #include <string>
 #include "../util/dumpstack/dumpstack.h"
 #include "../script/jsapi.hpp"
@@ -13,6 +16,17 @@ int main(int argc, char const* const* argv) {
 		printf("usage: ama [-s script] [files]\n");
 		return 1;
 	}
+	#if defined(_WIN32)
+		//fix the Windows terminal
+		HANDLE hstdout = GetStdHandle(STD_OUTPUT_HANDLE);
+		DWORD mode = 0;
+		GetConsoleMode(hstdout, &mode);
+		//4 is ENABLE_VIRTUAL_TERMINAL_PROCESSING
+		SetConsoleMode(hstdout, mode | 4);
+		//65001 is CP_UTF8
+		SetConsoleCP(65001);
+		SetConsoleOutputCP(65001);
+	#endif
 	std::string extra_script{};
 	int has_file = 0;
 	for (int i = 1; i < argc; i += 1) {
