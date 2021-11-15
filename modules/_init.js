@@ -67,7 +67,7 @@ Node.toJSON = function() {
 	}
 }
 
-Node.MatchAny = function(node_class, name) {
+Node.MatchAny = function(/*optional*/node_class, name) {
 	if (name === undefined) {
 		//node_class is actually the name
 		return nNodeof(nRef(node_class));
@@ -158,7 +158,7 @@ Node.Subst = function(match) {
 	return nd_ret;
 }
 
-Node.Save = function(options) {
+Node.Save = function(/*optional*/options) {
 	if (typeof(options) === 'string') {
 		if (options.startsWith('.')) {
 			options = {change_ext: options};
@@ -219,7 +219,7 @@ Node.StripRedundantPrefixSpace = function(aggressive) {
 	return this;
 }
 
-Node.TranslateTemplates = function(match_jobs, is_forward) {
+Node.TranslateTemplates = function(match_jobs, /*optional*/is_forward) {
 	let nd_root = this;
 	for (let ndi = nd_root; ndi; ndi = ndi.PreorderNext(nd_root)) {
 		for (let job of match_jobs) {

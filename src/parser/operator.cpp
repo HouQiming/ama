@@ -156,6 +156,27 @@ namespace ama {
 				ndi = ndi_next;
 			}
 		}
+		//fix assignment - function associativity
+		for (ama::Node* nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION)) {
+			if (nd_func->c->node_class == ama::N_ASSIGNMENT) {
+				ama::Node* nd_asgn = nd_func->c;
+				ama::Node* nd_name = nd_asgn->c;
+				ama::Node* nd_value = nd_asgn->c->s;
+				ama::Node* nd_tmp = ama::GetPlaceHolder();
+				nd_value->ReplaceWith(nd_tmp);
+				nd_asgn->ReplaceWith(nd_value);
+				nd_func->ReplaceWith(nd_asgn);
+				nd_tmp->ReplaceWith(nd_func);
+			}
+		}
+		//fix parameter faux assignment once we get a real one
+		for (ama::Node* nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)) {
+			for (ama::Node* ndi = nd_paramlist->c; ndi; ndi = ndi->s) {
+				if (ndi->node_class == ama::N_ASSIGNMENT && ndi->c->node_class == ama::N_ASSIGNMENT && ndi->c->s->node_class == ama::N_AIR) {
+					ndi = ndi->ReplaceWith(ndi->c->Unlink());
+				}
+			}
+		}
 		return nd_root;
 	}
 	//COULDDO: lazy parsing with OwningUnparsedExpr  

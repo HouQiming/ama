@@ -205,7 +205,7 @@ namespace ama {
 		ama::Node* Root()const;
 		ama::Node* RootStatement()const;
 		ama::Node* LastChild()const;
-		int isAncestorOf(ama::Node const* nd)const;
+		int isAncestorOf(ama::Node const* nd_maybe_child)const;
 		//Find an ancestor node with node_class nc
 		//Returns NULL if not found
 		ama::Node* Owning(int nc)const;

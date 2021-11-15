@@ -6,7 +6,7 @@ const depends=require('depends');
 
 let g_templates={};
 function ApplyMDTemplate(s_template,params){
-	return s_template.replace(/【(.*)】/g,(match,pname)=>(params[pname]||'').toString());
+	return s_template.replace(/【(.*?)】/g,(match,pname)=>(params[pname]||'').toString());
 }
 
 function CleanupDocString(s){
@@ -32,12 +32,34 @@ function CreateNodeAPIItem(name,nd_func,doc){
 	let nd_paramlist=nd_func.Find(N_PARAMETER_LIST);
 	if(!nd_paramlist){return;}
 	let prototype=[];
+	let n_optionals=0;
+	let n_tmp_optionals=0;
 	for(let ndi=nd_paramlist.c;ndi;ndi=ndi.s){
 		let name=ndi.GetName();
-		prototype.push(name);
-		if(ndi.s){
-			prototype.push(',');
+		if(ndi.node_class==N_ASSIGNMENT&&ndi.c.s.node_class!=N_AIR){
+			prototype.push('[');
+			n_optionals+=1;
+		}else if(ndi.comments_before.indexOf('optional')>=0){
+			prototype.push('[');
+			n_tmp_optionals+=1;
 		}
+		if(ndi.Prev()){
+			if(prototype[prototype.length-1]==']'){
+				prototype.pop();
+				prototype.push(',]');
+			}else{
+				prototype.push(',');
+			}
+		}
+		prototype.push(name);
+		while(n_tmp_optionals>0){
+			prototype.push(']');
+			n_tmp_optionals-=1;
+		}
+	}
+	n_optionals+=n_tmp_optionals;
+	for(let i=0;i<n_optionals;i++){
+		prototype.push(']');
 	}
 	return ApplyMDTemplate(g_templates.node_api,{
 		name:name,
@@ -64,6 +86,7 @@ function GenerateDocuments(){
 		let name_i=nd_method.data;
 		let doc_i=CleanupDocString(nd_method.ParentStatement().comments_before);
 		if(!name_i){continue;}
+		if(name_i=='LastChildSP'){continue;}
 		all_node_apis.push(CreateNodeAPIItem(name_i,nd_method,doc_i));
 		dedup.add(name_i);
 	}

@@ -18,4 +18,4 @@ module.exports = function Transform(nd_root) {
 		ret.push('0\n};\n');
 		gentag.UpdateGenTagContent(match.gentag, nAir().setCommentsBefore(ret.join('')));
 	}
-}
+};

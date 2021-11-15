@@ -434,9 +434,9 @@ ama::Node * ama::Node::RootStatement() const {
 	}
 	return ndi;
 }
-int ama::Node::isAncestorOf(ama::Node const* nd) const {
+int ama::Node::isAncestorOf(ama::Node const* nd_maybe_child) const {
 	ama::Node const* nd_this = this;
-	for (ama::Node const* ndi = nd; ndi; ndi = ndi->p) {
+	for (ama::Node const* ndi = nd_maybe_child; ndi; ndi = ndi->p) {
 		if ( ndi == nd_this ) {
 			return 1;
 		}

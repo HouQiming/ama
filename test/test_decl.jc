@@ -16,7 +16,7 @@ class TestClass<int>:Base{
 	int fwdMethod(void)const;
 };
 
-WEIRD_DECL_MACRO(int,weirdForward)(int p,int q);
+WEIRD_DECL_MACRO(int,weirdForward)(int p,int q=3);
 
 int main(int argc,char** argv){
 	int uninitialized_var;

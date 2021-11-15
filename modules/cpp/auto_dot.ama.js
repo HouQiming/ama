@@ -15,4 +15,4 @@ module.exports = function Transform(nd_root) {
 			}
 		}
 	}
-}
+};

@@ -13,5 +13,6 @@ int main() {
 	struct foo;
 	a.foo(bar);
 	a--->foo(bar);
+	Node* nd;
 	return nd.c.s;
 }

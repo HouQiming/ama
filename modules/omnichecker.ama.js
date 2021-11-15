@@ -312,7 +312,7 @@ omnichecker.RunGeneratedCode = function(nd_generated, options) {
 		console.log(src);
 	}
 	return ret && JSON.parse(ret);
-}
+};
 
 //don't over-generalize: dedicated dataflow generator first
 omnichecker.Check = function(nd_root, ...all_options) {
@@ -454,4 +454,4 @@ omnichecker.Check = function(nd_root, ...all_options) {
 		}
 	}
 	return ret;
-}
+};
