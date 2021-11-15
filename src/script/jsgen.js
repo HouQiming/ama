@@ -1,17 +1,13 @@
 'use strict'
 const path = require('path');
 
-function Generate(version,my_call) {
+function Generate(version,nd_root) {
 	let nd_node_jch = undefined;
 	let code_func = [];
 	let code = [];
-	if(version==='jc'){
-		nd_node_jch=compiler.Load(path.resolve(__dirname, '../ast/node.jch'));
-	}else{
-		require('class');
-		nd_node_jch=require('depends').LoadFile(path.resolve(__dirname, '../ast/node.hpp'));
-		code_func.push('namespace ama{\n');
-	}
+	require('class');
+	nd_node_jch=require('depends').LoadFile(path.resolve(__dirname, '../ast/node.hpp'));
+	code_func.push('namespace ama{\n');
 	let class_name = 'Node';
 	let class_full_name = 'ama::Node';
 	let classid = 'ama::g_node_classid';
@@ -127,65 +123,27 @@ function Generate(version,my_call) {
 	}
 	let properties=[];
 	let methods=[];
-	if(version==='jc'){
-		let nd_class_scope = nd_node_jch.Find(N_CLASS,'Node').LastChild();
-		nd_class_scope.FindAllWithin(BOUNDARY_SCOPE | BOUNDARY_FUNCTION | BOUNDARY_PROTOTYPE, N_DECLARATION, null).forEach(nd_i=>{
-			let nd_def = nd_i.c;
-			let nd_value = nd_i.c.s;
-			if( !nd_value || nd_value.node_class === N_NULL || nd_value.node_class === N_NUMBER ) {
-				let nd_type = nd_def.c;
-				properties.push({
-					name:nd_def.data,
-					type:nd_type
-				})
-			}
-		});
-		nd_class_scope.FindAllWithin(BOUNDARY_SCOPE | BOUNDARY_FUNCTION, N_EXTERN, null).forEach(nd_i=> {
-			let nd_def = nd_i.c;
-			if( nd_def.data === 'CloneEx' || nd_def.data === 'CloneCB' || nd_def.data === 'forEach' ) {
-				return;
-			}
-			if( nd_def.data === '__init__' || nd_def.data === '__done__' ) {
-				return;
-			}
-			//if( nd_def.getTag('nojs') ) {
-			//	return;
-			//}
-			//let nd_ret_type = nd_i.c.s.c.s;
-			//if( nd_ret_type ) {
-			//	if( nd_ret_type.getTag('nojs') ) {
-			//		return;
-			//	}
-			//}
-			methods.push({
-				name:nd_def.data,
-				paramlist:nd_i.c.s.c,
-				return_type:nd_i.c.s.c.s
+	//console.log(JSON.stringify(nd_node_jch,null,1))
+	const typing=require('cpp/typing');
+	let class_desc = nd_node_jch.Find(N_CLASS,'Node').ParseClass();
+	for(let ppt of class_desc.properties){
+		if(ppt.enumerable){
+			let nd_ref=ppt.node;
+			properties.push({
+				name:nd_ref.data,
+				type:typing.ComputeType(nd_ref)
 			})
-		});
-	}else{
-		//console.log(JSON.stringify(nd_node_jch,null,1))
-		const typing=require('cpp/typing');
-		let class_desc = nd_node_jch.Find(N_CLASS,'Node').ParseClass();
-		for(let ppt of class_desc.properties){
-			if(ppt.enumerable){
-				let nd_ref=ppt.node;
-				properties.push({
-					name:nd_ref.data,
-					type:typing.ComputeType(nd_ref)
-				})
+		}
+		if(ppt.kind==='method'){
+			if( ppt.name === 'CloneEx' || ppt.name === 'CloneCB' || ppt.name === 'forEach' ) {
+				continue;
 			}
-			if(ppt.kind==='method'){
-				if( ppt.name === 'CloneEx' || ppt.name === 'CloneCB' || ppt.name === 'forEach' ) {
-					continue;
-				}
-				let nd_func=ppt.node;
-				methods.push({
-					name:nd_func.data,
-					paramlist:nd_func.c.s,
-					return_type:typing.ComputeReturnType(nd_func)
-				});
-			}
+			let nd_func=ppt.node;
+			methods.push({
+				name:nd_func.data,
+				paramlist:nd_func.c.s,
+				return_type:typing.ComputeReturnType(nd_func)
+			});
 		}
 	}
 	for(let ppt of properties){
@@ -263,19 +221,13 @@ function Generate(version,my_call) {
 		let i = 0;
 		for(let ndi = nd_paramlist.c; ndi; ndi = ndi.s) {
 			let nd_def = ndi.c;
-			if(version==='ama'){
-				nd_def=nd_def.FindAll(N_REF,null).filter(nd=>nd.flags&REF_DECLARED)[0];
-			}
+			nd_def=nd_def.FindAll(N_REF,null).filter(nd=>nd.flags&REF_DECLARED)[0];
 			if( nd_def.GetName() === 'this' ) {
 				continue;
 			}
 			let nd_type=undefined;
-			if(version==='jc'){
-				nd_type=nd_def.c;
-			}else{
-				const typing=require('cpp/typing');
-				nd_type=typing.ComputeType(nd_def);
-			}
+			const typing=require('cpp/typing');
+			nd_type=typing.ComputeType(nd_def);
 			//if(version!=='jc'){
 			//	console.log(ClassifyType(nd_type),nd_type.toSource(),nd_def.data);
 			//}
@@ -301,9 +253,6 @@ function Generate(version,my_call) {
 		let s_call = code_call.join('');
 		//wrap the return value 
 		let nd_ret_type_stripped=nd_ret_type;
-		if(version==='jc'){
-			nd_ret_type_stripped=nd_ret_type_stripped.StripTypeQualifiers();
-		}
 		if( nd_ret_type && !(new Set(['auto', 'void'])).has(nd_ret_type_stripped.toSource()) ) {
 			code_func.push('return ', WrapValue(nd_ret_type, s_call), ';');
 		} else {
@@ -319,32 +268,23 @@ function Generate(version,my_call) {
 		);
 	};
 	let node_constants = [];
-	if(version==='jc'){
-		node_constants = nd_node_jch.Find(N_CLASS, 'ama').LastChild().FindAllWithin(
-			BOUNDARY_CLASS | BOUNDARY_FUNCTION | BOUNDARY_PROTOTYPE, N_DEF, null
-		).filter(nd => { return nd.p.node_class === N_DECLARATION; }).map(nd=>{return {
-			nd_def:nd,
-			nd_value:nd.p.c.s
-		}});
-	}else{
-		let class_desc=undefined;
-		for(let nd_class of nd_node_jch.FindAll(N_CLASS, 'ama')){
-			let class_desc_i = nd_class.ParseClass();
-			if(!class_desc||class_desc.properties.length<class_desc_i.properties.length){
-				class_desc=class_desc_i;
-			}
+	class_desc=undefined;
+	for(let nd_class of nd_node_jch.FindAll(N_CLASS, 'ama')){
+		let class_desc_i = nd_class.ParseClass();
+		if(!class_desc||class_desc.properties.length<class_desc_i.properties.length){
+			class_desc=class_desc_i;
 		}
-		for(let ppt of class_desc.properties){
-			if(ppt.kind==='variable'){
-				let nd_asgn = ppt.node.Owning(N_ASSIGNMENT);
-				if(!nd_asgn){
-					continue;
-				}
-				node_constants.push({
-					nd_def:ppt.node,
-					nd_value:nd_asgn.c.s
-				});
+	}
+	for(let ppt of class_desc.properties){
+		if(ppt.kind==='variable'){
+			let nd_asgn = ppt.node.Owning(N_ASSIGNMENT);
+			if(!nd_asgn){
+				continue;
 			}
+			node_constants.push({
+				nd_def:ppt.node,
+				nd_value:nd_asgn.c.s
+			});
 		}
 	}
 	let p_placeholder=code.length;
@@ -382,23 +322,17 @@ function Generate(version,my_call) {
 		'ama::g_builder_names.resize(',n_largest.toString(),');'
 	].join('');
 	//JS node builders are created in JS
-	if(version==='jc'){
-		my_call.RootStatement().InsertBefore(compiler.ParseCode(code_func.join('')).c || nEmpty());
-		return compiler.ParseCode(code.join('')).c || nEmpty();
-	}else{
-		//my_call is actually nd_root
-		my_call.Find(N_CALL,'gen').c.data='gen_begin';
-		code_func.push(
-			'void GeneratedJSBindings(){\n',
-			code.join(''),
-			'}\n',
-			//for namespace ama
-			'}'
-		);
-		my_call.Insert(POS_BACK,ParseCode(code_func.join('').replace(/\*\+/g,'*')).AutoFormat().c.setCommentsAfter(''));
-		my_call.Insert(POS_BACK,ParseCode('#pragma gen_end(js_bindings)').setCommentsBefore('\n'));
-		return my_call;
-	}
+	nd_root.Find(N_CALL,'gen').c.data='gen_begin';
+	code_func.push(
+		'void GeneratedJSBindings(){\n',
+		code.join(''),
+		'}\n',
+		//for namespace ama
+		'}'
+	);
+	nd_root.Insert(POS_BACK,ParseCode(code_func.join('').replace(/\*\+/g,'*')).AutoFormat().c.setCommentsAfter(''));
+	nd_root.Insert(POS_BACK,ParseCode('#pragma gen_end(js_bindings)').setCommentsBefore('\n'));
+	return nd_root;
 };
 
 module.exports=Generate;

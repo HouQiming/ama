@@ -122,6 +122,7 @@ Node.dfsMatch = function(ret, nd_pattern) {
 	return true;
 }
 
+//match a template
 Node.Match = function(nd_pattern) {
 	let ret = {nd: this};
 	if (this.dfsMatch(ret, nd_pattern)) {

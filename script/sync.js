@@ -4,7 +4,7 @@ const pipe=require('pipe');
 const path=require('path');
 const fs=require('fs');
 const fsext=require('fsext');
-const bisync=require('bisync')
+const bisync=require('bisync');
 
 function FixAMAJS(){
 	//minimize the `require` here: we are *modifying* the js files which we'll probably `require` later
@@ -33,3 +33,4 @@ function FixAMAJS(){
 
 FixAMAJS();
 bisync({dir_src:path.resolve(__dirname,'../src')});
+require(path.join(__dirname,'docgen.ama.js'))();

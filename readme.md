@@ -2,13 +2,13 @@
 
 A meta-language to customize any language for development, while keep interacting with upstream in the original language.
 
-The project itself is an example. You can build this repository in standard C++11, but it's actually developed in a different dialect. Try building it and run `script/sync.js`, then check `*.ama.cpp`.
+The project itself is an example. You can build this repository in plain C++11, but it's actually developed in a different dialect. Try building it and run `script/sync.js`, then check `*.ama.cpp`.
 
-The core is a generic parser and AST manipulation APIs, exposed through a simple Javascript interface.
+The core is a generic parser and a set of AST manipulation APIs, exposed through a simple Javascript interface.
 
 ## How to Use
 
-### Build the Project
+### Build
 
 #### Unix
 
@@ -42,14 +42,18 @@ See `example/hello_world.cpp` for a tutorial example.
 
 ### Configure an Existing Project
 
-To customize development of an existing project, the recommended way is to set up a bidirectional synchronization script like `script/sync.js`. The script will update in-repository source files when you change the custom-dialect files, and synchronize back any pulled upstream change.
+To customize development of an existing project, the recommended way is to set up a bidirectional synchronization script like `script/sync.js`. The script should update in-repository source files when you change the custom-dialect files, and synchronize back any pulled upstream change. The `bisync` module can help with that.
 
 Please refer to `script/sync.js` and the relevant module code for details.
 
-### API Reference
+## Documentation
+
+TODO: custom markdown generation
 
 TODO: ParseCurrentFile, ParseCode, Node, node-like modules
 
 ## Contributing
 
 TODO: ama.cpp features: indent, no (), array types
+
+TODO: rules: we never stop programmers from building the original code, as idiosyncratic as possible, try to avoid recursion

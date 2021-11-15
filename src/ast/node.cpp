@@ -585,6 +585,11 @@ ama::gcstring ama::Node::GetName() const {
 	} else if (this->node_class == ama::N_STRING) {
 		ama::Node* nd_hack = (ama::Node*)(this);
 		return nd_hack->GetStringValue();
+	} else if (this->node_class == ama::N_RAW) {
+		for (ama::Node* ndi = this->c; ndi; ndi = ndi->s) {
+			if (ndi->node_class == ama::N_REF && (ndi->flags & ama::REF_DECLARED)) {return ndi->data;}
+		}
+		return this->data;
 	} else {
 		return this->data;
 	}
