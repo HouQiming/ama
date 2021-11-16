@@ -1,13 +1,10 @@
 # Document for Contributors
 
-## How to Contribute
-
-Submit a pull request to this repository.
-
 ## Efforts Needed
 
-- Better language support in the parser
 - More creative ways of language customization
+- Better support of not-so-C-like languages
+- Better documentation
 
 ## C++11 Dialect for Development
 
@@ -28,16 +25,17 @@ if (foo) {
 }
 ```
 - Shortcut for common types: `i32[]` becomes `std::vector<int32_t>`
-- Undeclared variables will be automatically declared
-- `auto` will be replace with the deduced type whenever possible
+- Undeclared variables will be automatically declared as `auto`
+- Uninitialized variables will be zero-initialized with `Type foo{};`
+- `auto` will be replaced with a deduced type whenever possible
 
 ## Big Rules
 
 **No guarantees** Amalang is a best-effort tool and we do not pursue guarantees of any kind. We try our best to be helpful, but we don't make promises we can't keep. 
 
-**Idiosyncrasy** When generating code, try to make the result idiosyncratic. If a generator eventually lost maintenance, another soul could work manually on the once-generated code. For example, if we do auto-derivation, name our temporaries `d_loss_d_weight` instead of `_tmpvar42`. `nd.AutoFormat()` can help too.
+**Idiosyncrasy** When generating code, try to make the result idiosyncratic. If a generator eventually loses maintenance, another soul could end up hand-tweaking the once-generated code. Also enclose the generated code in some tags so that a backward transformation pass can remove them. Checkout `src/script/jsgen.cpp` for an example.
 
-**Tolerance** Make our AST manipulation coexist with other coding styles and language features, even if we can't parse them or don't like them.
+**Tolerance** Make our AST manipulation coexist with other coding styles and language features, even if we can't parse them or don't like them. Amalang is designed to assist programmers, not patronize.
 
 ## Small Rules
 

@@ -1,17 +1,29 @@
 'use strict';
 
+function DeclScope(nd) {
+	for (let ndi = nd; ndi; ndi = ndi.p) {
+		if (ndi.node_class == N_SCOPE) {
+			let nd_asgn = ndi.Owning(N_ASSIGNMENT);
+			if (nd_asgn && nd_asgn.c.isAncestorOf(ndi)) {
+				//hack out of destructuring
+				return nd_asgn.Owning(N_SCOPE);
+			}
+			return ndi;
+		}
+		if (ndi.node_class == N_PARAMETER_LIST) {
+			return ndi.p;
+		}
+	}
+	return nd.Root();
+}
+
 function Transform(nd_root, options) {
 	let all_refs = nd_root.FindAll(N_REF, null);
 	//track the locally undeclared
 	let scope_to_context = new Map();
 	for (let nd_def of all_refs) {
 		if (!(nd_def.flags & REF_DECLARED)) {continue;}
-		let nd_scope = nd_def.Owning(N_SCOPE) || nd_root;
-		let nd_asgn = nd_def.Owning(N_ASSIGNMENT);
-		if (nd_asgn && nd_asgn.c.isAncestorOf(nd_scope)) {
-			//hack out of destructuring
-			nd_scope = nd_asgn.Owning(N_SCOPE);
-		}
+		let nd_scope = DeclScope(nd_def);
 		let ctx = scope_to_context.get(nd_scope);
 		if (!ctx) {
 			ctx = {defs: new Set()};
@@ -51,12 +63,7 @@ function Transform(nd_root, options) {
 			nd_ref.flags |= REF_DECLARED;
 			///////////
 			//add it to the declarations
-			let nd_scope = nd_ref.Owning(N_SCOPE) || nd_root;
-			let nd_asgn = nd_ref.Owning(N_ASSIGNMENT);
-			if (nd_asgn && nd_asgn.c.isAncestorOf(nd_scope)) {
-				//hack out of destructuring
-				nd_scope = nd_asgn.Owning(N_SCOPE);
-			}
+			let nd_scope = DeclScope(nd_ref);
 			let ctx = scope_to_context.get(nd_scope);
 			if (!ctx) {
 				ctx = {defs: new Set()};
@@ -96,6 +103,10 @@ function Transform(nd_root, options) {
 			for (let nd_root_i of depends.ListAllDependency(nd_root, true)) {
 				for (let ndi = nd_root_i; ndi; ndi = ndi.PreorderNext(nd_root_i)) {
 					if (ndi.node_class == N_SCOPE && ndi.p && (ndi.p.node_class == N_FUNCTION || ndi.p.node_class == N_CLASS && ndi.p.data != 'namespace')) {
+						ndi = ndi.PreorderSkip();
+						continue;
+					}
+					if (ndi.node_class == N_PARAMETER_LIST) {
 						ndi = ndi.PreorderSkip();
 						continue;
 					}

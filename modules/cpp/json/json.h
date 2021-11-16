@@ -69,7 +69,7 @@ namespace JSON{
 		buf.push_back(']');
 	}
 	template<typename String,typename T>
-	static inline typename std::enable_if<std::is_convertible<char const*,String>::value,void>::type
+	static inline void
 	stringifyTo(std::string &buf,const std::unordered_map<String,T>& a){
 		buf.push_back('{');
 		int is_first=1;
@@ -192,7 +192,7 @@ namespace JSON{
 	}
 	//map with string key
 	template<typename String,typename T>
-	static inline typename std::enable_if<std::is_convertible<char const*,String>::value,std::unordered_map<String,T>>::type
+	static inline std::unordered_map<String,T>
 	parseFrom(JSONParserContext& ctx,std::unordered_map<String,T>**){
 		std::unordered_map<String,T> ret;
 		ctx.SkipSpace();
