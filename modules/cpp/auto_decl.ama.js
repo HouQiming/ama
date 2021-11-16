@@ -32,16 +32,37 @@ function Transform(nd_root, options) {
 			locally_undeclared.push(nd_ref);
 		}
 	}
-	//worse is better: just make all assignments decl, then look up the never-writtens
+	//worse is better: just make each first assignment decl, then look up the never-writtens
 	let owner_to_context = new Map();
 	let keyword = (options || {}).keyword || 'auto';
 	for (let nd_ref of locally_undeclared) {
 		if (nd_ref.flags == REF_WRITTEN) {
+			//check already-declared-ness
+			let declared = 0;
+			for (let nd_scope = nd_ref; nd_scope; nd_scope = nd_scope.p) {
+				let ctx = scope_to_context.get(nd_scope);
+				if (ctx && ctx.defs.has(nd_ref.data)) {declared = 1;break;}
+			}
+			if (declared) {continue;}
 			//make it a declaration
 			let nd_tmp = Node.GetPlaceHolder();
 			nd_ref.ReplaceWith(nd_tmp)
 			nd_tmp.ReplaceWith(nRaw(nRef(keyword).setCommentsAfter(' '), nd_ref));
 			nd_ref.flags |= REF_DECLARED;
+			///////////
+			//add it to the declarations
+			let nd_scope = nd_ref.Owning(N_SCOPE) || nd_root;
+			let nd_asgn = nd_ref.Owning(N_ASSIGNMENT);
+			if (nd_asgn && nd_asgn.c.isAncestorOf(nd_scope)) {
+				//hack out of destructuring
+				nd_scope = nd_asgn.Owning(N_SCOPE);
+			}
+			let ctx = scope_to_context.get(nd_scope);
+			if (!ctx) {
+				ctx = {defs: new Set()};
+				scope_to_context.set(nd_scope, ctx);
+			}
+			ctx.defs.add(nd_ref.data);
 		}
 		if (nd_ref.flags & REF_WRITTEN) {
 			let nd_owner = nd_ref.Owner();

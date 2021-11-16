@@ -1,10 +1,13 @@
 # Amalang
 
-A meta-language to customize any language for development, while keep interacting with upstream in the original language.
+A meta-language to amalgamate any features you want into any language you need, while keep interacting with upstream in the original language.
 
-The project itself is an example. You can build this repository in plain C++11, but it's actually developed in a different dialect. Try building it and run `script/sync.js`, then check `*.ama.cpp`.
+The project itself is an example. You can build this repository in plain C++11, but it's actually developed in a different dialect. Try building it and run `script/sync.js`, then check the generated `*.ama.cpp`.
 
-The core is a generic parser and a set of AST manipulation APIs, exposed through a simple Javascript interface.
+Key features:
+- **Zero setup** The system can parse any code as is, even if it's unbuildable or incomplete. It will parse whatever it understands and let unrecognized syntax pass through unchanged. Works best on languages with a C-like syntax.
+- **Zero disruption** Amalang lets you develop in a different language or workflow than you deliver. You can start or quit at any time you choose in any project you need, without disrupting upstream at all.
+- **Simple API** Most work only involve Javascript objects of one class `Node`. No need to learn special programming patterns.
 
 ## How to Use
 
@@ -38,7 +41,7 @@ build\ama script\sync.js
 
 To quickly try out the features, add a comment with `@ama` and some Javascript to a source code file, then pass that file to `ama`.
 
-See `example/hello_world.cpp` for a tutorial example.
+See `example/hello_world.cpp` for a tutorial.
 
 ### Configure an Existing Project
 
@@ -48,12 +51,12 @@ Please refer to `script/sync.js` and the relevant module code for details.
 
 ## Documentation
 
-TODO: custom markdown generation
+[AST API Reference](doc/api_node.md)
 
-TODO: ParseCurrentFile, ParseCode, Node, node-like modules
+TODO: module reference
 
 ## Contributing
 
-TODO: ama.cpp features: indent, no (), array types
+We welcome pull requests. We need your help to build up an ecosystem.
 
-TODO: rules: we never stop programmers from building the original code, as idiosyncratic as possible, try to avoid recursion
+See the [document for contributors](doc/contrib.md).

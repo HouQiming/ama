@@ -1,3 +1,4 @@
-`nd.【name】(【prototype】)`
+--------------
+【prototype】
 
-【params】【description】
+【description】

@@ -14,5 +14,7 @@ int main() {
 	a.foo(bar);
 	a--->foo(bar);
 	Node* nd;
+	b=3;
+	b=4;
 	return nd.c.s;
 }

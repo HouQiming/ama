@@ -35,14 +35,17 @@ Node.setCommentsAfter = function(comments_after) {
 	return this;
 }
 
+//Create `N_CALL` with `nd` as the function and `args` as arguments.
 Node.call = function(...args) {
 	return nCall.apply(null, [this].concat(args));
 }
 
+//Return an enclosure of the current node in `s_brackets`. `s_brackets` can be '[]' or '()'.
 Node.enclose = function(s_brackets) {
 	return nRaw(this).setFlags((s_brackets.charCodeAt(0) & 0xff) | (s_brackets.charCodeAt(1) & 0xff) << 8);
 }
 
+//Chainable syntax sugar for `f(nd, ...args)`.
 Node.then = function(f, ...args) {
 	let ret = f.apply(null, [this].concat(args));
 	if (ret === undefined) {
@@ -51,6 +54,7 @@ Node.then = function(f, ...args) {
 	return ret;
 }
 
+//Callback for `JSON.stringify(nd)`. The resulting JSON is for human inspection only and not useful when parsed back.
 Node.toJSON = function() {
 	let children = [];
 	for (let ndi = this.c; ndi; ndi = ndi.s) {
@@ -65,19 +69,6 @@ Node.toJSON = function() {
 		comments_after: this.comments_after || undefined,
 		"[children]": children,
 	}
-}
-
-Node.MatchAny = function(/*optional*/node_class, name) {
-	if (name === undefined) {
-		//node_class is actually the name
-		return nNodeof(nRef(node_class));
-	} else {
-		return nNodeof(nCall(nRef(__node_class_names[node_class]), nRef(name)));
-	}
-}
-
-Node.MatchDot = function(nd_object, name) {
-	return nNodeof(nd_object.dot(name));
 }
 
 Node.dfsMatch = function(ret, nd_pattern) {
@@ -122,7 +113,10 @@ Node.dfsMatch = function(ret, nd_pattern) {
 	return true;
 }
 
-//match a template
+//Match a code template specified by `nd_pattern`.
+//`nd.Match` only checks `nd` itself. `nd.MatchAll` matches the pattern against the entire subtree under `nd` and returns an array of matches.
+//
+//The returned match objects have the shape `{nd:<matched node>}`
 Node.Match = function(nd_pattern) {
 	let ret = {nd: this};
 	if (this.dfsMatch(ret, nd_pattern)) {
@@ -136,6 +130,40 @@ Node.MatchAll = function(nd_pattern) {
 	return this.FindAll(nd_pattern.node_class, nd_pattern.data).map(nd=>nd.Match(nd_pattern)).filter(ret=>ret);
 }
 
+//Wildcards for template matching. You can invoke the patterns with nested `.()` inside `.()`.
+//
+//MatchAny matches any node of an optional node class and saves the result in the `name` property of the returned match.
+//
+//For example, this code:
+//```Javascript
+//let nd_source = .(test(3));
+//nd_source.Match(
+//    .(test(.(Node.MatchAny("val"))))
+//)
+//```
+//will return `{nd:nd_source,val:nd_source.Find(N_NUMBER, '3')}`.
+Node.MatchAny = function(/*optional*/node_class, name) {
+	if (name === undefined) {
+		//node_class is actually the name
+		return nNodeof(nRef(node_class));
+	} else {
+		return nNodeof(nCall(nRef(__node_class_names[node_class]), nRef(name)));
+	}
+}
+
+Node.MatchDot = function(nd_object, name) {
+	return nNodeof(nd_object.dot(name));
+}
+
+//Substitution a match into the code template specified by `nd`.
+//`.(foo)` under `nd` will be replaced with `match.foo`.
+//
+//For example, this code:
+//```Javascript
+//let nd_source = .(test(.(val)));
+//nd_source.Subst({val:nNumber(3)})
+//```
+//will return `.(test(3))`
 Node.Subst = function(match) {
 	let nd_ret = this.Clone();
 	for (let ndi = nd_ret; ndi; ndi = ndi.PreorderNext(null)) {

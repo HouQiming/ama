@@ -18,6 +18,10 @@ class TestClass<int>:Base{
 
 WEIRD_DECL_MACRO(int,weirdForward)(int p,int q=3);
 
+Node.JSVariadic=function(arg0,...rest){
+	return rest;
+}
+
 int main(int argc,char** argv){
 	int uninitialized_var;
 	auto a=function(int p=3,...){

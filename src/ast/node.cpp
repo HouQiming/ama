@@ -685,7 +685,7 @@ int ama::Node::isSymbol(std::span<char> name) const {
 int ama::Node::isRef(std::span<char> name) const {
 	return this->node_class == ama::N_REF && this->data == name;
 }
-int ama::Node::isMethodCall(ama::gcstring name) const {
+int ama::Node::isMethodCall(std::span<char> name) const {
 	return this->node_class == ama::N_CALL && this->c->node_class == ama::N_DOT && this->c->data == name;
 }
 ///dependency is global: have to re-ParseDependency after you InsertDependency
@@ -727,18 +727,18 @@ ama::gcstring ama::Node::DestroyForSymbol() {
 	this->FreeASTStorage();
 	return ret;
 }
-int ama::Node::ValidateChildCount(int n_children) {
+int ama::Node::ValidateChildCount(int n_children, int quiet) {
 	ama::Node* ndi = this->c;
 	for (int i = 0; i < n_children; i += 1) {
 		if ( !ndi ) {
-			printf("need %d children but only got %d : %lld\n", n_children, i + 1, ((long long)(intptr_t(this))));
+			if (!quiet) {printf("need %d children but only got %d : %lld\n", n_children, i + 1, ((long long)(intptr_t(this))));}
 			this->comments_before = ama::gcstring(JC::string_concat("/*bad children count*/ ", this->comments_before));
 			return 0;
 		}
 		ndi = ndi->s;
 	}
 	if ( ndi ) {
-		printf("too many children %lld\n", ((long long)(intptr_t(this))));
+		if (!quiet) {printf("too many children %lld\n", ((long long)(intptr_t(this))));}
 		this->comments_before = ama::gcstring(JC::string_concat("/*too many children*/ ", this->comments_before));
 		return 0;
 	}
@@ -795,12 +795,12 @@ int ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 			error_count += 1;
 		}
 		if ( nd->node_class == ama::N_FUNCTION ) {
-			if ( !nd->ValidateChildCount(4) ) {
+			if ( !nd->ValidateChildCount(4, quiet) ) {
 				error_count += 1;
 			}
 		}
 		if ( nd->node_class == ama::N_CLASS ) {
-			if ( !nd->ValidateChildCount(4) ) {
+			if ( !nd->ValidateChildCount(4, quiet) ) {
 				error_count += 1;
 			}
 		}

@@ -570,10 +570,10 @@ namespace ama {
 		for ( ama::Node* nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
 			for (ama::Node* nd_param = nd_paramlist->node_class == ama::N_CALL_TEMPLATE ? nd_paramlist->c->s : nd_paramlist->c; nd_param; nd_param = nd_param->s) {
 				if ( nd_param->node_class == ama::N_ASSIGNMENT ) { continue; }
-				if ( nd_param->node_class == ama::N_SYMBOL || (nd_param->node_class == ama::N_RAW && nd_param->c && nd_param->c->node_class == ama::N_SYMBOL) ) {
-					//rest args
-					continue;
-				}
+				//if ( nd_param->node_class == ama::N_SYMBOL || (nd_param->node_class == ama::N_RAW && nd_param->c && nd_param->c->node_class == ama::N_SYMBOL) ) {
+				//	//rest args
+				//	continue;
+				//}
 				ama::Node* nd_tmp = ama::GetPlaceHolder();
 				nd_param->ReplaceWith(nd_tmp);
 				nd_param = nd_tmp->ReplaceWith(ama::nAssignment(nd_param, ama::nAir()));
