@@ -35,7 +35,8 @@ namespace ama {
 			nd->node_class == ama::N_BINOP || nd->node_class == ama::N_POSTFIX || 
 			nd->node_class == ama::N_DOT || nd->node_class == ama::N_ITEM || nd->node_class == ama::N_FUNCTION || 
 			nd->node_class == ama::N_ASSIGNMENT || nd->node_class == ama::N_CONDITIONAL || 
-			nd->node_class == ama::N_LABELED || nd->node_class == ama::N_SEMICOLON || 
+			nd->node_class == ama::N_LABELED || nd->node_class == ama::N_SEMICOLON ||
+			nd->node_class == ama::N_PARAMETER_LIST && (nd->flags & ama::PARAMLIST_UNWRAPPED) || 
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
 				if ( nd->c->comments_before.size() ) {
 					nd->comments_before = (nd->comments_before + nd->c->comments_before);
@@ -150,15 +151,17 @@ namespace ama {
 				//fix the priority reversal
 				ama::Node* nd_asgn = nd_label->p;
 				ama::Node* nd_var = nd_label->c->s->Unlink();
-				int8_t indent_asgn = nd_asgn->indent_level;
-				int8_t indent_var = nd_var->indent_level;
-				int8_t indent_label = nd_label->indent_level;
+				int32_t indent_asgn = nd_asgn->indent_level;
+				int32_t indent_var = nd_var->indent_level;
+				int32_t indent_label = nd_label->indent_level;
 				nd_label->ReplaceWith(nd_var);
 				nd_asgn->ReplaceWith(nd_label);
 				nd_label->Insert(ama::POS_BACK, nd_asgn);
 				nd_label->indent_level = indent_asgn;
 				nd_asgn->indent_level = indent_var;
 				nd_var->indent_level = 0;
+				//the shenanigans above ignored the assignment value
+				nd_asgn->c->s->AdjustIndentLevel(indent_asgn - indent_var);
 			}
 		}
 		return nd_root;

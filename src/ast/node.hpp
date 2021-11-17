@@ -218,8 +218,9 @@ namespace ama {
 		//```
 		ama::Node* ReplaceWith(ama::Node* nd_new);
 		//Replace all nodes between `nd` and `nd_upto` with `nd_new`.
-		//`nd_upto` is inclusive, set `nd_new` to NULL to delete the nodes instead.
+		//`nd_upto` is inclusive, set `nd_new` to NULL to unlink the nodes instead.
 		//`nd_upto` must be a sibling of `nd`.
+		//The sibling links between `nd` and `nd_upto` are retained.
 		ama::Node* ReplaceUpto(ama::Node* nd_upto, ama::Node* nd_new);
 		//Insert `nd_new` in a position relative to `nd`. `pos` controls the positioning:
 		//- **POS_BEFORE**: `nd_new` will be the previous sibling of `nd`
@@ -440,6 +441,7 @@ namespace ama {
 	static inline ama::Node* GetPlaceHolder() {
 		assert(!g_placeholder->p);
 		assert(!g_placeholder->s);
+		g_placeholder->indent_level=0;
 		g_placeholder->comments_before = "";
 		g_placeholder->comments_after = "";
 		g_placeholder->c = nullptr;

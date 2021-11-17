@@ -1,5 +1,7 @@
 # AST API Reference
 
+TODO: what is AST
+
 ## Creating an AST
 
 The AST (Abstract Syntax Tree) is usually created in Javascript with a parsing API:
@@ -112,7 +114,7 @@ nd_tmp.ReplaceWith(nParen(nd));
 --------------
 - `nd.ReplaceUpto(nd_upto, nd_new)`
 
-Replace all nodes between `nd` and `nd_upto` with `nd_new`. `nd_upto` is inclusive, set `nd_new` to NULL to delete the nodes instead. `nd_upto` must be a sibling of `nd`.
+Replace all nodes between `nd` and `nd_upto` with `nd_new`. `nd_upto` is inclusive, set `nd_new` to NULL to unlink the nodes instead. `nd_upto` must be a sibling of `nd`. The sibling links between `nd` and `nd_upto` are retained.
 
 --------------
 - `nd.Insert(pos, nd_new)`
@@ -398,6 +400,11 @@ Perform template substitution. `match_jobs` is an array with objects in the form
 - `nd.GetFunctionNameNode()`
 
 Return the name of `N_FUNCTION`. Returns an empty string if the function is unnamed.
+
+--------------
+- `nd.GetCompleteParseOption(options)`
+
+Create an extension-aware parsing option for `ParseCode`.
 
 
 ## Node Types

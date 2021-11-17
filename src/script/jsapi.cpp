@@ -252,6 +252,16 @@ namespace ama {
 		ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		assert(!nd_root->p);
+		JSValue parser_hook = JS_GetPropertyStr(ama::jsctx, options, "parser_hook");
+		if (!JS_IsUndefined(parser_hook) && !JS_IsNull(parser_hook)) {
+			JSValue js_nd_root = ama::WrapNode(nd_root);
+			JSValueConst ret = JS_Call(ama::jsctx, parser_hook, JS_NULL, 1, &js_nd_root);
+			ama::Node* nd_new_root = ama::UnwrapNode(ret);
+			if (nd_new_root) {
+				nd_root = nd_new_root;
+			}
+			JS_FreeValue(ama::jsctx, ret);
+		}
 		return nd_root;
 	}
 	static JSValueConst JSParseCurrentFile(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv, int magic, JSValue* func_data) {
@@ -477,7 +487,8 @@ namespace ama {
 		NodeFilterDesc{"NodeofToASTExpression", ama::NodeofToASTExpression, nullptr},
 		NodeFilterDesc{"CleanupDummyRaws", ama::CleanupDummyRaws, nullptr},
 		NodeFilterDesc{"ParseOperators", nullptr, ama::ParseOperators},
-		NodeFilterDesc{"AutoFormat", ama::AutoFormat, nullptr}
+		NodeFilterDesc{"AutoFormat", ama::AutoFormat, nullptr},
+		NodeFilterDesc{"SanitizeCommentPlacement", ama::SanitizeCommentPlacement, nullptr}
 	};
 	//new NodeFilterDesc!{
 	//	name: 'StripBinaryOperatorSpaces',

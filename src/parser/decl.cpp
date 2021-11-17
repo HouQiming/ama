@@ -482,7 +482,7 @@ namespace ama {
 							}
 							nd_paramlist = ConvertToParameterList(nd_paramlist);
 							if (is_unwrapped_parameter_list) {
-								nd_paramlist->flags = PARAMLIST_UNWRAPPED;
+								nd_paramlist->flags = ama::PARAMLIST_UNWRAPPED;
 							}
 							nd_before = ama::toSingleNode(nd_before);
 							nd_after = ama::toSingleNode(nd_after);

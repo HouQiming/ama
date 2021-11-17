@@ -290,6 +290,10 @@ Node.GetFunctionNameNode=function() {
 	return nd_name;
 }
 
+//Create an extension-aware parsing option for `ParseCode`. 
+Node.GetCompleteParseOption=function(options){
+	return __PrepareOptions(this.Root().data,options);
+}
 
 //The default_options tries to be generic enough for any language.
 __global.default_options = {
@@ -359,7 +363,47 @@ __global.extension_specific_options = {
 		enable_hash_comment: 1,
 		parse_indent_as_scope: 1,
 		parse_js_regexp: 0,
-		auto_curly_bracket: 0
+		auto_curly_bracket: 0,
+		parser_hook:function(nd_root){
+			//parse: Python lambda
+			for(let nd_lambda of nd_root.FindAll(N_REF,'lambda')){
+				if(nd_lambda.p.node_class!==N_RAW){continue;}
+				let nd_raw=nd_lambda.p;
+				if(nd_raw.p.node_class!==N_LABELED){
+					//misparsed multi-parameter lambda
+					let ndi=nd_raw;
+					while(ndi&&ndi.node_class!==N_LABELED){
+						ndi=ndi.s;
+					}
+					if(!ndi){continue;}
+					let ndi_prev=ndi.Prev();
+					nd_raw.ReplaceUpto(ndi_prev,null);
+					let nd_other_args=nd_raw.BreakSibling();
+					if(nd_other_args){
+						nd_raw.Insert(POS_BACK,nd_other_args);
+					}
+					let nd_last_param=ndi.c;
+					nd_last_param.ReplaceWith(nd_raw);
+					nd_raw.Insert(POS_BACK,nd_last_param);
+					//COULDDO: add back comma if removed
+				}
+				let nd_labeled=nd_raw.p;
+				let params=[];
+				for(let ndi=nd_raw.c.s;ndi;ndi=ndi.s){
+					if(ndi.node_class===N_REF){
+						params.push(nAssignment(ndi.Clone(),nAir()));
+					}
+				}
+				let nd_body=nd_labeled.c.s;
+				nd_labeled.ReplaceWith(nFunction(
+					nd_raw.c.Unlink(),
+					nParameterList.apply(null,params).setFlags(PARAMLIST_UNWRAPPED).SanitizeCommentPlacement(),
+					nSymbol(':').setCommentsBefore(nd_raw.comments_after),
+					nd_body.Unlink()
+				))
+			}
+			return nd_root;
+		}
 	}),
 }
 
@@ -377,6 +421,7 @@ __global.__PrepareOptions = function(filename, options) {
 	}
 	return options;
 }
+
 
 //for instanceof
 function fake_options_ctor() {}

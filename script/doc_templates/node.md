@@ -1,5 +1,7 @@
 # AST API Reference
 
+TODO: what is AST
+
 ## Creating an AST
 
 The AST (Abstract Syntax Tree) is usually created in Javascript with a parsing API:

@@ -3,21 +3,18 @@
 let nd_root=ParseCurrentFile();
 //multi-line lambda
 for(let nd_func of nd_root.FindAll(N_FUNCTION)){
-	//before, paramlist, after, body
-	if(nd_func.c.s.s.isSymbol('=>')){
-		let nd_stmt=nd_func.ParentStatement();
+	if(nd_func.c.isRef('lambda')&&nd_func.LastChild().comments_before.indexOf('\n')>=0){
+		let nd_stmt=nd_func.ParentStatement(); 
+		let code=nd_func.toSource()+";";
+		let nd_reparsed=ParseCode(code,nd_root.GetCompleteParseOption()).Find(N_FUNCTION);
+		if(!nd_reparsed){continue;}
 		let name='LongLambdaL'+nd_stmt.ComputeLineNumber().toString();
-		nd_func.c.ReplaceWith(nRaw(nRef('def'),nRef(name).setCommentsBefore(' ')).setCommentsBefore('\n'));
-		nd_func.c.s.flags&=~PARAMLIST_UNWRAPPED;
-		nd_func.c.s.s.data=':';
-		let nd_scope=nd_func.LastChild();
-		nd_scope.flags=SCOPE_FROM_INDENT;
-		if(nd_scope.LastChild()){
-			nd_scope.LastChild().comments_after='';
-		}
-		nd_func.ReplaceWith(nRef(name));
-		nd_func.indent_level=nd_stmt.indent_level;
-		nd_stmt.Insert(POS_BEFORE,nd_func);
+		nd_reparsed.c.ReplaceWith(nRaw(nRef('def'),nRef(name).setCommentsBefore(' ')));
+		nd_reparsed.c.s.flags&=~PARAMLIST_UNWRAPPED;
+		nd_reparsed.c.s.comments_before='';
+		nd_reparsed.comments_after='';
+		nd_func.ReplaceWith(nRef(name)).setCommentsAfter('');
+		nd_stmt.Insert(POS_BEFORE,nd_reparsed.setIndent(nd_stmt.indent_level).setCommentsBefore('\n'));
 	}
 }
 //methodified 'map'
@@ -28,6 +25,7 @@ for(let nd_call of nd_root.FindAll(N_CALL,'map')){
 	}
 }
 nd_root.Save('.audit.py');
+console.log(JSON.stringify(nd_root,null,1));
 console.log(nd_root.toSource());
 '''
 
@@ -35,9 +33,9 @@ def main():
 	input=[1,2,3]
 	print(list(input.map(lambda v:v+1)))
 	acc=[0]
-	print(list(input.map(v=>{
+	print(list(input.map(lambda v:
 		acc[0]+=v
 		return acc[0]
-	})))
+	)))
 
 main()
