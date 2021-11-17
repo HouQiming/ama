@@ -29,6 +29,8 @@ The AST makes extensive use of doubly-linked lists. The links are exposed as mut
 ### Fields
 
 【fields】
+**children** is a Javascript-only property which returns an array with all child nodes.
+
 ### Common Methods
 
 Unless otherwise specified, the following methods are supported in both C++ and Javascript:

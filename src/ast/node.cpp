@@ -1000,6 +1000,13 @@ int32_t ama::Node::ComputeLineNumber() const {
 			}
 		}
 		if (ndi == this) {break;}
+		if (ndi->node_class == ama::N_STRING && !(ndi->flags & ama::LITERAL_PARSED)) {
+			for (char ch: ndi->data) {
+				if (ch == '\n') {
+					ret += 1;
+				}
+			}
+		}
 		if (ndi->c) {
 			ndi = ndi->c;
 		} else {

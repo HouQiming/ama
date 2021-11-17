@@ -9,11 +9,16 @@
 #include "scoping.hpp"
 #include "../util/jc_array.h"
 namespace ama {
-	static ama::Node* ConvertToParameterList(ama::Node* nd_raw) {
-		assert(nd_raw->isRawNode('(', ')') || nd_raw->isRawNode('<', '>'));
+	ama::Node* ConvertToParameterList(ama::Node* nd_raw) {
 		uint32_t flags = 0;
+		if (nd_raw->node_class == ama::N_PAREN) {
+			nd_raw->Unparse();
+		}
 		if (nd_raw->isRawNode('<', '>')) {
 			flags = ama::PARAMLIST_TEMPLATE;
+		} else if (!nd_raw->isRawNode('(', ')')) {
+			flags = ama::PARAMLIST_UNWRAPPED;
+			nd_raw = ama::CreateNode(ama::N_RAW, nd_raw)->setFlags(uint32_t('(') | (uint32_t(')') << 8));
 		}
 		std::vector<ama::Node*> params{};
 		for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
@@ -427,7 +432,7 @@ namespace ama {
 								}
 							}
 							ama::Node* nd_paramlist = nullptr;
-							int is_unwrapped_parameter_list = 0;
+							//int is_unwrapped_parameter_list = 0;
 							for (ama::Node* ndj = nd_paramlist_start; ndj != ndi; ndj = ndj->s) {
 								if ( ndj->isRawNode('(', ')') || ndj->node_class == ama::N_CALL ) {
 									nd_paramlist = ndj;
@@ -435,18 +440,20 @@ namespace ama {
 									if (nd_paramlist) {
 										break;
 									}
-									if (ndj != nd_paramlist_start && ndj->Prev()->node_class == ama::N_REF) {
-										ama::Node* nd_was_paramlist = ndj->Prev();
-										ama::Node* nd_tmp = ama::GetPlaceHolder();
-										nd_was_paramlist->ReplaceWith(nd_tmp);
-										nd_paramlist = nd_tmp->ReplaceWith(ama::CreateNode(ama::N_RAW, nd_was_paramlist)->setFlags(uint32_t('(') | (uint32_t(')') << 8)));
-										is_unwrapped_parameter_list = 1;
-										if (nd_was_paramlist == nd_paramlist_start) {
-											nd_paramlist_start = nd_paramlist;
-										}
-										if (nd_was_paramlist == nd_prototype_start) {
-											nd_prototype_start = nd_paramlist;
-										}
+									if (ndj->node_class == ama::N_SYMBOL && ndj != nd_paramlist_start && ndj->Prev()->node_class == ama::N_REF) {
+										//for function-indicator symbols like the Javascript '=>'
+										//ama::Node* nd_was_paramlist = ndj->Prev();
+										//ama::Node* nd_tmp = ama::GetPlaceHolder();
+										//nd_was_paramlist->ReplaceWith(nd_tmp);
+										//nd_paramlist = nd_tmp->ReplaceWith(ama::CreateNode(ama::N_RAW, nd_was_paramlist)->setFlags(u32('(') | (u32(')') << 8)));
+										//is_unwrapped_parameter_list = 1;
+										//if (nd_was_paramlist == nd_paramlist_start) {
+										//	nd_paramlist_start = nd_paramlist;
+										//}
+										//if (nd_was_paramlist == nd_prototype_start) {
+										//	nd_prototype_start = nd_paramlist;
+										//}
+										nd_paramlist = ndj->Prev();
 										break;
 									}
 								} else if ( parse_cpp11_lambda && ndj->isRawNode('[', ']') && ndj->s->isRawNode('(', ')') ) {
@@ -481,9 +488,9 @@ namespace ama {
 								nd_after = ama::nAir();
 							}
 							nd_paramlist = ConvertToParameterList(nd_paramlist);
-							if (is_unwrapped_parameter_list) {
-								nd_paramlist->flags = ama::PARAMLIST_UNWRAPPED;
-							}
+							//if (is_unwrapped_parameter_list) {
+							//	nd_paramlist->flags = ama::PARAMLIST_UNWRAPPED;
+							//}
 							nd_before = ama::toSingleNode(nd_before);
 							nd_after = ama::toSingleNode(nd_after);
 							ama::ConvertToScope(ndi);

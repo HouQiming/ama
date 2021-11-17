@@ -42,6 +42,11 @@ ama::Node * ama::Node::Unparse() {
 		default: {
 			return this;
 		}
+		case ama::N_PAREN: {
+			this->flags = uint32_t('(') | uint32_t(')') << 8;
+			this->node_class = ama::N_RAW;
+			return this;
+		}
 		case ama::N_RAW: {
 			return ama::UnparseRaw(this);
 		}
@@ -488,7 +493,8 @@ namespace ama {
 		NodeFilterDesc{"CleanupDummyRaws", ama::CleanupDummyRaws, nullptr},
 		NodeFilterDesc{"ParseOperators", nullptr, ama::ParseOperators},
 		NodeFilterDesc{"AutoFormat", ama::AutoFormat, nullptr},
-		NodeFilterDesc{"SanitizeCommentPlacement", ama::SanitizeCommentPlacement, nullptr}
+		NodeFilterDesc{"SanitizeCommentPlacement", ama::SanitizeCommentPlacement, nullptr},
+		NodeFilterDesc{"ConvertToParameterList", ama::ConvertToParameterList, nullptr}
 	};
 	//new NodeFilterDesc!{
 	//	name: 'StripBinaryOperatorSpaces',

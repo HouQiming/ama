@@ -59,6 +59,8 @@ The `return 0;` node has `.indent_level=4` (default tab width) while all other n
 **v** links to the node's previous sibling, or `PackTailPointer(last_sibling)` if `this==this->p->c`
 
 
+**children** is a Javascript-only property which returns an array with all child nodes.
+
 ### Common Methods
 
 Unless otherwise specified, the following methods are supported in both C++ and Javascript:

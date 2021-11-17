@@ -405,6 +405,30 @@ __global.extension_specific_options = {
 			return nd_root;
 		}
 	}),
+	'.js':Object.assign(Object.create(__global.default_options), {
+		prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
+		postfix_operators: '++ --',
+		cv_qualifiers: '',
+		named_operators: 'typeof delete await new in of instanceof as',
+		parse_js_regexp: 1,
+		parser_hook:function(nd_root){
+			for(let nd_func_sym of nd_root.FindAll(N_SYMBOL,'=>')){
+				let nd_parent=nd_func_sym.p;
+				if(nd_parent&&nd_parent.node_class===N_RAW&&nd_func_sym.Prev()&&nd_func_sym.s){
+					let nd_body=nd_func_sym.BreakSibling();
+					nd_func_sym.BreakSelf();
+					let nd_prototype=nd_parent.BreakChild();
+					nd_parent.ReplaceWith(nFunction(
+						nAir(),
+						nd_prototype.ConvertToParameterList(),
+						nd_func_sym,
+						nd_body
+					))
+				}
+			}
+			return nd_root;
+		}
+	})
 }
 
 __global.__PrepareOptions = function(filename, options) {

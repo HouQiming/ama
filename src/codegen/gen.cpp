@@ -52,13 +52,13 @@ namespace ama {
 				break;
 			}
 			case ama::N_SCOPE: {
-				if (!(nd->flags & SCOPE_FROM_INDENT) ) {
+				if (!(nd->flags & ama::SCOPE_FROM_INDENT) ) {
 					this->code.push_back('{');
 				}
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					this->Generate(ndi);
 				}
-				if (!(nd->flags & SCOPE_FROM_INDENT) ) {
+				if (!(nd->flags & ama::SCOPE_FROM_INDENT) ) {
 					this->code.push_back('}');
 				}
 				break;
@@ -231,7 +231,8 @@ namespace ama {
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					if ( ndi->node_class == ama::N_EXTENSION_CLAUSE || ndi->node_class == ama::N_SCOPE || 
 					ndi->node_class == ama::N_SYMBOL && ndi->data != ":" ||
-					ndi->node_class == ama::N_PARAMETER_LIST && (ndi->flags & ama::PARAMLIST_UNWRAPPED)) {
+					ndi_last && ndi->node_class == ama::N_PARAMETER_LIST && (ndi->flags & ama::PARAMLIST_UNWRAPPED) ||
+					ndi_last && ndi_last->node_class == ama::N_SYMBOL) {
 						if ( ndi_last ) {
 							this->GenerateSpaceBetween(ndi_last, ndi);
 						} else {
