@@ -4,11 +4,11 @@
 
 The AST (Abstract Syntax Tree) is usually created in Javascript with a parsing API:
 
-`ParseCurrentFile([options])` parses the current file and returns an AST.
-
 `ParseCode(code, [options])` parses the provided code string into an AST. This function is also available in C++.
 
-`require('depends').LoadFile(name)` loads a file and returns its AST, or `undefined` if the loading failed. Once a file is successfully loaded, the result is cached and later calls will return the same AST even if it were modified. This is useful for maintaining a partially-edited state.
+`ParseCurrentFile([options])` parses the current file and returns an AST. The `.data` field of the returned root node stores the file path.
+
+`require('depends').LoadFile(name)` loads a file and returns its AST, or `undefined` if the loading failed. The `.data` field of the returned root node stores the file path. Once a file is successfully loaded, the result is cached and later calls will return the same AST even if it were modified. This is useful for maintaining a partially-edited state.
 
 Alternatively, we can also create an in-line AST by wrapping raw code with `.()` in an ama script.
 
@@ -363,10 +363,6 @@ will return `{nd:nd_source,val:nd_source.Find(N_NUMBER, '3')}`.
 
 --------------
 - `nd.Subst(match)`
-- `nd.Save([options])`
-- `nd.StripRedundantPrefixSpace(aggressive)`
-- `nd.TranslateTemplates(match_jobs[, is_forward])`
-- `nd.GetFunctionNameNode()`
 
 Substitution a match into the code template specified by `nd`. `.(foo)` under `nd` will be replaced with `match.foo`. For example, this code:
 
@@ -376,6 +372,32 @@ nd_source.Subst({val:nNumber(3)})
 ```
 
 will return `.(test(3))`
+
+--------------
+- `nd.Save([options])`
+
+Save the node. `options` can be:
+
+- A string starting with '.' interpreted as a new extension
+- A string specifying a full path
+- An object with saving options, see [Parsing Options](#-parsing-options). `options.name` is the full path
+
+For example, `nd.Save('.audit.cpp')` saves the current AST into a new file with the same file name as `nd.Root().data` and extension '.audit.cpp'.
+
+--------------
+- `nd.StripRedundantPrefixSpace(aggressive)`
+
+Remove redundant spaces from the AST, if `aggressive` is true, also remove newlines.
+
+--------------
+- `nd.TranslateTemplates(match_jobs, is_forward)`
+
+Perform template substitution. `match_jobs` is an array with objects in the form `{from:Node, to:Node}`. Each match of the `from` pattern will be replaced with its parameters substituted into the corresponding `to` pattern with `Node.Subst`. If `is_forward` is false, do it backwards.
+
+--------------
+- `nd.GetFunctionNameNode()`
+
+Return the name of `N_FUNCTION`. Returns an empty string if the function is unnamed.
 
 
 ## Node Types

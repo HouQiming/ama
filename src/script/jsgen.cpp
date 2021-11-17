@@ -656,6 +656,7 @@ namespace ama {
 		JS_SetPropertyStr(ama::jsctx, global, "TMPF_IS_NODE", JS_NewInt32(ama::jsctx, TMPF_IS_NODE));
 		JS_SetPropertyStr(ama::jsctx, global, "TMPF_GC_MARKED", JS_NewInt32(ama::jsctx, TMPF_GC_MARKED));
 		JS_SetPropertyStr(ama::jsctx, global, "FILE_SPACE_INDENT", JS_NewInt32(ama::jsctx, FILE_SPACE_INDENT));
+		JS_SetPropertyStr(ama::jsctx, global, "SCOPE_FROM_INDENT", JS_NewInt32(ama::jsctx, SCOPE_FROM_INDENT));
 		JS_SetPropertyStr(ama::jsctx, global, "REF_WRITTEN", JS_NewInt32(ama::jsctx, REF_WRITTEN));
 		JS_SetPropertyStr(ama::jsctx, global, "REF_RW", JS_NewInt32(ama::jsctx, REF_RW));
 		JS_SetPropertyStr(ama::jsctx, global, "REF_DECLARED", JS_NewInt32(ama::jsctx, REF_DECLARED));
@@ -668,6 +669,7 @@ namespace ama {
 		JS_SetPropertyStr(ama::jsctx, global, "DEP_TYPE_MASK", JS_NewInt32(ama::jsctx, DEP_TYPE_MASK));
 		JS_SetPropertyStr(ama::jsctx, global, "DEPF_C_INCLUDE_NONSTR", JS_NewInt32(ama::jsctx, DEPF_C_INCLUDE_NONSTR));
 		JS_SetPropertyStr(ama::jsctx, global, "PARAMLIST_TEMPLATE", JS_NewInt32(ama::jsctx, PARAMLIST_TEMPLATE));
+		JS_SetPropertyStr(ama::jsctx, global, "PARAMLIST_UNWRAPPED", JS_NewInt32(ama::jsctx, PARAMLIST_UNWRAPPED));
 		JS_SetPropertyStr(ama::jsctx, global, "MAX_INDENT", JS_NewInt32(ama::jsctx, MAX_INDENT));
 		JS_SetPropertyStr(ama::jsctx, global, "POS_BEFORE", JS_NewInt32(ama::jsctx, POS_BEFORE));
 		JS_SetPropertyStr(ama::jsctx, global, "POS_AFTER", JS_NewInt32(ama::jsctx, POS_AFTER));

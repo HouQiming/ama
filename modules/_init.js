@@ -186,6 +186,11 @@ Node.Subst = function(match) {
 	return nd_ret;
 }
 
+//Save the node. `options` can be:
+//- A string starting with '.' interpreted as a new extension
+//- A string specifying a full path
+//- An object with saving options, see [Parsing Options](#-parsing-options). `options.name` is the full path
+//For example, `nd.Save('.audit.cpp')` saves the current AST into a new file with the same file name as `nd.Root().data` and extension '.audit.cpp'.
 Node.Save = function(/*optional*/options) {
 	if (typeof(options) === 'string') {
 		if (options.startsWith('.')) {
@@ -209,6 +214,7 @@ Node.Save = function(/*optional*/options) {
 	return this;
 }
 
+//Remove redundant spaces from the AST, if `aggressive` is true, also remove newlines.
 Node.StripRedundantPrefixSpace = function(aggressive) {
 	function isSpace(s){
 		return s&&!s.trim()&&(aggressive||s.indexOf('\n')<0);
@@ -247,7 +253,11 @@ Node.StripRedundantPrefixSpace = function(aggressive) {
 	return this;
 }
 
-Node.TranslateTemplates = function(match_jobs, /*optional*/is_forward) {
+//Perform template substitution. `match_jobs` is an array with objects in the form `{from:Node, to:Node}`.
+//Each match of the `from` pattern will be replaced with its parameters substituted into the corresponding `to` pattern with `Node.Subst`.
+//
+//If `is_forward` is false, do it backwards.
+Node.TranslateTemplates = function(match_jobs, is_forward) {
 	let nd_root = this;
 	for (let ndi = nd_root; ndi; ndi = ndi.PreorderNext(nd_root)) {
 		for (let job of match_jobs) {
@@ -267,6 +277,7 @@ Node.TranslateTemplates = function(match_jobs, /*optional*/is_forward) {
 	return nd_root;
 }
 
+//Return the name of `N_FUNCTION`. Returns an empty string if the function is unnamed.
 Node.GetFunctionNameNode=function() {
 	if(this.node_class !== N_FUNCTION){return undefined;}
 	let nd_name = this.c;
@@ -340,13 +351,15 @@ __global.default_options = {
 	tab_width: 4,
 	tab_indent: 2, //2 for auto
 	auto_space: 1,
+	auto_curly_bracket: 0,
 };
 
 __global.extension_specific_options = {
 	'.py': Object.assign(Object.create(__global.default_options), {
 		enable_hash_comment: 1,
 		parse_indent_as_scope: 1,
-		parse_js_regexp: 0
+		parse_js_regexp: 0,
+		auto_curly_bracket: 0
 	}),
 }
 

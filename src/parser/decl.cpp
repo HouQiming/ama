@@ -426,12 +426,29 @@ namespace ama {
 									nd_paramlist_start = nd_keyword->s;
 								}
 							}
-							ama::Node* nd_paramlist{};
+							ama::Node* nd_paramlist = nullptr;
+							int is_unwrapped_parameter_list = 0;
 							for (ama::Node* ndj = nd_paramlist_start; ndj != ndi; ndj = ndj->s) {
 								if ( ndj->isRawNode('(', ')') || ndj->node_class == ama::N_CALL ) {
 									nd_paramlist = ndj;
-								} else if ( (ndj->node_class == ama::N_SYMBOL || ndj->node_class == ama::N_REF) && nd_paramlist && keywords_after_prototype--->get(ndj->data) ) {
-									break;
+								} else if ( (ndj->node_class == ama::N_SYMBOL || ndj->node_class == ama::N_REF) && keywords_after_prototype--->get(ndj->data) ) {
+									if (nd_paramlist) {
+										break;
+									}
+									if (ndj != nd_paramlist_start && ndj->Prev()->node_class == ama::N_REF) {
+										ama::Node* nd_was_paramlist = ndj->Prev();
+										ama::Node* nd_tmp = ama::GetPlaceHolder();
+										nd_was_paramlist->ReplaceWith(nd_tmp);
+										nd_paramlist = nd_tmp->ReplaceWith(ama::CreateNode(ama::N_RAW, nd_was_paramlist)->setFlags(uint32_t('(') | (uint32_t(')') << 8)));
+										is_unwrapped_parameter_list = 1;
+										if (nd_was_paramlist == nd_paramlist_start) {
+											nd_paramlist_start = nd_paramlist;
+										}
+										if (nd_was_paramlist == nd_prototype_start) {
+											nd_prototype_start = nd_paramlist;
+										}
+										break;
+									}
 								} else if ( parse_cpp11_lambda && ndj->isRawNode('[', ']') && ndj->s->isRawNode('(', ')') ) {
 									nd_paramlist = ndj->s;
 									break;
@@ -464,6 +481,9 @@ namespace ama {
 								nd_after = ama::nAir();
 							}
 							nd_paramlist = ConvertToParameterList(nd_paramlist);
+							if (is_unwrapped_parameter_list) {
+								nd_paramlist->flags = PARAMLIST_UNWRAPPED;
+							}
 							nd_before = ama::toSingleNode(nd_before);
 							nd_after = ama::toSingleNode(nd_after);
 							ama::ConvertToScope(ndi);

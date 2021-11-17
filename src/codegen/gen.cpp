@@ -52,11 +52,15 @@ namespace ama {
 				break;
 			}
 			case ama::N_SCOPE: {
-				this->code.push_back('{');
+				if (!(nd->flags & SCOPE_FROM_INDENT) ) {
+					this->code.push_back('{');
+				}
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					this->Generate(ndi);
 				}
-				this->code.push_back('}');
+				if (!(nd->flags & SCOPE_FROM_INDENT) ) {
+					this->code.push_back('}');
+				}
 				break;
 			}
 			case ama::N_STRING: {
@@ -132,7 +136,9 @@ namespace ama {
 				break;
 			}
 			case ama::N_PARAMETER_LIST: {
-				this->code.push_back(nd->flags & ama::PARAMLIST_TEMPLATE ? '<' : '(');
+				if (!(nd->flags & ama::PARAMLIST_UNWRAPPED)) {
+					this->code.push_back(nd->flags & ama::PARAMLIST_TEMPLATE ? '<' : '(');
+				}
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					this->Generate(ndi);
 					if ( ndi->s ) {
@@ -140,7 +146,9 @@ namespace ama {
 						this->GenerateSpaceBefore(ndi->s);
 					}
 				}
-				this->code.push_back(nd->flags & ama::PARAMLIST_TEMPLATE ? '>' : ')');
+				if (!(nd->flags & ama::PARAMLIST_UNWRAPPED)) {
+					this->code.push_back(nd->flags & ama::PARAMLIST_TEMPLATE ? '>' : ')');
+				}
 				break;
 			}
 			//case ama::N_RAW_DECLARATION: {
@@ -221,7 +229,9 @@ namespace ama {
 				//N_SCOPED_STATEMENT, N_EXTENSION_CLAUSE: arg, body
 				ama::Node* ndi_last = nullptr;
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
-					if ( ndi->node_class == ama::N_EXTENSION_CLAUSE || ndi->node_class == ama::N_SCOPE ) {
+					if ( ndi->node_class == ama::N_EXTENSION_CLAUSE || ndi->node_class == ama::N_SCOPE || 
+					ndi->node_class == ama::N_SYMBOL && ndi->data != ":" ||
+					ndi->node_class == ama::N_PARAMETER_LIST && (ndi->flags & ama::PARAMLIST_UNWRAPPED)) {
 						if ( ndi_last ) {
 							this->GenerateSpaceBetween(ndi_last, ndi);
 						} else {

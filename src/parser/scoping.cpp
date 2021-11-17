@@ -7,10 +7,12 @@
 #include "scoping.hpp"
 namespace ama {
 	void ConvertToScope(ama::Node* nd_raw) {
+		if (nd_raw->node_class == ama::N_SCOPE) {return;}
 		nd_raw->node_class = ama::N_SCOPE;
 		if ( nd_raw->p ) {
 			nd_raw->flags = 0;
 		} else {
+			//it will end up as N_FILE instead
 			nd_raw->flags &= 0xffff0000u;
 		}
 	}
@@ -68,15 +70,18 @@ namespace ama {
 	}
 	static void FoldIndentGroup(
 	std::unordered_map<ama::gcstring, int> const& keywords_extension_clause,
-	std::vector<ama::Node*>& lines_out, int32_t level, intptr_t lineno, ama::Node* nd_nextline) {
+	std::vector<ama::Node*>& lines_out, int32_t level, intptr_t lineno, int32_t auto_curly_bracket, ama::Node* nd_nextline) {
 		for (intptr_t i = lineno; i < intptr_t(lines_out.size()); i += 1) {
 			lines_out[i]->AdjustIndentLevel(-level);
 		}
 		ama::Node* nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(keywords_extension_clause, lines_out--->subarray(lineno))));
+		if (!auto_curly_bracket) {
+			nd_new_scope->flags = ama::SCOPE_FROM_INDENT;
+		}
 		nd_new_scope->indent_level = level;
 		if ( nd_nextline ) {
 			intptr_t p_newline = nd_nextline->comments_before--->indexOf('\n');
-			if ( p_newline >= 0 ) {
+			if ( p_newline >= 0 && auto_curly_bracket) {
 				if ( nd_new_scope->c ) {
 					ama::Node* nd_last = nd_new_scope->LastChild();
 					if ( nd_last->comments_after--->indexOf('\n') < intptr_t(0L) ) {
@@ -223,6 +228,7 @@ namespace ama {
 	};
 	ama::Node* ConvertIndentToScope(ama::Node* nd_root, JSValue options) {
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
+		int32_t auto_curly_bracket = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "auto_curly_bracket"), 0);
 		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
 		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( nd_raw->isRawNode('{', '}') ) {
@@ -273,7 +279,7 @@ namespace ama {
 						//bad indent
 						istk.back().level = lines[i]->indent_level;
 					} else {
-						FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.size() - 2].level, istk.back().lineno, lines[i]);
+						FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.size() - 2].level, istk.back().lineno, auto_curly_bracket, lines[i]);
 						istk--->pop();
 					}
 				}
@@ -284,7 +290,7 @@ namespace ama {
 				lines_out.push_back(lines[i]);
 			}
 			while ( istk.size() > 1 ) {
-				FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.size() - 2].level, istk.back().lineno, nullptr);
+				FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.size() - 2].level, istk.back().lineno, auto_curly_bracket, nullptr);
 				istk--->pop();
 			}
 			//merge scopes into surrounding raws

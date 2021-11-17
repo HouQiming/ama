@@ -70,6 +70,7 @@ namespace ama {
 	/////////////////
 	//for Node::flags
 	static const uint32_t FILE_SPACE_INDENT = 1u;
+	static const uint32_t SCOPE_FROM_INDENT = 1u;
 	static const uint32_t REF_WRITTEN = 1u;
 	//REF_RW is only set for REF_WRITTEN nodes: non-written nodes are trivially read 
 	static const uint32_t REF_RW = 2u;
@@ -85,6 +86,7 @@ namespace ama {
 	static const uint32_t DEP_TYPE_MASK = 31u;
 	static const uint32_t DEPF_C_INCLUDE_NONSTR = 32u;
 	static const uint32_t PARAMLIST_TEMPLATE = 1u;
+	static const uint32_t PARAMLIST_UNWRAPPED = 2u;
 	//for Node::indent_level, reserve 1 bit for future use
 	static const intptr_t MAX_INDENT = 63;
 	/////////////////

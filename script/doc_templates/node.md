@@ -4,11 +4,11 @@
 
 The AST (Abstract Syntax Tree) is usually created in Javascript with a parsing API:
 
-`ParseCurrentFile([options])` parses the current file and returns an AST.
-
 `ParseCode(code, [options])` parses the provided code string into an AST. This function is also available in C++.
 
-`require('depends').LoadFile(name)` loads a file and returns its AST, or `undefined` if the loading failed. Once a file is successfully loaded, the result is cached and later calls will return the same AST even if it were modified. This is useful for maintaining a partially-edited state.
+`ParseCurrentFile([options])` parses the current file and returns an AST. The `.data` field of the returned root node stores the file path.
+
+`require('depends').LoadFile(name)` loads a file and returns its AST, or `undefined` if the loading failed. The `.data` field of the returned root node stores the file path. Once a file is successfully loaded, the result is cached and later calls will return the same AST even if it were modified. This is useful for maintaining a partially-edited state.
 
 Alternatively, we can also create an in-line AST by wrapping raw code with `.()` in an ama script.
 
