@@ -235,8 +235,11 @@ namespace ama {
 		ama::Node* Root()const;
 		ama::Node* RootStatement()const;
 		ama::Node* ParentStatement();
+		ama::Node* FirstChild()const;
 		ama::Node* LastChild()const;
-		ama::Node* Prev();
+		ama::Node* Prev()const;
+		ama::Node* Next()const;
+		ama::Node* Parent()const;
 		//Test for specific nodes. They are cheaper than the Javascript-only `nd.Match`.
 		int isRawNode(char ch_open, char ch_close)const;
 		int isMethodCall(std::span<char> name)const;
@@ -441,7 +444,7 @@ namespace ama {
 	static inline ama::Node* GetPlaceHolder() {
 		assert(!g_placeholder->p);
 		assert(!g_placeholder->s);
-		g_placeholder->indent_level=0;
+		g_placeholder->indent_level = 0;
 		g_placeholder->comments_before = "";
 		g_placeholder->comments_after = "";
 		g_placeholder->c = nullptr;

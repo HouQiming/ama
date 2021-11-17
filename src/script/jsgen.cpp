@@ -244,6 +244,10 @@ namespace ama {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
 		return ama::WrapNode(nd->ParentStatement());
 	}
+	JSValue NodeCall_FirstChild(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
+		return ama::WrapNode(nd->FirstChild());
+	}
 	JSValue NodeCall_LastChild(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
 		return ama::WrapNode(nd->LastChild());
@@ -251,6 +255,14 @@ namespace ama {
 	JSValue NodeCall_Prev(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
 		return ama::WrapNode(nd->Prev());
+	}
+	JSValue NodeCall_Next(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
+		return ama::WrapNode(nd->Next());
+	}
+	JSValue NodeCall_Parent(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
+		return ama::WrapNode(nd->Parent());
 	}
 	JSValue NodeCall_isRawNode(JSContext* jsctx, JSValueConst this_val, int argc, JSValueConst* argv) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
@@ -548,8 +560,11 @@ namespace ama {
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "Root", JS_NewCFunction(jsctx, (NodeCall_Root), "Node.Root", 0));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "RootStatement", JS_NewCFunction(jsctx, (NodeCall_RootStatement), "Node.RootStatement", 0));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "ParentStatement", JS_NewCFunction(jsctx, (NodeCall_ParentStatement), "Node.ParentStatement", 0));
+		JS_SetPropertyStr(jsctx, ama::g_node_proto, "FirstChild", JS_NewCFunction(jsctx, (NodeCall_FirstChild), "Node.FirstChild", 0));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "LastChild", JS_NewCFunction(jsctx, (NodeCall_LastChild), "Node.LastChild", 0));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "Prev", JS_NewCFunction(jsctx, (NodeCall_Prev), "Node.Prev", 0));
+		JS_SetPropertyStr(jsctx, ama::g_node_proto, "Next", JS_NewCFunction(jsctx, (NodeCall_Next), "Node.Next", 0));
+		JS_SetPropertyStr(jsctx, ama::g_node_proto, "Parent", JS_NewCFunction(jsctx, (NodeCall_Parent), "Node.Parent", 0));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "isRawNode", JS_NewCFunction(jsctx, (NodeCall_isRawNode), "Node.isRawNode", 2));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "isMethodCall", JS_NewCFunction(jsctx, (NodeCall_isMethodCall), "Node.isMethodCall", 1));
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "isSymbol", JS_NewCFunction(jsctx, (NodeCall_isSymbol), "Node.isSymbol", 1));

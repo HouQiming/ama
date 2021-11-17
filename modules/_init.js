@@ -67,7 +67,7 @@ Node.toJSON = function() {
 		indent_level: this.indent_level || undefined,
 		comments_before: this.comments_before || undefined,
 		comments_after: this.comments_after || undefined,
-		"[children]": children,
+		"children": children,
 	}
 }
 

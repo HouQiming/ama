@@ -885,8 +885,17 @@ ama::Node * ama::Node::ParentStatement() {
 	}
 	return nd;
 }
-ama::Node * ama::Node::Prev() {
+ama::Node * ama::Node::Prev()const {
 	return ama::isValidPreviousSibling(this->v) ? this->v : nullptr;
+}
+ama::Node * ama::Node::Next()const {
+	return this->s;
+}
+ama::Node * ama::Node::FirstChild()const {
+	return this->c;
+}
+ama::Node * ama::Node::Parent()const {
+	return this->p;
 }
 ama::Node * ama::Node::BreakSibling() {
 	ama::Node* ret = this->s;

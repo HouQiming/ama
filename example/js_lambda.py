@@ -9,9 +9,10 @@ for(let nd_func of nd_root.FindAll(N_FUNCTION)){
 		let nd_reparsed=ParseCode(code,nd_root.GetCompleteParseOption()).Find(N_FUNCTION);
 		if(!nd_reparsed){continue;}
 		let name='LongLambdaL'+nd_stmt.ComputeLineNumber().toString();
-		nd_reparsed.c.ReplaceWith(nRaw(nRef('def'),nRef(name).setCommentsBefore(' ')));
-		nd_reparsed.c.s.flags&=~PARAMLIST_UNWRAPPED;
-		nd_reparsed.c.s.comments_before='';
+		let func_children=nd_reparsed.children;
+		func_children[0].ReplaceWith(nRaw(nRef('def'),nRef(name).setCommentsBefore(' ')));
+		func_children[1].flags&=~PARAMLIST_UNWRAPPED;
+		func_children[1].comments_before='';
 		nd_reparsed.comments_after='';
 		nd_func.ReplaceWith(nRef(name)).setCommentsAfter('');
 		nd_stmt.Insert(POS_BEFORE,nd_reparsed.setIndent(nd_stmt.indent_level).setCommentsBefore('\n'));

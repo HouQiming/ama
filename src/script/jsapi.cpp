@@ -883,6 +883,16 @@ namespace ama {
 		JS_FreeContext(sbctx);
 		return my_ret;
 	}
+	static JSValue NodeGetChildren(JSContext* ctx, JSValueConst this_val) {
+		ama::Node* nd = (ama::Node*)(JS_GetOpaque(this_val, ama::g_node_classid));
+		JSValue ret = JS_NewArray(ctx);
+		int32_t p = 0L;
+		for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
+			JS_SetPropertyUint32(ctx, ret, p, ama::WrapNode(ndi));
+			p++;
+		}
+		return ret;
+	}
 	void InitScriptEnv() {
 		ama::g_runtime_handle = JS_NewRuntime();
 		ama::jsctx = JS_NewContext(ama::g_runtime_handle);
@@ -1077,6 +1087,12 @@ namespace ama {
 			)
 		);
 		JS_SetPropertyStr(ama::jsctx, global, "Node", ama::g_node_proto);
+		JS_DefinePropertyGetSet(
+			ama::jsctx, ama::g_node_proto, JS_NewAtom(ama::jsctx, "children"), 
+			JS_NewCFunction2(ama::jsctx, (JSCFunction*)(NodeGetChildren), "get_children", 0, JS_CFUNC_getter, 0), 
+			JS_UNDEFINED, 
+			0
+		);
 		JS_SetPropertyStr(
 			ama::jsctx, ama::g_node_proto, "GetPlaceHolder", JS_NewCFunction(
 				ama::jsctx, JSGetPlaceHolder,

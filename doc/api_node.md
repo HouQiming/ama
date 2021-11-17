@@ -131,8 +131,11 @@ Insert `nd_new` in a position relative to `nd`. `pos` controls the positioning:
 - `nd.Root()`
 - `nd.RootStatement()`
 - `nd.ParentStatement()`
+- `nd.FirstChild()`
 - `nd.LastChild()`
 - `nd.Prev()`
+- `nd.Next()`
+- `nd.Parent()`
 
 Find a node with some relationship specified by the method name to `nd`, return NULL if not found. The definition of statements are lexical: they are immediate children of `N_FILE` or `N_SCOPE`
 
