@@ -22,7 +22,7 @@ for(let nd_func of nd_root.FindAll(N_FUNCTION)){
 for(let nd_call of nd_root.FindAll(N_CALL,'map')){
 	if(nd_call.c.node_class==N_DOT){
 		let nd_obj=nd_call.c.c;
-		nd_call.ReplaceWith(.(map(.(nd_call.c.s),.(nd_obj))))
+		nd_call.ReplaceWith(@(map(@(nd_call.c.s),@(nd_obj))))
 	}
 }
 nd_root.Save('.audit.py');

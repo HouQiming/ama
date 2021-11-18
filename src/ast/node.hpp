@@ -29,9 +29,9 @@ namespace ama {
 	/////////////////
 	//"parsed" nodes
 	//N_NODEOF is our own extension to switch between source code and ama code.
-	//The syntax is `.(foo)`. Example uses:
-	//- nd.Match(.(JSON.parse<.(Node.MatchAny('foo'))>)))
-	//- nd_root.Insert(POS_FRONT, .(#include <stdio.h>))
+	//The syntax is `@(foo)`. Example uses:
+	//- nd.Match(@(JSON.parse<@(Node.MatchAny('foo'))>)))
+	//- nd_root.Insert(POS_FRONT, @(#include <stdio.h>))
 	static const uint8_t N_NODEOF = 6;
 	static const uint8_t N_SCOPE = 7;
 	static const uint8_t N_FUNCTION = 8;
@@ -143,7 +143,7 @@ namespace ama {
 		uint16_t tmp_flags{};
 		//are persistent flags affecting code generation.
 		//
-		//For N_RAW, it stores `opening_char|closing_char<<8`, for example, `.([])` is `nRaw().setFlags(0x5d5b)`
+		//For N_RAW, it stores `opening_char|closing_char<<8`, for example, `@([])` is `nRaw().setFlags(0x5d5b)`
 		uint32_t flags{};
 		//stores the string content of the node, like the operator string for N_BINOP, the variable name for N_REF.
 		ama::gcstring data{};

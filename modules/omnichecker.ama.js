@@ -20,8 +20,8 @@ function DeferJob(djobs, nd, job_nd) {
 	ret.push(job_nd);
 }
 
-let g_ptn_readname = .(Sandbox.ReadName(.(Node.MatchAny('ctx')), .(Node.MatchAny(N_STRING, 'name')), .(Node.MatchAny(N_STRING, 'addr'))));
-let g_ptn_declare = .(Sandbox.Declare(.(Node.MatchAny('ctx')), .(Node.MatchAny(N_STRING, 'name')), .(Node.MatchAny(N_STRING, 'addr'))));
+let g_ptn_readname = @(Sandbox.ReadName(@(Node.MatchAny('ctx')), @(Node.MatchAny(N_STRING, 'name')), @(Node.MatchAny(N_STRING, 'addr'))));
+let g_ptn_declare = @(Sandbox.Declare(@(Node.MatchAny('ctx')), @(Node.MatchAny(N_STRING, 'name')), @(Node.MatchAny(N_STRING, 'addr'))));
 function dfsGenerate(nd, options) {
 	if (options.hook) {
 		let nd_ret = options.hook(nd);
@@ -73,9 +73,9 @@ function dfsGenerate(nd, options) {
 				}
 				let match = nd_core.Match(g_ptn_readname);
 				if (match) {
-					nd_ret = .(Sandbox.RunHooks(.(nd_ret), .(nd_extra_args), .(match.ctx.Clone()), .(nString(match.name.GetName())), ctx, .(nString(nd.GetUniqueTag()))));
+					nd_ret = @(Sandbox.RunHooks(@(nd_ret), @(nd_extra_args), @(match.ctx.Clone()), @(nString(match.name.GetName())), ctx, @(nString(nd.GetUniqueTag()))));
 				} else {
-					nd_ret = .(Sandbox.RunHooks(.(nd_ret), .(nd_extra_args), vars, .(nString(nd.GetName())), ctx, .(nString(nd.GetUniqueTag()))));
+					nd_ret = @(Sandbox.RunHooks(@(nd_ret), @(nd_extra_args), vars, @(nString(nd.GetName())), ctx, @(nString(nd.GetUniqueTag()))));
 				}
 			}
 			//nd_ret=nCall(nRef(name),nd_ret);
@@ -111,22 +111,22 @@ function dfsGenerateDefault(nd, options) {
 		}
 		//translate the body
 		let nd_body = nd.LastChild();
-		return .((function() {
+		return @((function() {
 			let f = function(ctx_outer, params) {
-				let ctx = Sandbox.LazyChildScope(ctx_outer, .(nString(nd.GetUniqueTag())));
+				let ctx = Sandbox.LazyChildScope(ctx_outer, @(nString(nd.GetUniqueTag())));
 				let vars = ctx.vars;
-				Sandbox.AssignMany(vars, .(ParseCode(JSON.stringify(param_names))), params);
-				.(dfsGenerate(nd_body, options));
+				Sandbox.AssignMany(vars, @(ParseCode(JSON.stringify(param_names))), params);
+				@(dfsGenerate(nd_body, options));
 				return ctx;
 			}
-			f(ctx, .(nItem.apply(null, default_params)));
-			let value = Sandbox.FunctionValue(ctx, .(nString(nd.GetUniqueTag())), f.bind(null, ctx));
-			return .(
+			f(ctx, @(nItem.apply(null, default_params)));
+			let value = Sandbox.FunctionValue(ctx, @(nString(nd.GetUniqueTag())), f.bind(null, ctx));
+			return @(
 				nd.GetName() ? 
 					options.enable_operator_overloading ?
-						.(Sandbox.MergePossibility(vars, .(nString(nd.GetName())), value)) :
-						.(Sandbox.Assign(vars, .(nString(nd.GetName())), value)) : 
-					.(value)
+						@(Sandbox.MergePossibility(vars, @(nString(nd.GetName())), value)) :
+						@(Sandbox.Assign(vars, @(nString(nd.GetName())), value)) : 
+					@(value)
 			);
 		})());
 	}
@@ -134,11 +134,11 @@ function dfsGenerateDefault(nd, options) {
 		//fields, base class, resolve methods using or-on-Assign
 		//all those are handled under nd_body
 		let nd_body = nd.LastChild();
-		return .(
-			Sandbox.Assign(vars, .(nString(nd.GetName())), Sandbox.ClassValue(ctx, .(nString(nd.GetUniqueTag())), function(ctx_outer) {
-				let ctx = Sandbox.LazyChildScope(ctx_outer, .(nString(nd.GetUniqueTag())));
+		return @(
+			Sandbox.Assign(vars, @(nString(nd.GetName())), Sandbox.ClassValue(ctx, @(nString(nd.GetUniqueTag())), function(ctx_outer) {
+				let ctx = Sandbox.LazyChildScope(ctx_outer, @(nString(nd.GetUniqueTag())));
 				let vars = ctx.vars;
-				.(dfsGenerate(nd_body, options));
+				@(dfsGenerate(nd_body, options));
 				return ctx;
 			}.bind(null, ctx)))
 		);
@@ -149,13 +149,13 @@ function dfsGenerateDefault(nd, options) {
 		if (nd.flags & REF_DECLARED) {
 			//set the declared node too
 			//we can't possibly have dots here
-			return .(Sandbox.Declare(ctx, .(nString(nd.GetName())), .(nString(nd.GetUniqueTag()))));
+			return @(Sandbox.Declare(ctx, @(nString(nd.GetName())), @(nString(nd.GetUniqueTag()))));
 		} else {
-			return .(Sandbox.ReadName(vars, .(nString(nd.GetName())), .(nString(nd.GetUniqueTag()))));
+			return @(Sandbox.ReadName(vars, @(nString(nd.GetName())), @(nString(nd.GetUniqueTag()))));
 		}
 	}
 	if (nd.node_class == N_DOT) {
-		return .(Sandbox.ReadName(Sandbox.GetVarsContainer(.(nString(nd.GetUniqueTag())), .(dfsGenerate(nd.c, options))), .(nString(nd.GetName())), .(nString(nd.GetUniqueTag()))));
+		return @(Sandbox.ReadName(Sandbox.GetVarsContainer(@(nString(nd.GetUniqueTag())), @(dfsGenerate(nd.c, options))), @(nString(nd.GetName())), @(nString(nd.GetUniqueTag()))));
 	}
 	if (nd.node_class == N_ITEM) {
 		//generate subscript values without using them: redundant args
@@ -163,7 +163,7 @@ function dfsGenerateDefault(nd, options) {
 		for (let ndi = nd.c.s; ndi; ndi = ndi.s) {
 			subscripts.push(dfsGenerate(ndi, options));
 		}
-		return .(Sandbox.ReadName(Sandbox.GetVarsContainer(.(nString(nd.GetUniqueTag())), .(dfsGenerate(nd.c, options))), '[element]', .(nString(nd.GetUniqueTag())), .(subscripts)));
+		return @(Sandbox.ReadName(Sandbox.GetVarsContainer(@(nString(nd.GetUniqueTag())), @(dfsGenerate(nd.c, options))), '[element]', @(nString(nd.GetUniqueTag())), @(subscripts)));
 	}
 	if (nd.node_class == N_ASSIGNMENT) {
 		let nd_lhs = dfsGenerate(nd.c, options);
@@ -188,7 +188,7 @@ function dfsGenerateDefault(nd, options) {
 			match.ctx.Unlink();
 			match.name.Unlink();
 			match.addr.Unlink();
-			let nd_replaced = .(Sandbox.Assign(.(match.ctx), .(match.name), .(nd_rhs), .(match.addr)));
+			let nd_replaced = @(Sandbox.Assign(@(match.ctx), @(match.name), @(nd_rhs), @(match.addr)));
 			if (nd_lhs == match.nd) {nd_lhs = nd_replaced;} else {match.nd.ReplaceWith(nd_replaced);}
 			return nd_lhs;
 		}
@@ -197,20 +197,20 @@ function dfsGenerateDefault(nd, options) {
 			match.ctx.Unlink();
 			match.name.Unlink();
 			match.addr.Unlink();
-			let nd_replaced = .(Sandbox.Declare(.(match.ctx), .(match.name), .(match.addr), .(nd_rhs)));
+			let nd_replaced = @(Sandbox.Declare(@(match.ctx), @(match.name), @(match.addr), @(nd_rhs)));
 			if (nd_lhs == match.nd) {nd_lhs = nd_replaced;} else {match.nd.ReplaceWith(nd_replaced);}
 			return nd_lhs;
 		}
 		//we don't understand it...
 		//console.log(nd.dump(),nd_lhs.dump())
-		return .(Sandbox.DummyValue(ctx, .(nString(nd.GetUniqueTag())), .(nd_lhs), .(nd_rhs)));
+		return @(Sandbox.DummyValue(ctx, @(nString(nd.GetUniqueTag())), @(nd_lhs), @(nd_rhs)));
 	}
 	if (nd.node_class == N_CALL) {
 		let children = [nAir()];
 		for (let ndi = nd.c; ndi; ndi = ndi.s) {
 			children.push(dfsGenerate(ndi, options));
 		}
-		return .(Sandbox.Call(ctx, .(nString(nd.GetUniqueTag())), .(nItem.apply(null, children))));
+		return @(Sandbox.Call(ctx, @(nString(nd.GetUniqueTag())), @(nItem.apply(null, children))));
 	}
 	if (nd.node_class == N_SCOPED_STATEMENT) {
 		if (nd.data == 'if') {
@@ -218,21 +218,21 @@ function dfsGenerateDefault(nd, options) {
 			let nd_then = dfsGenerate(nd.c.s, options);
 			let nd_else = nd.c.s.s ? dfsGenerate(nd.c.s.s, options) : nScope();
 			//fork / join, treat the condition normally
-			return .((function(ctx_if) {
+			return @((function(ctx_if) {
 				let ctx = ctx_if;
-				let ctx_then = Sandbox.LazyCloneScope(ctx_if, .(nString(nd.GetUniqueTag())), 'in the then-clause', .(nd_cond));
+				let ctx_then = Sandbox.LazyCloneScope(ctx_if, @(nString(nd.GetUniqueTag())), 'in the then-clause', @(nd_cond));
 				{
 					let ctx = ctx_then;
 					let vars = ctx.vars;
-					.(nd_then);
+					@(nd_then);
 					Sandbox.MergeContext(ctx_if, [ctx_then]);
 					Sandbox.EndScope(ctx);
 				}
-				let ctx_else = Sandbox.LazyCloneScope(ctx_if, .(nString(nd.GetUniqueTag())), 'in the else-clause');
+				let ctx_else = Sandbox.LazyCloneScope(ctx_if, @(nString(nd.GetUniqueTag())), 'in the else-clause');
 				{
 					let ctx = ctx_else;
 					let vars = ctx.vars;
-					.(nd_else);
+					@(nd_else);
 					Sandbox.MergeContext(ctx_if, [ctx_else]);
 					Sandbox.EndScope(ctx);
 				}
@@ -249,18 +249,18 @@ function dfsGenerateDefault(nd, options) {
 				}
 			}
 			//loops: change to for-twice
-			return .((function(ctx_before) {
-				let ctx_loop = Sandbox.LazyCloneScope(ctx_before, .(nString(nd.GetUniqueTag())), 'loop initialization');
+			return @((function(ctx_before) {
+				let ctx_loop = Sandbox.LazyCloneScope(ctx_before, @(nString(nd.GetUniqueTag())), 'loop initialization');
 				{
 					let ctx = ctx_loop;
 					let vars = ctx.vars;
-					.(nScope.apply(null, children));
+					@(nScope.apply(null, children));
 				}
 				let iterations = [ctx_loop];
 				for (let i = 0; i < 2; i++) {
-					let ctx = Sandbox.LazyCloneScope(iterations[iterations.length - 1], .(nString(nd.GetUniqueTag())), i == 0 ? 'in the first iteration' : 'in subsequent iterations');
+					let ctx = Sandbox.LazyCloneScope(iterations[iterations.length - 1], @(nString(nd.GetUniqueTag())), i == 0 ? 'in the first iteration' : 'in subsequent iterations');
 					let vars = ctx.vars;
-					.(dfsGenerate(nd_loop_body, options));
+					@(dfsGenerate(nd_loop_body, options));
 					Sandbox.MergeContext(ctx_loop, [ctx]);
 					Sandbox.EndScope(ctx);
 					iterations.push(ctx);
@@ -274,7 +274,7 @@ function dfsGenerateDefault(nd, options) {
 		if (nd.data == 'return') {
 			let nd_value = dfsGenerate(nd.c, options);
 			//yes, we need a second level of ()
-			return .((ctx['return'] = .(nd_value)));
+			return @((ctx['return'] = @(nd_value)));
 		}
 	}
 	if (nd.node_class == N_PAREN || nd.node_class == N_SEMICOLON ) {
@@ -286,10 +286,10 @@ function dfsGenerateDefault(nd, options) {
 		for (let ndi = nd.c; ndi; ndi = ndi.s) {
 			children.push(nSemicolon(dfsGenerate(ndi, options)));
 		}
-		return .((function(ctx_outer) {
-			let ctx = Sandbox.LazyCloneScope(ctx_outer, .(nString(nd.GetUniqueTag())), undefined);
+		return @((function(ctx_outer) {
+			let ctx = Sandbox.LazyCloneScope(ctx_outer, @(nString(nd.GetUniqueTag())), undefined);
 			let vars = ctx.vars;
-			.(nScope.apply(null, children).c)/*no ;*/
+			@(nScope.apply(null, children).c)/*no ;*/
 			Sandbox.MergeContext(ctx_outer, [ctx]);
 			Sandbox.EndScope(ctx);
 		})(ctx));
@@ -297,7 +297,7 @@ function dfsGenerateDefault(nd, options) {
 	//just treat scopes and air as dummy values
 	//it's just {} so no point recording, but we need {}
 	//it's pointless to record node-level information at run time then associate it back with a node
-	let children = [.(Sandbox.DummyValue), nRef('ctx'), nString(nd.GetUniqueTag())];
+	let children = [@(Sandbox.DummyValue), nRef('ctx'), nString(nd.GetUniqueTag())];
 	for (let ndi = nd.c; ndi; ndi = ndi.s) {
 		children.push(dfsGenerate(ndi, options));
 	}
@@ -371,18 +371,18 @@ omnichecker.Check = function(nd_root, ...all_options) {
 			nd_src.Unlink();
 		}
 	}
-	let ret = omnichecker.RunGeneratedCode(.({
+	let ret = omnichecker.RunGeneratedCode(@({
 		Sandbox.Reset();
-		Sandbox.default_value = .(ParseCode(JSON.stringify(options.default_value || {})));
+		Sandbox.default_value = @(ParseCode(JSON.stringify(options.default_value || {})));
 		let ctx = Object.create(null);
 		ctx.utag = 0;
 		ctx.utag_parent = -1;
-		ctx.utag_addr = .(nString(nd_root.GetUniqueTag()));
+		ctx.utag_addr = @(nString(nd_root.GetUniqueTag()));
 		Sandbox.ctx_map.push(ctx);
 		let vars = Sandbox.GetVarsContainer(ctx.utag_addr, ctx);
 		vars['<utag>'] = ctx.utag;
-		.(nSymbol(callback_defs.join('')));
-		.(nd_flowcode);
+		@(nSymbol(callback_defs.join('')));
+		@(nd_flowcode);
 		return JSON.stringify({
 			//node_to_value: Sandbox.node_to_value,
 			errors: Sandbox.errors,

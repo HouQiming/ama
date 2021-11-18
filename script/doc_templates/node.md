@@ -12,7 +12,7 @@ The AST (Abstract Syntax Tree) is usually created in Javascript with a parsing A
 
 `require('depends').LoadFile(name)` loads a file and returns its AST, or `undefined` if the loading failed. The `.data` field of the returned root node stores the file path. Once a file is successfully loaded, the result is cached and later calls will return the same AST even if it were modified. This is useful for maintaining a partially-edited state.
 
-Alternatively, we can also create an in-line AST by wrapping raw code with `.()` in an ama script.
+Alternatively, we can also create an in-line AST by wrapping raw code with `@()` in an ama script.
 
 ### Parsing Options
 
@@ -39,7 +39,7 @@ Unless otherwise specified, the following methods are supported in both C++ and 
 --------------
 - `nd.NodeofToASTExpression()`
 
-Translate `.()` to Javascript node construction expression. Useful if we eventually run the AST in our own scripting context.
+Translate `@()` to Javascript node construction expression. Useful if we eventually run the AST in our own scripting context.
 
 --------------
 - `nd.AutoFormat()`

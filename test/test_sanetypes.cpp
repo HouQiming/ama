@@ -16,7 +16,7 @@ let nd_root=ParseCurrentFile({parse_indent_as_scope:1})
 	.Save('.mid.audit.cpp')
 	.then(sane_types.FixArrayTypes)
 	.then(require('cpp/typing').DeduceAuto)
-	.then(sane_types,{view:{to:.(JC::array_base<.(Node.MatchAny('TElement'))>)}})
+	.then(sane_types,{view:{to:@(JC::array_base<@(Node.MatchAny('TElement'))>)}})
 	.then(sane_init)
 	.then(sane_export)
 	.then(move_operator)
@@ -34,7 +34,7 @@ nd_root
 	.then(move_operator.inverse)
 	.then(sane_export.inverse)
 	.then(sane_init.inverse)
-	.then(sane_types.inverse,{view:{to:.(JC::array_base<.(Node.MatchAny('TElement'))>)}})
+	.then(sane_types.inverse,{view:{to:@(JC::array_base<@(Node.MatchAny('TElement'))>)}})
 	.Save('.aba.audit.cpp')
 */
 

@@ -247,7 +247,7 @@ namespace ama {
 				break;
 			}
 			case ama::N_NODEOF: {
-				this->code--->push('.');
+				this->code--->push('@');
 				this->Generate(nd->c);
 				break;
 			}

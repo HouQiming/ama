@@ -12,7 +12,7 @@ The AST (Abstract Syntax Tree) is usually created in Javascript with a parsing A
 
 `require('depends').LoadFile(name)` loads a file and returns its AST, or `undefined` if the loading failed. The `.data` field of the returned root node stores the file path. Once a file is successfully loaded, the result is cached and later calls will return the same AST even if it were modified. This is useful for maintaining a partially-edited state.
 
-Alternatively, we can also create an in-line AST by wrapping raw code with `.()` in an ama script.
+Alternatively, we can also create an in-line AST by wrapping raw code with `@()` in an ama script.
 
 ### Parsing Options
 
@@ -42,7 +42,7 @@ The `return 0;` node has `.indent_level=4` (default tab width) while all other n
 
 **tmp_flags** pack temporary flags that must not affect code generation
 
-**flags** are persistent flags affecting code generation. For N_RAW, it stores `opening_char|closing_char<<8`, for example, `.([])` is `nRaw().setFlags(0x5d5b)`
+**flags** are persistent flags affecting code generation. For N_RAW, it stores `opening_char|closing_char<<8`, for example, `@([])` is `nRaw().setFlags(0x5d5b)`
 
 **data** stores the string content of the node, like the operator string for N_BINOP, the variable name for N_REF.
 
@@ -316,7 +316,7 @@ Return 1 if whether `nd_child` gets executed depends on `nd`, `nd_child` must be
 --------------
 - `nd.NodeofToASTExpression()`
 
-Translate `.()` to Javascript node construction expression. Useful if we eventually run the AST in our own scripting context.
+Translate `@()` to Javascript node construction expression. Useful if we eventually run the AST in our own scripting context.
 
 --------------
 - `nd.AutoFormat()`
@@ -357,12 +357,12 @@ Match a code template specified by `nd_pattern`. `nd.Match` only checks `nd` its
 - `nd.MatchAny([node_class, ]name)`
 - `nd.MatchDot(nd_object, name)`
 
-Wildcards for template matching. You can invoke the patterns with nested `.()` inside `.()`. MatchAny matches any node of an optional node class and saves the result in the `name` property of the returned match. For example, this code:
+Wildcards for template matching. You can invoke the patterns with nested `@()` inside `@()`. MatchAny matches any node of an optional node class and saves the result in the `name` property of the returned match. For example, this code:
 
 ```Javascript
-let nd_source = .(test(3));
+let nd_source = @(test(3));
 nd_source.Match(
-    .(test(.(Node.MatchAny("val"))))
+    @(test(@(Node.MatchAny("val"))))
 )
 ```
 
@@ -371,14 +371,14 @@ will return `{nd:nd_source,val:nd_source.Find(N_NUMBER, '3')}`.
 --------------
 - `nd.Subst(match)`
 
-Substitution a match into the code template specified by `nd`. `.(foo)` under `nd` will be replaced with `match.foo`. For example, this code:
+Substitution a match into the code template specified by `nd`. `@(foo)` under `nd` will be replaced with `match.foo`. For example, this code:
 
 ```Javascript
-let nd_source = .(test(.(val)));
+let nd_source = @(test(@(val)));
 nd_source.Subst({val:nNumber(3)})
 ```
 
-will return `.(test(3))`
+will return `@(test(3))`
 
 --------------
 - `nd.Save([options])`

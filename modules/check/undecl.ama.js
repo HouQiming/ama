@@ -3,7 +3,7 @@ module.exports = {
 	templates: [
 		{
 			pattern: Node.MatchAny(N_REF, 'foo'),
-			filter: match=>{
+			filter: match=> {
 				let nd_ref = match.foo;
 				if (g_builtin_names.has(nd_ref.data)) {return 0;}
 				if (nd_ref.flags & REF_DECLARED) {return 0;}

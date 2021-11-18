@@ -40,7 +40,7 @@ let console_method_to_options = {
 jsism.EnableConsole = function(nd_root, options) {
 	options = options || {};
 	let backend = options.backend || 'iostream';
-	let console_uses = nd_root.FindAll(N_CALL, null).filter(nd_call=>{
+	let console_uses = nd_root.FindAll(N_CALL, null).filter(nd_call => {
 		return nd_call.c.node_class == N_DOT && nd_call.c.c.node_class == N_REF && nd_call.c.c.data == 'console' && console_method_to_options[nd_call.c.data];
 	});
 	if (!console_uses.length) {
@@ -220,7 +220,7 @@ jsism.EnableJSON = function(nd_root) {
 			//#pragma gen_end(JSON.stringify<foo>)
 			//dedicated finder for generator tags? replacement / inverse? make generating passes use those tags?
 			//how do we differentiate request from result? replace gen with gen_begin and gen_end
-			let nd_tag = .(JSON.foo<.(typing.AccessTypeAt(type, nd_root))>);
+			let nd_tag = @(JSON.foo<@(typing.AccessTypeAt(type, nd_root))>);
 			nd_tag.Find(N_DOT, 'foo').data = nd_parent.data;
 			let match_gentag = gentag.FindGenTag(nd_root, nd_tag);
 			if (!match_gentag) {
@@ -229,7 +229,7 @@ jsism.EnableJSON = function(nd_root) {
 			if (!match_gentag) {
 				//create a new gentag and insert it
 				//COULDDO: insert recursively
-				let nd_gentag = .(#pragma gen(.(nd_tag)));
+				let nd_gentag = @(#pragma gen(@(nd_tag)));
 				if (type.Root() == nd_root) {
 					type.ParentStatement().Insert(POS_AFTER, nd_gentag.setCommentsBefore('\n'));
 				} else {
@@ -246,19 +246,19 @@ jsism.EnableJSON = function(nd_root) {
 		nd_parent.flags = DOT_CLASS;
 	}
 	//generate code for the gentags
-	for (let match of gentag.FindAllGenTags(nd_root, .(JSON.stringify<.(Node.MatchAny('type'))>))) {
+	for (let match of gentag.FindAllGenTags(nd_root, @(JSON.stringify<@(Node.MatchAny('type'))>))) {
 		let type = typing.ComputeType(match.type);
 		if (type.node_class != N_CLASS) {continue;}
 		//generate and replace
 		let desc = type.ParseClass();
-		let nd_generated = .(
+		let nd_generated = @(
 			namespace JSON {
 				template <>
-				struct StringifyToImpl<.(typing.AccessTypeAt(type, match.gentag))> {
+				struct StringifyToImpl<@(typing.AccessTypeAt(type, match.gentag))> {
 					//`type` is only used for SFINAE
 					typedef void type;
-					template <typename T = .(typing.AccessTypeAt(type, match.gentag))>
-					static void stringifyTo(std::string& buf, .(typing.AccessTypeAt(type, match.gentag)) const& a) {
+					template <typename T = @(typing.AccessTypeAt(type, match.gentag))>
+					static void stringifyTo(std::string& buf, @(typing.AccessTypeAt(type, match.gentag)) const& a) {
 						buf.push_back('{');
 						__INSERT_HERE;
 						buf.push_back('}');
@@ -275,33 +275,33 @@ jsism.EnableJSON = function(nd_root) {
 				continue;
 			}
 			if (body.length) {
-				body.push(.(
+				body.push(@(
 					buf.push_back(',');
 				));
 			}
-			body.push(.(
-				buf.append(.(nString(JSON.stringify(ppt.name) + ':')));
+			body.push(@(
+				buf.append(@(nString(JSON.stringify(ppt.name) + ':')));
 			));
-			body.push(.(
-				JSON::stringifyTo(buf, .(nRef('a').dot(ppt.name)));
+			body.push(@(
+				JSON::stringifyTo(buf, @(nRef('a').dot(ppt.name)));
 			));
 		}
 		nd_generated.Find(N_REF, '__INSERT_HERE').ParentStatement().ReplaceWith(nScope.apply(null, body).c);
 		gentag.UpdateGenTagContent(match.gentag, nd_generated);
 	}
-	for (let match of gentag.FindAllGenTags(nd_root, .(JSON.parse<.(Node.MatchAny('type'))>))) {
+	for (let match of gentag.FindAllGenTags(nd_root, @(JSON.parse<@(Node.MatchAny('type'))>))) {
 		let type = typing.ComputeType(match.type);
 		if (type.node_class != N_CLASS) {continue;}
 		//generate and replace
 		let desc = type.ParseClass();
-		let nd_generated = .(
+		let nd_generated = @(
 			namespace JSON {
 				template <>
-				struct ParseFromImpl<.(typing.AccessTypeAt(type, match.gentag))> {
+				struct ParseFromImpl<@(typing.AccessTypeAt(type, match.gentag))> {
 					//`type` is only used for SFINAE
 					typedef void type;
-					template <typename T = .(typing.AccessTypeAt(type, match.gentag))>
-					static .(typing.AccessTypeAt(type, match.gentag)) parseFrom(JSONParserContext& ctx, .(typing.AccessTypeAt(type, match.gentag))**) {
+					template <typename T = @(typing.AccessTypeAt(type, match.gentag))>
+					static @(typing.AccessTypeAt(type, match.gentag)) parseFrom(JSONParserContext& ctx, @(typing.AccessTypeAt(type, match.gentag))**) {
 						T ret{};
 						if ( ctx.begin == ctx.end ) {
 							return std::move(ret);
@@ -372,8 +372,8 @@ jsism.EnableJSON = function(nd_root) {
 			}
 			let nd_prefix = undefined;
 			if (lg_prefix > 0) {
-				nd_prefix = .(
-					if ( !ctx.TrySkipName(.(nString(__byte_substr(name0, lg_eaten, lg_prefix)))) ) {
+				nd_prefix = @(
+					if ( !ctx.TrySkipName(@(nString(__byte_substr(name0, lg_eaten, lg_prefix)))) ) {
 						goto skip;
 					} else {
 						__SWITCH;
@@ -384,12 +384,12 @@ jsism.EnableJSON = function(nd_root) {
 			//no-switch special case
 			let nd_switch = undefined;
 			if (properties.length == 1) {
-				nd_switch = .({
+				nd_switch = @({
 					ctx.SkipColon();
 					if ( ctx.error ) {
 						return std::move(ret);
 					}
-					.(nRef('ret').dot(properties[0].name)) = JSON::parseFrom(ctx, (.(typing.AccessTypeAt(properties[0].type, match.gentag))**)(NULL));
+					@(nRef('ret').dot(properties[0].name)) = JSON::parseFrom(ctx, (@(typing.AccessTypeAt(properties[0].type, match.gentag))**)(NULL));
 					if ( ctx.error ) {
 						return std::move(ret);
 					}
@@ -424,7 +424,7 @@ jsism.EnableJSON = function(nd_root) {
 					});
 				}
 				//the default clause breaks and skips
-				nd_switch = .(
+				nd_switch = @(
 					switch (*ctx.begin) {}
 				);
 				let nd_body = nd_switch.Find(N_SCOPE, null);
@@ -435,11 +435,11 @@ jsism.EnableJSON = function(nd_root) {
 					} else {
 						nd_char = nNumber(cases[i].indicator.toString());
 					}
-					//we must not have ; after the .(): it screws up multi-node insertion
-					nd_body.Insert(POS_BACK, .(
-						case .(nd_char): {
+					//we must not have ; after the @(): it screws up multi-node insertion
+					nd_body.Insert(POS_BACK, @(
+						case @(nd_char): {
 							ctx.begin += 1;
-							.(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten + 1))
+							@(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten + 1))
 							break;
 						}
 					));
@@ -463,14 +463,14 @@ jsism.EnableJSLambdaSyntax = function(nd_root) {
 		let nd_after = nd_func.c.s.s;
 		if (nd_after.isSymbol('=>')) {
 			nd_after.ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
-			nd_before.ReplaceWith(.([&]));
+			nd_before.ReplaceWith(@([&]));
 		}
 	}
 };
 
 jsism.EnableJSLambdaSyntax.inverse = function(nd_root) {
 	//()=>{} <=> [&](){}
-	let nd_template = .([&]);
+	let nd_template = @([&]);
 	for (let nd_func of nd_root.FindAll(N_FUNCTION, null)) {
 		let nd_before = nd_func.c;
 		let nd_after = nd_func.c.s.s;

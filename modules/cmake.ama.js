@@ -157,8 +157,8 @@ function TryRelative(dir_cmake, src_name_abs) {
 	return src_name_rel;
 }
 
-//let nd_output_format_template = ParseCode('#pragma add("output_format",.(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
-let nd_output_format_template = .{#pragma add("output_format", .(Node.MatchAny(N_STRING, 'format')))};
+//let nd_output_format_template = ParseCode('#pragma add("output_format",@(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
+let nd_output_format_template = @{#pragma add("output_format", @(Node.MatchAny(N_STRING, 'format')))};
 
 Node.CMakeInsertAMACommand = function(options) {
 	let dir_cmake = path.dirname(path.resolve(this.data));

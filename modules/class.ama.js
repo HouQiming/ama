@@ -96,8 +96,8 @@ Node.ParseClass = function() {
 		}
 	}
 	let base_classes = [];
-	base_class_set.forEach(nd_class=>{
-		base_classes.push(nd_class)
+	base_class_set.forEach(nd_class => {
+		base_classes.push(nd_class);
 	});
 	//properties: enum base_classes first
 	let properties = [];

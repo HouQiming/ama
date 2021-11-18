@@ -4,7 +4,7 @@ module.exports = {
 	templates: [
 		{
 			pattern: Node.MatchAny(N_REF, 'foo'),
-			filter: match=>{
+			filter: match=> {
 				let nd_ref = match.foo;
 				if (nd_ref.Owning(N_PARAMETER_LIST)) {return 0;}
 				if (nd_ref.Owner().node_class != N_FUNCTION) {return 0;}

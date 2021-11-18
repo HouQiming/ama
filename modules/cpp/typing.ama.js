@@ -25,7 +25,7 @@ typing.options = {
 	string_type: nPostfix(nRef('char'), '*'),
 	regexp_type: nRef('RegExp'),
 	bool_type: nRef('int'),
-	node_type: nPostfix(.(ama::Node), '*'),
+	node_type: nPostfix(@(ama::Node), '*'),
 	null_type: nPostfix(nRef('void'), '*'),
 	non_type_function_keywords: new Set([
 		'private', 'public', 'protected',

@@ -130,15 +130,15 @@ Node.MatchAll = function(nd_pattern) {
 	return this.FindAll(nd_pattern.node_class, nd_pattern.data).map(nd=>nd.Match(nd_pattern)).filter(ret=>ret);
 }
 
-//Wildcards for template matching. You can invoke the patterns with nested `.()` inside `.()`.
+//Wildcards for template matching. You can invoke the patterns with nested `@()` inside `@()`.
 //
 //MatchAny matches any node of an optional node class and saves the result in the `name` property of the returned match.
 //
 //For example, this code:
 //```Javascript
-//let nd_source = .(test(3));
+//let nd_source = @(test(3));
 //nd_source.Match(
-//    .(test(.(Node.MatchAny("val"))))
+//    @(test(@(Node.MatchAny("val"))))
 //)
 //```
 //will return `{nd:nd_source,val:nd_source.Find(N_NUMBER, '3')}`.
@@ -156,14 +156,14 @@ Node.MatchDot = function(nd_object, name) {
 }
 
 //Substitution a match into the code template specified by `nd`.
-//`.(foo)` under `nd` will be replaced with `match.foo`.
+//`@(foo)` under `nd` will be replaced with `match.foo`.
 //
 //For example, this code:
 //```Javascript
-//let nd_source = .(test(.(val)));
+//let nd_source = @(test(@(val)));
 //nd_source.Subst({val:nNumber(3)})
 //```
-//will return `.(test(3))`
+//will return `@(test(3))`
 Node.Subst = function(match) {
 	let nd_ret = this.Clone();
 	for (let ndi = nd_ret; ndi; ndi = ndi.PreorderNext(null)) {

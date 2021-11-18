@@ -95,7 +95,7 @@ namespace ama {
 		for (ama::Node* ndi = nd_root->PostorderFirst(); ndi; ndi = ndi->PostorderNext(nd_root)) {
 			ama::Node* nd = ndi->p;
 			if ( ndi != nd_root ) {
-				if ( nd->node_class == ama::N_SCOPE || nd->node_class == ama::N_FILE ) {
+				if ( (nd->node_class == ama::N_SCOPE || nd->node_class == ama::N_FILE) && ndi->node_class != ama::N_SYMBOL ) {
 					if ( nd->node_class == ama::N_SCOPE ) {
 						ndi->AdjustIndentLevel(4);
 					}

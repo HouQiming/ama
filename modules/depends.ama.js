@@ -58,7 +58,7 @@ depends.LoadFile = function(fn, options) {
 	return nd_cached;
 };
 
-let nd_add_template = .{#pragma add(.(Node.MatchAny(N_STRING, 'kind')), .(Node.MatchAny(N_STRING, 'name')))};
+let nd_add_template = @{#pragma add(@(Node.MatchAny(N_STRING, 'kind')), @(Node.MatchAny(N_STRING, 'name')))};
 depends.dependency_cache = [new Map(), new Map()];
 depends.ListAllDependency = function(nd_root, include_system_headers) {
 	let cache = depends.dependency_cache[0 | !!include_system_headers];
@@ -111,7 +111,7 @@ depends.ListLoadedFiles = function() {
 	for (let name in __require_cache) {
 		ret.push(path.resolve(name));
 	}
-	depends.cache.forEach((nd_root, name)=> {
+	depends.cache.forEach((nd_root, name) => {
 		ret.push(path.resolve(name));
 	});
 	return ret;

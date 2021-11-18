@@ -377,8 +377,9 @@ namespace ama {
 		if ( extra_script.size() ) {
 			script_i = JC::string_concat(extra_script, script_i);
 		}
-		//allow .(foo) in ama code
-		if ( script_i--->indexOf(".(") >= 0 || script_i--->indexOf(".{") >= 0 ) {
+		//allow @(foo) in ama code
+		if ( script_i--->indexOf(".(") >= 0 || script_i--->indexOf(".{") >= 0 ||
+		script_i--->indexOf("@(") >= 0 || script_i--->indexOf("@{") >= 0) {
 			ama::Node* nd_root = ParseCode(script_i.c_str(), JS_UNDEFINED);
 			ama::NodeofToASTExpression(nd_root);
 			script_i = nd_root->toSource();

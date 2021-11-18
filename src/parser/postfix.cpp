@@ -136,7 +136,7 @@ namespace ama {
 					ndi->p = nullptr; ndi->s = nullptr; ndi->FreeASTStorage();
 					ndi = nd_dot;
 					continue;
-				} else if ( ndi->isSymbol(".") && ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('{', '}') || ndi_next->node_class == ama::N_SCOPE) ) {
+				} else if ( (ndi->isSymbol(".") || ndi->isSymbol("@")) && ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('{', '}') || ndi_next->node_class == ama::N_SCOPE) ) {
 					//nodeof
 					ndi_next->Unlink();
 					ndi = ndi->ReplaceWith(ama::nNodeof(ndi_next)->setIndent(ndi->indent_level));

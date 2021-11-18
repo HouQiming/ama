@@ -3,10 +3,10 @@ const typing = require('cpp/typing');
 module.exports = {
 	templates: [
 		{
-			pattern: .(&.(Node.MatchAny('foo'))),
+			pattern: @(&@(Node.MatchAny('foo'))),
 			nd: (values, extra_args, vars, name, ctx)=> {
 				let utag = vars['<utag>'];
-				let other_pointers = Sandbox.FindValues(ctx.vars, value=>{
+				let other_pointers = Sandbox.FindValues(ctx.vars, value => {
 					return value.ref_vars_utag == utag && value.ref_name == name;
 				});
 				if (other_pointers.length) {
@@ -30,7 +30,7 @@ module.exports = {
 					ref_mutable: extra_args.ref_mutable,
 				}));
 			},
-			nd_extra_args: match=>{
+			nd_extra_args: match=> {
 				let ref_mutable = 1;
 				//pass-to-const test
 				//cast / assignment / call
@@ -73,16 +73,16 @@ module.exports = {
 		}
 	],
 	destructors: [
-		(values, vars, name)=> {
+		(values, vars, name) => {
 			let utag = vars['<utag>'];
 			let utag_parent = Sandbox.ctx_map[utag].utag_parent;
 			if (utag_parent == undefined) {return;}
 			let ctx_parent = Sandbox.ctx_map[utag_parent];
-			let dangling_pointers = Sandbox.FindValues(ctx_parent.vars, value=>{
+			let dangling_pointers = Sandbox.FindValues(ctx_parent.vars, value => {
 				return value.ref_vars_utag == utag && value.ref_name == name;
 			});
 			if (dangling_pointers.length) {
-				return dangling_pointers.map(value_ptr=>{
+				return dangling_pointers.map(value_ptr => {
 					return {
 						error: 'to `{code}`',
 						value: value_ptr,

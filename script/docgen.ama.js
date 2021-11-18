@@ -134,7 +134,7 @@ function GenerateDocuments(){
 	}
 	all_node_apis.push({separator:'js',description:'---'});
 	let nd_init_js=depends.LoadFile(path.resolve(__dirname, '../modules/_init.js'));
-	for(let match of nd_init_js.MatchAll(nAssignment(Node.MatchDot(.(Node),'name'),Node.MatchAny('impl')))){
+	for(let match of nd_init_js.MatchAll(nAssignment(Node.MatchDot(@(Node),'name'),Node.MatchAny('impl')))){
 		let name_i=match.name.data;
 		if(dedup.has(name_i)){continue;}
 		if(name_i=='dfsMatch'){continue;}

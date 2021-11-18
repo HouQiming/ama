@@ -6,8 +6,8 @@ function isTypeLike(nd_type) {
 	return nd_type.node_class == N_REF || nd_type.node_class == N_DOT || nd_type.node_class == N_CALL_TEMPLATE;
 }
 let g_obj_init_transform = {
-	from: .(.(Node.MatchAny('key')): .(Node.MatchAny('value'))),
-	to: .(.(Node.MatchDot(nAir(), 'key')) = .(Node.MatchAny('value')))
+	from: @(@(Node.MatchAny('key')): @(Node.MatchAny('value'))),
+	to: @(@(Node.MatchDot(nAir(), 'key')) = @(Node.MatchAny('value')))
 };
 function BidirTransform(nd_root, is_forward) {
 	//`type foo{};` as the default

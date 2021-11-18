@@ -4,7 +4,7 @@ const path = require('path');
 const gentag = require('cpp/gentag');
 
 module.exports = function Transform(nd_root) {
-	for (let match of gentag.FindAllGenTags(nd_root, .(asset(.(Node.MatchAny(N_STRING, 'file')))))) {
+	for (let match of gentag.FindAllGenTags(nd_root, @(asset(@(Node.MatchAny(N_STRING, 'file')))))) {
 		let file = match.file.GetStringValue();
 		let name = path.parse(file).name.replace(/[^a-zA-Z0-9]+/g, '_').toLowerCase();
 		let data = new Uint8Array(fs.readFileSync(file));
