@@ -3,8 +3,8 @@
 ## Efforts Needed
 
 - More creative ways of language customization
-- Better support of not-so-C-like languages
 - Better documentation
+- Better support of not-so-C-like languages
 
 ## C++11 Dialect for Development
 

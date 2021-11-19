@@ -8,6 +8,9 @@ const move_operator=require('cpp/move_operator');
 const unified_null=require('cpp/unified_null');
 function ToCPP(nd_root,options){
 	if(!options){options={};}
+	for(let nd_line of nd_root.FindAll(N_KEYWORD_STATEMENT,'#line')){
+		nd_line.c.ReplaceWith(nNumber((nd_line.ComputeLineNumber()+2).toString()))
+	}
 	(nd_root
 		.StripRedundantPrefixSpace()
 		.then(require('auto_semicolon'))
@@ -37,6 +40,9 @@ function ToCPP(nd_root,options){
 }
 
 function FromCPP(nd_root){
+	for(let nd_line of nd_root.FindAll(N_KEYWORD_STATEMENT,'#line')){
+		nd_line.c.ReplaceWith(nRef('__AMA_LINE__'))
+	}
 	return (nd_root
 		.then(require('cpp/gentag').DropGeneratedCode)
 		.StripRedundantPrefixSpace(false)

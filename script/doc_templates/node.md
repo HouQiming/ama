@@ -1,10 +1,12 @@
 # AST API Reference
 
-TODO: what is AST
+Our AST (Abstract Syntax Tree) is a tree formed by homogeneously-typed `Node` objects. The AST is language neutral: the same `Node` constructs are used for every language, be it C, Python, or Javascript. We also use one unified parser, with minor customizations, to parse every language.
+
+Not all language constructs are supported, though. Unrecognized language constructs will be parsed into *raw* nodes, which packs node or token sequences verbatim. We always interpret parenthesis so even raw nodes can still form a tree more useful than raw code strings.
 
 ## Creating an AST
 
-The AST (Abstract Syntax Tree) is usually created in Javascript with a parsing API:
+The AST is usually parsed from strings or files in Javascript with one of the following APIs:
 
 `ParseCode(code, [options])` parses the provided code string into an AST. This function is also available in C++.
 
@@ -16,7 +18,11 @@ Alternatively, we can also create an in-line AST by wrapping raw code with `@()`
 
 ### Parsing Options
 
-TODO: default_options
+The default parser options are listed by the `__global.default_options` assignment in `module/_init.js`:
+
+```Javascript
+【default_options】
+```
 
 ## The Node Class
 
@@ -46,12 +52,20 @@ Translate `@()` to Javascript node construction expression. Useful if we eventua
 
 Format the AST with sane indentations. Useful on generated code before dumping.
 
-### Methods
+--------------
+- `Node.GetPlaceHolder()` (Javascript)
+- `ama::GetPlaceHolder()` (C++)
+
+Get a placeholder node required when adding code around an existing node, see `nd.ReplaceWith` for details.
+
+### Javascript Methods
 
 The following methods are only supported in Javascript:
 
 【apis_js】
-## Node Types
+## Node Classes
+
+Here is a list of all node classes, i.e., possible `node_class` values. The AST stores each node's children in the same order as the constructor parameters listed here.
 
 【ctor】
 ## Notes

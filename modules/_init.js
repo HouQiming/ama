@@ -295,8 +295,10 @@ Node.GetCompleteParseOption=function(options){
 	return __PrepareOptions(this.Root().data,options);
 }
 
-//The default_options tries to be generic enough for any language.
 __global.default_options = {
+	//The default_options tries to be generic enough for any language.
+	/////////////////////////
+	//whether to enable `#foo` comments
 	enable_hash_comment: 0,
 	symbols: '!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->*',
 	//we treat # as an identifier character to make C stuff like `#define` more idiosyncratic
@@ -308,8 +310,10 @@ __global.default_options = {
 	regexp_flags_charset: 'A-Za-z',
 	//we don't really look up the Unicode tables: enable_unicode_identifiers means "all high bytes are treated as identifiers"
 	enable_unicode_identifiers: 1,
+	//if enabled, auto finish dangling strings / parenthesis
 	finish_incomplete_code: 0,
 	///////////
+	//flags controlling individual features
 	parse_operators: 1,
 	parse_pointed_brackets: 1,
 	parse_scoped_statements: 1,
@@ -326,15 +330,15 @@ __global.default_options = {
 	struct_can_be_type_prefix: 1,
 	parse_js_regexp: 1,
 	///////////
+	//binary operators, each \n denotes a change of priority level, it must be followed by a ' '
 	//the 'of' operator is a hack to improve JS for-of parsing
-	//each \n denotes a change of priority level, it must be followed by a ' '
 	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in of instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
 	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
 	postfix_operators: 'const volatile ++ --',
 	cv_qualifiers: 'const volatile',
 	//the JS `void` is too common in C/C++ to be treated as an operator by default
 	named_operators: 'typeof delete sizeof await co_await new in of instanceof as const volatile',
-	//unlike general named_operators, c_type_prefix_operators only make sense when used before another identifier
+	//unlike generic named_operators, c_type_prefix_operators only make sense when used before another identifier
 	c_type_prefix_operators: 'unsigned signed long short',
 	ambiguous_type_suffix: '* ** ^ & &&',
 	///////////
@@ -346,9 +350,9 @@ __global.default_options = {
 	keywords_after_prototype: ': -> => throw const noexcept override',
 	keywords_not_a_function: 'switch case #define #if #else #elif return',
 	keywords_not_variable_name: 'static const volatile private public protected final noexcept throw override virtual operator',
-	//case is better treated as a part of a label
+	//`case` is better treated as a part of a label
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
-	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif break continue template',
+	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template',
 	keywords_operator_escape: 'operator',
 	///////////
 	//codegen

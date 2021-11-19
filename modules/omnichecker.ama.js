@@ -1,3 +1,5 @@
+//Generic checker for module invariance
+//note: this module is currently experimental
 'use strict';
 let omnichecker = module.exports;
 const assert = require('assert');

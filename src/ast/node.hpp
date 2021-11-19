@@ -10,7 +10,6 @@ namespace ama {
 	struct Node;
 };
 namespace ama {
-	static const uint8_t N_NONE = 0;
 	/////////////////
 	//The node classes are designed for .FindAll ergonomy: if we process two
 	//types of nodes more often then not, they're the same class, and vice
@@ -19,45 +18,210 @@ namespace ama {
 	//While the relatively minor CUDA `foo<<<grid,block>>>` has its own node
 	//class: because it requires different treatment than both template
 	//substitution and function call.
+	//`N_NONE` is an invalid value reserved to check uninitialized `Node`
+	static const uint8_t N_NONE = 0;
 	/////////////////
-	//raw nodes
+	//`nRaw(...nodes)`
+	//
+	//Reserved for token sequences we cannot exactly parse.
+	//It can have any number of children.
+	//The textual form is the concatenation of its children, optionally enclosed by two ASCII characters:
+	//- `.flags` packes the enclosing characters: `opening_char|closing_char<<8`. A character value of 0 means it's omitten.
 	static const uint8_t N_RAW = 1;
+	//`nSymbol(string)`
+	//
+	//Reserved for symbol tokens unconnected to surrounding nodes:
+	//- `.data` stores the symbol string.
 	static const uint8_t N_SYMBOL = 2;
+	//`nRef(string)`
+	//
+	//An identifier, likely a reference:
+	//- `.data` stores the identifier string.
+	//- `.flags` can take a combination of the following values:
+	//  - `REF_WRITTEN` signifies the identifier is being written, like the `foo` in `foo = bar;`
+	//  - `REF_RW` signifies the identifier is being updated, like the `foo` in `foo += bar;`. Must be used with `REF_WRITTEN`. 
+	//  - `REF_DECLARED` signifies the identifier is being declared, like the `foo` in `int foo;`
 	static const uint8_t N_REF = 3;
+	//`nNumber(string)`
+	//
+	//A number:
+	//- `.data` stores the original textual form of the number.
 	static const uint8_t N_NUMBER = 4;
+	//`nString(string)`
+	//
+	//A string. C characters are also parsed as strings:
+	//- `.data` stores the original textual form of the string if `.flags==0`, or the string content if `.flags==LITERAL_PARSED`
+	//  For example, parsing `'a'` gives `{node_class:N_STRING,flags:0,data:"'a'"}`.
+	//  While `nString('a')` gives `{node_class:N_STRING,flags:LITERAL_PARSED,data:"a"}`.
 	static const uint8_t N_STRING = 5;
-	/////////////////
-	//"parsed" nodes
-	//N_NODEOF is our own extension to switch between source code and ama code.
+	//`nNodeof(nd)`
+	//
+	//Our own extension to switch between script code and code templates in scripts.
 	//The syntax is `@(foo)`. Example uses:
-	//- nd.Match(@(JSON.parse<@(Node.MatchAny('foo'))>)))
-	//- nd_root.Insert(POS_FRONT, @(#include <stdio.h>))
+	//- `nd.Match(@(JSON.parse<@(Node.MatchAny('foo'))>)))`
+	//- `nd_root.Insert(POS_FRONT, @(#include <stdio.h>))`
+	//- `nd_paramlist.Insert(POS_BACK, @(int @(nRef(name))))`
+	//In normal code, `@()` enters the code template mode: it evaluates to an AST node corresponding to the `@()` contents.
+	//Nested `@()` switches back to normal code, where one can put in non-verbatim content like `nRef(name)`.
+	//Nested `@()` supports sibling chains, like `nd.Insert`.
 	static const uint8_t N_NODEOF = 6;
+	//`nScope(...nodes)`
+	//
+	//A statement block:
+	//- `.flags` can be:
+	//  - `0` to indicate a `{}`-enclosed block.
+	//  - `SCOPE_FROM_INDENT` to indicate a Python-like indentation-based block.
 	static const uint8_t N_SCOPE = 7;
+	//`nFunction(nd_before, nd_parameter_list, nd_after, nd_body)`
+	//
+	//A function declaration:
+	//- `nd_before` packs everything before the parameter list, e.g. `int __cdecl printf` in `int __cdecl printf(char* fmt,...);`
+	//- `nd_parameter_list` is a `N_PARAMETER_LIST` (documented later) storing the parameter list.
+	//- `nd_after` packs everything between the parameter list and the body, e.g. `const override` in `virtual void foo()const override{}`
+	//- `nd_body` is the function body. It is usually `N_AIR` or `N_SCOPE`, 
+	//  but can also be an arbitrary expression for lambda expressions like the `x+1` in `x => x+1`.
+	//- `data` stores the deduced function name
 	static const uint8_t N_FUNCTION = 8;
+	//`nClass(keyword, nd_before, nd_name, nd_after, nd_body)`
+	//
+	//A class declaration. Take the following code as example:
+	//```C++
+	//struct __attribute__((aligned(16))) Quaternion: Vector4 {
+	//    ...
+	//};
+	//```
+	//- `.data` stores the keyword declaring the class, like `struct` in the example.
+	//  It's provided to the constructor with the `keyword` argument.
+	//- `nd_before` packs everything between the keyword and the class name, like `__attribute__((aligned(16)))` in the example.
+	//- `nd_name` is a `N_REF` with the class name, like `Quaternion` in the example.
+	//- `nd_after` packs everything between the class name and the body, like `: Vector4` in the example.
+	//- `nd_body` is the class body. It is usually `N_AIR` or `N_SCOPE`, like `{...}` in the example.
 	static const uint8_t N_CLASS = 9;
+	//`nPostfix(nd, operator)`
+	//
+	//A postfix operation:
+	//- `.data`, provided by `operator`, is the operator string.
+	//- `nd` is the operand.
 	static const uint8_t N_POSTFIX = 10;
+	//`nd.dot(name)`
+	//
+	//A dot notation:
+	//- `.data`, provided by `name`, is the member name.
+	//- `nd` is the object.
 	static const uint8_t N_DOT = 11;
+	//`nItem(nd_object, ...subscripts)`
+	//
+	//Array item fetching expression in the form of `nd_object[...subscripts]`.
+	//`subscripts` can be empty and `nd_object` can be `N_AIR`.
+	//If `subscripts` contain multiple nodes, they are assumed to be comma-separated. 
 	static const uint8_t N_ITEM = 12;
+	//`nCall(nd_function, ...parameters)`
+	//
+	//Function-call expression in the form of `nd_function(...parameters)`.
 	static const uint8_t N_CALL = 13;
+	//`nCallTemplate(nd_template, ...parameters)`
+	//
+	//Template instantiation expression in the form of `nd_template<...parameters>`.
 	static const uint8_t N_CALL_TEMPLATE = 14;
+	//`nCallCudaKernel(nd_function, ...parameters)`
+	//
+	//The parameter binding portion of a CUDA kernel call in the form of `nd_function<<<...parameters>>>`.
 	static const uint8_t N_CALL_CUDA_KERNEL = 15;
+	//`nDependency(...nodes).setFlags(flags)`
+	//
+	//A node with dependency information, like `#include` in and `require` in Javascript_
+	//- `.flags` can be:
+	//  - `DEP_C_INCLUDE` stands for C `#include`, if we also have `.flags&DEPF_C_INCLUDE_NONSTR != 0`, it's `#include <>`.
+	//  In any case, `nodes` packs one string. However, it can also be an arbitrary expression in presence of advanced
+	//  C preprocessor techniques like `#include ADD_FANCY_DIRECTORY("name." HEADER_EXTENSION)`.
+	//  - `DEP_JS_REQUIRE` stands for Javascript `require`, `nodes` packs one require argument
 	static const uint8_t N_DEPENDENCY = 16;
+	//`nBinop(nd_a, operator, nd_b)`
+	//
+	//A binary operation:
+	//- `.data`, provided by `operator`, is the operator string.
+	//- `nd_a` and `nd_b` are the two operands.
 	static const uint8_t N_BINOP = 17;
+	//`nPrefix(operator, nd)`
+	//
+	//A prefix operation:
+	//- `.data`, provided by `operator`, is the operator string.
+	//- `nd` is the operand.
 	static const uint8_t N_PREFIX = 18;
+	//`nAssignment(nd_target, [symbol, ]nd_value)`
+	//
+	//An assignment in the form of `nd_target symbol= nd_value`:
+	//- `.data`, provided by `symbol`, packs the assignment symbol sans `=`, like the `+` in `a += 1`.
+	//  Use an empty string for plain assignment.
+	//- `nd_target` is the target.
+	//- `nd_value` is the value.
 	static const uint8_t N_ASSIGNMENT = 19;
+	//`nScopedStatement(keyword, nd_parameter, nd_body[, ...extension_clauses])`
+	//
+	//A special statement that canonically takes a statement block, like `if`:
+	//- `.data`, provided by `keyword`, stores the keyword, like `for` in `for(;;){}`.
+	//- `nd_parameter` packs everything between the keyword and the body, like the `(;;)` in `for(;;){}`.
+	//  It can be `N_AIR` for statements like `try{}` or `do{}while()`.
+	//- `nd_body` is the statement block. It's always `N_SCOPE` except for the C++ `template<>...`,
+	//  in which case it packs the declaration after the template parameters.
+	//- `extension_clauses` pack follow-ups after the body, like `else` clauses for `if` and `catch` clauses for `try.
 	static const uint8_t N_SCOPED_STATEMENT = 20;
+	//`nExtensionClause(keyword, nd_parameter, nd_body)`
+	//
+	//An extension clause. Parameters and fields are similar to `N_SCOPED_STATEMENT`.
 	static const uint8_t N_EXTENSION_CLAUSE = 21;
+	//`nParameterList(...nodes)`
+	//
+	//A list of parameters:
+	//- `.flags` can be:
+	//  - `0` stands for a `()`-enclosed list
+	//  - `PARAMLIST_TEMPLATE` stands for a `<>`-enclosed list
+	//  - `PARAMLIST_UNWRAPPED` stands for a free-standing list
+	//- `nodes` are a list of `N_ASSIGNMENT` nodes, the target of each represents a parameter while the value of each represents an optional default value.
+	//  Parameters without a default value have it set to `N_AIR`.
 	static const uint8_t N_PARAMETER_LIST = 22;
+	//`nConditional(nd_condition, nd_true_value, nd_false_value)`
+	//
+	//C `?:` construct in the form of `nd_condition ? nd_true_value : nd_false_value`.
 	static const uint8_t N_CONDITIONAL = 23;
+	//`nLabeled(nd_label, nd_value)`
+	//
+	//Generic labeled construct in the form of `nd_label: nd_value`. It can be a number of things, including but not limited to:
+	//- A C goto label with a statement like `end: return;`
+	//- A C case or default clause like `case 0: break;`
+	//- A Javascript field initializer like the inside of `{foo:"bar"}`
 	static const uint8_t N_LABELED = 24;
-	//N_AIR is a node that stands for something but generates no code, like
-	//the namespace in `::foo` and the undefined initial value of `int bar;`
+	//`nAir()`
+	//
+	//An *air node* that stands for something grammatical but generates no code, like
+	//the namespace in `::foo`.
 	static const uint8_t N_AIR = 25;
+	//`nFile(...nodes)`
+	//
+	//A source file. Must be the root node:
+	//- `.data` stores the file name when available.
+	//- `.flags` can be:
+	//  - `0` stands for a tab-indented file
+	//  - `FILE_SPACE_INDENT` stands for a space-indented file
 	static const uint8_t N_FILE = 26;
+	//`nSemicolon(nd)`
+	//
+	//A trailing semicolon: `nd;`
 	static const uint8_t N_SEMICOLON = 27;
+	//`nParen(nd)`
+	//
+	//A pair of parenthesis: `(nd)`
 	static const uint8_t N_PAREN = 28;
+	//`nKeywordStatement(keyword, nd_parameter)`
+	//
+	//A special statement that cannot take a statement block, like `return`:
+	//- `.data`, provided by `keyword`, stores the keyword, like the `goto` in `goto end;`
+	//- `nd_parameter` pack whatever that follows the keyword, or `N_AIR` if there is no follow-up, like in `break;`.
 	static const uint8_t N_KEYWORD_STATEMENT = 29;
+	//`nJsRegexp(string)`
+	//
+	//A Javascript regular expression in the form of `/foo/flags`.
+	//- `.data` stores the original textual form of the regular expression.
 	static const uint8_t N_JS_REGEXP = 30;
 	/////////////////
 	//don't start any other constant with "N_", jsgen.cpp depends on this
@@ -137,6 +301,7 @@ namespace ama {
 		}
 		```
 		The `return 0;` node has `.indent_level=4` (default tab width) while all other nodes have `.indent_level=0`.
+		Using this relative indentation representation can keep the formatting sane while moving nodes around.
 		*/
 		int8_t indent_level{};
 		//pack temporary flags that must not affect code generation
@@ -228,6 +393,7 @@ namespace ama {
 		//- **POS_FRONT**: `nd_new` will be the previous sibling of `nd`
 		//- **POS_BACK**: `nd_new` will be the previous sibling of `nd`
 		//- **POS_REPLACE**: `nd_new` will be the previous sibling of `nd`
+		//`nd_new` can have sibling chains, i.e., if `nd_new.s != NULL`, the linked siblings will be inserted as well.
 		ama::Node* Insert(int pos, ama::Node* nd_new);
 		//Find a node with some relationship specified by the method name to `nd`, return NULL if not found.
 		//
@@ -268,14 +434,14 @@ namespace ama {
 		std::vector<ama::Node*> FindAll(int node_class, ama::gcstring data = ama::gcstring())const;
 		std::vector<ama::Node*> FindAllWithin(int32_t boundary, int node_class, ama::gcstring data = ama::gcstring())const;
 		std::vector<ama::Node*> FindAllBefore(ama::Node const* nd_before, int32_t boundary, int node_class, ama::gcstring data = ama::gcstring())const;
-		//Returns the string content for N_STRING.
+		//Returns the string content for `N_STRING`.
 		//
 		//The default parser keeps quotes around source code strings, so
-		//parsing "hello world" gives a node with .data="\"hello world\""
-		//You need GetStringValue() to get the content "hello world".
-		//Once you call GetStringValue() though, the original textual form
-		//is no longer preserved. For example, "hello \u0077orld" becomes
-		//"hello world". That's why this function is not `const`. 
+		//parsing `"hello world"` gives a node with `{data:"\"hello world\""}`
+		//You need `GetStringValue()` to get the content `"hello world"`.
+		//Once you call `GetStringValue()` though, the original textual form
+		//is no longer preserved. For example, `"hello \u0077orld"` becomes
+		//`"hello world"`. That's why this function is not `const`. 
 		ama::gcstring GetStringValue();
 		//Get a best-effort "name" of the node. For example, the `.data` field of `N_CALL` is always empty, but .GetName() on such nodes return the callee's name if it's `N_REF` or `N_DOT`.
 		ama::gcstring GetName()const;

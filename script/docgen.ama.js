@@ -16,7 +16,7 @@ function CleanupDocString(s){
 	let in_code=0;
 	let in_list=0;
 	for(let line of s.split('\n')){
-		if(line.match(/^[* \t/]+$/)){continue;}
+		//if(line.match(/^[* \t/]+$/)){continue;}
 		if(line==='/*'||line==='*/'){continue;}
 		line=line.replace(/^[ \t]*[/]+/,'');
 		if(line.indexOf('```')>=0){
@@ -97,7 +97,7 @@ function CreateNodeAPIItem(name,nd_func,doc){
 	}
 	let self='nd';
 	if(name=='MatchAny'||name=='MatchDot'){
-		nd='Node';
+		self='Node';
 	}
 	return {
 		prototype:['- `',self,'.',name,'(',prototype.join(''),')`'].join(''),
@@ -158,13 +158,24 @@ function GenerateDocuments(){
 			all_node_apis_dedup.push(item);
 		}
 	}
+	//node constructors
+	let all_node_ctors=[];
+	for(let nd_const of nd_node_hpp.FindAll(N_REF).filter(item=>(item.flags&REF_DECLARED)&&item.data.startsWith('N_'))){
+		if(nd_const.data!='N_NONE'){
+			all_node_ctors.push({
+				name:nd_const.data,
+				description:CleanupDocString(nd_const.ParentStatement().comments_before),
+			})
+		}
+	}
 	fs.writeFileSync(
 		path.resolve(__dirname, '../doc/api_node.md'),
 		ApplyMDTemplate(g_templates.node,{
 			fields:all_node_fields.join(''),
 			apis_cpp:all_node_apis_cpp.map(item=>ApplyMDTemplate(g_templates.node_api,item)).join(''),
 			apis_js:all_node_apis_dedup.map(item=>ApplyMDTemplate(g_templates.node_api,item)).join(''),
-			//ctor:
+			ctor:all_node_ctors.map(item=>ApplyMDTemplate(g_templates.node_ctor,item)).join(''),
+			default_options:nd_init_js.MatchAll(@(__global.default_options=@(Node.MatchAny('foo'))))[0].nd.toSource()
 		})
 	);
 	/////////////////////

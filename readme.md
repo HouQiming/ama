@@ -1,12 +1,12 @@
 # Amalang
 
-A system to amalgamate any features you want into any language you need, while keep interacting with upstream in the original language.
+A system to amalgamate any features you want into any language you need, while still interacting with upstream in the original language.
 
 The project itself is an example. You can build this repository in plain C++11, but it's actually developed in a different dialect. Try building it and run `script/sync.js`, then check the generated `*.ama.cpp`.
 
 Key features:
-- **Zero setup** The system can parse any code as is, even if it's unbuildable or incomplete. It will parse whatever it understands and let unrecognized syntax pass through unchanged.
-- **Zero disruption** Amalang lets you develop in a different language or workflow than you deliver. You can start or quit at any time you choose in any project you need, without disrupting upstream at all.
+- **Zero setup** The system can parse any code as is, even if it's unbuildable or riddled with `#define` macros. It will parse whatever it understands and let unrecognized syntax pass through unchanged.
+- **Zero disruption** Amalang lets you develop in a different language or work flow than you deliver. You can start or quit at any time you choose in any project you need, without disrupting upstream at all.
 - **Simple API** Most work only involves simple Javascript manipulating objects of one class `Node`. No need to learn special programming patterns or compiler theory.
 
 Works best on languages with a reasonable resemblance to C. And that includes Python. See `example/` to see Amalang in action.
