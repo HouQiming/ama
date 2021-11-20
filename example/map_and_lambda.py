@@ -1,4 +1,5 @@
 '''
+Multi-line lambda and .map method for Python.
 @ama
 let nd_root=ParseCurrentFile();
 //multi-line lambda

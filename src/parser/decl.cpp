@@ -417,9 +417,7 @@ namespace ama {
 							//use (){} as indicator: we could drag back those misidentified functions later
 							//if we had a keyword, we won't have a C-like return type
 							ama::Node* nd_paramlist_start = nd_prototype_start;
-							if ( !nd_keyword ) {
-								nd_keyword = nd_prototype_start;
-							} else {
+							if ( nd_keyword ) {
 								nd_paramlist_start = nd_keyword->s;
 								if ( nd_keyword->node_class == ama::N_CALL ) {
 									//the unparsing always creates a paramlist
@@ -466,10 +464,11 @@ namespace ama {
 							}
 							if ( nd_paramlist->node_class == ama::N_CALL ) {
 								int start_was_paramlist = nd_prototype_start == nd_paramlist;
-								nd_paramlist = ama::UnparseCall(nd_paramlist)->s;
+								nd_paramlist = ama::UnparseCall(nd_paramlist);
 								if ( start_was_paramlist ) {
 									nd_prototype_start = nd_paramlist;
 								}
+								nd_paramlist = nd_paramlist->s;
 							}
 							//keyworded function shouldn't have any junk before... but C++ function has both junk before and junk after
 							//before (C++ return type plus junk plus name, or just a name), paramlist, after, body, figure out return type separately
@@ -896,34 +895,41 @@ namespace ama {
 			ama::Node* nd_before = nd_func->c;
 			//try to find a name
 			int found = 0;
-			for (ama::Node* ndi = nd_before->c; ndi; ndi = ndi->s) {
-				//we could have mistaken it for binop due to type shenanigans
-				ama::Node* ndj = ndi;
-				while ( ndj->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(ndj->data) ) {
-					ndj = ndj->c->s;
-				}
-				if ( ndj->node_class == ama::N_REF || ndj->node_class == ama::N_DOT ) {
-					//the starting keyword doesn't count
-					//if it appears after a non-key word, we are likely in the wrong language so take the name
-					if ( !found && keywords_function--->get(ndj->data) ) { continue; }
-					if (keywords_operator_escape--->get(ndj->data, 0) && ndj->s) {
-						//it's `operator`, check for symbol / brackets
-						if (ndj->s->node_class == ama::N_SYMBOL && ndj->s->data != "::") {
-							nd_func->data = ndj->s->data;
-							found = 1;
-							continue;
-						}
-						if (ndj->s->node_class == ama::N_RAW && !ndj->s->c) {
-							//operator() / operator[]
-							std::array<char, 2> buf{};
-							buf[0] = char(ndj->s->flags & 0xff);
-							buf[1] = char((ndj->s->flags >> 8) & 0xff);
-							nd_func->data = ama::gcstring(buf.data(), 2);
-							found = 1;
-							continue;
-						}
+			if (nd_before->node_class == ama::N_RAW) {
+				for (ama::Node* ndi = nd_before->c; ndi; ndi = ndi->s) {
+					//we could have mistaken it for binop due to type shenanigans
+					ama::Node* ndj = ndi;
+					while ( ndj->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(ndj->data) ) {
+						ndj = ndj->c->s;
 					}
-					nd_func->data = ndj->data;
+					if ( ndj->node_class == ama::N_REF || ndj->node_class == ama::N_DOT ) {
+						//the starting keyword doesn't count
+						//if it appears after a non-key word, we are likely in the wrong language so take the name
+						if ( !found && keywords_function--->get(ndj->data) ) { continue; }
+						if (keywords_operator_escape--->get(ndj->data, 0) && ndj->s) {
+							//it's `operator`, check for symbol / brackets
+							if (ndj->s->node_class == ama::N_SYMBOL && ndj->s->data != "::") {
+								nd_func->data = ndj->s->data;
+								found = 1;
+								continue;
+							}
+							if (ndj->s->node_class == ama::N_RAW && !ndj->s->c) {
+								//operator() / operator[]
+								std::array<char, 2> buf{};
+								buf[0] = char(ndj->s->flags & 0xff);
+								buf[1] = char((ndj->s->flags >> 8) & 0xff);
+								nd_func->data = ama::gcstring(buf.data(), 2);
+								found = 1;
+								continue;
+							}
+						}
+						nd_func->data = ndj->data;
+						found = 1;
+					}
+				}
+			} else if (nd_before->node_class == ama::N_REF) {
+				if ( !keywords_function--->get(nd_before->data) ) {
+					nd_func->data = nd_before->data;
 					found = 1;
 				}
 			}

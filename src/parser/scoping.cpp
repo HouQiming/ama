@@ -16,7 +16,7 @@ namespace ama {
 			nd_raw->flags &= 0xffff0000u;
 		}
 	}
-	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<ama::gcstring, int> const& keywords_extension_clause, std::span<ama::Node*> lines_out) {
+	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<ama::gcstring, int> const& keywords_extension_clause, int32_t but_merge_cpp_ctor_lines, std::span<ama::Node*> lines_out) {
 		std::vector<ama::Node*> line_group{};
 		std::vector<ama::Node*> line_out_final{};
 		for (int i0 = 0; i0 < lines_out.size();) {
@@ -27,7 +27,9 @@ namespace ama {
 				(lines_out[i1]->isRawNode(0, 0) && lines_out[i1]->c && (lines_out[i1]->c->node_class == ama::N_SCOPE || lines_out[i1]->c->isRawNode('{', '}'))) || 
 				((lines_out[i1 - 1]->node_class == ama::N_SCOPE || lines_out[i1 - 1]->isRawNode('{', '}')) && 
 				((lines_out[i1]->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->data)) || 
-				(lines_out[i1]->node_class == ama::N_RAW && lines_out[i1]->c && lines_out[i1]->c->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->c->data))))) ) {
+				(lines_out[i1]->node_class == ama::N_RAW && lines_out[i1]->c && lines_out[i1]->c->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->c->data))))) ||
+				but_merge_cpp_ctor_lines && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(":")) ||
+				(lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(","))) {
 					if ( (lines_out[i1 - 1]->node_class == ama::N_SCOPE || lines_out[i1 - 1]->isRawNode('{', '}')) && lines_out[i1]->comments_before--->startsWith('\n') ) {
 						lines_out[i1]->comments_before = ama::gcstring(lines_out[i1]->comments_before--->subarray(1));
 					}
@@ -70,11 +72,12 @@ namespace ama {
 	}
 	static void FoldIndentGroup(
 	std::unordered_map<ama::gcstring, int> const& keywords_extension_clause,
-	std::vector<ama::Node*>& lines_out, int32_t level, intptr_t lineno, int32_t auto_curly_bracket, ama::Node* nd_nextline) {
+	std::vector<ama::Node*>& lines_out, int32_t level, intptr_t lineno, int32_t auto_curly_bracket, 
+	int32_t but_merge_cpp_ctor_lines, ama::Node* nd_nextline) {
 		for (intptr_t i = lineno; i < intptr_t(lines_out.size()); i += 1) {
 			lines_out[i]->AdjustIndentLevel(-level);
 		}
-		ama::Node* nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(keywords_extension_clause, lines_out--->subarray(lineno))));
+		ama::Node* nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(keywords_extension_clause, but_merge_cpp_ctor_lines, lines_out--->subarray(lineno))));
 		if (!auto_curly_bracket) {
 			nd_new_scope->flags = ama::SCOPE_FROM_INDENT;
 		}
@@ -229,6 +232,7 @@ namespace ama {
 	ama::Node* ConvertIndentToScope(ama::Node* nd_root, JSValue options) {
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		int32_t auto_curly_bracket = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "auto_curly_bracket"), 0);
+		int32_t but_merge_cpp_ctor_lines = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_indent_as_scope_but_merge_cpp_ctor_lines"), 0);
 		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
 		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( nd_raw->isRawNode('{', '}') ) {
@@ -279,7 +283,7 @@ namespace ama {
 						//bad indent
 						istk.back().level = lines[i]->indent_level;
 					} else {
-						FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.size() - 2].level, istk.back().lineno, auto_curly_bracket, lines[i]);
+						FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.size() - 2].level, istk.back().lineno, auto_curly_bracket, but_merge_cpp_ctor_lines, lines[i]);
 						istk--->pop();
 					}
 				}
@@ -290,11 +294,11 @@ namespace ama {
 				lines_out.push_back(lines[i]);
 			}
 			while ( istk.size() > 1 ) {
-				FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.size() - 2].level, istk.back().lineno, auto_curly_bracket, nullptr);
+				FoldIndentGroup(keywords_extension_clause, lines_out, istk[istk.size() - 2].level, istk.back().lineno, auto_curly_bracket, but_merge_cpp_ctor_lines, nullptr);
 				istk--->pop();
 			}
 			//merge scopes into surrounding raws
-			std::vector<ama::Node*> line_out_final = MergeScopesIntoStatements(keywords_extension_clause, lines_out);
+			std::vector<ama::Node*> line_out_final = MergeScopesIntoStatements(keywords_extension_clause, but_merge_cpp_ctor_lines, lines_out);
 			//replace old children
 			for ( ama::Node* ndi: line_out_final ) {
 				ndi->p = nd_scope;

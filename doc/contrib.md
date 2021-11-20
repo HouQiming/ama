@@ -5,6 +5,7 @@
 - More creative ways of language customization
 - Better documentation
 - Better support of not-so-C-like languages
+- Project setup scripts: Visual Studio, cmake, scattered C++ files
 
 ## C++11 Dialect for Development
 
@@ -29,6 +30,7 @@ if (foo) {
 - Uninitialized variables will be zero-initialized with `Type foo{};`
 - `auto` will be replaced with a deduced type whenever possible
 - Global functions default to `static`, prefix with `public` to export
+- `#line`'s line numbers will be auto-updated, useful for keeping generated line numbers in sync 
 
 ## Big Rules
 

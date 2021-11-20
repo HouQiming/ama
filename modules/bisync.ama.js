@@ -10,7 +10,7 @@ const fsext = require('fsext');
 {
 	dir_src: path.resolve('./src'),
 	middle_extension: '.ama',
-	processed_extensions:['.cpp','.hpp']
+	processed_extensions:['.cpp','.hpp','.cu']
 	script_forward: fs.readFileSync(path.join(__dirname,'cpp/from_ama.js')).toString(),
 	script_backward: fs.readFileSync(path.join(__dirname,'cpp/to_ama.js')).toString(),
 }

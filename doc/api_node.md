@@ -52,6 +52,7 @@ __global.default_options = {
 	parse_labels: 1,
 	parse_air_object: 1,
 	parse_indent_as_scope: 0,
+	parse_indent_as_scope_but_merge_cpp_ctor_lines: 0,
 	parse_c_forward_declarations: 1,
 	struct_can_be_type_prefix: 1,
 	parse_js_regexp: 1,
@@ -521,9 +522,9 @@ Return the name of `N_FUNCTION`. Returns an empty string if the function is unna
 Create an extension-aware parsing option for `ParseCode`.
 
 
-## Node Types
+## Node Classes
 
-Here is a list of all node types, i.e., possible `node_class` values. The AST stores each node's children in the same order as the constructor parameters listed here.
+Here is a list of all node classes, i.e., possible `node_class` values. The AST stores each node's children in the same order as the constructor parameters listed here.
 
 --------------
 - Node class: `N_RAW`

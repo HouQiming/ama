@@ -43,7 +43,7 @@ build\ama script\sync.js
 
 To quickly try out the features, add a comment with `@ama` and some Javascript to a source code file, then pass that file to `ama`.
 
-See `example/hello_world.cpp` for a tutorial.
+See `example/hello_world.cpp` for a simple tutorial. See `example/cmake` for an automatic C++ build / run setup.
 
 ### Configure an Existing Project
 
