@@ -6,7 +6,7 @@ namespace ama {
 	ama::Node* ParseOperators(ama::Node* nd_root, JSValueConst options);
 	ama::Node* ParsePointedBrackets(ama::Node* nd_root);
 	ama::Node* UnparseBinop(ama::Node* nd_binop);
-	ama::Node* ParseColons(ama::Node* nd_root, int has_c_conditional);
+	ama::Node* ParseColons(ama::Node* nd_root, JSValueConst options);
 	ama::Node* UnparseLabel(ama::Node* nd_label);
 	ama::Node* UnparsePrefix(ama::Node* nd_unary);
 	ama::Node* UnparsePostfix(ama::Node* nd_unary);

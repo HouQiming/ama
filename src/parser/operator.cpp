@@ -59,7 +59,9 @@ namespace ama {
 		}
 		return nd_next;
 	}
-	ama::Node* ParseColons(ama::Node* nd_root, int has_c_conditional) {
+	ama::Node* ParseColons(ama::Node* nd_root, JSValueConst options) {
+		int has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_conditional"), 1);
+		//int has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_labels"), 1);
 		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( !nd_raw->c ) { continue; }
 			//console.error('--------');

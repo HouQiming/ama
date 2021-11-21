@@ -365,6 +365,11 @@ __global.default_options = {
 	auto_curly_bracket: 0,
 };
 
+__global.default_pipeline=[
+	__global.default_options,
+	//TODO
+]
+
 __global.extension_specific_options = {
 	'.py': Object.assign(Object.create(__global.default_options), {
 		enable_hash_comment: 1,

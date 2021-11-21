@@ -30,7 +30,12 @@ if (foo) {
 - Uninitialized variables will be zero-initialized with `Type foo{};`
 - `auto` will be replaced with a deduced type whenever possible
 - Global functions default to `static`, prefix with `public` to export
-- `#line`'s line numbers will be auto-updated, useful for keeping generated line numbers in sync 
+- `#line`'s line numbers will be auto-updated, useful for keeping generated line numbers in sync
+- Relaxed `for` syntax:
+```C++
+for i<foo
+	...
+```
 
 ## Big Rules
 

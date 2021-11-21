@@ -244,7 +244,7 @@ namespace ama {
 		int has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_conditional"), 1);
 		int has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_labels"), 1);
 		if ( has_c_conditional || has_labels ) {
-			ama::ParseColons(nd_root, has_c_conditional);
+			ama::ParseColons(nd_root, options);
 		}
 		//nd_root.Validate();
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_operators"), 1) ) {
@@ -492,13 +492,35 @@ namespace ama {
 		NodeFilter f{};
 		NodeFilterWithOption fo{};
 	};
+	static ama::Node* ConvertRootToFile(ama::Node* nd_root) {
+		nd_root->node_class = ama::N_FILE;
+		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
+		nd_root->flags = (nd_root->flags & 0x10000) ? ama::FILE_SPACE_INDENT : 0;
+		return nd_root;
+	}
 	static std::vector<NodeFilterDesc> g_filters{
 		NodeFilterDesc{"NodeofToASTExpression", ama::NodeofToASTExpression, nullptr},
-		NodeFilterDesc{"CleanupDummyRaws", ama::CleanupDummyRaws, nullptr},
 		NodeFilterDesc{"ParseOperators", nullptr, ama::ParseOperators},
 		NodeFilterDesc{"AutoFormat", ama::AutoFormat, nullptr},
+		NodeFilterDesc{"ConvertToParameterList", ama::ConvertToParameterList, nullptr},
+		///////////////
+		NodeFilterDesc{"ConvertIndentToScope",nullptr,ama::ConvertIndentToScope},
+		NodeFilterDesc{"ParsePointedBrackets",ama::ParsePointedBrackets,nullptr},
+		NodeFilterDesc{"DelimitCLikeStatements",nullptr,ama::DelimitCLikeStatements},
+		NodeFilterDesc{"CleanupDummyRaws", ama::CleanupDummyRaws, nullptr},
+		NodeFilterDesc{"ConvertRootToFile", ama::ConvertRootToFile, nullptr},
+		NodeFilterDesc{"ParseDependency", nullptr,ama::ParseDependency},
+		NodeFilterDesc{"ParsePostfix", nullptr,ama::ParsePostfix},
 		NodeFilterDesc{"SanitizeCommentPlacement", ama::SanitizeCommentPlacement, nullptr},
-		NodeFilterDesc{"ConvertToParameterList", ama::ConvertToParameterList, nullptr}
+		NodeFilterDesc{"ParseKeywordStatements", nullptr,ama::ParseKeywordStatements},
+		NodeFilterDesc{"ParseScopedStatements", nullptr,ama::ParseScopedStatements},
+		NodeFilterDesc{"ParseAssignment", nullptr,ama::ParseAssignment},
+		NodeFilterDesc{"ParseColons", nullptr,ama::ParseColons},
+		NodeFilterDesc{"ParseOperators", nullptr,ama::ParseOperators},
+		NodeFilterDesc{"FixPriorityReversal", ama::FixPriorityReversal,nullptr},
+		NodeFilterDesc{"ParseDeclarations", nullptr,ama::ParseDeclarations},
+		NodeFilterDesc{"NodifySemicolonAndParenthesis", ama::NodifySemicolonAndParenthesis,nullptr},
+		NodeFilterDesc{"SanitizeCommentPlacement", ama::SanitizeCommentPlacement, nullptr},
 	};
 	//new NodeFilterDesc!{
 	//	name: 'StripBinaryOperatorSpaces',
