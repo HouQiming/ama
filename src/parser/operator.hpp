@@ -9,6 +9,7 @@ namespace ama {
 	ama::Node* ParseColons(ama::Node* nd_root, int has_c_conditional);
 	ama::Node* UnparseLabel(ama::Node* nd_label);
 	ama::Node* UnparsePrefix(ama::Node* nd_unary);
+	ama::Node* UnparsePostfix(ama::Node* nd_unary);
 };
 
 #endif

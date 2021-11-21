@@ -108,7 +108,8 @@ function Transform(nd_root, options) {
 		}
 		let found = 0;
 		for (let nd_scope of scopes) {
-			if (nd_scope.Find(N_FUNCTION, names[0])) {
+			//constructor forwards are found as calls
+			if (nd_scope.Find(N_FUNCTION, names[0]) || nd_scope.Find(N_CALL, names[0])) {
 				found = 1;
 				break;
 			}
@@ -122,10 +123,14 @@ function Transform(nd_root, options) {
 					//use found=1 to prevent headersyncing
 					found = 1;
 					//sync to that private class instead
-					if (!nd_scope.Find(N_FUNCTION, names[0])) {
+					if (!nd_scope.Find(N_FUNCTION, names[0]) && !nd_scope.Find(N_CALL, names[0])) {
 						let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
 						nd_forward.GetFunctionNameNode().ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
 						nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
+						if (nd_forward.c.s.s.node_class == N_LABELED) {
+							//C++ constructor
+							nd_forward.c.s.s.ReplaceWith(nAir());
+						}
 						nd_forward = nSemicolon(nd_forward);
 						nd_scope.Insert(POS_BACK, nd_forward);
 						nd_forward.AutoFormat();

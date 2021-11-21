@@ -28,6 +28,8 @@ int main(int argc,char** argv){
 		return p+p;
 	}
 	if(a)c+=a;else c+=b;
+	if(size)(*size)=dialog->GetSize();
+	if(size)--size;
 	c+=a*b;
 	do{
 		console.log('do-while');

@@ -15,3 +15,15 @@ struct FooImpl: public torch::nn::Module {
 		register_parameter("b_k", this->b_k);
 	}
 };
+
+struct BarImpl: public torch::nn::Module {
+	torch::Tensor w_k;
+	torch::Tensor b_k;
+};
+
+BarImpl::BarImpl(NetConfig const& config):
+w_k(torch::zeros({config.d_model, config.heads * config.attn_features})),
+b_k(torch::zeros({config.heads * config.attn_features})) {
+	register_parameter("w_k", this->w_k);
+	register_parameter("b_k", this->b_k);
+}

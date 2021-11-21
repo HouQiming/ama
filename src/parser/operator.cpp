@@ -420,13 +420,28 @@ namespace ama {
 	}
 	ama::Node* UnparsePrefix(ama::Node* nd_unary) {
 		ama::Node* nd_parent = nd_unary->p;
-		if ( !nd_parent || nd_parent->node_class != ama::N_RAW ) {
+		if ( nd_parent && nd_parent->node_class != ama::N_RAW ) {
 			nd_parent = nd_unary->ReplaceWith(ama::CreateNode(ama::N_RAW, nullptr));
 			nd_parent->Insert(ama::POS_FRONT, nd_unary);
 			nd_parent->indent_level = nd_unary->indent_level;
 		}
 		ama::Node* nd_opr = nd_unary->BreakChild();
 		ama::Node* ret = nd_unary->ReplaceWith(ama::cons(ama::nSymbol(nd_unary->data), nd_opr));
+		if ( nd_opr->isRawNode(0, 0) ) {
+			ama::UnparseRaw(nd_opr);
+		}
+		nd_unary->FreeASTStorage();
+		return ret;
+	}
+	ama::Node* UnparsePostfix(ama::Node* nd_unary) {
+		ama::Node* nd_parent = nd_unary->p;
+		if ( nd_parent && nd_parent->node_class != ama::N_RAW ) {
+			nd_parent = nd_unary->ReplaceWith(ama::CreateNode(ama::N_RAW, nullptr));
+			nd_parent->Insert(ama::POS_FRONT, nd_unary);
+			nd_parent->indent_level = nd_unary->indent_level;
+		}
+		ama::Node* nd_opr = nd_unary->BreakChild();
+		ama::Node* ret = nd_unary->ReplaceWith(ama::cons(nd_opr, ama::nSymbol(nd_unary->data)));
 		if ( nd_opr->isRawNode(0, 0) ) {
 			ama::UnparseRaw(nd_opr);
 		}

@@ -19,6 +19,7 @@ namespace ama {
 	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<ama::gcstring, int> const& keywords_extension_clause, int32_t but_merge_cpp_ctor_lines, std::span<ama::Node*> lines_out) {
 		std::vector<ama::Node*> line_group{};
 		std::vector<ama::Node*> line_out_final{};
+		int could_be_in_ctor = 0;
 		for (int i0 = 0; i0 < lines_out.size();) {
 			int i1 = i0 + 1;
 			if ( !(lines_out[i0]->c && lines_out[i0]->LastChild()->isSymbol(";")) ) {
@@ -27,11 +28,14 @@ namespace ama {
 				(lines_out[i1]->isRawNode(0, 0) && lines_out[i1]->c && (lines_out[i1]->c->node_class == ama::N_SCOPE || lines_out[i1]->c->isRawNode('{', '}'))) || 
 				((lines_out[i1 - 1]->node_class == ama::N_SCOPE || lines_out[i1 - 1]->isRawNode('{', '}')) && 
 				((lines_out[i1]->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->data)) || 
-				(lines_out[i1]->node_class == ama::N_RAW && lines_out[i1]->c && lines_out[i1]->c->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->c->data))))) ||
+				(lines_out[i1]->node_class == ama::N_RAW && lines_out[i1]->c && lines_out[i1]->c->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->c->data)))) ||
 				but_merge_cpp_ctor_lines && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(":")) ||
-				(lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(","))) {
+				but_merge_cpp_ctor_lines && could_be_in_ctor && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(",")))) {
 					if ( (lines_out[i1 - 1]->node_class == ama::N_SCOPE || lines_out[i1 - 1]->isRawNode('{', '}')) && lines_out[i1]->comments_before--->startsWith('\n') ) {
 						lines_out[i1]->comments_before = ama::gcstring(lines_out[i1]->comments_before--->subarray(1));
+					}
+					if (but_merge_cpp_ctor_lines && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(":"))) {
+						could_be_in_ctor = 1;
 					}
 					i1 += 1;
 				}
@@ -241,6 +245,13 @@ namespace ama {
 		}
 		scopes.push_back(nd_root);
 		for ( ama::Node* nd_scope: scopes ) {
+			if (nd_scope->p && nd_scope->p->isRawNode('(', ')')) {
+				auto nd_prev = nd_scope->Prev();
+				if (!nd_prev || nd_prev->isSymbol(",")) {
+					//likely C++ array const, ignore
+					continue;
+				}
+			}
 			std::vector<ama::Node*> lines{};
 			int passed_newline = 1;
 			lines.push_back(nd_scope->c);

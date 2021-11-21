@@ -53,6 +53,17 @@ namespace ama {
 		nd_keyword->ReplaceUpto(nd_end, nd_tmp);
 		ama::Node* nd_body = nd_keyword->BreakSibling();
 		ama::Node* nd_arg = nullptr;
+		if (nd_body) {
+			ama::Node* nd_body_first = nd_body;
+			while (nd_body_first->node_class == ama::N_CALL || nd_body_first->node_class == ama::N_POSTFIX) {
+				nd_body_first = nd_body_first->c;
+			}
+			if (nd_body_first->isRawNode('(', ')')) {
+				while (nd_body->node_class == ama::N_CALL || nd_body->node_class == ama::N_POSTFIX) {
+					nd_body = nd_body->Unparse();
+				}
+			}
+		}
 		if (is_elseif) {
 			//there is no arg
 			nd_arg = nullptr;

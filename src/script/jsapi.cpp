@@ -62,6 +62,9 @@ ama::Node * ama::Node::Unparse() {
 		case ama::N_PREFIX: {
 			return ama::UnparsePrefix(this);
 		}
+		case ama::N_POSTFIX: {
+			return ama::UnparsePostfix(this);
+		}
 	}
 }
 namespace ama {
