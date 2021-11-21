@@ -518,11 +518,6 @@ If `is_forward` is false, do it backwards.
 
 Return the name of `N_FUNCTION`. Returns an empty string if the function is unnamed.
 
---------------
-- `nd.GetCompleteParseOption(options)`
-
-Create an extension-aware parsing option for `ParseCode`.
-
 
 ## Node Classes
 

@@ -7,7 +7,7 @@
 namespace ama {
 	int RunScriptOnFile(std::span<char> script, char const* file_name, char const* file_data);
 	void InitScriptEnv();
-	ama::Node* ParseCode(char const* code, JSValue options);
+	ama::Node* DefaultParseCode(char const* code);
 	void LazyInitScriptEnv();
 	void DumpASTAsJSON(ama::Node* nd);
 	static const int PROCESS_AMA_NOT_FOUND = -1;

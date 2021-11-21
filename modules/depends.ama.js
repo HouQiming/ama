@@ -51,7 +51,7 @@ depends.LoadFile = function(fn, options) {
 			//do nothing
 		};
 		if (!data) {return undefined;}
-		nd_cached = ParseCode(data, options || __PrepareOptions(fn));
+		nd_cached = ParseCode(data, options || __global.GetPipelineFromFilename ? __global.GetPipelineFromFilename(fn) : __PrepareOptions(fn));
 		nd_cached.data = fn;
 		depends.cache.set(fn, nd_cached);
 	}

@@ -83,7 +83,7 @@ namespace ama {
 			return JC::string_concat("(function(exports,module){module.exports=JSON.parse(", JSON::stringify(s_code.some), ")})");
 		} else {
 			if ( fn--->endsWith(".ama.js") ) {
-				ama::Node* nd_root = ParseCode(s_code->c_str(), JS_UNDEFINED);
+				ama::Node* nd_root = DefaultParseCode(s_code->c_str());
 				if (nd_root) {
 					for (ama::Node* nd: nd_root->FindAll(ama::N_BINOP, "!=")) {
 						nd->data = "!==";
@@ -213,10 +213,21 @@ namespace ama {
 		LazyInitScriptEnv();
 		printf("%s\n", (char const*)(JS_ToCString(ama::jsctx, JS_JSONStringify(ama::jsctx, ama::WrapNode(nd), JS_NULL, JS_NewInt32(ama::jsctx, 2)))));
 	}
-	ama::Node* ParseCode(char const* code, JSValue options) {
+	static ama::Node* ConvertRootToFile(ama::Node* nd_root, JSValueConst options) {
+		nd_root->node_class = ama::N_FILE;
+		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
+		nd_root->flags = (nd_root->flags & 0x10000) ? ama::FILE_SPACE_INDENT : 0;
+		JSValue full_path = JS_GetPropertyStr(ama::jsctx, options, "full_path");
+		if (JS_IsString(full_path)) {
+			nd_root->data = ama::UnwrapString(full_path);
+		}
+		JS_FreeValue(ama::jsctx, full_path);
+		return nd_root;
+	}
+	ama::Node* DefaultParseCode(char const* code) {
 		//for external code that calls ParseCode as an API
 		LazyInitScriptEnv();
-		options = ama::InheritOptions(options);
+		JSValue options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), "default_options");
 		ama::Node* nd_root = ama::ParseSimplePairing(code, options);
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_indent_as_scope"), 0) ) {
 			ama::ConvertIndentToScope(nd_root, options);
@@ -227,9 +238,7 @@ namespace ama {
 		ama::DelimitCLikeStatements(nd_root, options);
 		//from here on, N_RAW no longer includes the root scope
 		ama::CleanupDummyRaws(nd_root);
-		nd_root->node_class = ama::N_FILE;
-		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
-		nd_root->flags = (nd_root->flags & 0x10000) ? ama::FILE_SPACE_INDENT : 0;
+		ama::ConvertRootToFile(nd_root, options);
 		ama::ParseDependency(nd_root, options);
 		ama::ParsePostfix(nd_root, options);
 		ama::SanitizeCommentPlacement(nd_root);
@@ -260,39 +269,10 @@ namespace ama {
 		ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		assert(!nd_root->p);
-		JSValue parser_hook = JS_GetPropertyStr(ama::jsctx, options, "parser_hook");
-		if (!JS_IsUndefined(parser_hook) && !JS_IsNull(parser_hook)) {
-			JSValue js_nd_root = ama::WrapNode(nd_root);
-			JSValueConst ret = JS_Call(ama::jsctx, parser_hook, JS_NULL, 1, &js_nd_root);
-			ama::Node* nd_new_root = ama::UnwrapNode(ret);
-			if (nd_new_root) {
-				nd_root = nd_new_root;
-			}
-			JS_FreeValue(ama::jsctx, ret);
-		}
+		JS_FreeValue(ama::jsctx, options);
 		return nd_root;
 	}
-	static JSValueConst JSParseCurrentFile(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv, int magic, JSValue* func_data) {
-		JSValue options{};
-		if ( argc < 1 ) {
-			options = JS_NULL;
-		} else {
-			options = argv[0];
-		}
-		//extension-aware option preparation, default inheritance if necessary
-		std::array<JSValueConst, intptr_t(2L)> prepare_option_args{
-			func_data[1],
-			options
-		};
-		options = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__PrepareOptions"), 2, prepare_option_args.data());
-		options = ama::InheritOptions(options);
-		//JS_DupValue(ama::jsctx, func_data[1])
-		char const* file_data = (char const*)(JSON::parse<uintptr_t>(ama::UnwrapString(func_data[0])));
-		ama::Node* nd_root = ParseCode(file_data, options);
-		nd_root->data = path::toAbsolute(ama::UnwrapString(func_data[1]));
-		return ama::WrapNode(nd_root);
-	}
-	static JSValueConst JSParseCode(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
+	static JSValueConst JSParseSimplePairing(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		JSValue options{};
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a code string");
@@ -302,7 +282,7 @@ namespace ama {
 		} else {
 			options = argv[1];
 		}
-		return ama::WrapNode(ParseCode(JS_ToCString(ama::jsctx, argv[0]), options));
+		return ama::WrapNode(ama::ParseSimplePairing(JS_ToCString(ama::jsctx, argv[0]), options));
 	}
 	static JSValueConst JSGenerateCode(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		return ama::WrapString(ama::GenerateCode(ama::UnwrapNode(this_val), argc > 0 ? argv[0] : JS_NULL));
@@ -330,7 +310,14 @@ namespace ama {
 	int RunScriptOnFile(std::span<char> script, char const* file_name, char const* file_data) {
 		//we must not hold any Node* here: the script could gc them and native-only pointers can get freed
 		LazyInitScriptEnv();
-		std::string s_fixed_code = JC::string_concat("(function(__filename,__dirname,ParseCurrentFile){\"use strict\";let require=__require.bind(null,__filename);", script, "\n})\n");
+		std::string s_fixed_code = JC::string_concat(
+			"(function(__filename,__dirname,__code){\"use strict\";"
+			"let __pipeline=GetPipelineFromFilename(__filename);"
+			"let ParseCurrentFile=__global.ParseCode.bind(null,__code,__pipeline);"
+			"let ParseCode=function(code,options){return __global.ParseCode(code,options||__pipeline);};"
+			"let require=__require.bind(null,__filename);", 
+			script, "\n})\n"
+		);
 		JSValueConst ret = JS_Eval(
 			ama::jsctx, s_fixed_code.data(),
 			s_fixed_code.size(), file_name, JS_EVAL_TYPE_GLOBAL
@@ -342,10 +329,6 @@ namespace ama {
 		}
 		////////////
 		//the most light weight method to pass a pointer...
-		std::array<JSValueConst, intptr_t(2L)> func_data{
-			JS_NewString(ama::jsctx, JSON::stringify(uintptr_t(file_data)).c_str()),
-			JS_NewString(ama::jsctx, file_name)
-		};
 		std::string dirname = path::dirname(JC::toSpan(file_name));
 		if (!dirname.size()) {
 			dirname.push_back('.');
@@ -353,10 +336,7 @@ namespace ama {
 		std::array<JSValueConst, 3> module_args{
 			JS_NewString(ama::jsctx, file_name),
 			ama::WrapString(path::toAbsolute(dirname)),
-			JS_NewCFunctionData(
-				ama::jsctx, JSParseCurrentFile,
-				1, 0, 2, func_data.data()
-			)
+			JS_NewString(ama::jsctx, file_data)
 		};
 		JSValueConst ret_script = JS_Call(ama::jsctx, ret, JS_GetGlobalObject(ama::jsctx), 3, module_args.data());
 		for (intptr_t i = 0; i < 3; i++) {
@@ -383,11 +363,11 @@ namespace ama {
 		//allow @(foo) in ama code
 		if ( script_i--->indexOf(".(") >= 0 || script_i--->indexOf(".{") >= 0 ||
 		script_i--->indexOf("@(") >= 0 || script_i--->indexOf("@{") >= 0) {
-			ama::Node* nd_root = ParseCode(script_i.c_str(), JS_UNDEFINED);
+			ama::Node* nd_root = DefaultParseCode(script_i.c_str());
 			ama::NodeofToASTExpression(nd_root);
 			script_i = nd_root->toSource();
 		}
-		if ( !ama::RunScriptOnFile(script_i, fn, file_data->c_str()) ) {
+		if ( !ama::RunScriptOnFile(script_i, path::toAbsolute(std::span<char>(fn)).c_str(), file_data->c_str()) ) {
 			return ama::PROCESS_AMA_SCRIPT_FAILED;
 		}
 		return ama::PROCESS_AMA_SUCCESS;
@@ -492,12 +472,6 @@ namespace ama {
 		NodeFilter f{};
 		NodeFilterWithOption fo{};
 	};
-	static ama::Node* ConvertRootToFile(ama::Node* nd_root) {
-		nd_root->node_class = ama::N_FILE;
-		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
-		nd_root->flags = (nd_root->flags & 0x10000) ? ama::FILE_SPACE_INDENT : 0;
-		return nd_root;
-	}
 	static std::vector<NodeFilterDesc> g_filters{
 		NodeFilterDesc{"NodeofToASTExpression", ama::NodeofToASTExpression, nullptr},
 		NodeFilterDesc{"ParseOperators", nullptr, ama::ParseOperators},
@@ -508,7 +482,7 @@ namespace ama {
 		NodeFilterDesc{"ParsePointedBrackets",ama::ParsePointedBrackets,nullptr},
 		NodeFilterDesc{"DelimitCLikeStatements",nullptr,ama::DelimitCLikeStatements},
 		NodeFilterDesc{"CleanupDummyRaws", ama::CleanupDummyRaws, nullptr},
-		NodeFilterDesc{"ConvertRootToFile", ama::ConvertRootToFile, nullptr},
+		NodeFilterDesc{"ConvertRootToFile", nullptr, ama::ConvertRootToFile},
 		NodeFilterDesc{"ParseDependency", nullptr,ama::ParseDependency},
 		NodeFilterDesc{"ParsePostfix", nullptr,ama::ParsePostfix},
 		NodeFilterDesc{"SanitizeCommentPlacement", ama::SanitizeCommentPlacement, nullptr},
@@ -529,7 +503,7 @@ namespace ama {
 	static JSValueConst JSApplyNodeFilter(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv, int magic) {
 		if ( g_filters[magic].fo ) {
 			JSValue options = argc >= 1 ? argv[0] : JS_UNDEFINED;
-			options = ama::InheritOptions(options);
+			//options = ama::InheritOptions(options);
 			return ama::WrapNode(g_filters[magic].fo(ama::UnwrapNode(this_val), options));
 		} else {
 			return ama::WrapNode(g_filters[magic].f(ama::UnwrapNode(this_val)));
@@ -969,9 +943,9 @@ namespace ama {
 			)
 		);
 		JS_SetPropertyStr(
-			ama::jsctx, global, "ParseCode", JS_NewCFunction(
-				ama::jsctx, JSParseCode,
-				"ParseCode", 1
+			ama::jsctx, global, "ParseSimplePairing", JS_NewCFunction(
+				ama::jsctx, JSParseSimplePairing,
+				"ParseSimplePairing", 1
 			)
 		);
 		JS_SetPropertyStr(
@@ -1222,6 +1196,7 @@ namespace ama {
 			fprintf(stderr, "panic: failed to find ${AMA_MODULES}/_init.js\n");
 			abort();
 		} else {
+			JS_SetPropertyStr(ama::jsctx, global, "__init_js_path", ama::WrapString(fn_initjs));
 			JC::StringOrError bootstrap_code = fs::readFileSync(fn_initjs);
 			JSValueConst ret = JS_Eval(
 				ama::jsctx, bootstrap_code->c_str(),

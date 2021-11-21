@@ -8,7 +8,7 @@ namespace ama {
 	static void dfsTranslate(std::string& ret, ama::Node* nd);
 };
 namespace ama {
-	ama::Node* ParseCode(char const* code, JSValue options);
+	ama::Node* DefaultParseCode(char const* code);
 	static void dfsTranslateList(std::string& ret, ama::Node* nd) {
 		if ( nd->s ) {
 			ret--->push("cons(");
@@ -25,7 +25,7 @@ namespace ama {
 			for ( ama::Node* const &nd_nodeof: nd->c->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF) ) {
 				std::string ret2{};
 				dfsTranslateList(ret2, nd_nodeof->c->c);
-				nd_nodeof->ReplaceWith(ParseCode(ret2.c_str(), JS_NULL));
+				nd_nodeof->ReplaceWith(DefaultParseCode(ret2.c_str()));
 			}
 			ret--->push('(');
 			for (ama::Node* ndi_0 = nd->c->c; ndi_0; ndi_0 = ndi_0->s) {
@@ -98,7 +98,7 @@ namespace ama {
 			if ( comment_pushed ) {
 				ret--->push('/');
 			}
-			nd_nodeof->ReplaceWith(ParseCode(ret.c_str(), JS_NULL)->setIndent(nd_nodeof->indent_level));
+			nd_nodeof->ReplaceWith(DefaultParseCode(ret.c_str())->setIndent(nd_nodeof->indent_level));
 		}
 		return nd_root;
 	}

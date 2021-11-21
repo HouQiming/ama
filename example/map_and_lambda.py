@@ -7,7 +7,7 @@ for(let nd_func of nd_root.FindAll(N_FUNCTION)){
 	if(nd_func.c.isRef('lambda')&&nd_func.LastChild().comments_before.indexOf('\n')>=0){
 		let nd_stmt=nd_func.ParentStatement(); 
 		let code=nd_func.toSource()+";";
-		let nd_reparsed=ParseCode(code,nd_root.GetCompleteParseOption()).Find(N_FUNCTION);
+		let nd_reparsed=ParseCode(code).Find(N_FUNCTION);
 		if(!nd_reparsed){continue;}
 		let name='LongLambdaL'+nd_stmt.ComputeLineNumber().toString();
 		let func_children=nd_reparsed.children;

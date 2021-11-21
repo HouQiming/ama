@@ -290,11 +290,6 @@ Node.GetFunctionNameNode=function() {
 	return nd_name;
 }
 
-//Create an extension-aware parsing option for `ParseCode`. 
-Node.GetCompleteParseOption=function(options){
-	return __PrepareOptions(this.Root().data,options);
-}
-
 __global.default_options = {
 	//The default_options tries to be generic enough for any language.
 	/////////////////////////
@@ -366,110 +361,210 @@ __global.default_options = {
 };
 
 __global.default_pipeline=[
-	__global.default_options,
-	//TODO
-]
+	'ParseSimplePairing',
+	//'ConvertIndentToScope',
+	'ParsePointedBrackets',
+	'DelimitCLikeStatements',
+	//from here on, N_RAW no longer includes the root scope
+	'CleanupDummyRaws',
+	'ConvertRootToFile',
+	'ParseDependency',
+	'ParsePostfix',
+	'SanitizeCommentPlacement',
+	'CleanupDummyRaws',
+	'ParseKeywordStatements',
+	'ParseScopedStatements',
+	'ParseAssignment',
+	'ParseColons',
+	'ParseOperators',
+	'CleanupDummyRaws',
+	'FixPriorityReversal',
+	'ParseDeclarations',
+	'NodifySemicolonAndParenthesis',
+	'CleanupDummyRaws',
+	'SanitizeCommentPlacement'
+];
 
-__global.extension_specific_options = {
-	'.py': Object.assign(Object.create(__global.default_options), {
-		enable_hash_comment: 1,
-		parse_indent_as_scope: 1,
-		parse_js_regexp: 0,
-		auto_curly_bracket: 0,
-		parser_hook:function(nd_root){
-			//parse: Python lambda
-			for(let nd_lambda of nd_root.FindAll(N_REF,'lambda')){
-				if(nd_lambda.p.node_class!==N_RAW){continue;}
-				let nd_raw=nd_lambda.p;
-				if(nd_raw.p.node_class!==N_LABELED){
-					//misparsed multi-parameter lambda
-					let ndi=nd_raw;
-					while(ndi&&ndi.node_class!==N_LABELED){
-						ndi=ndi.s;
-					}
-					if(!ndi){continue;}
-					let ndi_prev=ndi.Prev();
-					nd_raw.ReplaceUpto(ndi_prev,null);
-					let nd_other_args=nd_raw.BreakSibling();
-					if(nd_other_args){
-						nd_raw.Insert(POS_BACK,nd_other_args);
-					}
-					let nd_last_param=ndi.c;
-					nd_last_param.ReplaceWith(nd_raw);
-					nd_raw.Insert(POS_BACK,nd_last_param);
-					//COULDDO: add back comma if removed
-				}
-				let nd_labeled=nd_raw.p;
-				let params=[];
-				for(let ndi=nd_raw.c.s;ndi;ndi=ndi.s){
-					if(ndi.node_class===N_REF){
-						params.push(nAssignment(ndi.Clone(),nAir()));
-					}
-				}
-				let nd_body=nd_labeled.c.s;
-				nd_labeled.ReplaceWith(nFunction(
-					nd_raw.c.Unlink(),
-					nParameterList.apply(null,params).setFlags(PARAMLIST_UNWRAPPED).SanitizeCommentPlacement(),
-					nSymbol(':').setCommentsBefore(nd_raw.comments_after),
-					nd_body.Unlink()
-				))
+function ParsePythonLambdas(nd_root){
+	//parse: Python lambda
+	for(let nd_lambda of nd_root.FindAll(N_REF,'lambda')){
+		if(nd_lambda.p.node_class!==N_RAW){continue;}
+		let nd_raw=nd_lambda.p;
+		if(nd_raw.p.node_class!==N_LABELED){
+			//misparsed multi-parameter lambda
+			let ndi=nd_raw;
+			while(ndi&&ndi.node_class!==N_LABELED){
+				ndi=ndi.s;
 			}
-			return nd_root;
-		}
-	}),
-	'.js':Object.assign(Object.create(__global.default_options), {
-		prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
-		postfix_operators: '++ --',
-		cv_qualifiers: '',
-		named_operators: 'typeof delete await new in of instanceof as',
-		parse_js_regexp: 1,
-		parser_hook:function(nd_root){
-			for(let nd_func_sym of nd_root.FindAll(N_SYMBOL,'=>')){
-				let nd_parent=nd_func_sym.p;
-				if(nd_parent&&nd_parent.node_class===N_RAW&&nd_func_sym.Prev()&&nd_func_sym.s){
-					let nd_body=nd_func_sym.BreakSibling();
-					nd_func_sym.BreakSelf();
-					let nd_prototype=nd_parent.BreakChild();
-					nd_parent.ReplaceWith(nFunction(
-						nAir(),
-						nd_prototype.ConvertToParameterList(),
-						nd_func_sym,
-						nd_body
-					))
-				}
+			if(!ndi){continue;}
+			let ndi_prev=ndi.Prev();
+			nd_raw.ReplaceUpto(ndi_prev,null);
+			let nd_other_args=nd_raw.BreakSibling();
+			if(nd_other_args){
+				nd_raw.Insert(POS_BACK,nd_other_args);
 			}
-			return nd_root;
+			let nd_last_param=ndi.c;
+			nd_last_param.ReplaceWith(nd_raw);
+			nd_raw.Insert(POS_BACK,nd_last_param);
+			//COULDDO: add back comma if removed
 		}
-	})
-}
-
-__global.__PrepareOptions = function(filename, options) {
-	let pdot = filename.lastIndexOf('.');
-	let proto = __global.extension_specific_options[filename.substr(pdot).toLowerCase()];
-	if (proto) {
-		let ret = Object.create(proto);
-		if (options) {
-			for (let key in options) {
-				ret[key] = options[key];
+		let nd_labeled=nd_raw.p;
+		let params=[];
+		for(let ndi=nd_raw.c.s;ndi;ndi=ndi.s){
+			if(ndi.node_class===N_REF){
+				params.push(nAssignment(ndi.Clone(),nAir()));
 			}
 		}
-		return ret;
+		let nd_body=nd_labeled.c.s;
+		nd_labeled.ReplaceWith(nFunction(
+			nd_raw.c.Unlink(),
+			nParameterList.apply(null,params).setFlags(PARAMLIST_UNWRAPPED).SanitizeCommentPlacement(),
+			nSymbol(':').setCommentsBefore(nd_raw.comments_after),
+			nd_body.Unlink()
+		))
 	}
-	return options;
+	return nd_root;
 }
 
+function ParseJSLambdas(nd_root){
+	for(let nd_func_sym of nd_root.FindAll(N_SYMBOL,'=>')){
+		let nd_parent=nd_func_sym.p;
+		if(nd_parent&&nd_parent.node_class===N_RAW&&nd_func_sym.Prev()&&nd_func_sym.s){
+			let nd_body=nd_func_sym.BreakSibling();
+			nd_func_sym.BreakSelf();
+			let nd_prototype=nd_parent.BreakChild();
+			nd_parent.ReplaceWith(nFunction(
+				nAir(),
+				nd_prototype.ConvertToParameterList(),
+				nd_func_sym,
+				nd_body
+			))
+		}
+	}
+	return nd_root;
+}
 
-//for instanceof
-function fake_options_ctor() {}
-fake_options_ctor.prototype = __global.default_options;
+__global.GetPipelineFromFilename=function(filename){
+	let pdot = filename.lastIndexOf('.');
+	let ext=filename.substr(pdot).toLowerCase();
+	let p=default_pipeline.map(s=>s);
+	if(ext==='.py'){
+		p.splice(p.indexOf('ParseSimplePairing')+1,0,'ConvertIndentToScope');
+		p.splice(p.indexOf('ParsePointedBrackets'),1);
+		p.splice(0,0,{
+			enable_hash_comment: 1,
+			parse_indent_as_scope: 1,
+			parse_js_regexp: 0,
+			auto_curly_bracket: 0,
+		});
+		p.push(ParsePythonLambdas);
+	}else if(ext==='.js'){
+		p.splice(p.indexOf('ParsePointedBrackets'),1);
+		p.splice(0,0,{
+			prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
+			postfix_operators: '++ --',
+			cv_qualifiers: '',
+			named_operators: 'typeof delete await new in of instanceof as',
+			parse_js_regexp: 1,
+		});
+		p.push(ParseJSLambdas);
+	}
+	p.splice(0,0,{full_path:filename});
+	return p;
+};
 
-//__InheritOptions is called from native code to sanitize option objects
-__global.__InheritOptions = function(options) {
-	if (!options || options === __global.default_options) {return Object.create(__global.default_options);}
-	if (options instanceof fake_options_ctor) {
+function GetFunctionByName(name) {
+	if(name==='ParseSimplePairing'){
+		return ParseSimplePairing;
+	}
+	if(Node[name]){
+		return function(nd,options){
+			return nd[name](options);
+		}
+	}
+	return __require(__init_js_path,'_filter_list')(name);
+	//throw new Error('unknown function ' + JSON.stringify(name));
+};
+
+if(!__global.ParseCode){
+	__global.ParseCode=function(input,options_or_pipeline){
+		let p=undefined;
+		if(Array.isArray(options_or_pipeline)){
+			p=options_or_pipeline;
+		}else if(options_or_pipeline){
+			p=[options_or_pipeline].concat(__global.default_pipeline);
+		}else{
+			p=__global.default_pipeline;
+		}
+		let options = Object.create(__global.default_options);
+		for (let i = 0; i < p.length; i++) {
+			let item = p[i];
+			if (typeof(item) === 'string') {
+				item = GetFunctionByName(item);
+			}
+			if (typeof(item) === 'function') {
+				let ret = item(input, options);
+				if (ret != undefined) {
+					input = ret;
+				}
+			} else if (typeof(item) === 'object') {
+				Object.assign(options, item);
+			} else {
+				throw new Error('invalid pipeline item [' + i.toString() + ']')
+			}
+		}
+		return input;
+	}
+}
+
+//for migration
+{
+	__global.extension_specific_options = {
+		'.py': Object.assign(Object.create(__global.default_options),{
+			enable_hash_comment: 1,
+			parse_indent_as_scope: 1,
+			parse_js_regexp: 0,
+			auto_curly_bracket: 0,
+			parser_hook:ParsePythonLambdas
+		}),
+		'.js': Object.assign(Object.create(__global.default_options),{
+			prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
+			postfix_operators: '++ --',
+			cv_qualifiers: '',
+			named_operators: 'typeof delete await new in of instanceof as',
+			parse_js_regexp: 1,
+			parser_hook:ParseJSLambdas
+		})
+	}
+	
+	__global.__PrepareOptions = function(filename, options) {
+		let pdot = filename.lastIndexOf('.');
+		let proto = __global.extension_specific_options[filename.substr(pdot).toLowerCase()];
+		if (proto) {
+			let ret = Object.create(proto);
+			if (options) {
+				for (let key in options) {
+					ret[key] = options[key];
+				}
+			}
+			return ret;
+		}
 		return options;
-	} else {
-		return Object.assign(Object.create(__global.default_options), options);
+	}
+	
+	
+	//for instanceof
+	function fake_options_ctor() {}
+	fake_options_ctor.prototype = __global.default_options;
+	
+	//__InheritOptions is called from native code to sanitize option objects
+	__global.__InheritOptions = function(options) {
+		if (!options || options === __global.default_options) {return Object.create(__global.default_options);}
+		if (options instanceof fake_options_ctor) {
+			return options;
+		} else {
+			return Object.assign(Object.create(__global.default_options), options);
+		}
 	}
 }
 
