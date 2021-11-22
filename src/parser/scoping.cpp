@@ -174,7 +174,7 @@ namespace ama {
 					}
 					after_cpp_macro = 1;
 				}
-				if ( after_cpp_macro && ndi->s != nullptr && ndi->s->comments_before--->indexOf('\n') >= 0 ) {
+				if ( after_cpp_macro && (ndi->comments_after--->indexOf('\n') >= 0 || ndi->s != nullptr && ndi->s->comments_before--->indexOf('\n') >= 0) ) {
 					after_cpp_macro = 0;
 					changed = ';';
 					ndi->BreakSibling();

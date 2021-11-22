@@ -84,21 +84,16 @@ function Transform(nd_root, options) {
 			}
 		}
 		//namespace deduplication
-		let n_dup = class_names.length;
-		while (n_dup > 0) {
-			let is_equal = 1;
-			for (let i = 0; i < n_dup; i++) {
-				if (class_names[i] != names[names.length - i]) {
-					is_equal = 0;
-					break;
-				}
+		if (names.length > 1) {
+			let inner_starting_class = names[names.length - 1];
+			let p_class_names = class_names.indexOf(inner_starting_class);
+			if (p_class_names >= 0) {
+				class_names.splice(0, p_class_names + 1);
 			}
-			if (is_equal) {
-				break;
-			}
-			n_dup--;
 		}
-		names.length -= n_dup;
+		for (let i = 0; i < class_names.length; i++) {
+			names.push(class_names[i]);
+		}
 		if (!names.length) {continue;}
 		//look up in all possible namespaces
 		let scopes = [nd_header];
