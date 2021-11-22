@@ -204,4 +204,41 @@ int main() {
 }
 ```
 
+### cpp/sane_types.FixArrayTypes
+
+`require("cpp/sane_types").FixArrayTypes` Mark `[]` as a type suffix, a required setup step for `require("sane_types")`.
+
+The filter itself has no visible effect and must be used before `require("sane_types")`.
+
+### cpp/sane_types
+
+`require("cpp/sane_types")` Short names for C++ template types.
+
+Correspondence:
+
+- `foo[]` => `std::vector<foo>`
+- `foo[:]` => `std::span<foo>`
+- `foo[size]!` => `std::array<foo, size>`
+- `Map<foo, bar>` => `std::unordered_map<foo, bar>`
+
+Before:
+
+```C++
+int main() {
+	int[] a;
+	a.push_back(10);
+	return 0;
+}
+```
+
+After:
+
+```C++
+int main() {
+	std::vector<int> a;
+	a.push_back(10);
+	return 0;
+}
+```
+
 

@@ -6,6 +6,10 @@ let g_templates = {
 	map: {from: @(Map<@(Node.MatchAny('TKey')), @(Node.MatchAny('TValue'))>), to: @(std::unordered_map<@(Node.MatchAny('TKey')), @(Node.MatchAny('TValue'))>)},
 };
 
+/*
+#filter Mark `[]` as a type suffix, a required setup step for `require("sane_types")`
+The filter itself has no visible effect and must be used before `require("sane_types")`.
+*/
 function FixArrayTypes(nd_root) {
 	for (let nd_mul of nd_root.FindAll(N_BINOP, '*')) {
 		//[]
@@ -43,7 +47,23 @@ function BidirTransform(nd_root, alt_templates, is_forward) {
 	return nd_root.TranslateTemplates(match_jobs, is_forward);
 };
 
-function TranslateSaneTypeNames(nd_root, alt_templates) {
+/*
+#filter Short names for C++ template types
+Correspondence:
+- `foo[]` => `std::vector<foo>`
+- `foo[:]` => `std::span<foo>`
+- `foo[size]!` => `std::array<foo, size>`
+- `Map<foo, bar>` => `std::unordered_map<foo, bar>`
+Before:
+```C++
+int main() {
+	int[] a;
+	a.push_back(10);
+	return 0;
+}
+```
+*/
+function Translate(nd_root, alt_templates) {
 	return BidirTransform(nd_root, alt_templates, 1);
 }
 
@@ -51,9 +71,9 @@ function UntranslateSaneTypeNames(nd_root, alt_templates) {
 	return BidirTransform(nd_root, alt_templates, 0);
 }
 
-TranslateSaneTypeNames.inverse = UntranslateSaneTypeNames;
-TranslateSaneTypeNames.setup = function(code, options) {
+Translate.inverse = UntranslateSaneTypeNames;
+Translate.setup = function(code, options) {
 	options.postfix_operators = '! ' + options.postfix_operators;
 };
-module.exports = TranslateSaneTypeNames;
+module.exports = Translate;
 module.exports.FixArrayTypes = FixArrayTypes;
