@@ -7,7 +7,7 @@ let depends = module.exports;
 depends.oracle = function nullOracle(name, referrer) {
 	return /*full path or undefined*/;
 };
-depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':').filter(s=> s);
+depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':').filter(s => s);
 
 depends.Resolve = function(nd) {
 	assert(nd.node_class == N_DEPENDENCY);
@@ -51,7 +51,7 @@ depends.LoadFile = function(fn, options) {
 			//do nothing
 		};
 		if (!data) {return undefined;}
-		nd_cached = ParseCode(data, options || __global.GetPipelineFromFilename ? __global.GetPipelineFromFilename(fn) : __PrepareOptions(fn));
+		nd_cached = ParseCode(data, options || __global.GetPipelineFromFilename(fn));
 		nd_cached.data = fn;
 		depends.cache.set(fn, nd_cached);
 	}

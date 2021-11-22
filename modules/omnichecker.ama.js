@@ -51,7 +51,7 @@ function dfsGenerate(nd, options) {
 	let cb_dedup = new Set();
 	let call_wrapped = 0;
 	let jobs = (options._deferred_jobs.get(nd) || []);
-	jobs.sort((a, b)=>a.priority - b.priority);
+	jobs.sort((a, b) => a.priority - b.priority);
 	for (let job_nd of jobs) {
 		let action = job_nd.action;
 		let nd_extra_args = job_nd.nd_extra_args;
@@ -400,7 +400,7 @@ omnichecker.Check = function(nd_root, ...all_options) {
 			for (let utag = err.site; utag > 0; utag = ret.ctx_map[utag].utag_parent) {
 				site_path.push(utag);
 			}
-			let origin_path = site_path.map(utag=>utag);
+			let origin_path = site_path.map(utag => utag);
 			if (err.origin_utag) {
 				origin_path = [];
 				for (let utag = err.origin_utag; utag > 0; utag = ret.ctx_map[utag].utag_parent) {

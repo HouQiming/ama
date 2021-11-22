@@ -13,9 +13,9 @@ module.exports = {
 				return 1;
 			},
 			foo: (values, extra_args, vars, name)=> {
-				if (values.filter(v=>v.as_function).length) {return;}
+				if (values.filter(v => v.as_function).length) {return;}
 				//if (!values.filter(v=>v.addr_declared).length) {return;}
-				let bad_values = values.filter(v=>!v.initialized);
+				let bad_values = values.filter(v => !v.initialized);
 				if (bad_values.length) {
 					return {
 						error: 'uninitialized variable `{code}`',
@@ -27,7 +27,7 @@ module.exports = {
 		{
 			//we can only tag initialization after checking
 			pattern: nAssignment(Node.MatchAny('bar'), Node.MatchAny('foo')),
-			foo: values=>values.map(v=>Sandbox.set(v, {initialized: 1}))
+			foo: values => values.map(v => Sandbox.set(v, {initialized: 1}))
 		}
 	]
 };

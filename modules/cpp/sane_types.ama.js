@@ -1,5 +1,4 @@
 'use strict';
-default_options.postfix_operators = '! ' + default_options.postfix_operators;
 let g_templates = {
 	array: {from: @(@(Node.MatchAny('TElement'))[]), to: @(std::vector<@(Node.MatchAny('TElement'))>)},
 	view: {from: @(@(Node.MatchAny('TElement'))[:]), to: @(std::span<@(Node.MatchAny('TElement'))>)},
@@ -51,5 +50,8 @@ function UntranslateSaneTypeNames(nd_root, alt_templates) {
 }
 
 TranslateSaneTypeNames.inverse = UntranslateSaneTypeNames;
+TranslateSaneTypeNames.setup = function(code, options) {
+	options.postfix_operators = '! ' + options.postfix_operators;
+};
 module.exports = TranslateSaneTypeNames;
 module.exports.FixArrayTypes = FixArrayTypes;

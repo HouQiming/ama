@@ -357,7 +357,7 @@ jsism.EnableJSON = function(nd_root) {
 			ppt.json_name = JSON.stringify(ppt.name);
 			properties.push(ppt);
 		}
-		properties.sort((a, b)=>(a.json_name < b.json_name ? -1 : (a.json_name > b.json_name ? 1 : 0)));
+		properties.sort((a, b) => (a.json_name < b.json_name ? -1 : (a.json_name > b.json_name ? 1 : 0)));
 		function GenerateParseField(properties, lg_eaten) {
 			if (!properties.length) {return nAir();}
 			//eating the common prefix

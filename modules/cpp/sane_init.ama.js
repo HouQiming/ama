@@ -48,7 +48,7 @@ function BidirTransform(nd_root, is_forward) {
 						}
 						let type = typing.TryGettingClass(typing.ComputeType(nd_type_provider));
 						if (type && type.node_class == N_CLASS) {
-							all_properties = type.ParseClass().properties.filter(ppt=>ppt.enumerable);
+							all_properties = type.ParseClass().properties.filter(ppt => ppt.enumerable);
 						} else {
 							all_properties = [];
 						}

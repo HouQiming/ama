@@ -6,11 +6,10 @@ const sane_init=require('cpp/sane_init');
 const sane_export=require('cpp/sane_export');
 const move_operator=require('cpp/move_operator');
 const unified_null=require('cpp/unified_null');
+sane_types.setup('',default_options);
+move_operator.setup('',default_options);
 function ToCPP(nd_root,options){
 	if(!options){options={};}
-	for(let nd_line of nd_root.FindAll(N_KEYWORD_STATEMENT,'#line')){
-		nd_line.c.ReplaceWith(nNumber((nd_line.ComputeLineNumber()+2).toString()))
-	}
 	(nd_root
 		.StripRedundantPrefixSpace()
 		.then(require('auto_semicolon'))
@@ -24,6 +23,7 @@ function ToCPP(nd_root,options){
 	);
 	if(options.update_source){nd_root.Save();}
 	return (nd_root
+		.then(require('cpp/line_sync'))
 		.then(short_types)
 		.then(sane_types)
 		.then(sane_init)
@@ -40,9 +40,6 @@ function ToCPP(nd_root,options){
 }
 
 function FromCPP(nd_root){
-	for(let nd_line of nd_root.FindAll(N_KEYWORD_STATEMENT,'#line')){
-		nd_line.c.ReplaceWith(nRef('__AMA_LINE__'))
-	}
 	return (nd_root
 		.then(require('cpp/gentag').DropGeneratedCode)
 		.StripRedundantPrefixSpace(false)
@@ -53,6 +50,7 @@ function FromCPP(nd_root){
 		.then(sane_init.inverse)
 		.then(sane_types.inverse)
 		.then(short_types.inverse)
+		.then(require('cpp/line_sync').inverse)
 	);
 }
 

@@ -10,7 +10,11 @@ const fsext = require('fsext');
 {
 	dir_src: path.resolve('./src'),
 	middle_extension: '.ama',
-	processed_extensions:['.cpp','.hpp','.cu']
+	processed_extensions:['.cpp','.hpp','.cu'],
+	features:[],
+}
+Obsolete options:
+{
 	script_forward: fs.readFileSync(path.join(__dirname,'cpp/from_ama.js')).toString(),
 	script_backward: fs.readFileSync(path.join(__dirname,'cpp/to_ama.js')).toString(),
 }
@@ -25,8 +29,36 @@ module.exports = function Bisync(options) {
 	let middle_extension = options.middle_extension || '.ama';
 	let dir_src = options.dir_src || path.resolve('./src');
 	process.chdir(dir_src);
-	let script_ama2cpp = options.script_forward || fs.readFileSync(path.join(__dirname, 'cpp/from_ama.js')).toString();
-	let script_cpp2ama = options.script_backward || fs.readFileSync(path.join(__dirname, 'cpp/to_ama.js')).toString();
+	/////////
+	let script_ama2cpp = '';
+	let script_cpp2ama = '';
+	let p_backup = __global.default_pipeline;
+	let p_forward = __global.default_pipeline.map(a => a);
+	let p_inverse = __global.default_pipeline.map(a => a);
+	if (options.features) {
+		let p_inverse_rev = [];
+		for (let item of options.features) {
+			if (typeof(item) == 'string') {
+				item = __global.__GetFilterByName(item);
+			}
+			p_forward.push(item);
+			if (item.setup) {
+				p_forward.unshift(item.setup);
+			}
+			if (item.inverse) {
+				p_inverse_rev.push(item.inverse);
+				if (item.setup) {
+					p_inverse.unshift(item.setup);
+				}
+			}
+		}
+		for (let item of p_inverse_rev.reverse()) {
+			p_inverse.push(item);
+		}
+	} else {
+		script_ama2cpp = options.script_forward || fs.readFileSync(path.join(__dirname, 'cpp/from_ama.js')).toString();
+		script_cpp2ama = options.script_backward || fs.readFileSync(path.join(__dirname, 'cpp/to_ama.js')).toString();
+	}
 	let all_cpp_files = new Set();
 	let mext_dot = middle_extension + '.';
 	let exts = options.processed_extensions || ['.cpp', '.hpp', '.cu'];
@@ -49,17 +81,21 @@ module.exports = function Bisync(options) {
 		let t_ama = GetFileTime(fn_ama_cpp);
 		if (t_ama < t_cpp || process.aba || process[rebuild_ama]) {
 			//cpp to ama
+			if (options.features) {__global.default_pipeline = p_inverse;}
 			if (process.dry_run || ProcessAmaFile(fn_cpp, script_cpp2ama) == 1) {
 				if (!process.dry_run) {fsext.SyncTimestamp(fn_cpp, fn_ama_cpp);}
 				console.log(process.dry_run ? 'will update' : 'updated', fn_ama_cpp);
 			}
+			if (options.features) {__global.default_pipeline = p_backup;}
 		}
 		if (t_cpp < t_ama || process.aba || process[rebuild_cpp]) {
 			//ama to cpp
+			if (options.features) {__global.default_pipeline = p_forward;}
 			if (process.dry_run || ProcessAmaFile(fn_ama_cpp, script_ama2cpp) == 1) {
 				if (!process.dry_run) {fsext.SyncTimestamp(fn_ama_cpp, fn_cpp);}
 				console.log(process.dry_run ? 'will update' : 'updated', fn_cpp);
 			}
+			if (options.features) {__global.default_pipeline = p_backup;}
 		}
 	}
 };

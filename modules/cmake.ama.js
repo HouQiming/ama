@@ -64,7 +64,7 @@ Node.TokenizeCMakeArgs = function() {
 					merge_group.length = 0;
 		} else {
 			let n0 = ret.length;
-			for (let str of merge_group.map(nd=>nd.toSource(cmake_options)).join('').trim().split(' ')) {
+			for (let str of merge_group.map(nd => nd.toSource(cmake_options)).join('').trim().split(' ')) {
 				ret.push(nString(str).setCommentsBefore(' '));
 			}
 			merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nScope.apply(null, ret.slice(n0)).c)
@@ -178,7 +178,7 @@ Node.CMakeInsertAMACommand = function(options) {
 		'\nadd_custom_command(\n',
 		'  OUTPUT ', JSON.stringify(fn_out), '\n',
 		'  COMMAND ', options.command.replace(/\$\{SOURCE_FILE\}/g, JSON.stringify(fn_src)), '\n',
-		'  MAIN_DEPENDENCY ', options.main_dependency.map(fn=>JSON.stringify(TryRelative(dir_cmake, fn))).join(' '), '\n',
+		'  MAIN_DEPENDENCY ', options.main_dependency.map(fn => JSON.stringify(TryRelative(dir_cmake, fn))).join(' '), '\n',
 		'  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n',
 		')\n'
 	].join('');
@@ -190,7 +190,7 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 		fn_cmake = __global.__cmakelist;
 	}
 	if (!fn_cmake) {
-		let dir = path.dirname(fn_cmake);
+		let dir = path.dirname(this.Root().data);
 		let dir_git = undefined;
 		for (; ;) {
 			let fn_test = path.join(dir, 'CMakeLists.txt');
@@ -207,15 +207,19 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 			fn_cmake = path.join(dir_git, 'CMakeLists.txt');
 		}
 	}
+	if (!fn_cmake) {
+		let dir = path.dirname(this.Root().data);
+		fn_cmake = path.join(dir, 'CMakeLists.txt');
+	}
 	fn_cmake = path.resolve(fn_cmake);
-	let nd_cmake = cmake.LoadCMakeFile(fn_cmake, ()=>[
+	let nd_cmake = cmake.LoadCMakeFile(fn_cmake, () => [
 		'cmake_minimum_required (VERSION 3.0)\n',
 		'project(', path.basename(path.dirname(path.resolve(fn_cmake))).replace(/[^0-9a-zA-Z]+/g, '_'), ')\n',
 	].join(''))   
 	//insert files
 	let src_name_abs = path.resolve(this.data);
 	let dir_cmake = path.dirname(fn_cmake);
-	let our_files = new Set(depends.ListAllDependency(this, false).map(nd_root=>__path_toAbsolute(nd_root.data)));
+	let our_files = new Set(depends.ListAllDependency(this, false).map(nd_root => __path_toAbsolute(nd_root.data)));
 	let our_files_filtered = [];
 	//our own file could be .ama.
 	let src_name_rel = TryRelative(dir_cmake, src_name_abs).replace('.ama.', '.');
@@ -248,8 +252,8 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 		if (args[1] && args[1].isRef('SHARED')) {
 			p_files += 1;
 		}
-		let files = new Set(args.slice(p_files).map(nd=>nd.GetName()));
-		let new_files = our_files_filtered.filter(fn=>!files.has(fn));
+		let files = new Set(args.slice(p_files).map(nd => nd.GetName()));
+		let new_files = our_files_filtered.filter(fn => !files.has(fn));
 		if (new_files.length) {
 			//append the new files
 			for (let fn of new_files) {
@@ -298,7 +302,7 @@ Node.CMakeBuild = function(options) {
 	if (ret_code == 0 && (options.run || process.run) && options.target) {
 		pipe.run([
 			__platform == 'win32' ? 'build\\' : 'build/', process.platform, '_', build.toLowerCase(), __platform == 'win32' ? '\\' : '/', options.target, ' ',
-			options.run.map(s=>s.indexOf(' ') >= 0 ? JSON.stringify(s) : s).join(' ')
+			options.run.map(s => s.indexOf(' ') >= 0 ? JSON.stringify(s) : s).join(' ')
 		].join(''));
 	}
 };

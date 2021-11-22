@@ -216,6 +216,9 @@ Node.Save = function(/*optional*/options) {
 
 //Remove redundant spaces from the AST, if `aggressive` is true, also remove newlines.
 Node.StripRedundantPrefixSpace = function(aggressive) {
+	if(typeof(aggressive)==='object'){
+		aggressive=aggressive.strip_spaces_aggressively;
+	}
 	function isSpace(s){
 		return s&&!s.trim()&&(aggressive||s.indexOf('\n')<0);
 	}
@@ -459,7 +462,8 @@ __global.GetPipelineFromFilename=function(filename){
 		});
 		p.push(ParsePythonLambdas);
 	}else if(ext==='.js'){
-		p.splice(p.indexOf('ParsePointedBrackets'),1);
+		//we need <> parsing for .ama.js
+		//p.splice(p.indexOf('ParsePointedBrackets'),1);
 		p.splice(0,0,{
 			prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
 			postfix_operators: '++ --',
@@ -473,7 +477,7 @@ __global.GetPipelineFromFilename=function(filename){
 	return p;
 };
 
-function GetFunctionByName(name) {
+__global.__GetFilterByName=function(name) {
 	if(name==='ParseSimplePairing'){
 		return ParseSimplePairing;
 	}
@@ -482,90 +486,45 @@ function GetFunctionByName(name) {
 			return nd[name](options);
 		}
 	}
-	return __require(__init_js_path,'_filter_list')(name);
-	//throw new Error('unknown function ' + JSON.stringify(name));
+	let parts=name.split('.');
+	if(parts.length>=1){
+		let obj=__require(__init_js_path,parts[0]);
+		for(let i=1;i<parts.length;i++){
+			if(!obj){break;}
+			obj=obj[parts[i]];
+		}
+		if(obj){return obj;}
+	}
+	throw new Error('unknown function ' + JSON.stringify(name));
 };
 
-if(!__global.ParseCode){
-	__global.ParseCode=function(input,options_or_pipeline){
-		let p=undefined;
-		if(Array.isArray(options_or_pipeline)){
-			p=options_or_pipeline;
-		}else if(options_or_pipeline){
-			p=[options_or_pipeline].concat(__global.default_pipeline);
-		}else{
-			p=__global.default_pipeline;
-		}
-		let options = Object.create(__global.default_options);
-		for (let i = 0; i < p.length; i++) {
-			let item = p[i];
-			if (typeof(item) === 'string') {
-				item = GetFunctionByName(item);
-			}
-			if (typeof(item) === 'function') {
-				let ret = item(input, options);
-				if (ret != undefined) {
-					input = ret;
-				}
-			} else if (typeof(item) === 'object') {
-				Object.assign(options, item);
-			} else {
-				throw new Error('invalid pipeline item [' + i.toString() + ']')
-			}
-		}
-		return input;
+__global.ParseCode=function(input,options_or_pipeline){
+	let p=undefined;
+	if(Array.isArray(options_or_pipeline)){
+		p=options_or_pipeline;
+	}else if(options_or_pipeline){
+		p=[options_or_pipeline].concat(__global.default_pipeline);
+	}else{
+		p=__global.default_pipeline;
 	}
-}
-
-//for migration
-{
-	__global.extension_specific_options = {
-		'.py': Object.assign(Object.create(__global.default_options),{
-			enable_hash_comment: 1,
-			parse_indent_as_scope: 1,
-			parse_js_regexp: 0,
-			auto_curly_bracket: 0,
-			parser_hook:ParsePythonLambdas
-		}),
-		'.js': Object.assign(Object.create(__global.default_options),{
-			prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
-			postfix_operators: '++ --',
-			cv_qualifiers: '',
-			named_operators: 'typeof delete await new in of instanceof as',
-			parse_js_regexp: 1,
-			parser_hook:ParseJSLambdas
-		})
-	}
-	
-	__global.__PrepareOptions = function(filename, options) {
-		let pdot = filename.lastIndexOf('.');
-		let proto = __global.extension_specific_options[filename.substr(pdot).toLowerCase()];
-		if (proto) {
-			let ret = Object.create(proto);
-			if (options) {
-				for (let key in options) {
-					ret[key] = options[key];
-				}
-			}
-			return ret;
+	let options = Object.create(__global.default_options);
+	for (let i = 0; i < p.length; i++) {
+		let item = p[i];
+		if (typeof(item) === 'string') {
+			item = __global.__GetFilterByName(item);
 		}
-		return options;
-	}
-	
-	
-	//for instanceof
-	function fake_options_ctor() {}
-	fake_options_ctor.prototype = __global.default_options;
-	
-	//__InheritOptions is called from native code to sanitize option objects
-	__global.__InheritOptions = function(options) {
-		if (!options || options === __global.default_options) {return Object.create(__global.default_options);}
-		if (options instanceof fake_options_ctor) {
-			return options;
+		if (typeof(item) === 'function') {
+			let ret = item(input, options);
+			if (ret != undefined) {
+				input = ret;
+			}
+		} else if (typeof(item) === 'object') {
+			Object.assign(options, item);
 		} else {
-			return Object.assign(Object.create(__global.default_options), options);
+			throw new Error('invalid pipeline item [' + i.toString() + ']')
 		}
 	}
+	return input;
 }
 
 __global.process = {

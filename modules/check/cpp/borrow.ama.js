@@ -24,7 +24,7 @@ module.exports = {
 						return errors;
 					}
 				}
-				return values.map(v=>Sandbox.set(v, {
+				return values.map(v => Sandbox.set(v, {
 					ref_vars_utag: utag,
 					ref_name: name,
 					ref_mutable: extra_args.ref_mutable,

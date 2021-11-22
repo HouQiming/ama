@@ -11,7 +11,7 @@ module.exports = {
 				return 1;
 			},
 			foo: (values, extra_args, vars, name)=> {
-				if (values.filter(v=>v.as_function).length) {return;}
+				if (values.filter(v => v.as_function).length) {return;}
 				if (!vars[name]) {
 					return {
 						error: 'undeclared identifier `{code}`',

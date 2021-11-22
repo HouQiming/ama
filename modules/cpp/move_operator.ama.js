@@ -1,7 +1,7 @@
 'use strict';
 
 //COULDDO: auto-move last ref
-default_options.prefix_operators = '<< ' + default_options.prefix_operators;
+//default_options.prefix_operators = '<< ' + default_options.prefix_operators;
 
 function BidirTransform(nd_root, is_forward) {
 	if (is_forward) {
@@ -29,4 +29,7 @@ function Untranslate(nd_root) {
 }
 
 Translate.inverse = Untranslate;
+Translate.setup = function(code, options) {
+	options.prefix_operators = '<< ' + options.prefix_operators;
+};
 module.exports = Translate;
