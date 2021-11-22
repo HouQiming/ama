@@ -313,10 +313,15 @@ namespace ama {
 		std::string s_fixed_code = JC::string_concat(
 			"(function(__filename,__dirname,__code){\"use strict\";"
 			"let __pipeline=GetPipelineFromFilename(__filename);"
-			"let ParseCurrentFile=__global.ParseCode.bind(null,__code,__pipeline);"
+			"let __parsed=0;"
+			"let ParseCurrentFile=function(){__parsed=1;return ParseCode(__code,__pipeline);};"
 			"let ParseCode=function(code,options){return __global.ParseCode(code,options||__pipeline);};"
-			"let require=__require.bind(null,__filename);", 
-			script, "\n})\n"
+			"let require=__require.bind(null,__filename);"
+			"try{", 
+			script, "\n"
+			"}finally{"
+				"if(!__parsed&&__pipeline.indexOf('Save')>=0){ParseCurrentFile();}"
+			"}})\n"
 		);
 		JSValueConst ret = JS_Eval(
 			ama::jsctx, s_fixed_code.data(),

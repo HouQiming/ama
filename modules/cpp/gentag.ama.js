@@ -85,3 +85,6 @@ gentag.DropGeneratedCode = function(nd_root) {
 		gentag.UpdateGenTagContent(nd_gentag, null);
 	}
 };
+//virtual feature for bisync
+gentag.GeneratedCode = function() {};
+gentag.GeneratedCode.inverse = gentag.DropGeneratedCode;

@@ -55,6 +55,11 @@ module.exports = function Bisync(options) {
 		for (let item of p_inverse_rev.reverse()) {
 			p_inverse.push(item);
 		}
+		//we cannot edit the default pipeline: it's used in depends
+		script_ama2cpp = '__pipeline=GetPipelineFromFilename(__filename,__global.inverse_pipeline);';
+		script_cpp2ama = '__pipeline=GetPipelineFromFilename(__filename,__global.forward_pipeline);/*ignore per-file scripts*/return;';
+		__global.inverse_pipeline = p_inverse;
+		__global.forward_pipeline = p_forward;
 	} else {
 		script_ama2cpp = options.script_forward || fs.readFileSync(path.join(__dirname, 'cpp/from_ama.js')).toString();
 		script_cpp2ama = options.script_backward || fs.readFileSync(path.join(__dirname, 'cpp/to_ama.js')).toString();
@@ -79,23 +84,23 @@ module.exports = function Bisync(options) {
 		let fn_ama_cpp = path.join(parts.dir, parts.name + middle_extension + parts.ext);
 		let t_cpp = GetFileTime(fn_cpp);
 		let t_ama = GetFileTime(fn_ama_cpp);
+		p_inverse.push({change_ext: middle_extension + parts.ext}, 'Save');
+		p_forward.push({change_ext: parts.ext}, 'Save');
 		if (t_ama < t_cpp || process.aba || process[rebuild_ama]) {
 			//cpp to ama
-			if (options.features) {__global.default_pipeline = p_inverse;}
 			if (process.dry_run || ProcessAmaFile(fn_cpp, script_cpp2ama) == 1) {
 				if (!process.dry_run) {fsext.SyncTimestamp(fn_cpp, fn_ama_cpp);}
 				console.log(process.dry_run ? 'will update' : 'updated', fn_ama_cpp);
 			}
-			if (options.features) {__global.default_pipeline = p_backup;}
 		}
 		if (t_cpp < t_ama || process.aba || process[rebuild_cpp]) {
 			//ama to cpp
-			if (options.features) {__global.default_pipeline = p_forward;}
 			if (process.dry_run || ProcessAmaFile(fn_ama_cpp, script_ama2cpp) == 1) {
 				if (!process.dry_run) {fsext.SyncTimestamp(fn_ama_cpp, fn_cpp);}
 				console.log(process.dry_run ? 'will update' : 'updated', fn_cpp);
 			}
-			if (options.features) {__global.default_pipeline = p_backup;}
 		}
+		p_forward.pop();p_forward.pop();
+		p_inverse.pop();p_inverse.pop();
 	}
 };

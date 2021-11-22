@@ -196,20 +196,21 @@ Node.Save = function(/*optional*/options) {
 		if (options.startsWith('.')) {
 			options = {change_ext: options};
 		} else {
-			options = {name: options};
+			options = {full_path: options};
 		}
 	}
 	if (!options) {
-		options = __global.default_options;
+		options = Object.create(__global.default_options);
 	}
 	if (options.change_ext) {
 		//we need to handle .ama.js => .js shenanigans, so remove everything after the *first* dot
 		let pdot = this.data.indexOf('.',Math.max(this.data.lastIndexOf('/'),this.data.lastIndexOf('\\'),0));
 		if (pdot < 0) {pdot = this.data.length;}
-		options.name = this.data.substr(0, pdot) + (options.change_ext.startsWith('.') ? '' : '.') + options.change_ext;
+		options.full_path = this.data.substr(0, pdot) + (options.change_ext.startsWith('.') ? '' : '.') + options.change_ext;
+		options.change_ext = undefined;
 	}
 	let content = this.toSource(options);
-	let name = options.name || this.data;
+	let name = options.full_path || this.data;
 	__writeFileSync(name, content);
 	return this;
 }
@@ -255,6 +256,7 @@ Node.StripRedundantPrefixSpace = function(aggressive) {
 	}
 	return this;
 }
+Node.StripRedundantPrefixSpace.inverse=Node.StripRedundantPrefixSpace;
 
 //Perform template substitution. `match_jobs` is an array with objects in the form `{from:Node, to:Node}`.
 //Each match of the `from` pattern will be replaced with its parameters substituted into the corresponding `to` pattern with `Node.Subst`.
@@ -447,14 +449,14 @@ function ParseJSLambdas(nd_root){
 	return nd_root;
 }
 
-__global.GetPipelineFromFilename=function(filename){
+__global.GetPipelineFromFilename=function(filename,default_pipeline){
 	let pdot = filename.lastIndexOf('.');
 	let ext=filename.substr(pdot).toLowerCase();
-	let p=default_pipeline.map(s=>s);
+	let p=(default_pipeline||__global.default_pipeline).map(s=>s);
 	if(ext==='.py'){
 		p.splice(p.indexOf('ParseSimplePairing')+1,0,'ConvertIndentToScope');
 		p.splice(p.indexOf('ParsePointedBrackets'),1);
-		p.splice(0,0,{
+		p.unshift({
 			enable_hash_comment: 1,
 			parse_indent_as_scope: 1,
 			parse_js_regexp: 0,
@@ -464,7 +466,7 @@ __global.GetPipelineFromFilename=function(filename){
 	}else if(ext==='.js'){
 		//we need <> parsing for .ama.js
 		//p.splice(p.indexOf('ParsePointedBrackets'),1);
-		p.splice(0,0,{
+		p.unshift({
 			prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
 			postfix_operators: '++ --',
 			cv_qualifiers: '',
@@ -473,7 +475,7 @@ __global.GetPipelineFromFilename=function(filename){
 		});
 		p.push(ParseJSLambdas);
 	}
-	p.splice(0,0,{full_path:filename});
+	p.unshift({full_path:filename});
 	return p;
 };
 

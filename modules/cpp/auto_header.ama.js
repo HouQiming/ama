@@ -180,7 +180,7 @@ function Transform(nd_root, options) {
 			nd_header.Insert(POS_BACK, nd_endif);
 		}
 		if (options && options.audit) {
-			nd_header.Save({name: options.audit});
+			nd_header.Save({name: options.audit, full_path: options.audit});
 		} else {
 			nd_header.Save();
 		}

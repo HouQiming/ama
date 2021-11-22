@@ -25,6 +25,8 @@ function BidirTransform(nd_root, alt_templates, is_forward) {
 	if (alt_templates) {
 		templates = Object.create(g_templates)
 		for (let key in alt_templates) {
+			if (typeof(alt_templates[key]) != 'object') {continue;}
+			if (!(alt_templates[key].from instanceof Node && alt_templates[key].to instanceof Node)) {continue;}
 			templates[key] = Object.create(templates[key] || null);
 			for (let key2 in alt_templates[key]) {
 				templates[key][key2] = alt_templates[key][key2];
