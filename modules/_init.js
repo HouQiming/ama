@@ -1,3 +1,4 @@
+'use strict';
 //this module is automatically executed by ama::InitScriptEnv()
 //the `require` system isn't ready here so don't use it
 //@ama ParseCurrentFile().Save()

@@ -1,5 +1,6 @@
-//this module is automatically executed by ama::JSRunInSandbox at most once
-//it's in a sandbox and does not have access to ANY native function
+'use strict';
+//This module is automatically executed by ama::JSRunInSandbox at most once
+//It's in a sandbox and does not have access to ANY native function
 //@ama ParseCurrentFile().Save()
 //convention: sandbox objects should be dumb, the shouldn't have methods
 __global.Sandbox={

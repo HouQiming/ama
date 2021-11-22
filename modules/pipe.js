@@ -1,4 +1,4 @@
-//Run external commands
+//Run external commands.
 //
 //Provided methods:
 //- `pipe.run(command)`

@@ -1,4 +1,5 @@
-'use strict'
+'use strict';
+//command line --foo command resolver
 let _cmdline = module.exports;
 
 _cmdline.help = function(argv) {

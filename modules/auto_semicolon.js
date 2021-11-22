@@ -1,5 +1,14 @@
-//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
 'use strict';
+/*
+#filter Automatically add ';' for C / C++ / Javascript. 
+Before:
+```C++
+int main() {
+	puts("hello world")
+	return 0
+}
+```
+*/
 module.exports = function(nd_root) {
 	for (let nd of nd_root.FindAll(N_RAW, null)) {
 		if (nd.flags & 0xffff) {continue;}
@@ -35,7 +44,9 @@ module.exports = function(nd_root) {
 					ndi.node_class === N_POSTFIX ||
 					ndi.node_class === N_PREFIX
 				)) {
-					new_children[i] = nSemicolon(ndi.toSingleNode());
+					ndi=ndi.toSingleNode();
+					new_children[i] = nSemicolon(ndi).setIndent(ndi.indent_level);
+					ndi.indent_level=0;
 				}
 			}
 			nd.ReplaceWith(nScope.apply(null, new_children).c);
@@ -77,7 +88,7 @@ module.exports = function(nd_root) {
 				let nd_tmp = Node.GetPlaceHolder();
 				ndi.ReplaceWith(nd_tmp);
 				ndi = nd_tmp.ReplaceWith(nSemicolon(ndi));
-				ndi.c.AdjustIndentLevel(-ndi.indent_level);
+				//ndi.c.AdjustIndentLevel(-ndi.indent_level);
 				//shove trailing comments after the ;
 				let all_comments = [];
 				for (let ndj = ndi; ; ndj = ndj.LastChild()) {

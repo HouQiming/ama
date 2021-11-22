@@ -1,24 +1,24 @@
-//the bidirectional synchronization workflow
+//Bidirectional synchronization system:
+//
+//Usage with default option values:
+//```Javascript
+//require('bisync')({
+//    dir_src: path.resolve(__dirname, '../src'),
+//    middle_extension: '.ama',
+//    processed_extensions: ['.cpp','.hpp','.cu'],
+//    features: [],
+//})
+//```
+//The module will search for all files with `processed_extensions` in `dir_src`.
+//It will apply filters specified in `features` to files with `middle_extension` (e.g. `foo.ama.cpp`) to generate the corresponding non-ama file (e.g. `foo.cpp`).
+//When available, it will also apply the inverse version of the filters to generate ama files from non-ama files.
+//Between each pair of ama and non-ama files, `bisync` will always synchronize the the newer file's content to its older counterpart.  
 'use strict';
 const pipe = require('pipe');
 const path = require('path');
 const fs = require('fs');
 const fsext = require('fsext');
 
-/**
-@param options Options and default values:
-{
-	dir_src: path.resolve('./src'),
-	middle_extension: '.ama',
-	processed_extensions:['.cpp','.hpp','.cu'],
-	features:[],
-}
-Obsolete options:
-{
-	script_forward: fs.readFileSync(path.join(__dirname,'cpp/from_ama.js')).toString(),
-	script_backward: fs.readFileSync(path.join(__dirname,'cpp/to_ama.js')).toString(),
-}
-*/
 module.exports = function Bisync(options) {
 	if (!options) {options = {};}
 	function GetFileTime(fn) {

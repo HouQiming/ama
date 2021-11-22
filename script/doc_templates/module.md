@@ -9,6 +9,6 @@ Here is a list of modules for ama script development.
 【modules】
 ## Filters
 
-Here is a list of filters intended for the `features` section of `bisync` options.
+Here is a list of filters intended for the `features` option of `bisync`.
 
 【filters】

@@ -29,39 +29,23 @@ Provided methods:
 
 DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
 
-### auto_semicolon
-
-`const auto_semicolon = require("auto_semicolon");`
-
-DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
-
-### _init
-
-`const _init = require("_init");`
-
-this module is automatically executed by ama::InitScriptEnv() the `require` system isn't ready here so don't use it @ama ParseCurrentFile().Save()
-
 ### omnichecker
 
 `const omnichecker = require("omnichecker");`
 
-Generic checker for module invariance note: this module is currently experimental
+Generic checker for module invariance.
+
+Note: this module is currently experimental.
 
 ### pipe
 
 `const pipe = require("pipe");`
 
-Run external commands
+Run external commands.
 
 Provided methods:
 
 - `pipe.run(command)`
-
-### _sandbox
-
-`const _sandbox = require("_sandbox");`
-
-this module is automatically executed by ama::JSRunInSandbox at most once it's in a sandbox and does not have access to ANY native function @ama ParseCurrentFile().Save() convention: sandbox objects should be dumb, the shouldn't have methods
 
 ### fs
 
@@ -81,7 +65,20 @@ Provided methods:
 
 `const bisync = require("bisync");`
 
-the bidirectional synchronization workflow
+Bidirectional synchronization system:
+
+Usage with default option values:
+
+```Javascript
+require('bisync')({
+    dir_src: path.resolve(__dirname, '../src'),
+    middle_extension: '.ama',
+    processed_extensions: ['.cpp','.hpp','.cu'],
+    features: [],
+})
+```
+
+The module will search for all files with `processed_extensions` in `dir_src`. It will apply filters specified in `features` to files with `middle_extension` (e.g. `foo.ama.cpp`) to generate the corresponding non-ama file (e.g. `foo.cpp`). When available, it will also apply the inverse version of the filters to generate ama files from non-ama files. Between each pair of ama and non-ama files, `bisync` will always synchronize the the newer file's content to its older counterpart.
 
 ### fsext
 
@@ -97,7 +94,7 @@ Provided methods:
 
 ## Filters
 
-Here is a list of filters intended for the `features` section of `bisync` options.
+Here is a list of filters intended for the `features` option of `bisync`.
 
 ### cpp/cpp_indent
 
@@ -109,6 +106,28 @@ Before:
 int main()
 	puts("hello world");
 	return 0;
+```
+
+After:
+
+```C++
+int main() {
+	puts("hello world");
+	return 0;
+}
+```
+
+### auto_semicolon
+
+`require("auto_semicolon")` Automatically add ';' for C / C++ / Javascript..
+
+Before:
+
+```C++
+int main() {
+	puts("hello world")
+	return 0
+}
 ```
 
 After:

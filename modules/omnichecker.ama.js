@@ -1,5 +1,6 @@
-//Generic checker for module invariance
-//note: this module is currently experimental
+//Generic checker for module invariance.
+//
+//Note: this module is currently experimental.
 'use strict';
 let omnichecker = module.exports;
 const assert = require('assert');
@@ -128,7 +129,7 @@ function dfsGenerateDefault(nd, options) {
 					options.enable_operator_overloading ?
 						@(Sandbox.MergePossibility(vars, @(nString(nd.GetName())), value)) :
 						@(Sandbox.Assign(vars, @(nString(nd.GetName())), value)) : 
-					@(value)
+				@(value)
 			);
 		})());
 	}
