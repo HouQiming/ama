@@ -550,8 +550,9 @@ An identifier, likely a reference:
 
 - `.data` stores the identifier string.
 - `.flags` can take a combination of the following values:
-
-- `REF_WRITTEN` signifies the identifier is being written, like the `foo` in `foo = bar;`   - `REF_RW` signifies the identifier is being updated, like the `foo` in `foo += bar;`. Must be used with `REF_WRITTEN`.    - `REF_DECLARED` signifies the identifier is being declared, like the `foo` in `int foo;`
+  - `REF_WRITTEN` signifies the identifier is being written, like the `foo` in `foo = bar;`
+  - `REF_RW` signifies the identifier is being updated, like the `foo` in `foo += bar;`. Must be used with `REF_WRITTEN`. 
+  - `REF_DECLARED` signifies the identifier is being declared, like the `foo` in `int foo;`
 
 
 --------------
@@ -594,8 +595,8 @@ In normal code, `@()` enters the code template mode: it evaluates to an AST node
 A statement block:
 
 - `.flags` can be:
-
-- `0` to indicate a `{}`-enclosed block.   - `SCOPE_FROM_INDENT` to indicate a Python-like indentation-based block.
+  - `0` to indicate a `{}`-enclosed block.
+  - `SCOPE_FROM_INDENT` to indicate a Python-like indentation-based block.
 
 
 --------------
@@ -691,8 +692,11 @@ The parameter binding portion of a CUDA kernel call in the form of `nd_function<
 A node with dependency information, like `#include` in and `require` in Javascript_
 
 - `.flags` can be:
+  - `DEP_C_INCLUDE` stands for C `#include`, if we also have `.flags&DEPF_C_INCLUDE_NONSTR != 0`, it's `#include <>`.
 
-- `DEP_C_INCLUDE` stands for C `#include`, if we also have `.flags&DEPF_C_INCLUDE_NONSTR != 0`, it's `#include <>`.   In any case, `nodes` packs one string. However, it can also be an arbitrary expression in presence of advanced   C preprocessor techniques like `#include ADD_FANCY_DIRECTORY("name." HEADER_EXTENSION)`.   - `DEP_JS_REQUIRE` stands for Javascript `require`, `nodes` packs one require argument
+In any case, `nodes` packs one string. However, it can also be an arbitrary expression in presence of advanced   C preprocessor techniques like `#include ADD_FANCY_DIRECTORY("name." HEADER_EXTENSION)`.
+
+  - `DEP_JS_REQUIRE` stands for Javascript `require`, `nodes` packs one require argument
 
 
 --------------
@@ -758,9 +762,9 @@ An extension clause. Parameters and fields are similar to `N_SCOPED_STATEMENT`.
 A list of parameters:
 
 - `.flags` can be:
-
-- `0` stands for a `()`-enclosed list   - `PARAMLIST_TEMPLATE` stands for a `<>`-enclosed list   - `PARAMLIST_UNWRAPPED` stands for a free-standing list
-
+  - `0` stands for a `()`-enclosed list
+  - `PARAMLIST_TEMPLATE` stands for a `<>`-enclosed list
+  - `PARAMLIST_UNWRAPPED` stands for a free-standing list
 - `nodes` are a list of `N_ASSIGNMENT` nodes, the target of each represents a parameter while the value of each represents an optional default value.
 
 Parameters without a default value have it set to `N_AIR`.
@@ -799,8 +803,8 @@ A source file. Must be the root node:
 
 - `.data` stores the file name when available.
 - `.flags` can be:
-
-- `0` stands for a tab-indented file   - `FILE_SPACE_INDENT` stands for a space-indented file
+  - `0` stands for a tab-indented file
+  - `FILE_SPACE_INDENT` stands for a space-indented file
 
 
 --------------

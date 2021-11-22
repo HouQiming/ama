@@ -30,7 +30,7 @@ function CleanupDocString(s){
 				continue;
 			}
 		}
-		if(line.startsWith('- ')){
+		if(line.search(/^[ ]*- /)==0){
 			if(cur_paragraph.length){
 				paragraphs.push(cur_paragraph.join(' ').replace(/[ \t]+/,' ').trim()+'\n');
 				cur_paragraph.length=0;
