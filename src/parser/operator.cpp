@@ -137,7 +137,7 @@ namespace ama {
 					nd_raw->ReplaceWith(nd_tmp);
 					//ndi.s = NULL;
 					ama::Node* nd_asgn = nd_tmp->ReplaceWith(ama::nAssignment(nd_raw, nd_value));
-					nd_raw->AdjustIndentLevel(-nd_asgn->indent_level);
+					//nd_raw->AdjustIndentLevel(-nd_asgn->indent_level);
 					//nd_value doesn't need adjusting: it was a child, while nd_raw was the parent
 					//always allow :=
 					if ( ndi->node_class == ama::N_SYMBOL && (binop_priority--->get(ndi->data) || ndi->data == ":") && ndi != nd_raw->c ) {
@@ -406,7 +406,7 @@ namespace ama {
 		if ( !nd_parent || nd_parent->node_class != ama::N_RAW ) {
 			nd_parent = nd_binop->ReplaceWith(ama::CreateNode(ama::N_RAW, nullptr));
 			nd_parent->Insert(ama::POS_FRONT, nd_binop);
-			nd_parent->indent_level = nd_binop->indent_level;
+			//nd_parent->indent_level = nd_binop->indent_level;
 		}
 		ama::Node* nd_a = nd_binop->BreakChild();
 		ama::Node* nd_b = nd_a->s;
