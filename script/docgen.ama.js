@@ -213,6 +213,7 @@ function GenerateDocuments(){
 				if(name){feature=feature[name];}
 				let pipeline=__global.default_pipeline.map(a=>a);
 				if(feature.setup){pipeline.unshift(feature.setup);}
+				pipeline.unshift({full_path:fn+'.audit.js'});
 				pipeline.push(feature);
 				let code_after=ParseCode(code_before,pipeline).toSource().replace(/[\n]*$/,'\n');
 				//example code: apply twice and see

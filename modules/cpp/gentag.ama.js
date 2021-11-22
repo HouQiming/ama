@@ -85,6 +85,20 @@ gentag.DropGeneratedCode = function(nd_root) {
 		gentag.UpdateGenTagContent(nd_gentag, null);
 	}
 };
-//virtual feature for bisync
+/*
+#filter Generic inverse filter for things like `jsism.EnableJSON`
+This filter replaces code inside:
+```C++
+#pragma gen_begin(foo)
+#pragma gen_end(foo)
+```
+with
+```C++
+#pragma gen(foo)
+```
+
+We recommend custom filters that generate C++ to follow this convention to put generated code inside `gen_begin` and `gen_end`.
+That allows the generated code to be cleared when synchronized back to `.ama.cpp` files.  
+*/
 gentag.GeneratedCode = function() {};
 gentag.GeneratedCode.inverse = gentag.DropGeneratedCode;

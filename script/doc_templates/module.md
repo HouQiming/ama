@@ -21,4 +21,8 @@ Here is a list of filters intended for the `filters` option of `bisync`. Each fi
 
 Put an option object `{change_ext:'.foo'}` before `"Save"` to save the changes under a different extension.
 
+### StripRedundantPrefixSpace
+
+`"StripRedundantPrefixSpace"` Strip redundant spaces.
+
 【filters】

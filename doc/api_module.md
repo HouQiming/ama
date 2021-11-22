@@ -100,6 +100,10 @@ Here is a list of filters intended for the `filters` option of `bisync`. Each fi
 
 Put an option object `{change_ext:'.foo'}` before `"Save"` to save the changes under a different extension.
 
+### StripRedundantPrefixSpace
+
+`"StripRedundantPrefixSpace"` Strip redundant spaces.
+
 ### auto_paren
 
 `require("auto_paren")` Enable Python-style `if foo:` / `for foo:` / ... in C / C++ / Javascript..
@@ -158,6 +162,26 @@ int main() {
 `require("cmake").AutoCreate` Create cmake build files for C/C++ source.
 
 This filter only applies to files containing a main function. It will create a build target for that file and a wrapping `CMakeLists.txt` if it can't find one. If there is already a build target, it will search for dependent files and update the source file list when necessary. Non-include dependency can be added with `#pragma add("c_files","./foo.c")`.
+
+### cpp/asset
+
+`require("cpp/asset")` Pull in an external file to a zero-terminated C constant array..
+
+Before:
+
+```C++
+#pragma gen(asset('./_doc_asset.txt'))
+```
+
+After:
+
+```C++
+#pragma gen_begin(asset('./_doc_asset.txt'))
+static const uint8_t _doc_asset[]={
+	72,101,108,108,111,32,119,111,114,108,100,33,0
+};
+#pragma gen_end(asset('./_doc_asset.txt'))
+```
 
 ### cpp/auto_decl
 
@@ -275,6 +299,25 @@ int main() {
 	return 0;
 }
 ```
+
+### cpp/gentag.GeneratedCode
+
+`require("cpp/gentag").GeneratedCode` Generic inverse filter for things like `jsism.EnableJSON`.
+
+This filter replaces code inside:
+
+```C++
+#pragma gen_begin(foo)
+#pragma gen_end(foo)
+```
+
+with
+
+```C++
+#pragma gen(foo)
+```
+
+We recommend custom filters that generate C++ to follow this convention to put generated code inside `gen_begin` and `gen_end`. That allows the generated code to be cleared when synchronized back to `.ama.cpp` files.
 
 ### cpp/jsism.EnableConsole
 
