@@ -182,16 +182,16 @@ Replace the `nd` with `nd_new` in the AST containing it. It has no effect if `nd
 ReplaceWith has a quirk -- you can't directly replace a node with something that parents it. For example, this is invalid:
 
 ```C++
-nd.ReplaceWith(nParen(nd)); //will fail!
-```
+//nd.ReplaceWith(nParen(nd)); //will fail!
+//```
 
 Instead, use GetPlaceHolder():
 
 ```C++
-Node* nd_tmp=GetPlaceHolder();
-nd.ReplaceWith(nd_tmp);
-nd_tmp.ReplaceWith(nParen(nd));
-```
+//Node* nd_tmp=GetPlaceHolder();
+//nd.ReplaceWith(nd_tmp);
+//nd_tmp.ReplaceWith(nParen(nd));
+//```
 
 --------------
 - `nd.ReplaceUpto(nd_upto, nd_new)`
@@ -468,11 +468,11 @@ MatchAny matches any node of an optional node class and saves the result in the 
 For example, this code:
 
 ```Javascript
-let nd_source = @(test(3));
-nd_source.Match(
-    @(test(@(Node.MatchAny("val"))))
-)
-```
+//let nd_source = @(test(3));
+//nd_source.Match(
+//    @(test(@(Node.MatchAny("val"))))
+//)
+//```
 
 will return `{nd:nd_source,val:nd_source.Find(N_NUMBER, '3')}`.
 
@@ -484,9 +484,9 @@ Substitution a match into the code template specified by `nd`. `@(foo)` under `n
 For example, this code:
 
 ```Javascript
-let nd_source = @(test(@(val)));
-nd_source.Subst({val:nNumber(3)})
-```
+//let nd_source = @(test(@(val)));
+//nd_source.Subst({val:nNumber(3)})
+//```
 
 will return `@(test(3))`
 
@@ -622,10 +622,10 @@ but can also be an arbitrary expression for lambda expressions like the `x+1` in
 A class declaration. Take the following code as example:
 
 ```C++
-struct __attribute__((aligned(16))) Quaternion: Vector4 {
-    ...
-};
-```
+//struct __attribute__((aligned(16))) Quaternion: Vector4 {
+//    ...
+//};
+//```
 
 - `.data` stores the keyword declaring the class, like `struct` in the example.
 

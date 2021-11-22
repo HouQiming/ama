@@ -17,7 +17,23 @@ function DeclScope(nd) {
 	return nd.Root();
 }
 
-function Transform(nd_root, options) {
+/*
+#filter Automatically declare variables on assignment
+Before:
+```C++
+int main(int argc){
+	a=42;
+	if(argc>=2){
+		b=0;
+		a=b;
+	}else{
+		a+=100;
+	}
+	return a;
+}
+```
+*/
+function Translate(nd_root, options) {
 	let all_refs = nd_root.FindAll(N_REF, null);
 	//track the locally undeclared
 	let scope_to_context = new Map();
@@ -140,4 +156,4 @@ function Transform(nd_root, options) {
 	}
 }
 
-module.exports = Transform;
+module.exports = Translate;

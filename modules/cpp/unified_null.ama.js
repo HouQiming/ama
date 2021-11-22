@@ -13,6 +13,13 @@ function BidirTransform(nd_root, is_forward) {
 	return nd_root;
 }
 
+/*
+#filter Use `NULL` for `nullptr`
+Before:
+```C++
+void* g_ptr = NULL;
+```
+*/
 function Translate(nd_root) {
 	return BidirTransform(nd_root, 1);
 }

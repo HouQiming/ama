@@ -42,6 +42,16 @@ function BidirTransform(nd_root, is_forward) {
 	return nd_root;
 }
 
+/*
+#filter Default global functions to `static` unless specified as `public`
+Before:
+```C++
+int square(int x){return x*x;}
+public int main(int argc){
+	return square(argc);
+}
+```
+*/
 function Translate(nd_root) {
 	return BidirTransform(nd_root, 1);
 }

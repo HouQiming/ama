@@ -4,11 +4,30 @@ const fs = require('fs');
 const depends = require('depends');
 const typing = require('cpp/typing');
 
-function Transform(nd_root, options) {
+/*
+#filter Synchronize methods and functions to classes and headers
+
+If you `#include "./foo.hpp"` in `foo.cpp`, this filter will also add function forward declarations to `foo.hpp`.
+Use `#pragma no_auto_header()` to suppress this behavior.
+
+Before:
+```
+struct TestClass{
+	int a;
+};
+int TestClass::get_a(){
+	return this->a;
+}
+void TestClass::set_a(int a){
+	this->a = a;
+}
+```
+*/
+function Translate(nd_root, options) {
 	if (path.extname(nd_root.data).startsWith('.h')) {return;}
 	if (nd_root.Find(N_CALL, 'no_auto_header')) {return;}
 	let header_file = (options || {}).header_file;
-	if (!header_file) {
+	if (!header_file && nd_root.data) {
 		//search for same-name dependency first
 		let my_name = path.parse(nd_root.data).name;
 		for (let ndi of nd_root.FindAll(N_DEPENDENCY)) {
@@ -23,7 +42,7 @@ function Transform(nd_root, options) {
 		}
 	}
 	if (!header_file) {
-		header_file = nd_root.data;
+		header_file = nd_root.data || '';
 		let pdot = header_file.lastIndexOf('.');
 		if (pdot >= 0) {
 			header_file = header_file.substr(0, pdot);
@@ -182,4 +201,4 @@ function Transform(nd_root, options) {
 	}
 }
 
-module.exports = Transform;
+module.exports = Translate;

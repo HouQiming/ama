@@ -3,7 +3,6 @@
 /*
 #filter Enable Python-style `if foo:` / `for foo:` / ... in C / C++ / Javascript.
 This filter will add '()' and `{}` automatically.
-  
 Before:
 ```C++
 int main() {

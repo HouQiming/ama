@@ -71,7 +71,7 @@ _cmdline.init = function(argv) {
 	} else {
 		//generate list of features on the fly
 		let feature_code = [];
-		for (let fn of fsext.FindAllFiles(__dirname)) {
+		for (let fn of fsext.FindAllFiles(__dirname).sort()) {
 			if (!fn.endsWith('.js')) {continue;}
 			let nd_root = depends.LoadFile(fn);
 			if (!nd_root) {continue;}
@@ -93,8 +93,7 @@ _cmdline.init = function(argv) {
 					s_prefix = '';
 				}
 				feature_code.push(
-					s_prefix, '//', brief, '\n',
-					s_prefix, 'require(', JSON.stringify(fn_require), ')', name ? '.' + name : '', ',\n'
+					s_prefix, 'require(', JSON.stringify(fn_require), ')', name ? '.' + name : '', ', //', brief, '\n'
 				);
 			}
 		}

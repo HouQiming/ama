@@ -37,6 +37,17 @@ let console_method_to_options = {
 		just_format: 1,
 	},
 };
+/*
+#filter Translate `console.log` to `std::cout << foo`
+The filter also supports some Javascript formatting methods like `toFixed` and `padStart`.
+Before:
+```C++
+int main(){
+	console.log("hello world",(0.25).toFixed(3));
+	return 0;
+}
+```
+*/
 jsism.EnableConsole = function(nd_root, options) {
 	options = options || {};
 	let backend = options.backend || 'iostream';
@@ -191,6 +202,38 @@ jsism.EnableConsole = function(nd_root, options) {
 	}
 };
 
+/*
+#filter Enable `JSON.stringify` and `JSON.parse<T>` in C++
+To use this filter, you need to: 
+```C++
+#include "<.ama_modules dir>/modules/cpp/json/json.h"
+```
+And add `json.cpp` to your project. For each class you wish to stringify or parse, add:
+```C++
+#pragma gen(JSON::stringify<YourClass>)
+```
+or
+```C++
+#pragma gen(JSON::parse<YourClass>)
+```
+in a file with this filter enabled. The pragmas will be translated to stringify / parse implementation.
+If the class is in the same file as the `JSON.foo`, the pragma can be omitten.
+
+Before:
+```C++
+#include <iostream>
+#include "<.ama_modules dir>/modules/cpp/json/json.h"
+
+struct Test{
+	int a;
+};
+int main(){
+	Test obj{3};
+	std::cout<<JSON.stringify(obj)<<std::endl;
+	return 0;
+}
+```
+*/
 jsism.EnableJSON = function(nd_root) {
 	//stringify / parse callback generation
 	//for persistent, we want StringifyToImpl in header
@@ -456,6 +499,13 @@ jsism.EnableJSON = function(nd_root) {
 	}
 };
 
+/*
+#filter Enable Javascript `()=>{}` syntax for C++ lambda
+Before:
+```C++
+std::sort(a.begin(), a.end(), (int x, int y)=>{return x<y;});
+```
+*/
 jsism.EnableJSLambdaSyntax = function(nd_root) {
 	//()=>{} <=> [&](){}
 	for (let nd_func of nd_root.FindAll(N_FUNCTION, null)) {
@@ -481,6 +531,15 @@ jsism.EnableJSLambdaSyntax.inverse = function(nd_root) {
 	}
 };
 
+/*
+#filter Enable single-quoted strings for C/C++
+Do not use this filter if you need multi-char constants.
+
+Before:
+```C++
+puts('hello world');
+```
+*/
 jsism.EnableSingleQuotedStrings = function(nd_root) {
 	for (let nd_str of nd_root.FindAll(N_STRING)) {
 		let bk_flags = nd_str.flags;

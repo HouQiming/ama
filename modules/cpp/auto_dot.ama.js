@@ -1,6 +1,18 @@
 const typing = require('cpp/typing');
 
-module.exports = function Transform(nd_root) {
+/*
+#filter Automatically deduce `->` or `::` from `.`
+Before:
+```C++
+namespace ama{
+	struct Node{...};
+}
+ama.Node* GetChild(ama.Node* nd){
+	return nd.c;
+}
+```
+*/
+module.exports = function Translate(nd_root) {
 	for (let nd_dot of nd_root.FindAll(N_DOT)) {
 		if (!nd_dot.flags) {
 			if (nd_dot.c.isRef('this')) {

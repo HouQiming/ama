@@ -20,6 +20,17 @@ function BidirTransform(nd_root, is_forward) {
 	return nd_root;
 }
 
+/*
+#filter Use prefix `<<` for `std::move`
+Before:
+```C++
+std::string MakeSomeString(){
+	std::string ret;
+	...
+	return <<ret;
+}
+```
+*/
 function Translate(nd_root) {
 	return BidirTransform(nd_root, 1);
 }

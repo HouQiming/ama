@@ -18,7 +18,7 @@ function CleanupDocString(s){
 	for(let line of s.split('\n')){
 		//if(line.match(/^[* \t/]+$/)){continue;}
 		if(line==='/*'||line==='*/'){continue;}
-		line=line.replace(/^[ \t]*[/]+/,'');
+		if(!in_code){line=line.replace(/^[ \t]*[/]+/,'');}
 		if(line.indexOf('```')>=0){
 			if(cur_paragraph.length){
 				paragraphs.push(cur_paragraph.join(' ').replace(/[ \t]+/,' ').trim()+'\n');
@@ -206,7 +206,7 @@ function GenerateDocuments(){
 			}
 			let p_example=description.indexOf('Before:\n```');
 			if(p_example>=0){
-				let p_example_start=description.indexOf('\n',p_example+8);
+				let p_example_start=description.indexOf('\n',p_example+8)+1;
 				let p_example_end=description.indexOf('```',p_example_start);
 				let code_before=description.substr(p_example_start,p_example_end-p_example_start);
 				let feature=require(fn);

@@ -324,7 +324,7 @@ ama::Node * ama::Node::Insert(int pos, ama::Node* nd_new) {
 			nd_tail->comments_after = this->comments_after;
 			this->comments_after = "";
 		}
-		for (ama::Node* ndi = nd_new; ndi; ndi = ndi->s) {
+		for (ama::Node* ndi = nd_new; ndi; ndi = ndi->s) { 
 			ndi->indent_level = this->indent_level;
 			//ndi->AdjustIndentLevel(this->indent_level);
 		}

@@ -33,7 +33,7 @@ function FixAMAJS(){
 FixAMAJS();
 bisync({
 	dir_src:path.resolve(__dirname,'../src'),
-	features:[
+	filters:[
 		'StripRedundantPrefixSpace',
 		require('auto_semicolon'),
 		require('cpp/sane_for'),
@@ -53,7 +53,6 @@ bisync({
 		require('cpp/sane_init'),
 		require('cpp/sane_export'),
 		require('cpp/move_operator'),
-		require('cpp/unified_null'),
 		require('cpp/unified_null'),
 		jsism.EnableJSLambdaSyntax,
 		jsism.EnableJSON,

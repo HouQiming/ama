@@ -68,6 +68,20 @@ function BidirTransform(nd_root, is_forward) {
 	return nd_root;
 }
 
+/*
+#filter Zero-initialize otherwise-uninitialized C++ variables
+Before:
+```C++
+struct CFoo{
+	int m_foo;
+};
+int g_foo;
+int main(){
+	int foo;
+	return 0;
+}
+```
+*/
 function Translate(nd_root) {
 	return BidirTransform(nd_root, 1);
 }

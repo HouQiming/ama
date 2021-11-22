@@ -1,18 +1,18 @@
-//Bidirectional synchronization system:
-//
-//Usage with default option values:
+//Bidirectional synchronization system. Usage with default option values:
 //```Javascript
 //require('bisync')({
 //    dir_src: path.resolve(__dirname, '../src'),
 //    middle_extension: '.ama',
 //    processed_extensions: ['.cpp','.hpp','.cu'],
-//    features: [],
+//    filters: [],
 //})
 //```
 //The module will search for all files with `processed_extensions` in `dir_src`.
-//It will apply filters specified in `features` to files with `middle_extension` (e.g. `foo.ama.cpp`) to generate the corresponding non-ama file (e.g. `foo.cpp`).
+//It will apply filters specified in `filters` to files with `middle_extension` (e.g. `foo.ama.cpp`) to generate the corresponding non-ama file (e.g. `foo.cpp`).
 //When available, it will also apply the inverse version of the filters to generate ama files from non-ama files.
-//Between each pair of ama and non-ama files, `bisync` will always synchronize the the newer file's content to its older counterpart.  
+//Between each pair of ama and non-ama files, `bisync` will always synchronize the the newer file's content to its older counterpart.
+//
+//See [the filters section](#-filters) for possible filters.
 'use strict';
 const pipe = require('pipe');
 const path = require('path');
@@ -35,9 +35,9 @@ module.exports = function Bisync(options) {
 	let p_backup = __global.default_pipeline;
 	let p_forward = __global.default_pipeline.map(a => a);
 	let p_inverse = __global.default_pipeline.map(a => a);
-	if (options.features) {
+	if (options.filters) {
 		let p_inverse_rev = [];
-		for (let item of options.features) {
+		for (let item of options.filters) {
 			if (typeof(item) == 'string') {
 				item = __global.__GetFilterByName(item);
 			}

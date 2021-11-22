@@ -19,6 +19,16 @@ function BidirTransform(nd_root, alt_templates, is_forward) {
 	return nd_root.TranslateTemplates(g_templates, is_forward);
 };
 
+/*
+#filter Short numerical type names for C++
+Before:
+```C++
+f32 powi(f32 a, u32 p){
+	return p == 0 ? 1.f : (p & 1 ? a : 1.f) * powi(a, p >> 1);
+}
+iptr addr_powi = (iptr)(void*)powi;
+```
+*/
 function Translate(nd_root, alt_templates) {
 	return BidirTransform(nd_root, alt_templates, 1);
 }
