@@ -1,5 +1,13 @@
-//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
+//Node.js-compatible file system module.
+//
+//Provided methods:
+//- `fs.readFileSync(path)`
+//- `fs.existsSync(path)`
+//- `fs.writeFileSync(path, data)`
+//- `fs.statSync(path)`
+//- `fs.readdirSync(dir,{withFileTypes:true})`
 'use strict'
+//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
 let fs = module.exports;
 
 let Buffer = {

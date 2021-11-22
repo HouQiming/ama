@@ -365,9 +365,16 @@ __global.default_options = {
 	auto_curly_bracket: 0,
 };
 
+Node.SmartConvertIndentToScope=function(options){
+	if(options.parse_indent_as_scope){
+		this.ConvertIndentToScope(options);
+	}
+	return this;
+}
+
 __global.default_pipeline=[
 	'ParseSimplePairing',
-	//'ConvertIndentToScope',
+	'SmartConvertIndentToScope',
 	'ParsePointedBrackets',
 	'DelimitCLikeStatements',
 	//from here on, N_RAW no longer includes the root scope

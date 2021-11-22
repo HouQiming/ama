@@ -168,6 +168,73 @@ function GenerateDocuments(){
 			})
 		}
 	}
+	/////////////////////
+	//modules
+	let module_section=[];
+	let module_filter=[];
+	let dir_modules=path.resolve(__dirname,'../modules');
+	for (let fn of fsext.FindAllFiles(dir_modules)) {
+		if (!fn.endsWith('.js')) {continue;}
+		let nd_root = depends.LoadFile(fn);
+		if (!nd_root) {continue;}
+		let fn_require = path.relative(dir_modules, fn).replace(/[.].*/, '').replace(/\\/g,'/');
+		//per-file document
+		let module_doc=CleanupDocString(nd_root.c.comments_before);
+		if(module_doc){
+			module_section.push(ApplyMDTemplate(g_templates.module_section,{
+				path:fn_require,
+				usage:['const ',path.parse(fn_require).name,' = require(',JSON.stringify(fn_require),');'].join(''),
+				description:module_doc
+			}))
+		}
+		for (let nd_func of nd_root.FindAll(N_FUNCTION)) {
+			let s = nd_func.ParentStatement().comments_before;
+			let p_filter = s.indexOf('#filter');
+			if (p_filter < 0) {continue;}
+			let name = nd_func.data;
+			if (nd_func.p.node_class == N_ASSIGNMENT) {
+				name = nd_func.p.c.GetName();
+			}
+			if(name == 'Translate'){name='';}
+			if(name == 'exports'){name='';}
+			let pnewline = s.indexOf('\n', p_filter);
+			let brief = s.substr(p_filter + 7, pnewline - p_filter - 7).trim();
+			let description=s.substr(pnewline);
+			let pclosing=description.lastIndexOf('*/');
+			if(pclosing>=0){
+				description=description.substr(0,pclosing);
+			}
+			let p_example=description.indexOf('Before:\n```');
+			if(p_example>=0){
+				let p_example_start=description.indexOf('\n',p_example+8);
+				let p_example_end=description.indexOf('```',p_example_start);
+				let code_before=description.substr(p_example_start,p_example_end-p_example_start);
+				let feature=require(fn);
+				if(name){feature=feature[name];}
+				let pipeline=__global.default_pipeline.map(a=>a);
+				if(feature.setup){pipeline.unshift(feature.setup);}
+				pipeline.push(feature);
+				let code_after=ParseCode(code_before,pipeline).toSource().replace(/[\n]*$/,'\n');
+				//example code: apply twice and see
+				let p_after=description.indexOf('\n',p_example_end);
+				description=[
+					description.substr(0,p_after+1),
+					'After:\n',
+					description.substr(p_example+8,p_example_start-p_example-8),
+					code_after,
+					'```\n',
+					description.substr(p_after+1)
+				].join('');
+			}
+			module_filter.push(ApplyMDTemplate(g_templates.module_filter,{
+				short_usage:fn_require+(name ? '.' + name:''),
+				usage:['require(', JSON.stringify(fn_require), ')', name ? '.' + name : ''].join(''),
+				brief:brief,
+				description:CleanupDocString(description)
+			}));
+		}
+	}
+	//write out
 	fs.writeFileSync(
 		path.resolve(__dirname, '../doc/api_node.md'),
 		ApplyMDTemplate(g_templates.node,{
@@ -178,8 +245,13 @@ function GenerateDocuments(){
 			default_options:nd_init_js.MatchAll(@(__global.default_options=@(Node.MatchAny('foo'))))[0].nd.toSource()
 		})
 	);
-	/////////////////////
-	//TODO: module reference
+	fs.writeFileSync(
+		path.resolve(__dirname, '../doc/api_module.md'),
+		ApplyMDTemplate(g_templates.module,{
+			modules:module_section.join(''),
+			filters:module_filter.join('')
+		})
+	);
 }
 
 module.exports=GenerateDocuments;

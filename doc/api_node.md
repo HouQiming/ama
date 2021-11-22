@@ -515,6 +515,7 @@ If `is_forward` is false, do it backwards.
 
 --------------
 - `nd.GetFunctionNameNode()`
+- `nd.SmartConvertIndentToScope(options)`
 
 Return the name of `N_FUNCTION`. Returns an empty string if the function is unnamed.
 

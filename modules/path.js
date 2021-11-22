@@ -1,5 +1,16 @@
-//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
+//Node.js-compatible path handling module.
+//
+//Provided methods:
+//- `path.join(...)`
+//- `path.resolve(...)`
+//- `path.parse(path)`
+//- `path.dirname(path)`
+//- `path.basename(path)`
+//- `path.extname(path)`
+//- `path.isAbsolute(path)`
+//- `path.relative(path_a, path_b)`
 'use strict'
+//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
 let path = module.exports;
 
 path.join = function(...args) {

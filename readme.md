@@ -47,9 +47,11 @@ See `example/hello_world.cpp` for a simple tutorial. See `example/cmake` for an 
 
 ### Configure an Existing Project
 
-On an existing project, the recommended way is to set up a bidirectional synchronization script like `script/sync.js`. The script should update in-repository source files when you change the custom-dialect files, and synchronize back any pulled upstream change. The `bisync` module can help with that.
+On an existing project, the recommended way is to set up a bidirectional synchronization script like `script/sync.js`. The script should update in-repository source files when you change the custom-dialect files, and synchronize back any pulled upstream change.
 
-Please refer to `script/sync.js` and the relevant module code for details.
+This process can be automated by the `ama --init` command. The command automatically creates `script/sync.js` with a complete list of customization features, which can be enabled by uncommenting. You can then `ama --build` to build the project with cmake, or add `ama script/sync.js` as a pre-build command to your build system.
+
+Currently the auto-created `sync.js` only customizes C++ development.
 
 ### Performance Critical Applications
 
@@ -60,8 +62,7 @@ Alternatively, you can create a native module and call that from Javascript. See
 ## Documentation
 
 [AST API Reference](doc/api_node.md)
-
-TODO: module reference, talk about CommonJS in module reference
+[Module Reference](doc/api_module.md)
 
 ## Contributing
 

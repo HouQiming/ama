@@ -1,5 +1,9 @@
-//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
+//Run external commands
+//
+//Provided methods:
+//- `pipe.run(command)`
 'use strict'
+//DO NOT use ama features: this is a "chicken" file which gets called when formatting other JS files
 const path = require('path');
 const fs = require('fs');
 let pipe = module.exports;

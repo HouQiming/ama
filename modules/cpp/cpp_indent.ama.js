@@ -1,6 +1,15 @@
-//CPP (C Pre-Processor) command fix for the {parse_indent_as_scope:1} mode 
-'use strict'
+'use strict';
+/*
+#filter Indent-based scoping for C++ 
+Before:
+```C++
+int main()
+	puts("hello world");
+	return 0;
+```
+*/
 module.exports = function DropCPPCommandScopes(nd_root) {
+	//Fix overzealously scoped C Pre-Processor commands
 	//N_SCOPE inside N_KEYWORD_STATEMENT
 	for (let nd_stmt of nd_root.FindAll(N_KEYWORD_STATEMENT)) {
 		if (!nd_stmt.data.startsWith('#')) {continue;}
@@ -27,4 +36,5 @@ module.exports = function DropCPPCommandScopes(nd_root) {
 		let nd_statements = nd_scope.BreakChild();
 		nd_stmt.Insert(POS_AFTER, nd_statements);
 	}
-}
+};
+module.exports.setup = {parse_indent_as_scope: 1,auto_curly_bracket: 1,parse_indent_as_scope_but_merge_cpp_ctor_lines: 1};

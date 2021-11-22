@@ -83,6 +83,8 @@ _cmdline.init = function(argv) {
 				if (!name && nd_func.p.node_class == N_ASSIGNMENT) {
 					name = nd_func.p.c.GetName();
 				}
+				if (name == 'Translate') {name = '';}
+				if (name == 'exports') {name = '';}
 				let pnewline = s.indexOf('\n', p_filter);
 				let brief = s.substr(p_filter + 7, pnewline - p_filter - 7).trim();
 				let s_prefix = '//';
@@ -91,7 +93,7 @@ _cmdline.init = function(argv) {
 				}
 				feature_code.push(
 					s_prefix, '//', brief, '\n',
-					s_prefix, 'require(', JSON.stringify(fn_require), ')', name && name != 'Translate' ? '.' + name : '', ',\n'
+					s_prefix, 'require(', JSON.stringify(fn_require), ')', name ? '.' + name : '', ',\n'
 				);
 			}
 		}
