@@ -2,7 +2,8 @@
 'use strict';
 
 function Transform(nd_root) {
-	for (let ndi of nd_root.FindAll(N_SCOPED_STATEMENT, null)) {
+	let all_scoped=nd_root.FindAll(N_SCOPED_STATEMENT, null);
+	for (let ndi of all_scoped) {
 		if(ndi.data==='template'){continue;}
 		if(ndi.data==='for'&&ndi.c.node_class === N_AIR&&ndi.c.s.node_class===N_SCOPE&&ndi.p&&ndi.p.isRawNode(0,0)){
 			//relaxed for syntax: `for i=0;i<n;i++{...}`
@@ -28,6 +29,23 @@ function Transform(nd_root) {
 				nd_arg = nd_arg.c;
 			}
 			nd_tmp.ReplaceWith(nParen(nd_arg));
+		}
+	}
+	//auto-scope
+	for (let ndi of all_scoped.concat(nd_root.FindAll(N_EXTENSION_CLAUSE, null))) {
+		if(ndi.c.s.node_class!=N_SCOPE){
+			if(ndi.data=='else'&&ndi.c.s.node_class==N_SCOPED_STATEMENT&&ndi.c.s.data=='if'){
+				continue;
+			}
+			let nd_tmp = Node.GetPlaceHolder();
+			let nd_body=ndi.c.s;
+			nd_body.ReplaceWith(nd_tmp);
+			let nd_scoped_body = nScope(nd_body);
+			nd_tmp.ReplaceWith(nd_scoped_body);
+			nd_body.comments_before=nd_scoped_body.comments_before;nd_scoped_body.comments_before='';
+			nd_body.comments_after=nd_scoped_body.comments_after;nd_scoped_body.comments_after='';
+			nd_body.AdjustIndentLevel(nd_scoped_body.indent_level);
+			nd_scoped_body.indent_level=0;
 		}
 	}
 }

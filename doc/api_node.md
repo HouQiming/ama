@@ -739,10 +739,7 @@ A special statement that canonically takes a statement block, like `if`:
 
 It can be `N_AIR` for statements like `try{}` or `do{}while()`.
 
-- `nd_body` is the statement block. It's always `N_SCOPE` except for the C++ `template<>...`,
-
-in which case it packs the declaration after the template parameters.
-
+- `nd_body` is the statement block. It can take values other than `N_SCOPE` in C when the scope is omitten.
 - `extension_clauses` pack follow-ups after the body, like `else` clauses for `if` and `catch` clauses for `try.
 
 

@@ -325,6 +325,7 @@ ama::Node * ama::Node::Insert(int pos, ama::Node* nd_new) {
 			this->comments_after = "";
 		}
 		nd_new->indent_level = this->indent_level;
+		this->indent_level = 0;
 		//if( nd_new.indent_level != this.indent_level ) {
 		//	nd_new.AdjustIndentLevel(this.indent_level - this->indent_level);
 		//}

@@ -162,8 +162,7 @@ namespace ama {
 	//- `.data`, provided by `keyword`, stores the keyword, like `for` in `for(;;){}`.
 	//- `nd_parameter` packs everything between the keyword and the body, like the `(;;)` in `for(;;){}`.
 	//  It can be `N_AIR` for statements like `try{}` or `do{}while()`.
-	//- `nd_body` is the statement block. It's always `N_SCOPE` except for the C++ `template<>...`,
-	//  in which case it packs the declaration after the template parameters.
+	//- `nd_body` is the statement block. It can take values other than `N_SCOPE` in C when the scope is omitten.
 	//- `extension_clauses` pack follow-ups after the body, like `else` clauses for `if` and `catch` clauses for `try.
 	static const uint8_t N_SCOPED_STATEMENT = 20;
 	//`nExtensionClause(keyword, nd_parameter, nd_body)`

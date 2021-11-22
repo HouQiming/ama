@@ -45,6 +45,8 @@ bisync({
 		require('cpp/typing').DeduceAuto,
 		require('cpp/auto_dot'),
 		require('cpp/cpp_indent'),
+		///////////////
+		//the changes above are written back to .ama.foo
 		'Save',
 		///////////////
 		require('cpp/line_sync'),

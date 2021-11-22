@@ -42,7 +42,7 @@ cmake.LoadCMakeFile = function(fn, template) {
 				let nd0 = if_stk.pop();
 				let nd_tmp = Node.GetPlaceHolder();
 				nd0.ReplaceUpto(ndi, nd_tmp)
-						ndi = nd_tmp.ReplaceWith(CreateNode(N_RAW, nd0));
+					ndi = nd_tmp.ReplaceWith(CreateNode(N_RAW, nd0));
 			} else {
 				//do nothing
 			}
@@ -61,14 +61,14 @@ Node.TokenizeCMakeArgs = function() {
 		if (merge_group.length == 1 && merge_group[0].node_class == N_REF) {
 			//leave single identifiers alone
 			ret.push(merge_group[0])
-					merge_group.length = 0;
+				merge_group.length = 0;
 		} else {
 			let n0 = ret.length;
 			for (let str of merge_group.map(nd => nd.toSource(cmake_options)).join('').trim().split(' ')) {
 				ret.push(nString(str).setCommentsBefore(' '));
 			}
 			merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nScope.apply(null, ret.slice(n0)).c)
-					merge_group.length = 0;
+				merge_group.length = 0;
 		}
 	}
 	function dfsTokenizeCMakeArgs(nd) {

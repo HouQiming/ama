@@ -88,24 +88,24 @@ namespace ama {
 		}
 		ama::Node* nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
 		nd_body = ama::toSingleNode(nd_body);
-		if (!is_elseif) {
-			ama::Node* nd_scoped_body = ama::CreateNode(ama::N_SCOPE, nd_body);
-			if ( nd_body->comments_before--->indexOf('\n') < 0 ) {
-				std::swap(nd_scoped_body->comments_before, nd_body->comments_before);
-			}
-			if ( nd_body->comments_after--->indexOf('\n') < 0 ) {
-				std::swap(nd_scoped_body->comments_after, nd_body->comments_after);
-			}
-			nd_scoped_body->indent_level = nd_keyword->indent_level;
-			if ( nd_body->comments_after--->indexOf('\n') >= 0 && nd_stmt->comments_after--->indexOf('\n') < 0 ) {
-				nd_stmt->comments_after = (ama::gcscat(nd_stmt->comments_after, "\n"));
-			}
-			if ( nd_body->comments_before--->indexOf('\n') >= 0 && nd_body->comments_after--->indexOf('\n') < 0 ) {
-				nd_body->comments_after = (ama::gcscat(nd_body->comments_after, "\n"));
-			}
-			nd_body->AdjustIndentLevel(-nd_scoped_body->indent_level);
-			nd_body = nd_scoped_body;
-		}
+		//if (!is_elseif) {
+		//	ama::Node* nd_scoped_body = ama::CreateNode(ama::N_SCOPE, nd_body);
+		//	if ( nd_body->comments_before--->indexOf('\n') < 0 ) {
+		//		std::swap(nd_scoped_body->comments_before, nd_body->comments_before);
+		//	}
+		//	if ( nd_body->comments_after--->indexOf('\n') < 0 ) {
+		//		std::swap(nd_scoped_body->comments_after, nd_body->comments_after);
+		//	}
+		//	nd_scoped_body->indent_level = nd_keyword->indent_level;
+		//	if ( nd_body->comments_after--->indexOf('\n') >= 0 && nd_stmt->comments_after--->indexOf('\n') < 0 ) {
+		//		nd_stmt->comments_after = (ama::gcscat(nd_stmt->comments_after, "\n"));
+		//	}
+		//	if ( nd_body->comments_before--->indexOf('\n') >= 0 && nd_body->comments_after--->indexOf('\n') < 0 ) {
+		//		nd_body->comments_after = (ama::gcscat(nd_body->comments_after, "\n"));
+		//	}
+		//	nd_body->AdjustIndentLevel(-nd_scoped_body->indent_level);
+		//	nd_body = nd_scoped_body;
+		//}
 		nd_stmt->Insert(
 			ama::POS_FRONT,
 			ama::cons(ama::toSingleNode(nd_arg)->MergeCommentsBefore(nd_keyword), nd_body)
