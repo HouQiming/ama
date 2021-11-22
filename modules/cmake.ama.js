@@ -287,11 +287,11 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 	return nd_cmake;
 };
 
-///called from a cmake node
-Node.CMakeBuild = function(options) {
+//this is not a filter
+cmake.Build = function(options) {
 	if (!options) {options = {};}
 	const pipe = require('pipe');
-	process.chdir(path.dirname(path.resolve(this.data)));
+	process.chdir(path.dirname(path.resolve(options.cmakelist_path)));
 	let build = (options.build || process.build || 'Debug');
 	let ret_code = pipe.run([
 		__platform == 'win32' ? 'md build\\' : 'mkdir -p build/', process.platform, '_', build.toLowerCase(), ' && ',
@@ -307,6 +307,13 @@ Node.CMakeBuild = function(options) {
 	}
 };
 
+///called from a cmake node
+Node.CMakeBuild = function(options) {
+	if (!options) {options = {};}
+	options.cmakelist_path = this.data;
+	return cmake.Build(options);
+};
+
 Node.CMakeEnsureCommand = function(nd_command) {
 	if (!this.MatchAll(nd_command).length) {
 		let nd_command_tokenized = nd_command.Clone();
@@ -315,4 +322,10 @@ Node.CMakeEnsureCommand = function(nd_command) {
 			this.Insert(POS_BACK, nd_command);
 		}
 	}
+};
+
+let g_main_functions = new Set(['main', 'WinMain', 'DllMain']);
+cmake.AutoCreate = function(nd_root, options) {
+	if (!nd_root.FindAll(N_FUNCTION).filter(nd => g_main_functions.has(nd.data)).length) {return;}
+	options.nd_cmake = nd_root.CreateCXXCMakeTarget(options.cmakelist_path);
 };

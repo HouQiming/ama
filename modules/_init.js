@@ -537,7 +537,8 @@ __global.process = {
 	}),
 	platform: __platform,
 	chdir: __chdir,
-	cwd: __cwd
+	cwd: __cwd,
+	argv:[]
 };
 
 __global.__RequireNativeLibrary = function(exports, module, __filename, __dirname) {
@@ -549,6 +550,31 @@ __global.__RequireNativeLibrary = function(exports, module, __filename, __dirnam
 	if (code !== 0) {
 		throw new Error(['native module ', JSON.stringify(__filename), ' failed with code ', JSON.stringify(code)].join(''));
 	}
+}
+
+__global.RunCommandLineUtility=function(){
+	let groups=[];
+	let group=undefined;
+	for(let i=1;i<process.argv.length;i++){
+		if(process.argv[i].startsWith('--')){
+			if(group){groups.push(group);}
+			group=[process.argv[0]];
+		}
+		if(group){group.push(process.argv[i]);}
+	}
+	if(group){groups.push(group);}
+	let bk=process.argv;
+	let ret_code=0;
+	for(let group of groups){
+		process.argv=group;
+		ret_code=__require(__init_js_path,'_cmdline')[group[1].substr(2).toLowerCase()](group)|0;
+		if(ret_code!==0){
+			process.argv=bk;
+			return ret_code;
+		}
+	}
+	process.argv=bk;
+	return ret_code;
 }
 
 /////////////

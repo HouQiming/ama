@@ -9,12 +9,36 @@
 #include "../util/jc_array.h"
 #pragma no_auto_header()
 /*#pragma add("ldflags", "amal");*/
+static int RunCommandLineUtility(int argc, char const* const* argv) {
+	ama::LazyInitScriptEnv();
+	JSValue obj_process = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), "process");
+	JSValue obj_argv = JS_GetPropertyStr(ama::jsctx, obj_process, "argv");
+	JS_FreeValue(ama::jsctx, obj_process);
+	for (int ai = 0; ai < argc; ai += 1) {
+		JS_SetPropertyUint32(ama::jsctx, obj_argv, ai, JS_NewString(ama::jsctx, argv[ai]));
+	}
+	JS_FreeValue(ama::jsctx, obj_argv);
+	//JSValue arg = JS_NewString(ama::jsctx, argv[i] + 2);
+	JSAtom atom = JS_NewAtom(ama::jsctx, "RunCommandLineUtility");
+	JSValue ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom, 0, nullptr);
+	JS_FreeAtom(ama::jsctx, atom);
+	int ret_code = 1;
+	if (JS_IsException(ret)) {
+		ama::DumpError(ama::jsctx);
+		ret_code = 1;
+	} else {
+		ret_code = ama::UnwrapInt32(ret, 0);
+		JS_FreeValue(ama::jsctx, ret);
+	}
+	return ret_code;
+}
+
 int main(int argc, char const* const* argv) {
 	if ( argc < 2 ) {
 		//no macros, no output file name
 		//whatever you need, put in the script
-		printf("usage: ama [-s script] [files]\n");
-		return 1;
+		char const* help_argv[2] = {argv[0],"--help"};
+		return RunCommandLineUtility(2, help_argv);
 	}
 	#if defined(_WIN32)
 		//fix the Windows terminal
@@ -34,6 +58,9 @@ int main(int argc, char const* const* argv) {
 			extra_script--->push(argv[i + 1], ";\n");
 			i += 1;
 			continue;
+		}
+		if (memcmp(argv[i], "--", 2) == 0) {
+			return RunCommandLineUtility(argc, argv);
 		}
 		int err_code = ama::ProcessAmaFile(argv[i], extra_script);
 		if ( err_code == ama::PROCESS_AMA_NOT_FOUND ) {
