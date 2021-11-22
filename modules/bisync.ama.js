@@ -73,6 +73,8 @@ module.exports = function Bisync(options) {
 		for (let fn_rel_cpp of all_files) {
 			//if (!fn_rel_cpp) {continue;}
 			if (path.extname(fn_rel_cpp) != ext) {continue;}
+			//COULDDO: ignore patterns
+			if (fn_rel_cpp.indexOf('/build/') >= 0 || fn_rel_cpp.indexOf('\\build\\') >= 0) {continue;}
 			all_cpp_files.add(path.resolve(dir_src, fn_rel_cpp.replace(mext_dot, '.')));
 		}
 	}

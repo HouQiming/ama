@@ -300,7 +300,8 @@ cmake.Build = function(options) {
 		__platform == 'win32' ? 'md build\\' : 'mkdir -p build/', process.platform, '_', build.toLowerCase(), ' && ',
 		__platform == 'win32' ? 'cd build\\' : 'cd build/', process.platform, '_', build.toLowerCase(), ' && ',
 		'cmake -DCMAKE_BUILD_TYPE=', build, ' ../.. && ',
-		'cmake --build .', options.target ? ' --target ' + options.target : '', ' --config ', build, options.rebuild || process.rebuild ? ' --clean-first' : ''
+		'cmake --build .', options.target ? ' --target ' + options.target : '', ' --config ', build, options.rebuild || process.rebuild ? ' --clean-first' : '',
+		options.extra_args ? ' ' + options.extra_args.join(' ') : ''
 	].join(''));
 	if (ret_code == 0 && (options.run || process.run) && options.target) {
 		pipe.run([
@@ -329,6 +330,7 @@ Node.CMakeEnsureCommand = function(nd_command) {
 
 let g_main_functions = new Set(['main', 'WinMain', 'DllMain']);
 /*
+#default on
 #filter Create cmake build files for C/C++ source
 This filter only applies to files containing a main function.
 It will create a build target for that file and a wrapping `CMakeLists.txt` if it can't find one.
@@ -339,3 +341,4 @@ cmake.AutoCreate = function(nd_root, options) {
 	if (!nd_root.FindAll(N_FUNCTION).filter(nd => g_main_functions.has(nd.data)).length) {return;}
 	options.nd_cmake = nd_root.CreateCXXCMakeTarget(options.cmakelist_path);
 };
+cmake.AutoCreate.inverse = cmake.AutoCreate; 

@@ -556,7 +556,7 @@ __global.RunCommandLineUtility=function(){
 	let groups=[];
 	let group=undefined;
 	for(let i=1;i<process.argv.length;i++){
-		if(process.argv[i].startsWith('--')){
+		if(process.argv[i].startsWith('--')&&!(group&&group[1]==='--build')){
 			if(group){groups.push(group);}
 			group=[process.argv[0]];
 		}
