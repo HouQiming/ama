@@ -1,12 +1,15 @@
 'use strict';
 
 /*
-#filter Enable Python-style `if foo:` / `for foo:` / ... for C / C++ / Javascript.
+#filter Enable Python-style `if foo:` / `for foo:` / ... in C / C++ / Javascript.
 This filter will add '()' and `{}` automatically.
   
 Before:
 ```C++
 int main() {
+	if rand()&1:{
+		puts("rand()&1");
+	}
 	for int i=0;i<10;i++
 		printf("iteration %d\n",i);
 	return 0;

@@ -92,12 +92,15 @@ Here is a list of filters intended for the `features` option of `bisync`.
 
 ### auto_paren
 
-`require("auto_paren")` Enable Python-style `if foo:` / `for foo:` / ... for C / C++ / Javascript..
+`require("auto_paren")` Enable Python-style `if foo:` / `for foo:` / ... in C / C++ / Javascript..
 
 This filter will add '()' and `{}` automatically.    Before:
 
 ```C++
 int main() {
+	if rand()&1:{
+		puts("rand()&1");
+	}
 	for int i=0;i<10;i++
 		printf("iteration %d\n",i);
 	return 0;
@@ -108,6 +111,9 @@ After:
 
 ```C++
 int main() {
+	if (rand() & 1) {
+		puts("rand()&1");
+	}
 	for (int i = 0;i < 10;i++) { 
 		printf("iteration %d\n", i);
 	}
@@ -160,6 +166,40 @@ After:
 ```C++
 int main() {
 	puts("hello world");
+	return 0;
+}
+```
+
+### cpp/sane_for
+
+`require("cpp/sane_for")` Extend C++ `for` syntax with `for(foo of bar)` and `for(i<foo)`.
+
+Before:
+
+```C++
+int main() {
+	std::vector<int> a;
+	for(int i<10){
+		a.push_back(i);
+	}
+	for(int i in a){
+		std::cout<<i;
+	}
+	return 0;
+}
+```
+
+After:
+
+```C++
+int main() {
+	std::vector<int> a;
+	for (int i = 0; i < 10; i++) {
+		a.push_back(i);
+	}
+	for (int i : a) {
+		std::cout << i;
+	}
 	return 0;
 }
 ```
