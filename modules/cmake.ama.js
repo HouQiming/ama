@@ -202,6 +202,9 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 				break;
 			}
 			if (dir_git) {break;}
+			let dir_next = path.dirname(dir);
+			if (dir_next == dir) {break;}
+			dir = dir_next;
 		}
 		if (dir_git && !fn_cmake) {
 			fn_cmake = path.join(dir_git, 'CMakeLists.txt');
@@ -325,6 +328,13 @@ Node.CMakeEnsureCommand = function(nd_command) {
 };
 
 let g_main_functions = new Set(['main', 'WinMain', 'DllMain']);
+/*
+#filter Create cmake build files for C/C++ source
+This filter only applies to files containing a main function.
+It will create a build target for that file and a wrapping `CMakeLists.txt` if it can't find one.
+If there is already a build target, it will search for dependent files and update the source file list when necessary.
+Non-include dependency can be added with `#pragma add("c_files","./foo.c")`.
+*/
 cmake.AutoCreate = function(nd_root, options) {
 	if (!nd_root.FindAll(N_FUNCTION).filter(nd => g_main_functions.has(nd.data)).length) {return;}
 	options.nd_cmake = nd_root.CreateCXXCMakeTarget(options.cmakelist_path);

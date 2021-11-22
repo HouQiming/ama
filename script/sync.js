@@ -12,11 +12,9 @@ function FixAMAJS(){
 	const auto_paren=require('auto_paren');
 	const auto_semicolon=require('auto_semicolon');
 	process.chdir(path.join(__dirname,'../modules'));
-	//for(let fn_rel_amajs of pipe.runPiped(process.platform==='win32'?'dir /s /b *.ama.js':"find -iname '*.ama.js'").stdout.split('\n'))
-	for(let fn_rel_amajs of fsext.FindAllFiles(path.join(__dirname,'../modules'))){
-		//if(!fn_rel_amajs){continue;}
-		if(!fn_rel_amajs.endsWith('.ama.js')){continue;}
-		let fn=path.resolve(__dirname,'../modules',fn_rel_amajs);
+	for(let fn_abs_amajs of fsext.FindAllFiles(path.join(__dirname,'../modules'))){
+		if(!fn_abs_amajs.endsWith('.ama.js')){continue;}
+		let fn=path.resolve(__dirname,'../modules',fn_abs_amajs);
 		let nd_root=ParseCode(fs.readFileSync(fn));
 		if(nd_root){
 			nd_root.data=fn;
