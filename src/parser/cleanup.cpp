@@ -40,7 +40,9 @@ namespace ama {
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
 				if ( nd->c->comments_before.size() ) {
 					nd->comments_before = (nd->comments_before + nd->c->comments_before);
+					nd->AdjustIndentLevel(nd->c->indent_level);
 					nd->c->comments_before = "";
+					nd->c->indent_level = 0;
 				}
 			}
 			if ( nd->c && 

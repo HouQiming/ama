@@ -173,7 +173,7 @@ function GenerateDocuments(){
 	let module_section=[];
 	let module_filter=[];
 	let dir_modules=path.resolve(__dirname,'../modules');
-	for (let fn of fsext.FindAllFiles(dir_modules)) {
+	for (let fn of fsext.FindAllFiles(dir_modules).sort()) {
 		if (!fn.endsWith('.js')) {continue;}
 		let nd_root = depends.LoadFile(fn);
 		if (!nd_root) {continue;}
