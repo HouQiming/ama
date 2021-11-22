@@ -124,7 +124,7 @@ namespace DumpStack {
 	}
 	
 	void EnableDump() {
-		struct sigaction sa= {};
+		struct sigaction sa = {};
 		//////////
 		memset(&sa, 0, sizeof(struct sigaction));
 		sigemptyset(&sa.sa_mask);

@@ -56,8 +56,8 @@ module.exports = function Bisync(options) {
 			p_inverse.push(item);
 		}
 		//we cannot edit the default pipeline: it's used in depends
-		script_ama2cpp = '__pipeline=GetPipelineFromFilename(__filename,__global.inverse_pipeline);';
-		script_cpp2ama = '__pipeline=GetPipelineFromFilename(__filename,__global.forward_pipeline);/*ignore per-file scripts*/return;';
+		script_ama2cpp = '__pipeline=GetPipelineFromFilename(__filename,__global.forward_pipeline);';
+		script_cpp2ama = '__pipeline=GetPipelineFromFilename(__filename,__global.inverse_pipeline);/*ignore per-file scripts*/return;';
 		__global.inverse_pipeline = p_inverse;
 		__global.forward_pipeline = p_forward;
 	} else {

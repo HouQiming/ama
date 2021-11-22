@@ -102,7 +102,7 @@ ama::gcstring ama::gcscat(std::span<char> a, std::span<char> b) {
 		union{
 			uint64_t v{};
 			char s[8];
-		}u{};
+		}u;
 		u.v = 0;
 		memcpy(u.s, a.data(), a.size());
 		memcpy(u.s + a.size(), b.data(), b.size());
