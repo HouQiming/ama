@@ -11,7 +11,7 @@ If you `#include "./foo.hpp"` in `foo.cpp`, this filter will also add function f
 Use `#pragma no_auto_header()` to suppress this behavior.
 
 Before:
-```
+```C++
 struct TestClass{
 	int a;
 };

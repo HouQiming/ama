@@ -210,11 +210,11 @@ To use this filter, you need to:
 ```
 And add `json.cpp` to your project. For each class you wish to stringify or parse, add:
 ```C++
-#pragma gen(JSON::stringify<YourClass>)
+#pragma gen(JSON.stringify<YourClass>)
 ```
 or
 ```C++
-#pragma gen(JSON::parse<YourClass>)
+#pragma gen(JSON.parse<YourClass>)
 ```
 in a file with this filter enabled. The pragmas will be translated to stringify / parse implementation.
 If the class is in the same file as the `JSON.foo`, the pragma can be omitten.

@@ -1,6 +1,6 @@
 'use strict';
 /*
-#filter Indent-based scoping for C++ 
+#filter Indent-based scoping for C / C++ / Javascript 
 Before:
 ```C++
 int main()

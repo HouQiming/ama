@@ -1,5 +1,6 @@
 ### 【short_usage】
 
-`【usage】` 【brief】.
+- Syntax: `【usage】`
+- Description: 【brief】
 
 【description】

@@ -18,7 +18,7 @@ function CleanupDocString(s){
 	for(let line of s.split('\n')){
 		//if(line.match(/^[* \t/]+$/)){continue;}
 		if(line==='/*'||line==='*/'){continue;}
-		if(!in_code){line=line.replace(/^[ \t]*[/]+/,'');}
+		line=line.replace(/^[ \t]*[/]+/,'');
 		if(line.indexOf('```')>=0){
 			if(cur_paragraph.length){
 				paragraphs.push(cur_paragraph.join(' ').replace(/[ \t]+/,' ').trim()+'\n');
@@ -215,7 +215,7 @@ function GenerateDocuments(){
 				if(feature.setup){pipeline.unshift(feature.setup);}
 				pipeline.unshift({full_path:fn+'.audit.js'});
 				pipeline.push(feature);
-				let code_after=ParseCode(code_before,pipeline).toSource().replace(/[\n]*$/,'\n');
+				let code_after=ParseCode(code_before,pipeline).toSource().replace(/[\n]*$/,'\n').replace(/[ \t]*\/\/.*?\n/g,'');
 				//example code: apply twice and see
 				let p_after=description.indexOf('\n',p_example_end);
 				description=[

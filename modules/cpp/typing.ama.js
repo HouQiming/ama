@@ -685,7 +685,7 @@ typing.DeduceAutoTypedDef = function(nd_def) {
 };
 
 /*
-#filter Replace C++ `auto` with the deduced type whenever possible.
+#filter Replace C++ `auto` with the deduced type whenever possible
 This filter is intended for source feedback, i.e., save the deduction result to a file later.
 The deduction is backed by ama's simple typing engine so the result may not be available or correct.
 */

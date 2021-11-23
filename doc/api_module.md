@@ -13,13 +13,13 @@ Here is a list of modules for ama script development.
 Bidirectional synchronization system. Usage with default option values:
 
 ```Javascript
-//require('bisync')({
-//    dir_src: path.resolve(__dirname, '../src'),
-//    middle_extension: '.ama',
-//    processed_extensions: ['.cpp','.hpp','.cu'],
-//    filters: [],
-//})
-//```
+require('bisync')({
+    dir_src: path.resolve(__dirname, '../src'),
+    middle_extension: '.ama',
+    processed_extensions: ['.cpp','.hpp','.cu'],
+    filters: [],
+})
+```
 
 The module will search for all files with `processed_extensions` in `dir_src`. It will apply filters specified in `filters` to files with `middle_extension` (e.g. `foo.ama.cpp`) to generate the corresponding non-ama file (e.g. `foo.cpp`). When available, it will also apply the inverse version of the filters to generate ama files from non-ama files. Between each pair of ama and non-ama files, `bisync` will always synchronize the the newer file's content to its older counterpart.
 
@@ -106,7 +106,8 @@ Put an option object `{change_ext:'.foo'}` before `"Save"` to save the changes u
 
 ### auto_paren
 
-`require("auto_paren")` Enable Python-style `if foo:` / `for foo:` / ... in C / C++ / Javascript..
+- Syntax: `require("auto_paren")`
+- Description: Enable Python-style `if foo:` / `for foo:` / ... in C / C++ / Javascript.
 
 This filter will add '()' and `{}` automatically. Before:
 
@@ -137,7 +138,8 @@ int main() {
 
 ### auto_semicolon
 
-`require("auto_semicolon")` Automatically add ';' for C / C++ / Javascript..
+- Syntax: `require("auto_semicolon")`
+- Description: Automatically add ';' for C / C++ / Javascript.
 
 Before:
 
@@ -159,13 +161,15 @@ int main() {
 
 ### cmake.AutoCreate
 
-`require("cmake").AutoCreate` Create cmake build files for C/C++ source.
+- Syntax: `require("cmake").AutoCreate`
+- Description: Create cmake build files for C/C++ source
 
 This filter only applies to files containing a main function. It will create a build target for that file and a wrapping `CMakeLists.txt` if it can't find one. If there is already a build target, it will search for dependent files and update the source file list when necessary. Non-include dependency can be added with `#pragma add("c_files","./foo.c")`.
 
 ### cpp/asset
 
-`require("cpp/asset")` Pull in an external file to a zero-terminated C constant array..
+- Syntax: `require("cpp/asset")`
+- Description: Pull in an external file to a zero-terminated C constant array.
 
 Before:
 
@@ -185,7 +189,8 @@ static const uint8_t _doc_asset[]={
 
 ### cpp/auto_decl
 
-`require("cpp/auto_decl")` Automatically declare variables on assignment.
+- Syntax: `require("cpp/auto_decl")`
+- Description: Automatically declare variables on assignment
 
 Before:
 
@@ -219,7 +224,8 @@ int main(int argc) {
 
 ### cpp/auto_dot
 
-`require("cpp/auto_dot")` Automatically deduce `->` or `::` from `.`.
+- Syntax: `require("cpp/auto_dot")`
+- Description: Automatically deduce `->` or `::` from `.`
 
 Before:
 
@@ -245,13 +251,14 @@ ama::Node* GetChild(ama::Node* nd) {
 
 ### cpp/auto_header
 
-`require("cpp/auto_header")` Synchronize methods and functions to classes and headers.
+- Syntax: `require("cpp/auto_header")`
+- Description: Synchronize methods and functions to classes and headers
 
 If you `#include "./foo.hpp"` in `foo.cpp`, this filter will also add function forward declarations to `foo.hpp`. Use `#pragma no_auto_header()` to suppress this behavior.
 
 Before:
 
-```
+```C++
 struct TestClass{
 	int a;
 };
@@ -265,7 +272,7 @@ void TestClass::set_a(int a){
 
 After:
 
-```
+```C++
 struct TestClass {
 	int a;
 	int get_a();
@@ -281,7 +288,8 @@ void TestClass::set_a(int a) {
 
 ### cpp/cpp_indent
 
-`require("cpp/cpp_indent")` Indent-based scoping for C++.
+- Syntax: `require("cpp/cpp_indent")`
+- Description: Indent-based scoping for C / C++ / Javascript
 
 Before:
 
@@ -302,7 +310,8 @@ int main() {
 
 ### cpp/gentag.GeneratedCode
 
-`require("cpp/gentag").GeneratedCode` Generic inverse filter for things like `jsism.EnableJSON`.
+- Syntax: `require("cpp/gentag").GeneratedCode`
+- Description: Generic inverse filter for things like `jsism.EnableJSON`
 
 This filter replaces code inside:
 
@@ -321,7 +330,8 @@ We recommend custom filters that generate C++ to follow this convention to put g
 
 ### cpp/jsism.EnableConsole
 
-`require("cpp/jsism").EnableConsole` Translate `console.log` to `std::cout << foo`.
+- Syntax: `require("cpp/jsism").EnableConsole`
+- Description: Translate `console.log` to `std::cout << foo`
 
 The filter also supports some Javascript formatting methods like `toFixed` and `padStart`. Before:
 
@@ -346,7 +356,8 @@ int main() {
 
 ### cpp/jsism.EnableJSON
 
-`require("cpp/jsism").EnableJSON` Enable `JSON.stringify` and `JSON.parse<T>` in C++.
+- Syntax: `require("cpp/jsism").EnableJSON`
+- Description: Enable `JSON.stringify` and `JSON.parse<T>` in C++
 
 To use this filter, you need to:
 
@@ -357,13 +368,13 @@ To use this filter, you need to:
 And add `json.cpp` to your project. For each class you wish to stringify or parse, add:
 
 ```C++
-#pragma gen(JSON::stringify<YourClass>)
+#pragma gen(JSON.stringify<YourClass>)
 ```
 
 or
 
 ```C++
-#pragma gen(JSON::parse<YourClass>)
+#pragma gen(JSON.parse<YourClass>)
 ```
 
 in a file with this filter enabled. The pragmas will be translated to stringify / parse implementation. If the class is in the same file as the `JSON.foo`, the pragma can be omitten.
@@ -397,7 +408,6 @@ struct Test {
 namespace JSON {
 	template <>
 	struct StringifyToImpl<Test> {
-		//`type` is only used for SFINAE
 		typedef void type;
 		template <typename T = Test>
 		static void stringifyTo(std::string& buf, Test const& a) {
@@ -418,7 +428,8 @@ int main() {
 
 ### cpp/jsism.EnableJSLambdaSyntax
 
-`require("cpp/jsism").EnableJSLambdaSyntax` Enable Javascript `()=>{}` syntax for C++ lambda.
+- Syntax: `require("cpp/jsism").EnableJSLambdaSyntax`
+- Description: Enable Javascript `()=>{}` syntax for C++ lambda
 
 Before:
 
@@ -434,7 +445,8 @@ std::sort(a.begin(), a.end(), [&](int x, int y) {return x < y;});
 
 ### cpp/jsism.EnableSingleQuotedStrings
 
-`require("cpp/jsism").EnableSingleQuotedStrings` Enable single-quoted strings for C/C++.
+- Syntax: `require("cpp/jsism").EnableSingleQuotedStrings`
+- Description: Enable single-quoted strings for C/C++
 
 Do not use this filter if you need multi-char constants.
 
@@ -452,7 +464,8 @@ puts("hello world");
 
 ### cpp/line_sync
 
-`require("cpp/line_sync")` Allow using `#line __AMA_LINE__` to synchronize object file line numbers to `foo.ama.cpp`.
+- Syntax: `require("cpp/line_sync")`
+- Description: Allow using `#line __AMA_LINE__` to synchronize object file line numbers to `foo.ama.cpp`
 
 The filter simply replaces `__AMA_LINE__` with actual line numbers. Before:
 
@@ -476,7 +489,8 @@ int main() {
 
 ### cpp/move_operator
 
-`require("cpp/move_operator")` Use prefix `<<` for `std::move`.
+- Syntax: `require("cpp/move_operator")`
+- Description: Use prefix `<<` for `std::move`
 
 Before:
 
@@ -500,7 +514,8 @@ std::string MakeSomeString() {
 
 ### cpp/sane_export
 
-`require("cpp/sane_export")` Default global functions to `static` unless specified as `public`.
+- Syntax: `require("cpp/sane_export")`
+- Description: Default global functions to `static` unless specified as `public`
 
 Before:
 
@@ -522,7 +537,8 @@ int main(int argc) {
 
 ### cpp/sane_for
 
-`require("cpp/sane_for")` Extend C++ `for` syntax with `for(foo of bar)` and `for(i<foo)`.
+- Syntax: `require("cpp/sane_for")`
+- Description: Extend C++ `for` syntax with `for(foo of bar)` and `for(i<foo)`
 
 Before:
 
@@ -556,7 +572,8 @@ int main() {
 
 ### cpp/sane_init
 
-`require("cpp/sane_init")` Zero-initialize otherwise-uninitialized C++ variables.
+- Syntax: `require("cpp/sane_init")`
+- Description: Zero-initialize otherwise-uninitialized C++ variables
 
 Before:
 
@@ -586,13 +603,15 @@ int main() {
 
 ### cpp/sane_types.FixArrayTypes
 
-`require("cpp/sane_types").FixArrayTypes` Mark `[]` as a type suffix, a required setup step for `require("sane_types")`.
+- Syntax: `require("cpp/sane_types").FixArrayTypes`
+- Description: Mark `[]` as a type suffix, a required setup step for `require("sane_types")`
 
 The filter itself has no visible effect and must be used before `require("sane_types")`.
 
 ### cpp/sane_types
 
-`require("cpp/sane_types")` Short names for C++ template types.
+- Syntax: `require("cpp/sane_types")`
+- Description: Short names for C++ template types
 
 Correspondence:
 
@@ -623,7 +642,8 @@ int main() {
 
 ### cpp/short_types
 
-`require("cpp/short_types")` Short numerical type names for C++.
+- Syntax: `require("cpp/short_types")`
+- Description: Short numerical type names for C++
 
 Before:
 
@@ -645,13 +665,15 @@ intptr_t addr_powi = (intptr_t)(void*)powi;
 
 ### cpp/typing.DeduceAuto
 
-`require("cpp/typing").DeduceAuto` Replace C++ `auto` with the deduced type whenever possible..
+- Syntax: `require("cpp/typing").DeduceAuto`
+- Description: Replace C++ `auto` with the deduced type whenever possible
 
 This filter is intended for source feedback, i.e., save the deduction result to a file later. The deduction is backed by ama's simple typing engine so the result may not be available or correct.
 
 ### cpp/unified_null
 
-`require("cpp/unified_null")` Use `NULL` for `nullptr`.
+- Syntax: `require("cpp/unified_null")`
+- Description: Use `NULL` for `nullptr`
 
 Before:
 
