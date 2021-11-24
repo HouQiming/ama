@@ -25,6 +25,12 @@ The module will search for all files with `processed_extensions` in `dir_src`. I
 
 See [the filters section](#-filters) for possible filters.
 
+### cpp/c_for
+
+`const c_for = require("cpp/c_for");`
+
+Parser for C `for(init;cond;iter){}` loops
+
 ### fs
 
 `const fs = require("fs");`
@@ -49,14 +55,6 @@ Provided methods:
 
 - `fsext.FindAllFiles(dir)`: recursively find files in dir and return an array of absolute paths
 - `fsext.SyncTimestamp(fn_src, fn_tar)`: make the timestamps of `fn_src` and `fn_tar` identical
-
-### omnichecker
-
-`const omnichecker = require("omnichecker");`
-
-Generic checker for module invariance.
-
-Note: this module is currently experimental.
 
 ### path
 

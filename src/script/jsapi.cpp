@@ -866,7 +866,8 @@ namespace ama {
 		//run the script in a temporary context
 		JSContext* sbctx = JS_NewContext(g_sandbox_runtime);
 		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "Sandbox", JS_DupValue(sbctx, g_sandbox_object));
-		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "console", JS_DupValue(sbctx, g_sandbox_object));
+		//JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "console", JS_DupValue(sbctx, g_sandbox_object));
+		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "__global", JS_GetGlobalObject(sbctx));
 		std::span<char> code = ama::UnwrapStringSpan(argv[0]);
 		JSValueConst ret = JS_Eval(
 			sbctx, code.c_str(),
