@@ -378,8 +378,9 @@ namespace ama {
 							if ( ndi0_next == ndi ) {
 								ndi0_next = nullptr;
 							}
+							ndi->Prev()->MergeCommentsAfter(ndi); 
 							ndi0->ReplaceUpto(ndi, nd_tmp);
-							if ( j == 0 ) { ndi->BreakSelf(); }
+							if ( j == 0 ) {ndi->BreakSelf();}
 							ama::Node* nd_child = ama::CreateNode(ama::N_RAW, ndi0_next);
 							nd_child->flags = uint32_t('<') | uint32_t('>') << 8;
 							nd_tmp->ReplaceWith(nd_child);

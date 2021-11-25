@@ -178,6 +178,20 @@ namespace ama {
 					//call
 					ndi = TranslatePostfixCall(ndi);
 					continue;
+				} else if (ndi_next && ndi_next->isSymbol("<<<")) {
+					ama::Node* ndj = nullptr;
+					for (ndj = ndi_next->s; ndj; ndj = ndj->s) {
+						if (ndj->isSymbol(">>>")) {break;}
+					}
+					if ((ndj && ndj != ndi_next->s)) {
+						ama::Node* nd_tmp = ama::GetPlaceHolder();
+						ndi_next->ReplaceUpto(ndj, nd_tmp);
+						ndj->Unlink();
+						ndi_next = nd_tmp->ReplaceWith(ama::toSingleNode(ndi_next->BreakSibling()));
+						ndi = TranslatePostfixCall(ndi);
+						ndi->node_class = ama::N_CALL_CUDA_KERNEL;
+					}
+					continue;
 				}
 				ndi = ndi_next;
 			}
