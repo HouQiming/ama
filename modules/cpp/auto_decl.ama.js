@@ -51,6 +51,8 @@ function Translate(nd_root, options) {
 	let locally_undeclared = [];
 	for (let nd_ref of all_refs) {
 		if (nd_ref.flags & REF_DECLARED) {continue;}
+		let nd_owning_kwstmt = nd_ref.Owning(N_KEYWORD_STATEMENT);
+		if (nd_owning_kwstmt && nd_owning_kwstmt.data == 'using') {continue;}
 		let declared = 0;
 		for (let nd_scope = nd_ref; nd_scope; nd_scope = nd_scope.p) {
 			let ctx = scope_to_context.get(nd_scope);

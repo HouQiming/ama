@@ -24,7 +24,7 @@ omnichecker.CreateTestingCode = function CreateTestingCode(nd_root, options) {
 		enable_warnings: 1,
 		enable_shim: 1,
 	}), options);
-	assert((options.language) == 'js');
+	assert(options.language == 'js');
 	//setup a default property for function possibilities
 	options.properties.unshift({
 		name: 'f',
@@ -412,4 +412,8 @@ omnichecker.CreateTestingCode = function CreateTestingCode(nd_root, options) {
 };
 
 //TODO: actual check as a pipeline stage: options merging
+//TODO: later: individual checks as pipeline stages? implicit eventual check / save
 //TODO: dependency between checks: nullability on condition set
+omnichecker.Check = function Check(nd_root, ...options) {
+	//TODO
+};

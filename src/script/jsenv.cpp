@@ -144,9 +144,9 @@ namespace ama {
 		}
 		return std::move(ret);
 	}
-	JSValue InheritOptions(JSValueConst options) {
-		return JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__InheritOptions"), 1, &options);
-	}
+	//JSValue InheritOptions(JSValueConst options) {
+	//	return JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "__InheritOptions"), 1, &options);
+	//}
 	JSValue CallJSMethod(JSValue this_val, char const* name, std::span<JSValue> args) {
 		JSAtom atom = JS_NewAtom(ama::jsctx, name);
 		JSValue ret = JS_Invoke(jsctx, this_val, atom, int(args.size()), args.data());

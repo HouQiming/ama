@@ -212,6 +212,7 @@ Node.Save = function(/*optional*/options) {
 	}
 	let content = this.toSource(options);
 	let name = options.full_path || this.data;
+	//console.log(name,options);
 	__writeFileSync(name, content);
 	return this;
 }

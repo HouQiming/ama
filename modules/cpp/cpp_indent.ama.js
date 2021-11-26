@@ -37,4 +37,8 @@ module.exports = function DropCPPCommandScopes(nd_root) {
 		nd_stmt.Insert(POS_AFTER, nd_statements);
 	}
 };
-module.exports.setup = {parse_indent_as_scope: 1,auto_curly_bracket: 1,parse_indent_as_scope_but_merge_cpp_ctor_lines: 1};
+module.exports.setup = function(code, options) {
+	if (code.indexOf('@' + 'disable_cpp_indent') >= 0) {return;}
+	Object.assign(options, {parse_indent_as_scope: 1,auto_curly_bracket: 1,parse_indent_as_scope_but_merge_cpp_ctor_lines: 1});
+};
+
