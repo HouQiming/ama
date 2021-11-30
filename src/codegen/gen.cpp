@@ -383,7 +383,6 @@ namespace ama {
 	}
 	//this is exposed to JS with a non-standard wrapper, so make it a non-method
 	std::string GenerateCode(ama::Node* nd, JSValueConst options) {
-		//options = ama::InheritOptions(options);
 		ama::CodeGenerator ctx{};
 		ctx.tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "tab_width"), 4);
 		ctx.auto_space = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "auto_space"), 1);

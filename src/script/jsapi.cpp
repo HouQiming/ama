@@ -508,7 +508,6 @@ namespace ama {
 	static JSValueConst JSApplyNodeFilter(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv, int magic) {
 		if ( g_filters[magic].fo ) {
 			JSValue options = argc >= 1 ? argv[0] : JS_UNDEFINED;
-			//options = ama::InheritOptions(options);
 			return ama::WrapNode(g_filters[magic].fo(ama::UnwrapNode(this_val), options));
 		} else {
 			return ama::WrapNode(g_filters[magic].f(ama::UnwrapNode(this_val)));

@@ -384,6 +384,9 @@ namespace ama {
 							ama::Node* nd_child = ama::CreateNode(ama::N_RAW, ndi0_next);
 							nd_child->flags = uint32_t('<') | uint32_t('>') << 8;
 							nd_tmp->ReplaceWith(nd_child);
+							for (ama::Node* ndj = nd_child->c; ndj; ndj = ndj->s) {
+								ndj->AdjustIndentLevel(-nd_child->indent_level);
+							}
 							//////////
 							ndi0->p = nullptr; ndi0->s = nullptr; ndi0->FreeASTStorage();
 							if ( j == 0 ) {

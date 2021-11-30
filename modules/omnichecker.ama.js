@@ -402,7 +402,6 @@ omnichecker.CreateTestingCode = function CreateTestingCode(nd_root, options) {
 				Sandbox.queue.push(item);
 			});
 		//TODO: wrap up - return the errors
-	
 	}
 	for (let nd_binop of nd_gen.FindAll(N_BINOP)) {
 		if (nd_binop.data == '==') {nd_binop.data = '===';} else
