@@ -501,6 +501,7 @@ __global.__GetFilterByName=function(name) {
 			return nd[name](options);
 		}
 	}
+	if(name.startsWith('{')){return JSON.parse(name);}
 	let parts=name.split('.');
 	if(parts.length>=1){
 		let obj=__require(__init_js_path,parts[0]);
