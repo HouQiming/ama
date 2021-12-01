@@ -323,6 +323,21 @@ function Generate(version,nd_root) {
 	].join('');
 	//JS node builders are created in JS
 	nd_root.Find(N_CALL,'gen').c.data='gen_begin';
+	//////////
+	const fs = require('fs');
+	const fsext = require('fsext');
+	const depends = require('depends');
+	let dir_modules=path.resolve(__dirname,'../../modules');
+	let module_files=[];
+	code_func.push('char const *g_builtin_modules[] = {');
+	for (let fn of fsext.FindAllFiles(dir_modules).sort()) {
+		if (!fn.endsWith('.js')) {continue;}
+		let fn_rel=path.relative(dir_modules,fn).replace(/\\/g,'/');
+		code_func.push('\n\t',JSON.stringify(fn_rel),', ',JSON.stringify(fs.readFileSync(fn).toString()),',');
+	}
+	code_func.push('\n\tNULL, NULL');
+	code_func.push('\n};\n');
+	//////////
 	code_func.push(
 		'void GeneratedJSBindings(){\n',
 		code.join(''),

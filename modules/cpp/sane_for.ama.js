@@ -15,7 +15,7 @@ int main() {
 }
 ```
 */
-module.exports = function Transform(nd_root) {
+module.exports = function(nd_root) {
 	for (let nd_for of nd_root.FindAll(N_SCOPED_STATEMENT, 'for')) {
 		let nd_range = nd_for.c;
 		if (nd_range.node_class == N_PAREN || nd_range.node_class == N_LABELED) {

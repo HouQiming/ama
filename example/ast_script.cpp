@@ -1,3 +1,4 @@
+//Script feature demo
 //use #if 0 to syntax-highlight the script code
 #if 0
 	@ama

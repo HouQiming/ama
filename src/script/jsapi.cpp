@@ -76,6 +76,12 @@ namespace ama {
 		std::string their_extname = unicode::toLowerASCII(path::extname(fn));
 		JC::StringOrError s_code = fs::readFileSync(fn);
 		if ( !s_code ) {
+			//builtin modules
+			for (char const** ps = ama::g_builtin_modules; *ps; ps += 2) {
+				if (strncmp(fn.data(), ps[0], fn.size()) == 0) {
+					return std::string(ps[1]);
+				}
+			}
 			//console::error('failed to read', fn);
 			return std::string();
 		}
@@ -1200,20 +1206,22 @@ namespace ama {
 		if ( fn_initjs.empty() ) {
 			fn_initjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir_global, path::sep, "_init.js"))));
 		}
+		JC::StringOrError bootstrap_code(1);
 		if ( fn_initjs.empty() ) {
 			//we NEED that
-			fprintf(stderr, "panic: failed to find ${AMA_MODULES}/_init.js\n");
-			abort();
+			fn_initjs = "_init";
+			bootstrap_code.some = GetScriptJSCode("_init");
+			bootstrap_code.error = 0;
 		} else {
-			JS_SetPropertyStr(ama::jsctx, global, "__init_js_path", ama::WrapString(fn_initjs));
-			JC::StringOrError bootstrap_code = fs::readFileSync(fn_initjs);
-			JSValueConst ret = JS_Eval(
-				ama::jsctx, bootstrap_code->c_str(),
-				bootstrap_code->size(), fn_initjs.c_str(), JS_EVAL_TYPE_GLOBAL
-			);
-			if ( JS_IsException(ret) ) {
-				ama::DumpError(ama::jsctx);
-			}
+			bootstrap_code = fs::readFileSync(fn_initjs);
+		}
+		JS_SetPropertyStr(ama::jsctx, global, "__init_js_path", ama::WrapString(fn_initjs));
+		JSValueConst ret = JS_Eval(
+			ama::jsctx, bootstrap_code->c_str(),
+			bootstrap_code->size(), fn_initjs.c_str(), JS_EVAL_TYPE_GLOBAL
+		);
+		if ( JS_IsException(ret) ) {
+			ama::DumpError(ama::jsctx);
 		}
 	}
 	void LazyInitScriptEnv() {

@@ -2,14 +2,56 @@
 
 A system to amalgamate any features you want into any language you need, while still interacting with upstream in the original language.
 
-The project itself is an example. You can build this repository in plain C++11, but it's actually developed in a different dialect. Try building it and run `script/sync.js`, then check the generated `*.ama.cpp`.
+For example, we could write a `fizzbuzz.cpp` like this:
+
+```Python
+int main()
+  for i<10
+    if i%3==0
+      console.log("FizzBuzz");
+    else if i%3==0
+      console.log("Fizz");
+    else if i%5==0
+      console.log("Buzz");
+    else
+      console.log(i);
+  return 0
+```
+
+And run:
+```sh
+ama -f cpp/cpp_indent -f auto_paren \
+    -f cpp/sane_for -f cpp/jsism.EnableConsole \
+    fizzbuzz.cpp
+```
+
+To get:
+```C++
+#include <iostream>
+int main() {
+  for (auto i = 0; i < 10; i++) {
+    if (i % 3 == 0 && i % 5 == 0) {
+      std::cout << ("FizzBuzz") << std::endl;
+    } else if (i % 3 == 0) {
+      std::cout << ("Fizz") << std::endl;
+    } else if (i % 5 == 0) {
+      std::cout << ("Buzz") << std::endl;
+    } else {
+      std::cout << (i) << std::endl;
+    }
+  }
+  return 0
+}
+```
+
+The project itself is a bigger example. You can build this repository with plain C++11, but it's actually developed in a different dialect. Try building it and run `script/sync.js`, then check the generated `*.ama.cpp`.
 
 Key features:
-- **Zero setup** The system can parse any code as is, even if it's unbuildable or riddled with `#define` macros. It will parse whatever it understands and let unrecognized syntax pass through unchanged.
-- **Zero disruption** Amalang lets you develop in a different language or work flow than you deliver. You can start or quit at any time you choose in any project you need, without disrupting upstream at all.
-- **Simple API** Most work only involves simple Javascript manipulating objects of one class `Node`. No need to learn special programming patterns or compiler theory.
+- **Works on anything** The system can process any code as is. It will parse whatever it understands and let unrecognized syntax pass through unchanged.
+- **Bidirectional** Many filters have an inverse version so you can translate upstream to your favorite dialect, develop there, then translate them back before committing. You can start or quit Amalang at any time you choose in any project you need.
+- **Extensible** Filters are written in a very simple Javascript API.
 
-Works best on languages with a reasonable resemblance to C. And that includes Python. See `example/` to see Amalang in action.
+Works best on languages with a reasonable resemblance to C. That includes Python. See `example/` to see more of Amalang in action.
 
 ## How to Use
 
@@ -23,7 +65,6 @@ cd build
 cmake ..
 make
 cd ..
-ln -s "$(pwd)/modules" ~/.ama_modules
 build/ama script/sync.js
 ```
 
@@ -35,15 +76,14 @@ cd build
 cmake ..
 cmake --build .
 cd ..
-xcopy /e /y modules %USERPROFILE%\.ama_modules
 build\ama script\sync.js
 ```
 
 ### Start with a Single File
 
-To quickly try out the features, add a comment with `@ama` and some Javascript to a source code file, then pass that file to `ama`.
+To quickly try out the features, run `ama --help` to see a list of filters and use `ama -f <filter> <file>` to try one.
 
-See `example/hello_world.cpp` for a simple tutorial. See `example/cmake` for an automatic C++ build / run setup.
+For bigger tasks, add some Javascript to your code under an `@ama` tag. See `example/hello_world.cpp` for a simple tutorial. See `example/cmake` for an automatic C++ build / run setup.
 
 ### Configure an Existing Project
 

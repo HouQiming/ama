@@ -1,11 +1,26 @@
 # Document for Contributors
 
-## Efforts Needed
+## TODOs
 
 - More creative ways of language customization
 - Better documentation
 - Better support of not-so-C-like languages
 - Project setup scripts: Visual Studio, cmake, scattered C++ files
+
+## Rebuild-Free Module Development
+
+By default, all modules files are converted into a constant array in `jsgen.ama.cpp` and built into the binary. To debug modules without rebuilding, we need to create a development symlink to the modules directory. Once the link is created, module files inside would override the built-in versions.
+
+#### Unix
+```sh
+ln -s "$(pwd)/modules" ~/.ama_modules
+```
+
+#### Windows
+
+```bat
+mklink /d %USERPROFILE%\.ama_modules modules
+```
 
 ## C++11 Dialect for Development
 

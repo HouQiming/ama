@@ -1,9 +1,3 @@
-/*
-@ama
-let nd_root=ParseCurrentFile();
-console.log(JSON.stringify(nd_root,null,1));
-console.log(nd_root.toSource());
-*/
 #include "cutlass/cutlass.h"
 #include "cutlass/gemm/device/gemm.h"
 #include "cutlass/gemm/kernel/default_gemm.h"

@@ -75,7 +75,4 @@ endif()
 
 install(TARGETS ama DESTINATION bin)
 install(TARGETS amal DESTINATION lib)
-install(
-  DIRECTORY modules/
-  DESTINATION share/ama_modules
-)
+#install(DIRECTORY modules/ DESTINATION share/ama_modules)
