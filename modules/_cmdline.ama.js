@@ -3,12 +3,45 @@
 let _cmdline = module.exports;
 
 _cmdline.help = function(argv) {
-	console.log("  ama [-s script] [files]      = process [files] with [script]");
+	console.log([
+		"  ama [options] files          = process files with options",
+		"      -f filter                = add a filter",
+		"      -o path                  = write output to path",
+		"      -s script                = run the script",
+	].join('\n'));
 	for (let key in _cmdline) {
 		if (_cmdline[key].usage) {
 			console.log([
 				'  ama --', key, _cmdline[key].usage,
 			].join(''));
+		}
+	}
+	console.log('\nList of filters:');
+	const path = require('path');
+	const fs = require('fs');
+	const fsext = require('fsext');
+	const depends = require('depends');
+	for (let fn of fsext.FindAllFiles(__dirname).sort()) {
+		if (!fn.endsWith('.js')) {continue;}
+		let nd_root = depends.LoadFile(fn);
+		if (!nd_root) {continue;}
+		for (let nd_func of nd_root.FindAll(N_FUNCTION)) {
+			let s = nd_func.ParentStatement().comments_before;
+			let p_filter = s.indexOf('#filter');
+			if (p_filter < 0) {continue;}
+			let fn_require = path.relative(__dirname, fn).replace(/[.].*/, '');
+			let name = nd_func.data;
+			if (!name && nd_func.p.node_class == N_ASSIGNMENT) {
+				name = nd_func.p.c.GetName();
+			}
+			if (name == 'Translate') {name = '';}
+			if (name == 'exports') {name = '';}
+			if (name) {
+				fn_require = fn_require + '.' + name;
+			}
+			let pnewline = s.indexOf('\n', p_filter);
+			let brief = s.substr(p_filter + 7, pnewline - p_filter - 7).trim();
+			console.log(['  ', fn_require, ' '.repeat(Math.max(37 - fn_require.length, 1)), brief].join(''));
 		}
 	}
 };
@@ -133,6 +166,9 @@ _cmdline.build = function(argv) {
 	const fs = require('fs');
 	const pipe = require('pipe');
 	const cmake = require('cmake');
+	if (argv[2] && argv[2].startsWith('--')) {
+		argv.splice(2, 0, '.');
+	}
 	let fn_init = argv[2] || '.';
 	let dir = ComputeProjectDir(fn_init);
 	let fn_sync_js = path.resolve(dir, 'script/sync.js');
@@ -162,6 +198,16 @@ _cmdline.build = function(argv) {
 	}
 	if (isFile(fn_init)) {
 		options.target = path.parse(fn_init).name;
+	} else {
+		//run the first executable
+		let nd_cmake = require('cmake').LoadCMakeFile(options.cmakelist_path);
+		let nd_target = nd_cmake.Find(N_CALL, 'add_executable');
+		if (nd_target) {
+			let nd_name = nd_target.c.s.Find(N_REF);
+			if (nd_name) {
+				options.target = nd_name.data;
+			}
+		}
 	}
 	let extra_args = [];
 	options.extra_args = extra_args;
@@ -181,7 +227,7 @@ _cmdline.build = function(argv) {
 	cmake.Build(options);
 };
 _cmdline.build.usage = [
-	' [path [options]] = build a project dir or file, defaults to ./, options:',
+	' [path] [options] = build a project dir or file, defaults to ./, options:',
 	'      --type CMAKE_BUILD_TYPE  = specify build type, e.g., Debug / RelWithDebInfo',
 	'      --clean-first            = rebuild from scratch',
 	'      --run [args]             = run the result after build'

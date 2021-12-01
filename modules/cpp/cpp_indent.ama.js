@@ -8,7 +8,7 @@ int main()
 	return 0;
 ```
 */
-module.exports = function DropCPPCommandScopes(nd_root) {
+module.exports = function(nd_root) {
 	//Fix overzealously scoped C Pre-Processor commands
 	//N_SCOPE inside N_KEYWORD_STATEMENT
 	for (let nd_stmt of nd_root.FindAll(N_KEYWORD_STATEMENT)) {

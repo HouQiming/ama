@@ -10,6 +10,7 @@ namespace ama {
 	ama::Node* DefaultParseCode(char const* code);
 	void LazyInitScriptEnv();
 	void DumpASTAsJSON(ama::Node* nd);
+	static const int PROCESS_AMA_EMPTY_SCRIPT = -2;
 	static const int PROCESS_AMA_NOT_FOUND = -1;
 	static const int PROCESS_AMA_SCRIPT_FAILED = 0;
 	static const int PROCESS_AMA_SUCCESS = 1;

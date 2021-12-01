@@ -3,7 +3,7 @@
 //It's in a sandbox and does not have access to ANY native function
 //@ama ParseCurrentFile().Save()
 __global.Sandbox={
-	AlreadyMemorized:new Error('already memorized'),
+	global_age:0,
 	console:console,
 	Init:function(){
 		this.default_value={};
@@ -64,12 +64,7 @@ __global.Sandbox={
 		let reached_age=this.reach_map.get(addr)|0;
 		if(reached_age!==ctx['[age]']){
 			this.reach_map.set(addr,ctx['[age]']);
-		}else if(ctx.still_exploring){
-			//explore-more queueing: in-context unfinished-ness tagging: inside Reach
-			ctx.still_exploring=0;
-		}else{
-			//we're done
-			throw this.AlreadyMemorized;
+			this.global_age+=1;
 		}
 	},
 	Explore:function(ctx_func,ctx,addr,n_branches/*,...dummy_args*/){
@@ -81,14 +76,12 @@ __global.Sandbox={
 		}
 		let ret=st%mod;
 		if(ret===n_branches){
-			//we're done
-			throw this.AlreadyMemorized;
+			//random sample
+			ret=Math.min(Math.random()*n_branches|0,n_branches-1);
+		}else{
+			this.global_age+=1;
+			this.explore_map.set(addr,st+1);
 		}
-		if(ret+1<n_branches){
-			//explore-more queueing - ctx_func
-			ctx_func.still_exploring=1;
-		}
-		this.explore_map.set(addr,st+1);
 		return ret;
 	},
 	EndScope:function(ctx){

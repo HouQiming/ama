@@ -339,6 +339,10 @@ Non-include dependency can be added with `#pragma add("c_files","./foo.c")`.
 */
 cmake.AutoCreate = function(nd_root, options) {
 	if (!nd_root.FindAll(N_FUNCTION).filter(nd => g_main_functions.has(nd.data)).length) {return;}
+	if (options.full_path) {
+		nd_root.data = options.full_path;
+	}
 	options.nd_cmake = nd_root.CreateCXXCMakeTarget(options.cmakelist_path);
+	//{build:"debug",run:[]}
 };
 cmake.AutoCreate.inverse = cmake.AutoCreate; 

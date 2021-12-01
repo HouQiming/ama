@@ -217,6 +217,10 @@ Node.Save = function(/*optional*/options) {
 	return this;
 }
 
+Node.Print = function(options) {
+	console.write(this.toSource(options));
+}
+
 //Remove redundant spaces from the AST, if `aggressive` is true, also remove newlines.
 Node.StripRedundantPrefixSpace = function(aggressive) {
 	if(typeof(aggressive)==='object'){
@@ -502,10 +506,14 @@ __global.__GetFilterByName=function(name) {
 		let obj=__require(__init_js_path,parts[0]);
 		for(let i=1;i<parts.length;i++){
 			if(!obj){break;}
+			if(parts[i].endsWith('?')){
+				parts[i]=parts[i].substr(0,parts[i].length-1);
+			}
 			obj=obj[parts[i]];
 		}
 		if(obj){return obj;}
 	}
+	if(name.endsWith('?')){return {};}
 	throw new Error('unknown function ' + JSON.stringify(name));
 };
 
@@ -562,28 +570,16 @@ __global.__RequireNativeLibrary = function(exports, module, __filename, __dirnam
 }
 
 __global.RunCommandLineUtility=function(){
-	let groups=[];
-	let group=undefined;
-	for(let i=1;i<process.argv.length;i++){
-		if(process.argv[i].startsWith('--')&&!(group&&group[1]==='--build')){
-			if(group){groups.push(group);}
-			group=[process.argv[0]];
-		}
-		if(group){group.push(process.argv[i]);}
+	let argv=process.argv.map(a=>a);
+	while(argv.length>=2&&!argv[1].startsWith('--')){
+		argv.splice(1,1);
 	}
-	if(group){groups.push(group);}
-	let bk=process.argv;
-	let ret_code=0;
-	for(let group of groups){
-		process.argv=group;
-		ret_code=__require(__init_js_path,'_cmdline')[group[1].substr(2).toLowerCase()](group)|0;
-		if(ret_code!==0){
-			process.argv=bk;
-			return ret_code;
-		}
+	if(argv[1].startsWith('--')){
+		let ret_code=__require(__init_js_path,'_cmdline')[argv[1].substr(2).toLowerCase()](argv)|0;
+		return ret_code;
+	}else{
+		return 1;
 	}
-	process.argv=bk;
-	return ret_code;
 }
 
 /////////////

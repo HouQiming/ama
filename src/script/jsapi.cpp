@@ -375,7 +375,11 @@ namespace ama {
 		if ( !ama::RunScriptOnFile(script_i, path::toAbsolute(std::span<char>(fn)).c_str(), file_data->c_str()) ) {
 			return ama::PROCESS_AMA_SCRIPT_FAILED;
 		}
-		return ama::PROCESS_AMA_SUCCESS;
+		if (!script_i.size()) {
+			return ama::PROCESS_AMA_EMPTY_SCRIPT;
+		} else {
+			return ama::PROCESS_AMA_SUCCESS;
+		}
 	}
 	static JSValueConst JSProcessAmaFile(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 1 ) {
@@ -567,7 +571,7 @@ namespace ama {
 				);
 				JS_SetPropertyStr(
 					ctx, ret, "is_file",
-					JS_NewInt32(ctx, 1)
+					JS_NewInt32(ctx, (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 0 : 1)
 				);
 				JS_SetPropertyStr(
 					ctx, ret, "is_dir",
@@ -593,7 +597,7 @@ namespace ama {
 			JS_SetPropertyStr(ctx, ret, "size", JS_NewInt64(ctx, int64_t(sb.st_size)));
 			JS_SetPropertyStr(ctx, ret, "blksize", JS_NewInt64(ctx, int64_t(sb.st_blksize)));
 			JS_SetPropertyStr(ctx, ret, "blocks", JS_NewInt64(ctx, int64_t(sb.st_blocks)));
-			JS_SetPropertyStr(ctx, ret, "is_file", JS_NewInt32(ctx, 1));
+			JS_SetPropertyStr(ctx, ret, "is_file", JS_NewInt32(ctx, S_ISREG(sb.st_mode) ? 1 : 0));
 			JS_SetPropertyStr(ctx, ret, "is_dir", JS_NewInt32(ctx, S_ISDIR(sb.st_mode) ? 1 : 0));
 			//JS_SetPropertyStr(ctx, ret, 'flags', JS_NewInt64(ctx, i64(sb.st_flags)));
 			//JS_SetPropertyStr(ctx, ret, 'gen', JS_NewInt64(ctx, i64(sb.st_gen)));

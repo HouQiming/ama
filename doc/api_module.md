@@ -56,6 +56,12 @@ Provided methods:
 - `fsext.FindAllFiles(dir)`: recursively find files in dir and return an array of absolute paths
 - `fsext.SyncTimestamp(fn_src, fn_tar)`: make the timestamps of `fn_src` and `fn_tar` identical
 
+### omnichecker
+
+`const omnichecker = require("omnichecker");`
+
+work in progress
+
 ### path
 
 `const path = require("path");`
@@ -684,5 +690,11 @@ After:
 ```C++
 void* g_ptr = nullptr;
 ```
+
+### dump_ast
+
+- Syntax: `require("dump_ast")`
+- Description: Dump the AST (Abstract Syntax Tree).
+
 
 

@@ -492,6 +492,7 @@ will return `@(test(3))`
 
 --------------
 - `nd.Save([options])`
+- `nd.Print(options)`
 
 Save the node. `options` can be:
 

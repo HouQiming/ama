@@ -1,11 +1,11 @@
 cmake_minimum_required (VERSION 3.0)
 project(ama)
 if(MSVC)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4068 /D_CRT_SECURE_NO_WARNINGS")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4068 /EHsc /std:c++latest /D_CRT_SECURE_NO_WARNINGS")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4068 /D_CRT_SECURE_NO_WARNINGS")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4068 /EHsc /std:c++latest /D_CRT_SECURE_NO_WARNINGS")
 else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-delete-null-pointer-checks")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-delete-null-pointer-checks")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks")
 endif()
 add_executable(ama
 	"src/util/dumpstack/linux_bt.cpp"
@@ -48,29 +48,29 @@ set_property(
 	APPEND PROPERTY LINK_LIBRARIES
 	amal)
 if(WIN32)
-	set_property(
-		TARGET ama
-		APPEND PROPERTY LINK_LIBRARIES
-		DbgHelp.lib user32.lib)
-	set_property(
-		TARGET amal
-		APPEND PROPERTY LINK_LIBRARIES
-		kernel32.lib user32.lib)
-	if(MSVC)
-		set_target_properties(amal PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
-	endif()
+set_property(
+	TARGET ama
+	APPEND PROPERTY LINK_LIBRARIES
+	DbgHelp.lib user32.lib)
+set_property(
+	TARGET amal
+	APPEND PROPERTY LINK_LIBRARIES
+	kernel32.lib user32.lib)
+if(MSVC)
+set_target_properties(amal PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS 1)
+endif()
 else()
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funwind-tables")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
-	set_property(
-      TARGET amal
-      APPEND PROPERTY LINK_LIBRARIES
-      -ldl)
-	set_property(
-      TARGET ama
-      APPEND PROPERTY LINK_LIBRARIES
-      -ldl)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funwind-tables")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
+set_property(
+  TARGET amal
+  APPEND PROPERTY LINK_LIBRARIES
+  -ldl)
+set_property(
+  TARGET ama
+  APPEND PROPERTY LINK_LIBRARIES
+  -ldl)
 endif()
 
 install(TARGETS ama DESTINATION bin)

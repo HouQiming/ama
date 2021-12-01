@@ -1,3 +1,4 @@
+//work in progress
 'use strict';
 let omnichecker = module.exports;
 const assert = require('assert');
@@ -208,6 +209,7 @@ omnichecker.CreateTestingCode = function CreateTestingCode(nd_root, options) {
 				} else if (nd_cond_end) {
 					nd_body = @(do {@(nd_body)} while (Explore(ctx_func, ctx, @(nString(utag)), 2, @(nd_cond_end)) === 0));
 				} else {
+					//TODO: explore cond: make sure it terminates once values stop changing
 					nd_body = @(for (; ;) @(nd_body))
 				}
 				if (nd_init) {
@@ -408,11 +410,4 @@ omnichecker.CreateTestingCode = function CreateTestingCode(nd_root, options) {
 		if (nd_binop.data == '!=') {nd_binop.data = '!==';}
 	}
 	return nd_gen;
-};
-
-//TODO: actual check as a pipeline stage: options merging
-//TODO: later: individual checks as pipeline stages? implicit eventual check / save
-//TODO: dependency between checks: nullability on condition set
-omnichecker.Check = function Check(nd_root, ...options) {
-	//TODO
 };
