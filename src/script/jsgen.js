@@ -324,16 +324,38 @@ function Generate(version,nd_root) {
 	//JS node builders are created in JS
 	nd_root.Find(N_CALL,'gen').c.data='gen_begin';
 	//////////
-	const fs = require('fs');
-	const fsext = require('fsext');
-	const depends = require('depends');
-	let dir_modules=path.resolve(__dirname,'../../modules');
-	let module_files=[];
 	code_func.push('char const *g_builtin_modules[] = {');
-	for (let fn of fsext.FindAllFiles(dir_modules).sort()) {
-		if (!fn.endsWith('.js')) {continue;}
-		let fn_rel=path.relative(dir_modules,fn).replace(/\\/g,'/');
-		code_func.push('\n\t',JSON.stringify(fn_rel),', ',JSON.stringify(fs.readFileSync(fn).toString()),',');
+	try{
+		const fs = require('fs');
+		const fsext = require('fsext');
+		const depends = require('depends');
+		const auto_paren=require('auto_paren');
+		const auto_semicolon=require('auto_semicolon');
+		let dir_modules=path.resolve(__dirname,'../../modules');
+		let module_files=[];
+		for (let fn of fsext.FindAllFiles(dir_modules).sort()) {
+			if (!fn.endsWith('.js')) {continue;}
+			let fn_rel=path.relative(dir_modules,fn).replace(/\\/g,'/').replace(/[.].*/,'');
+			let code=fs.readFileSync(fn).toString();
+			if(fn.endsWith('.ama.js')){
+				let nd_root=ParseCode(code);
+				if(nd_root){
+					nd_root.data=fn;
+					for(let nd of nd_root.FindAll(N_BINOP,'!==')){
+						nd.data='!=';
+					}
+					for(let nd of nd_root.FindAll(N_BINOP,'===')){
+						nd.data='==';
+					}
+					code=nd_root.then(auto_paren).then(auto_semicolon).NodeofToASTExpression().toSource();
+				}
+			}
+			code_func.push('\n\t',JSON.stringify(fn_rel),', ',JSON.stringify(code),',');
+		}
+	}catch(err){
+		if(err){
+			console.error(err.stack);
+		}
 	}
 	code_func.push('\n\tNULL, NULL');
 	code_func.push('\n};\n');

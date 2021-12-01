@@ -79,7 +79,7 @@ namespace ama {
 			//builtin modules
 			for (char const** ps = ama::g_builtin_modules; *ps; ps += 2) {
 				if (strncmp(fn.data(), ps[0], fn.size()) == 0) {
-					return std::string(ps[1]);
+					return JC::string_concat("(function(exports,module,__filename,__dirname){let require=__require.bind(null,__filename);", ps[1], "\n})\n");
 				}
 			}
 			//console::error('failed to read', fn);
@@ -107,11 +107,12 @@ namespace ama {
 	static std::string ResolveJSRequire(std::span<char> fn_base, std::span<char> fn_required) {
 		//ResolveJSRequire's result is used in JS-running functions, so don't return ama::gcstring
 		std::string dir_base = path::dirname((path::CPathResolver{}).add(fn_base)->done());
-		std::string fn_final = (path::CPathResolver{}).add(dir_base)->add(fn_required)->done();
+		std::string fn_final{};
 		ama::gcstring fn_commonjs{};
 		if ( !fn_required--->startsWith(".") && !fn_required--->startsWith("/") ) {
 			//it's a standard module
 			//COULDDO: internal asset strings - faster and simpler than zip
+			fn_final--->push(fn_required);
 			fn_commonjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir, path::sep, fn_required))));
 			if ( fn_commonjs.empty() ) {
 				fn_commonjs = ama::FindCommonJSModuleByPath((path::normalize(JC::string_concat(ama::std_module_dir_global, path::sep, fn_required))));
@@ -123,7 +124,8 @@ namespace ama {
 				fn_final = JC::array_cast<std::string>(fn_commonjs);
 			}
 		} else {
-			fn_commonjs = ama::FindCommonJSModuleByPath((fn_final));
+			fn_final = (path::CPathResolver{}).add(dir_base)->add(fn_required)->done();
+			fn_commonjs = ama::FindCommonJSModuleByPath(fn_final);
 			if ( !fn_commonjs.empty() ) {
 				fn_final = JC::array_cast<std::string>(fn_commonjs);
 			}
@@ -751,6 +753,18 @@ namespace ama {
 	static JSValueConst JSNodeGC(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		return JS_NewInt64(ctx, ama::gc());
 	}
+	static JSValueConst JSGetBuiltinModuleCode(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
+		if ( argc < 1 ) {
+			return JS_ThrowReferenceError(ctx, "need a name");
+		}
+		char const* s = JS_ToCString(ctx, argv[0]);
+		for (char const** ps = ama::g_builtin_modules; *ps; ps += 2) {
+			if (strcmp(s, ps[0]) == 0) {
+				return JS_NewString(ctx, ps[1]);
+			}
+		}
+		return JS_ThrowReferenceError(ctx, "not found");
+	}
 	static void SetupConfigDirs() {
 		///////////
 		#if defined(_WIN32)
@@ -1107,6 +1121,19 @@ namespace ama {
 				"__RunInSandbox", 1
 			)
 		);
+		JS_SetPropertyStr(
+			ama::jsctx, global, "__GetBuiltinModuleCode", JS_NewCFunction(
+				ama::jsctx, JSGetBuiltinModuleCode,
+				"__GetBuiltinModuleCode", 1
+			)
+		);
+		int n_builtin_modules = 0;
+		JSValue js_builtin_module_names_array = JS_NewArray(ama::jsctx);
+		JS_SetPropertyStr(ama::jsctx, global, "__builtin_module_names", js_builtin_module_names_array);
+		for (char const** ps = ama::g_builtin_modules; *ps; ps += 2) {
+			JS_SetPropertyUint32(ama::jsctx, js_builtin_module_names_array, n_builtin_modules, JS_NewString(ama::jsctx, ps[0]));
+			n_builtin_modules += 1;
+		}
 		JS_SetPropertyStr(ama::jsctx, global, "Node", ama::g_node_proto);
 		JS_DefinePropertyGetSet(
 			ama::jsctx, ama::g_node_proto, JS_NewAtom(ama::jsctx, "children"), 
@@ -1208,9 +1235,8 @@ namespace ama {
 		}
 		JC::StringOrError bootstrap_code(1);
 		if ( fn_initjs.empty() ) {
-			//we NEED that
-			fn_initjs = "_init";
-			bootstrap_code.some = GetScriptJSCode("_init");
+			fn_initjs = "<_init>";
+			bootstrap_code.some = GetScriptJSCode("_init") + "()";
 			bootstrap_code.error = 0;
 		} else {
 			bootstrap_code = fs::readFileSync(fn_initjs);

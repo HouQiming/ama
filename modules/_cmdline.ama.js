@@ -18,18 +18,15 @@ _cmdline.help = function(argv) {
 	}
 	console.log('\nList of filters:');
 	const path = require('path');
-	const fs = require('fs');
-	const fsext = require('fsext');
-	const depends = require('depends');
-	for (let fn of fsext.FindAllFiles(__dirname).sort()) {
-		if (!fn.endsWith('.js')) {continue;}
-		let nd_root = depends.LoadFile(fn);
+	for (let fn of __builtin_module_names) {
+		//if (!fn.endsWith('.js')) {continue;}
+		let nd_root = ParseCode(__GetBuiltinModuleCode(fn));
 		if (!nd_root) {continue;}
 		for (let nd_func of nd_root.FindAll(N_FUNCTION)) {
 			let s = nd_func.ParentStatement().comments_before;
 			let p_filter = s.indexOf('#filter');
 			if (p_filter < 0) {continue;}
-			let fn_require = path.relative(__dirname, fn).replace(/[.].*/, '');
+			let fn_require = fn;
 			let name = nd_func.data;
 			if (!name && nd_func.p.node_class == N_ASSIGNMENT) {
 				name = nd_func.p.c.GetName();
@@ -104,15 +101,16 @@ _cmdline.init = function(argv) {
 	} else {
 		//generate list of features on the fly
 		let feature_code = [];
-		for (let fn of fsext.FindAllFiles(__dirname).sort()) {
-			if (!fn.endsWith('.js')) {continue;}
-			let nd_root = depends.LoadFile(fn);
+		//for (let fn of fsext.FindAllFiles(__dirname).sort())
+		for (let fn of __builtin_module_names) {
+			//if (!fn.endsWith('.js')) {continue;}
+			let nd_root = ParseCode(__GetBuiltinModuleCode(fn));
 			if (!nd_root) {continue;}
 			for (let nd_func of nd_root.FindAll(N_FUNCTION)) {
 				let s = nd_func.ParentStatement().comments_before;
 				let p_filter = s.indexOf('#filter');
 				if (p_filter < 0) {continue;}
-				let fn_require = path.relative(__dirname, fn).replace(/[.].*/, '');
+				let fn_require = fn.replace(/[.].*/, '');
 				let name = nd_func.data;
 				if (!name && nd_func.p.node_class == N_ASSIGNMENT) {
 					name = nd_func.p.c.GetName();
