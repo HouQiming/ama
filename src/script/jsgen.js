@@ -324,7 +324,7 @@ function Generate(version,nd_root) {
 	//JS node builders are created in JS
 	nd_root.Find(N_CALL,'gen').c.data='gen_begin';
 	//////////
-	code_func.push('char const *g_builtin_modules[] = {');
+	code_func.push('std::vector<char const*> g_builtin_modules{');
 	try{
 		const fs = require('fs');
 		const fsext = require('fsext');

@@ -81,7 +81,7 @@ namespace ama {
 	std::string FindCommonJSModule(std::span<char> fn_required, std::span<char> dir_base);
 	extern std::vector<char const*> g_builder_names;
 	extern std::vector<char const*> g_node_class_names;
-	extern char const* g_builtin_modules[];
+	extern std::vector<char const*> g_builtin_modules;
 	std::unordered_map<ama::gcstring, int> GetPrioritizedList(JSValueConst options, char const* name);
 	extern std::string std_module_dir_global;
 	JSValue CallJSMethod(JSValue this_val, char const* name, std::span<JSValue> args);

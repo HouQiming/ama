@@ -77,7 +77,7 @@ namespace ama {
 		JC::StringOrError s_code = fs::readFileSync(fn);
 		if ( !s_code ) {
 			//builtin modules
-			for (char const** ps = ama::g_builtin_modules; *ps; ps += 2) {
+			for (char const** ps = ama::g_builtin_modules.data(); *ps; ps += 2) {
 				if (strncmp(fn.data(), ps[0], fn.size()) == 0) {
 					return JC::string_concat("(function(exports,module,__filename,__dirname){let require=__require.bind(null,__filename);", ps[1], "\n})\n");
 				}
@@ -758,7 +758,7 @@ namespace ama {
 			return JS_ThrowReferenceError(ctx, "need a name");
 		}
 		char const* s = JS_ToCString(ctx, argv[0]);
-		for (char const** ps = ama::g_builtin_modules; *ps; ps += 2) {
+		for (char const** ps = ama::g_builtin_modules.data(); *ps; ps += 2) {
 			if (strcmp(s, ps[0]) == 0) {
 				return JS_NewString(ctx, ps[1]);
 			}
@@ -1130,7 +1130,7 @@ namespace ama {
 		int n_builtin_modules = 0;
 		JSValue js_builtin_module_names_array = JS_NewArray(ama::jsctx);
 		JS_SetPropertyStr(ama::jsctx, global, "__builtin_module_names", js_builtin_module_names_array);
-		for (char const** ps = ama::g_builtin_modules; *ps; ps += 2) {
+		for (char const** ps = ama::g_builtin_modules.data(); *ps; ps += 2) {
 			JS_SetPropertyUint32(ama::jsctx, js_builtin_module_names_array, n_builtin_modules, JS_NewString(ama::jsctx, ps[0]));
 			n_builtin_modules += 1;
 		}

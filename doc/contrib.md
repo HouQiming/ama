@@ -52,6 +52,8 @@ for i<foo
 	...
 ```
 
+After a commit, we can use `ama -s process.aba=1 script/sync.js` to validate that the script supporting our development dialect still works bidirectionally on every file.
+
 ## Big Rules
 
 **No guarantees** Amalang is a best-effort tool and we do not pursue guarantees of any kind. We try our best to be helpful, but we don't make promises we can't keep. 
