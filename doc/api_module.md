@@ -104,35 +104,55 @@ static const uint8_t _doc_asset[]={
 ### cpp/auto_decl
 
 - Syntax: `require("cpp/auto_decl")`
-- Description: Automatically declare variables on assignment
+- Description: Automatically resolve undeclared names.
+
+Each undeclared variable will be auto-declared on first assignment. If it's never assigned, this filter will search for global names in all available namespaces. If still not found, this filter will search for a similarly-named variable at call sites of the current function and pass it in as a newly-declared parameter.
 
 Before:
 
 ```C++
+namespace cns{
+  int c=0; 
+};
+
+int test(){
+  return b+c;
+}
+
 int main(int argc){
-	a=42;
-	if(argc>=2){
-		b=0;
-		a=b;
-	}else{
-		a+=100;
-	}
-	return a;
+  a=42;
+  if(argc>=2){
+    b=0;
+    a=b+c;
+    a+=test();
+  }else{
+    a+=100;
+  }
+  return a;
 }
 ```
 
 After:
 
 ```C++
+namespace cns {
+  int c = 0; 
+};
+
+int test(auto b) {
+  return b + cns::c;
+}
+
 int main(int argc) {
-	auto a = 42;
-	if (argc >= 2) {
-		auto b = 0;
-		a = b;
-	} else {
-		a += 100;
-	}
-	return a;
+  auto a = 42;
+  if (argc >= 2) {
+    auto b = 0;
+    a = b + cns::c;
+    a += test(b);
+  } else {
+    a += 100;
+  }
+  return a;
 }
 ```
 

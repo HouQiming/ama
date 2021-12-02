@@ -18,18 +18,32 @@ function DeclScope(nd) {
 }
 
 /*
-#filter Automatically declare variables on assignment
+#filter Automatically resolve undeclared names.
+
+Each undeclared variable will be auto-declared on first assignment.
+If it's never assigned, this filter will search for global names in all available namespaces.
+If still not found, this filter will search for a similarly-named variable at call sites of the current function and pass it in as a newly-declared parameter.
+
 Before:
 ```C++
+namespace cns{
+  int c=0; 
+};
+
+int test(){
+  return b+c;
+}
+
 int main(int argc){
-	a=42;
-	if(argc>=2){
-		b=0;
-		a=b;
-	}else{
-		a+=100;
-	}
-	return a;
+  a=42;
+  if(argc>=2){
+    b=0;
+    a=b+c;
+    a+=test();
+  }else{
+    a+=100;
+  }
+  return a;
 }
 ```
 */
@@ -100,7 +114,9 @@ function Translate(nd_root, options) {
 		}
 	}
 	//look up the never-writtens
-	let keywords_class = new Set(default_options.keywords_class.split(' '));
+	let auto_create_params = (options || {}).auto_create_params;
+	if (auto_create_params == undefined) {auto_create_params = 1;}
+	let keywords_class = new Set(((options || default_options).keywords_class || default_options.keywords_class).split(' '));
 	let all_possible_names = undefined;
 	for (let nd_ref of locally_undeclared) {
 		if (nd_ref.flags & (REF_WRITTEN | REF_DECLARED)) {continue;}
@@ -154,6 +170,43 @@ function Translate(nd_root, options) {
 				nd_ret = nd_ret.dot(names.pop()).setFlags(DOT_CLASS);
 			};
 			nd_ref.ReplaceWith(nd_ret);
+		} else if (nd_owner.node_class == N_FUNCTION && nd_owner.GetName()) {
+			//auto-param: check for the name at all call sites
+			let name = nd_owner.GetName();
+			let call_sites = nd_root.FindAll(N_CALL, name);
+			let all_found = 1;
+			for (let nd_call_site of call_sites) {
+				let declared = 0;
+				for (let nd_scope = nd_call_site; nd_scope; nd_scope = nd_scope.p) {
+					let ctx = scope_to_context.get(nd_scope);
+					if (ctx && ctx.defs.has(nd_ref.data)) {
+						declared = 1;
+						break;
+					}
+					if (nd_scope.node_class == N_FUNCTION || nd_scope.node_class == N_CLASS) {
+						break;
+					}
+				}
+				if (!declared) {
+					all_found = 0;
+					break;
+				}
+			}
+			if (call_sites.length > 0 && all_found) {
+				//the name is available at all call sites, create new parameter
+				let defs = call_sites[0].Owner().FindAll(N_REF, nd_ref.data).filter(nd_def => (nd_def.flags & REF_DECLARED));
+				if (defs.length > 0) {
+					let nd_def = defs[0];
+					if (nd_def.p.node_class == N_RAW) {
+						nd_def = nd_def.p;
+					}
+					let nd_paramlist = nd_owner.c.s;
+					nd_paramlist.Insert(POS_BACK, nAssignment(nd_def.Clone(), nAir()));
+				}
+				for (let nd_call of call_sites) {
+					nd_call.Insert(POS_BACK, nRef(nd_ref.data));
+				}
+			}
 		}
 	}
 }
