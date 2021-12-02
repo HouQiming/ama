@@ -102,7 +102,8 @@ Alternatively, you can create a native module and call that from Javascript. See
 ## Documentation
 
 [AST API Reference](doc/api_node.md)
-[Module Reference](doc/api_module.md)
+
+[Filter and Module Reference](doc/api_module.md)
 
 ## Contributing
 

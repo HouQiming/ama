@@ -1,12 +1,5 @@
-# Javascript Module Reference
+# Filter and Module Reference
 
-Amalang uses the CommonJS module system. To load a module, use `require('module_path')`.
-
-## Modules
-
-Here is a list of modules for ama script development.
-
-【modules】
 ## Filters
 
 Here is a list of filters intended for the `-f` command line option or the `filters` option of `bisync`. Each filter can be:
@@ -26,3 +19,10 @@ Put an option object `{change_ext:'.foo'}` before `"Save"` to save the changes u
 `"StripRedundantPrefixSpace"` Strip redundant spaces.
 
 【filters】
+## Modules
+
+Amalang uses the CommonJS module system. To load a module, use `require('module_path')`.
+
+Here is a list of modules for ama script development.
+
+【modules】

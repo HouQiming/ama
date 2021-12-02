@@ -1,94 +1,4 @@
-# Javascript Module Reference
-
-Amalang uses the CommonJS module system. To load a module, use `require('module_path')`.
-
-## Modules
-
-Here is a list of modules for ama script development.
-
-### bisync
-
-`const bisync = require("bisync");`
-
-Bidirectional synchronization system. Usage with default option values:
-
-```Javascript
-require('bisync')({
-    dir_src: path.resolve(__dirname, '../src'),
-    middle_extension: '.ama',
-    processed_extensions: ['.cpp','.hpp','.cu'],
-    filters: [],
-})
-```
-
-The module will search for all files with `processed_extensions` in `dir_src`. It will apply filters specified in `filters` to files with `middle_extension` (e.g. `foo.ama.cpp`) to generate the corresponding non-ama file (e.g. `foo.cpp`). When available, it will also apply the inverse version of the filters to generate ama files from non-ama files. Between each pair of ama and non-ama files, `bisync` will always synchronize the the newer file's content to its older counterpart.
-
-See [the filters section](#-filters) for possible filters.
-
-### cpp/c_for
-
-`const c_for = require("cpp/c_for");`
-
-Parser for C `for(init;cond;iter){}` loops
-
-### fs
-
-`const fs = require("fs");`
-
-Node.js-compatible file system module.
-
-Provided methods:
-
-- `fs.readFileSync(path)`
-- `fs.existsSync(path)`
-- `fs.writeFileSync(path, data)`
-- `fs.statSync(path)`
-- `fs.readdirSync(dir,{withFileTypes:true})`
-
-### fsext
-
-`const fsext = require("fsext");`
-
-Extra file system utility.
-
-Provided methods:
-
-- `fsext.FindAllFiles(dir)`: recursively find files in dir and return an array of absolute paths
-- `fsext.SyncTimestamp(fn_src, fn_tar)`: make the timestamps of `fn_src` and `fn_tar` identical
-
-### omnichecker
-
-`const omnichecker = require("omnichecker");`
-
-work in progress
-
-### path
-
-`const path = require("path");`
-
-Node.js-compatible path handling module.
-
-Provided methods:
-
-- `path.join(...)`
-- `path.resolve(...)`
-- `path.parse(path)`
-- `path.dirname(path)`
-- `path.basename(path)`
-- `path.extname(path)`
-- `path.isAbsolute(path)`
-- `path.relative(path_a, path_b)`
-
-### pipe
-
-`const pipe = require("pipe");`
-
-Run external commands.
-
-Provided methods:
-
-- `pipe.run(command)`
-
+# Filter and Module Reference
 
 ## Filters
 
@@ -485,7 +395,7 @@ After:
 
 ```C++
 #pragma gen(some_generated_code)
-#line 3
+#line 3 "/home/hqm/tp/ama/modules/cpp/line_sync.ama.js.audit.js"
 int main() {
 	return 0;
 }
@@ -696,5 +606,95 @@ void* g_ptr = nullptr;
 - Syntax: `require("dump_ast")`
 - Description: Dump the AST (Abstract Syntax Tree).
 
+
+
+## Modules
+
+Amalang uses the CommonJS module system. To load a module, use `require('module_path')`.
+
+Here is a list of modules for ama script development.
+
+### bisync
+
+`const bisync = require("bisync");`
+
+Bidirectional synchronization system. Usage with default option values:
+
+```Javascript
+require('bisync')({
+    dir_src: path.resolve(__dirname, '../src'),
+    middle_extension: '.ama',
+    processed_extensions: ['.cpp','.hpp','.cu'],
+    filters: [],
+})
+```
+
+The module will search for all files with `processed_extensions` in `dir_src`. It will apply filters specified in `filters` to files with `middle_extension` (e.g. `foo.ama.cpp`) to generate the corresponding non-ama file (e.g. `foo.cpp`). When available, it will also apply the inverse version of the filters to generate ama files from non-ama files. Between each pair of ama and non-ama files, `bisync` will always synchronize the the newer file's content to its older counterpart.
+
+See [the filters section](#-filters) for possible filters.
+
+### cpp/c_for
+
+`const c_for = require("cpp/c_for");`
+
+Parser for C `for(init;cond;iter){}` loops
+
+### fs
+
+`const fs = require("fs");`
+
+Node.js-compatible file system module.
+
+Provided methods:
+
+- `fs.readFileSync(path)`
+- `fs.existsSync(path)`
+- `fs.writeFileSync(path, data)`
+- `fs.statSync(path)`
+- `fs.readdirSync(dir,{withFileTypes:true})`
+
+### fsext
+
+`const fsext = require("fsext");`
+
+Extra file system utility.
+
+Provided methods:
+
+- `fsext.FindAllFiles(dir)`: recursively find files in dir and return an array of absolute paths
+- `fsext.SyncTimestamp(fn_src, fn_tar)`: make the timestamps of `fn_src` and `fn_tar` identical
+
+### omnichecker
+
+`const omnichecker = require("omnichecker");`
+
+work in progress
+
+### path
+
+`const path = require("path");`
+
+Node.js-compatible path handling module.
+
+Provided methods:
+
+- `path.join(...)`
+- `path.resolve(...)`
+- `path.parse(path)`
+- `path.dirname(path)`
+- `path.basename(path)`
+- `path.extname(path)`
+- `path.isAbsolute(path)`
+- `path.relative(path_a, path_b)`
+
+### pipe
+
+`const pipe = require("pipe");`
+
+Run external commands.
+
+Provided methods:
+
+- `pipe.run(command)`
 
 
