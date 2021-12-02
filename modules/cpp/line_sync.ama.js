@@ -13,7 +13,10 @@ int main(){
 */
 function Translate(nd_root) {
 	for (let nd_line of nd_root.FindAll(N_KEYWORD_STATEMENT, '#line')) {
-		nd_line.c.ReplaceWith(nNumber((nd_line.ComputeLineNumber() + 2).toString()));
+		nd_line.c.ReplaceWith(nRaw(
+			nNumber((nd_line.ComputeLineNumber() + 2).toString()),
+			nString(nd_root.data).setCommentsBefore(' ')
+		));
 	}
 	return nd_root;
 }

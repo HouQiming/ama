@@ -48,8 +48,8 @@ The project itself is a bigger example. You can build this repository with plain
 
 Key features:
 - **Works on anything** The system can process any code as is. It will parse whatever it understands and let unrecognized syntax pass through unchanged.
-- **Bidirectional** Many filters have an inverse version so you can translate upstream to your favorite dialect, develop there, then translate them back before committing. You can start or quit Amalang at any time you choose in any project you need.
-- **Extensible** Filters are written in a very simple Javascript API.
+- **Bidirectional** Many filters have an inverse version so you can translate upstream to your favorite dialect, develop there, then translate them back before committing.
+- **Low effort** The core of Amalang is a very simple Javascript API. One can hook up a tiny DSL in hours then ditch it when there is no longer a need to keep up.
 
 Works best on languages with a reasonable resemblance to C. That includes Python. See `example/` to see more of Amalang in action.
 
