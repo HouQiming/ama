@@ -5,10 +5,10 @@ namespace not_here{
 }
 
 int test(){
-	return b;
+	return b+argv[b][0];
 }
 
-int main() {
+int main(int argc,char** argv) {
 	struct foo;
 	a.foo(bar);
 	a--->foo(bar);

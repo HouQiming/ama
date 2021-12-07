@@ -328,7 +328,6 @@ function Generate(version,nd_root) {
 	try{
 		const fs = require('fs');
 		const fsext = require('fsext');
-		const depends = require('depends');
 		const auto_paren=require('auto_paren');
 		const auto_semicolon=require('auto_semicolon');
 		let dir_modules=path.resolve(__dirname,'../../modules');

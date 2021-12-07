@@ -190,8 +190,8 @@ namespace ama {
 						ndi_next = nd_tmp->ReplaceWith(ama::toSingleNode(ndi_next->BreakSibling()));
 						ndi = TranslatePostfixCall(ndi);
 						ndi->node_class = ama::N_CALL_CUDA_KERNEL;
+						continue;
 					}
-					continue;
 				}
 				ndi = ndi_next;
 			}

@@ -201,6 +201,10 @@ function Translate(nd_root, options) {
 						nd_def = nd_def.p;
 					}
 					let nd_paramlist = nd_owner.c.s;
+					if (nd_paramlist.FindAll(N_REF, nd_ref.data).filter(nd_def => (nd_def.flags & REF_DECLARED)).length > 0) {
+						//dedup
+						continue;
+					}
 					nd_paramlist.Insert(POS_BACK, nAssignment(nd_def.Clone(), nAir()));
 				}
 				for (let nd_call of call_sites) {
