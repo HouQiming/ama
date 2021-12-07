@@ -767,7 +767,14 @@ namespace ama {
 				continue;
 			}
 			ama::Node* nd_stmt = nd_ref->ParentStatement();
-			ama::Node* nd_asgn = nd_ref->Owning(ama::N_ASSIGNMENT);
+			ama::Node* nd_asgn = nd_ref;
+			while (nd_asgn && nd_asgn->node_class != ama::N_ASSIGNMENT) {
+				if (nd_asgn->node_class == ama::N_DOT || nd_asgn->node_class == ama::N_ITEM || nd_asgn->node_class == ama::N_CALL) {
+					nd_asgn = nullptr;
+					break;
+				}
+				nd_asgn = nd_asgn->p;
+			}
 			ama::Node* nd_owner = nd_ref->Owner();
 			if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_stmt->p->p->data == "enum" && 
 			!(nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->s->isAncestorOf(nd_ref)) ) {
@@ -842,6 +849,7 @@ namespace ama {
 			//C/C++ type foo, *bar[baz]
 			//C++/JS LHS {} destructuring
 			ama::Node* nd_cdecl = nd_ref;
+			int32_t is_array_assignment = 0;
 			while ( nd_cdecl && nd_cdecl != nd_stmt ) {
 				if ( nd_cdecl->p->node_class == ama::N_RAW ) {
 					ama::Node* nd_core = nd_cdecl;
@@ -853,9 +861,14 @@ namespace ama {
 						//don't go to that raw
 						nd_cdecl = nd_core;
 					}
+					//assume N_ITEM as C array declaration `baz foo[bar]`
+					is_array_assignment = 0;
 					break;
 				}
-				if ( ((nd_cdecl->p->node_class == ama::N_ITEM || nd_cdecl->p->node_class == ama::N_CALL) && nd_cdecl == nd_cdecl->p->c) || 
+				if ((nd_cdecl->p->node_class == ama::N_ITEM || nd_cdecl->p->node_class == ama::N_CALL) && nd_cdecl == nd_cdecl->p->c) {
+					//could be either an array assignment `foo[bar]=baz;` or a C array declaration `baz foo[bar]`
+					is_array_assignment = 1;
+				} else if (  
 				(nd_cdecl->p->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(nd_cdecl->p->data) && nd_cdecl == nd_cdecl->p->c->s) || 
 				nd_cdecl->p->node_class == ama::N_PREFIX ) {
 					//it's OK
@@ -879,7 +892,8 @@ namespace ama {
 					//foo in `type foo;` or `type bar,*foo[8];`
 					is_ok = 1;
 				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_ASSIGNMENT && nd_cdecl->p->c == nd_cdecl &&
-				nd_cdecl->p->data.empty() && nd_cdecl->node_class != ama::N_PREFIX) {
+				nd_cdecl->p->data.empty() && nd_cdecl->node_class != ama::N_PREFIX &&
+				!is_array_assignment) {
 					//foo in `type foo=bar;` or `type bar,*foo[8],baz=...;`
 					//exclude *y+=1; / *y=1;
 					is_ok = 1;

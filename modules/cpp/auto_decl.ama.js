@@ -205,7 +205,7 @@ function Translate(nd_root, options) {
 						//dedup
 						continue;
 					}
-					nd_paramlist.Insert(POS_BACK, nAssignment(nd_def.Clone(), nAir()));
+					nd_paramlist.Insert(POS_BACK, nAssignment(nd_def.Clone().setCommentsBefore('').setCommentsAfter(''), nAir()));
 				}
 				for (let nd_call of call_sites) {
 					nd_call.Insert(POS_BACK, nRef(nd_ref.data));
