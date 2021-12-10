@@ -306,7 +306,8 @@ typing.ComputeReturnType = function(type_func) {
 	return type;
 };
 
-typing.LookupDottedName = function(nd_site, name, nd_class) {
+typing.LookupDottedName = function(nd_site, name, nd_class, want_all) {
+	let ret = [];
 	let nd_def = undefined;
 	if (nd_class) {
 		//base class: should use ParseClass
@@ -341,8 +342,11 @@ typing.LookupDottedName = function(nd_site, name, nd_class) {
 			}
 		}
 		nd_def = class_defs.get(name);
+		if (nd_def && want_all) {
+			ret.push(nd_def);
+		}
 	}
-	if (!nd_def && isNamespace(nd_class)) {
+	if ((!nd_def || want_all) && isNamespace(nd_class)) {
 		//it got ugly: we need to search ALL same-named namespaces
 		//don't merge namespaces internally: each file "sees" a different version of the same namespace
 		let names = [];
@@ -352,11 +356,15 @@ typing.LookupDottedName = function(nd_site, name, nd_class) {
 		for (let nd_scope of typing.LookupClassesByNames(nd_site.Root(), names, {must_be: 'namespace',include_dependency: 1})) {
 			nd_def = typing.GetDefs(nd_scope).get(name);
 			if (nd_def) {
-				break;
+				if (want_all) {
+					ret.push(nd_def);
+				} else {
+					break;
+				}
 			}
 		}
 	}
-	return nd_def;
+	return want_all ? ret : nd_def;
 };
 
 typing.TryGettingClass = function(type_obj) {
@@ -540,9 +548,15 @@ typing.ComputeType = function(nd_expr) {
 		//COULDDO: substitute template parameters
 		let type_obj = typing.TryGettingClass(typing.ComputeType(nd_expr.c));
 		if (type_obj && type_obj.node_class == N_CLASS) {
-			let nd_def = typing.LookupDottedName(nd_expr, nd_expr.data, type_obj);
-			if (nd_def) {
-				type = typing.ComputeDeclaredType(nd_def);
+			let all_defs = typing.LookupDottedName(nd_expr, nd_expr.data, type_obj, true);
+			for (let nd_def of all_defs) {
+				let type_def = typing.ComputeDeclaredType(nd_def);
+				if (!type_def) {continue;}
+				//try to find a non-self-representing def
+				type = type_def;
+				if (type != nd_def) {
+					break;
+				}
 			}
 		}
 		//assume self-representing type name when we fail to find the def

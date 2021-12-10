@@ -246,7 +246,7 @@ namespace ama {
 		scopes.push_back(nd_root);
 		for ( ama::Node* nd_scope: scopes ) {
 			if (nd_scope->p && nd_scope->p->isRawNode('(', ')')) {
-				auto nd_prev = nd_scope->Prev();
+				ama::Node* nd_prev = nd_scope->Prev();
 				if (!nd_prev || nd_prev->isSymbol(",")) {
 					//likely C++ array const, ignore
 					continue;
