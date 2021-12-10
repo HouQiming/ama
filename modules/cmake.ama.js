@@ -159,6 +159,7 @@ function TryRelative(dir_cmake, src_name_abs) {
 
 //let nd_output_format_template = ParseCode('#pragma add("output_format",@(N_STRING(format)))\n').Find(N_KEYWORD_STATEMENT, '#pragma')
 let nd_output_format_template = @{#pragma add("output_format", @(Node.MatchAny(N_STRING, 'format')))};
+let nd_build_option_template = @{#pragma add(@(Node.MatchAny(N_STRING, 'name')), @(Node.MatchAny(N_STRING, 'value')))};
 
 Node.CMakeInsertAMACommand = function(options) {
 	let dir_cmake = path.dirname(path.resolve(this.data));
@@ -182,6 +183,32 @@ Node.CMakeInsertAMACommand = function(options) {
 		'  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}\n',
 		')\n'
 	].join('');
+	return this.Insert(POS_BACK, ParseCode(cmd, cmake_options).Find(N_CALL, null));
+};
+
+Node.CMakeInsertTargetProperty = function(target, name, value) {
+	for (let nd_call of this.FindAll(N_CALL, 'set_property')) {
+		if (!nd_call.Find(N_REF, target) || !nd_call.Find(N_REF, name)) {continue;}
+		let args = nd_call.TokenizeCMakeArgs();
+		if (args.length < 6) {continue;}
+		if (args[0].GetName() == 'TARGET' && args[1].GetName() == target && args[2].GetName() == 'APPEND' && args[3].GetName() == 'PROPERTY' && args[4].GetName() == name) {
+			//see what we can find
+			for (let i = 5; i < args.length; i++) {
+				if (args[i].GetName() == value) {
+					//already found
+					return nd_call;
+				}
+			}
+		}
+	}
+	let cmd = [
+		'\nset_property(\n',
+		'  TARGET ', target, '\n',
+		'  APPEND PROPERTY ', name, '\n',
+		'  ', JSON.stringify(value), '\n',
+		')\n'
+	].join('');
+	this.flags |= CMAKE_CHANGED;
 	return this.Insert(POS_BACK, ParseCode(cmd, cmake_options).Find(N_CALL, null));
 };
 
@@ -222,7 +249,8 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 	//insert files
 	let src_name_abs = path.resolve(this.data);
 	let dir_cmake = path.dirname(fn_cmake);
-	let our_files = new Set(depends.ListAllDependency(this, false).map(nd_root => __path_toAbsolute(nd_root.data)));
+	let all_dep_roots = depends.ListAllDependency(this, false);
+	let our_files = new Set(all_dep_roots.map(nd_root => __path_toAbsolute(nd_root.data)));
 	let our_files_filtered = [];
 	//our own file could be .ama.
 	let src_name_rel = TryRelative(dir_cmake, src_name_abs).replace('.ama.', '.');
@@ -279,6 +307,16 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 			format: format,
 			files: our_files_filtered
 		});
+	}
+	//add target properties
+	for (let nd_root of all_dep_roots) {
+		for (let match of nd_root.MatchAll(nd_build_option_template)) {
+			let key = match.name.GetName();
+			let value = match.value.GetName();
+			if (!key.endsWith('_files') && key != 'output_format') {
+				nd_cmake.CMakeInsertTargetProperty(name, key.toUpperCase(), value);
+			}
+		}
 	}
 	if (nd_cmake.flags & CMAKE_CHANGED) {
 		nd_cmake.Save(cmake_options);
