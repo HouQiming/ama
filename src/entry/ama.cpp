@@ -38,7 +38,7 @@ int main(int argc, char const* const* argv) {
 	if ( argc < 2 ) {
 		//no macros, no output file name
 		//whatever you need, put in the script
-		char const* help_argv[2] = {argv[0],"--help"};
+		char const * help_argv[2] = {argv[0],"--help"};
 		return RunCommandLineUtility(2, help_argv);
 	}
 	#if defined(_WIN32)

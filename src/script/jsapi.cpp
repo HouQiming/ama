@@ -37,7 +37,7 @@
 #include "jsenv.hpp"
 #include "jsapi.hpp"
 #include "jsgen.hpp"
-ama::Node * ama::Node::Unparse() {
+ama::Node* ama::Node::Unparse() {
 	switch ( this->node_class ) {
 		default: {
 			return this;

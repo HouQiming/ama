@@ -468,6 +468,19 @@ public:
 			}
 		#endif
 	}
+	inline std::vector<std::span<T>> split(T const &b)const{
+		std::vector<std::span<T>> ret;
+		intptr_t i0=0;
+		const T* p=this->data();
+		for(intptr_t i=0;i<(intptr_t)this->size();i++){
+			if(p[i]==b){
+				ret.push_back(std::span<T>(p+i0,i-i0));
+				i0=i+1;
+			}
+		}
+		ret.push_back(std::span<T>(p+i0,(intptr_t)this->size()-i0));
+		return std::move(ret);
+	}
 };
 
 template<typename Key,typename Value>

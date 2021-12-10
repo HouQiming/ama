@@ -957,6 +957,16 @@ namespace ama {
 					nd_func->data = nd_before->data;
 					found = 1;
 				}
+			} else if (nd_before->node_class == ama::N_BINOP) {
+				ama::Node* ndj = nd_before;
+				while ( ndj->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(ndj->data) ) {
+					ndj = ndj->c->s;
+				}
+				if ( ndj->node_class == ama::N_REF || ndj->node_class == ama::N_DOT ) {
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, ndj);
+					nd_func->data = ndj->data;
+					found = 1;
+				}
 			}
 			if ( !found ) {
 				//test for old C macro style `FOO_DECL(int,foo)(int bar){}`

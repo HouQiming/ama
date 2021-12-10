@@ -61,6 +61,8 @@ function Translate(nd_root, options) {
 		let nd_class = nd_func.Owning(N_CLASS);
 		if (nd_class && nd_class.data != 'namespace') {continue;}
 		if (!nd_func.GetFunctionNameNode()) {continue;}
+		//reject main
+		if (nd_func.data == 'main') {continue;}
 		//gotta sync to header
 		to_sync.push(nd_func);
 	}

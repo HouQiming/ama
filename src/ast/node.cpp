@@ -244,7 +244,7 @@ ama::TCloneResult ama::Node::CloneEx() const {
 	ama::Node* nd = dfsClone(mapping, this);
 	return ama::TCloneResult{.nd = nd, .mapping = std::move(mapping)};
 }
-ama::Node * ama::Node::Clone() const {
+ama::Node* ama::Node::Clone() const {
 	if ( !intptr_t(this) ) {
 		return nullptr;
 	}
@@ -263,7 +263,7 @@ ama::Node * ama::Node::Clone() const {
 //	assert(nd_prev.s == this)
 //	nd_prev.s = nd_new;
 //}
-ama::Node * ama::Node::ReplaceWith(ama::Node* nd_new) {
+ama::Node* ama::Node::ReplaceWith(ama::Node* nd_new) {
 	if ( !nd_new ) {
 		this->Unlink();
 		return nullptr;
@@ -272,7 +272,7 @@ ama::Node * ama::Node::ReplaceWith(ama::Node* nd_new) {
 		return nd_new;
 	}
 }
-ama::Node * ama::Node::Unlink() {
+ama::Node* ama::Node::Unlink() {
 	if ( this->s ) {
 		//this.s.v=this.v should work whether this.v is a tail pointer or not
 		//this.s.MergeCommentsBefore(this);
@@ -302,7 +302,7 @@ ama::Node * ama::Node::Unlink() {
 	this->v = nullptr;
 	return this;
 }
-ama::Node * ama::Node::Insert(int pos, ama::Node* nd_new) {
+ama::Node* ama::Node::Insert(int pos, ama::Node* nd_new) {
 	assert(this->tmp_flags & ama::TMPF_IS_NODE);
 	ama::Node* nd_new_parent = pos == ama::POS_FRONT || pos == ama::POS_BACK ? this : this->p;
 	ama::Node* nd_tail = nd_new;
@@ -424,14 +424,14 @@ ama::Node * ama::Node::Insert(int pos, ama::Node* nd_new) {
 	//}
 	return nd_new;
 }
-ama::Node * ama::Node::Root() const {
+ama::Node* ama::Node::Root() const {
 	ama::Node* ndi = (ama::Node*)(this);
 	while ( ndi->p ) {
 		ndi = ndi->p;
 	}
 	return ndi;
 }
-ama::Node * ama::Node::RootStatement() const {
+ama::Node* ama::Node::RootStatement() const {
 	ama::Node* ndi = (ama::Node*)(this);
 	while ( ndi->p && ndi->p->p ) {
 		ndi = ndi->p;
@@ -447,7 +447,7 @@ int ama::Node::isAncestorOf(ama::Node const* nd_maybe_child) const {
 	}
 	return 0;
 }
-ama::Node * ama::Node::Owning(int nc) const {
+ama::Node* ama::Node::Owning(int nc) const {
 	for (ama::Node* ndi = (ama::Node*)(this); ndi; ndi = ndi->p) {
 		if ( ndi->node_class == nc ) {
 			return ndi;
@@ -455,7 +455,7 @@ ama::Node * ama::Node::Owning(int nc) const {
 	}
 	return nullptr;
 }
-ama::Node * ama::Node::Owner() const {
+ama::Node* ama::Node::Owner() const {
 	//|| int(ndi.node_class) == ama::N_RAW_DECLARATION
 	for (ama::Node* ndi = this->p; ndi; ndi = ndi->p) {
 		if ( ndi->node_class == ama::N_FUNCTION || ndi->node_class == ama::N_CLASS || !ndi->p ) {
@@ -465,7 +465,7 @@ ama::Node * ama::Node::Owner() const {
 	return nullptr;
 }
 //for simppair.jc only
-ama::Node * ama::Node::LastChildSP() const {
+ama::Node* ama::Node::LastChildSP() const {
 	ama::Node* ndi = this->c;
 	if ( ndi ) {
 		while ( ndi->s ) {
@@ -476,7 +476,7 @@ ama::Node * ama::Node::LastChildSP() const {
 		return nullptr;
 	}
 }
-ama::Node * ama::Node::LastChild() const {
+ama::Node* ama::Node::LastChild() const {
 	ama::Node* ndi = this->c;
 	if ( ndi ) {
 		//while( ndi.s ) {
@@ -488,7 +488,7 @@ ama::Node * ama::Node::LastChild() const {
 		return nullptr;
 	}
 }
-ama::Node * ama::Node::CommonAncestor(ama::Node const* b) const {
+ama::Node* ama::Node::CommonAncestor(ama::Node const* b) const {
 	ama::Node* a = (ama::Node*)(this);
 	std::vector<ama::Node*> ancestors_a{};
 	for (ama::Node* ndi = a; ndi; ndi = ndi->p) {
@@ -525,7 +525,7 @@ ama::gcstring ama::Node::GetStringValue() {
 		return nd_this->data;
 	}
 }
-ama::Node * ama::Node::dot(ama::gcstring name) {
+ama::Node* ama::Node::dot(ama::gcstring name) {
 	ama::Node* nd_ret = ama::CreateNode(ama::N_DOT, this);
 	nd_ret->data = name;
 	nd_ret->indent_level = this->indent_level;
@@ -662,7 +662,7 @@ static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t bou
 	}
 	return nd_ret;
 }
-ama::Node * ama::Node::Find(int node_class, ama::gcstring data) const {
+ama::Node* ama::Node::Find(int node_class, ama::gcstring data) const {
 	return FindImpl((ama::Node*)(this), nullptr, 0, node_class, data, nullptr);
 }
 std::vector<ama::Node*> ama::Node::FindAll(int node_class, ama::gcstring data) const {
@@ -693,23 +693,23 @@ int ama::Node::isMethodCall(std::span<char> name) const {
 	return this->node_class == ama::N_CALL && this->c->node_class == ama::N_DOT && this->c->data == name;
 }
 ///dependency is global: have to re-ParseDependency after you InsertDependency
-ama::Node * ama::Node::InsertDependency(uint32_t flags, ama::gcstring name) {
+ama::Node* ama::Node::InsertDependency(uint32_t flags, ama::gcstring name) {
 	for ( ama::Node* const &ndi: this->FindAll(ama::N_DEPENDENCY, name) ) {
 		if ( ndi->flags == flags ) { return ndi; }
 	}
 	return this->Insert(ama::POS_FRONT, ama::nDependency(ama::nString(name))->setFlags(flags));
 }
-ama::Node * ama::Node::InsertCommentBefore(std::span<char> s) {
+ama::Node* ama::Node::InsertCommentBefore(std::span<char> s) {
 	this->comments_before = (ama::gcscat(s, this->comments_before));
 	return this;
 }
 ///////////////////////////////////////
-ama::Node * ama::Node::MergeCommentsAfter(ama::Node* nd_after) {
+ama::Node* ama::Node::MergeCommentsAfter(ama::Node* nd_after) {
 	this->comments_after = (this->comments_after + nd_after->comments_before);
 	nd_after->comments_before = "";
 	return this;
 }
-ama::Node * ama::Node::MergeCommentsAndIndentAfter(ama::Node* nd_after) {
+ama::Node* ama::Node::MergeCommentsAndIndentAfter(ama::Node* nd_after) {
 	std::string ret = JC::string_concat(this->comments_after, nd_after->comments_before);
 	if ( nd_after->comments_before--->indexOf('\n') >= 0 && nd_after->indent_level > 0 ) {
 		for (intptr_t i = intptr_t(0L); i < intptr_t(nd_after->indent_level); i += 1) {
@@ -720,7 +720,7 @@ ama::Node * ama::Node::MergeCommentsAndIndentAfter(ama::Node* nd_after) {
 	nd_after->comments_before = "";
 	return this;
 }
-ama::Node * ama::Node::MergeCommentsBefore(ama::Node* nd_before) {
+ama::Node* ama::Node::MergeCommentsBefore(ama::Node* nd_before) {
 	this->comments_before = (nd_before->comments_after + this->comments_before);
 	nd_before->comments_after = "";
 	return this;
@@ -856,24 +856,24 @@ int ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 void ama::Node::Validate() {
 	this->ValidateEx(intptr_t(0x3fffffffL), 0);
 }
-ama::Node * ama::Node::PreorderNext(ama::Node* nd_root) {
+ama::Node* ama::Node::PreorderNext(ama::Node* nd_root) {
 	if ( this->c ) { return this->c; } else { return PreorderSkipChildren(this, nd_root); }
 }
-ama::Node * ama::Node::PreorderSkip() {
+ama::Node* ama::Node::PreorderSkip() {
 	ama::Node* ndi = this;
 	while ( ndi && ndi->c ) {
 		ndi = ndi->LastChild();
 	}
 	return ndi;
 }
-ama::Node * ama::Node::PostorderFirst() {
+ama::Node* ama::Node::PostorderFirst() {
 	ama::Node* nd = this;
 	while ( nd->c ) {
 		nd = nd->c;
 	}
 	return nd;
 }
-ama::Node * ama::Node::PostorderNext(ama::Node* nd_root) {
+ama::Node* ama::Node::PostorderNext(ama::Node* nd_root) {
 	if ( this == nd_root ) {
 		return nullptr;
 	} else if ( this->s ) {
@@ -882,26 +882,26 @@ ama::Node * ama::Node::PostorderNext(ama::Node* nd_root) {
 		return this->p;
 	}
 }
-ama::Node * ama::Node::ParentStatement() {
+ama::Node* ama::Node::ParentStatement() {
 	ama::Node* nd = (ama::Node*)(this);
 	while ( nd->p != nullptr && nd->p->node_class != ama::N_SCOPE && nd->p->node_class != ama::N_FILE ) {
 		nd = nd->p;
 	}
 	return nd;
 }
-ama::Node * ama::Node::Prev()const {
+ama::Node* ama::Node::Prev()const {
 	return ama::isValidPreviousSibling(this->v) ? this->v : nullptr;
 }
-ama::Node * ama::Node::Next()const {
+ama::Node* ama::Node::Next()const {
 	return this->s;
 }
-ama::Node * ama::Node::FirstChild()const {
+ama::Node* ama::Node::FirstChild()const {
 	return this->c;
 }
-ama::Node * ama::Node::Parent()const {
+ama::Node* ama::Node::Parent()const {
 	return this->p;
 }
-ama::Node * ama::Node::BreakSibling() {
+ama::Node* ama::Node::BreakSibling() {
 	ama::Node* ret = this->s;
 	this->s = nullptr;
 	if ( ret ) { ret->v = nullptr; }
@@ -915,13 +915,13 @@ ama::Node * ama::Node::BreakSibling() {
 	}
 	return ret;
 }
-ama::Node * ama::Node::BreakChild() {
+ama::Node* ama::Node::BreakChild() {
 	ama::Node* ret = this->c;
 	this->c = nullptr;
 	if ( ret ) { ret->p = nullptr; ret->v = nullptr; }
 	return ret;
 }
-ama::Node * ama::Node::BreakSelf() {
+ama::Node* ama::Node::BreakSelf() {
 	if ( ama::isValidPreviousSibling(this->v) ) {
 		assert(this->v->s == this);
 		return this->v->BreakSibling();
@@ -932,10 +932,10 @@ ama::Node * ama::Node::BreakSelf() {
 		return this;
 	}
 }
-ama::Node * ama::Node::ReplaceUpto(ama::Node* nd_upto, ama::Node* nd_new) {
+ama::Node* ama::Node::ReplaceUpto(ama::Node* nd_upto, ama::Node* nd_new) {
 	return ama::ReplaceChildRange(this, nd_upto, nd_new);
 }
-ama::Node * ama::Node::toSingleNode() {
+ama::Node* ama::Node::toSingleNode() {
 	return ama::toSingleNode(this);
 }
 uint8_t ama::Node::GetCFGRole() const {

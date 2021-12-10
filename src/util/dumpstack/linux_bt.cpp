@@ -17,7 +17,7 @@ namespace DumpStack {
 	volatile int g_is_our_abort = 0;
 	void PrintCallStack() {
 		pid_t pid = getpid();
-		void* bt_addresses[64] = {};
+		void * bt_addresses[64] = {};
 		int n_levels = (int)backtrace(bt_addresses, 64);
 		char** messages = backtrace_symbols(bt_addresses, n_levels);
 		//level 2 is the offending instruction, anything above that is a call

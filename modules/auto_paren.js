@@ -76,7 +76,7 @@ function Translate(nd_root) {
 	//auto-scope
 	for (let ndi of all_scoped.concat(nd_root.FindAll(N_EXTENSION_CLAUSE, null))) {
 		if(ndi.data==='template'){continue;}
-		if(ndi.c.s.node_class!==N_SCOPE&&ndi.c.s.node_class!==N_AIR){
+		if(ndi.c.s&&ndi.c.s.node_class!==N_SCOPE&&ndi.c.s.node_class!==N_AIR){
 			if(ndi.data=='else'&&ndi.c.s.node_class==N_SCOPED_STATEMENT&&ndi.c.s.data=='if'){
 				continue;
 			}

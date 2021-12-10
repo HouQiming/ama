@@ -259,7 +259,7 @@ namespace ama {
 			for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 				//binary and unary in one pass
 				std::vector<ama::Node*> stack{};
-				ama::Node * nd_raw = a[i];
+				ama::Node* nd_raw = a[i];
 				ama::Node* ndi = nd_raw->c;
 				int changed = 0;
 				while ( ndi ) {

@@ -24,6 +24,19 @@ namespace path {
 	std::string relative(std::span<char> from, std::span<char> _to);
 	//toAbsolute implements resolve
 	std::string toAbsolute(std::span<char> path);
+	struct CPathJoiner {
+		std::string cur_path{};
+		CPathJoiner& operator+(std::span<char> b) {
+			if ( this->cur_path.size() ) {
+				this->cur_path--->push(sep);
+			}
+			this->cur_path--->push(b);
+			return *this;
+		}
+		std::string done() const {
+			return std::move(toAbsolute(this->cur_path));
+		}
+	};
 	struct CPathResolver {
 		std::string cur_path{};
 		CPathResolver* add(std::span<char> b) {
@@ -37,10 +50,27 @@ namespace path {
 			this->cur_path--->push(b);
 			return this;
 		}
+		CPathResolver& operator+(std::span<char> b) {
+			return *this->add(b);
+		}
 		std::string done() const {
 			return std::move(toAbsolute(this->cur_path));
 		}
 	};
+	#if __cplusplus >= 201703L
+		template<typename... Types>
+		static inline std::string join(Types&&... args) {
+			CPathJoiner a{};
+			(a+...+args);
+			return a.done();
+		}
+		template<typename... Types>
+		static inline std::string resolve(Types&&... args) {
+			CPathResolver a{};
+			(a+...+args);
+			return a.done();
+		}
+	#endif
 };
 #pragma gen_begin(JSON::stringify<path::CPathObject>)
 namespace JSON {
