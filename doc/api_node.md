@@ -406,6 +406,7 @@ Return the role of `nd` in a CFG (Control Flow Graph):
 
 --------------
 - `nd.isChildCFGDependent(nd_child)`
+- `nd.ComputeChildCount()`
 
 Return 1 if whether `nd_child` gets executed depends on `nd`, `nd_child` must be a child of `nd`.
 

@@ -30,7 +30,9 @@ namespace ama {
 				((lines_out[i1]->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->data)) || 
 				(lines_out[i1]->node_class == ama::N_RAW && lines_out[i1]->c && lines_out[i1]->c->node_class == ama::N_REF && keywords_extension_clause--->get(lines_out[i1]->c->data)))) ||
 				but_merge_cpp_ctor_lines && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(":")) ||
-				but_merge_cpp_ctor_lines && could_be_in_ctor && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(",")))) {
+				but_merge_cpp_ctor_lines && could_be_in_ctor && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(","))) ||
+				but_merge_cpp_ctor_lines && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->c->isRef("template") && (lines_out[i1 - 1]->LastChild()->isSymbol(">") || lines_out[i1 - 1]->LastChild()->isSymbol(">>")))
+				) {
 					if ( (lines_out[i1 - 1]->node_class == ama::N_SCOPE || lines_out[i1 - 1]->isRawNode('{', '}')) && lines_out[i1]->comments_before--->startsWith('\n') ) {
 						lines_out[i1]->comments_before = ama::gcstring(lines_out[i1]->comments_before--->subarray(1));
 					}

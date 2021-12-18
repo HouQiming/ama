@@ -576,7 +576,7 @@ ama::gcstring ama::Node::GetName() const {
 	if ( this->node_class == ama::N_FUNCTION ) {
 		//COULDDO: re-query the function name
 		return this->data;
-	} else if ( this->node_class == ama::N_CALL || this->node_class == ama::N_CALL_TEMPLATE || this->node_class == ama::N_CALL_CUDA_KERNEL ) {
+	} else if ( this->node_class == ama::N_CALL || this->node_class == ama::N_CALL_TEMPLATE || this->node_class == ama::N_CALL_CUDA_KERNEL || this->node_class == ama::N_ITEM ) {
 		if ( this->c && this->c->node_class != this->node_class && this->c->node_class != ama::N_CALL ) {
 			return this->c->GetName();
 		} else {
@@ -1023,6 +1023,14 @@ int32_t ama::Node::ComputeLineNumber() const {
 				if ( ndi->s ) { ndi = ndi->s;break; }
 			}
 		}
+	}
+	return ret;
+}
+
+intptr_t ama::Node::ComputeChildCount() const {
+	intptr_t ret = 0;
+	for (ama::Node* ndi = this->c; ndi; ndi = ndi->s) {
+		ret++;
 	}
 	return ret;
 }

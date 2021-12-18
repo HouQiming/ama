@@ -524,6 +524,7 @@ namespace ama {
 		uint8_t GetCFGRole()const;
 		//Return 1 if whether `nd_child` gets executed depends on `nd`, `nd_child` must be a child of `nd`.
 		int isChildCFGDependent(ama::Node const* nd_child)const;
+		intptr_t ComputeChildCount() const;
 	};
 	extern ama::Node* g_placeholder;
 	ama::Node* AllocNode();
