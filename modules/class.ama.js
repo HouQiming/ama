@@ -27,6 +27,9 @@ function ListOwnProperties(properties, nd_class) {
 				break;
 			}
 		}
+		//if (ndi.node_class == N_REF){
+		//	console.log(ndi.data,ndi.flags);
+		//}
 		if (ndi.node_class == N_REF && (ndi.flags & REF_DECLARED)) {
 			let is_static = last_appearance['static'] && last_appearance['static'].isAncestorOf(ndi) || nd_class.data == 'namespace';
 			properties.push({

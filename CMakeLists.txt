@@ -62,7 +62,6 @@ endif()
 else()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funwind-tables")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -funwind-tables")
 set_property(
   TARGET amal
   APPEND PROPERTY LINK_LIBRARIES

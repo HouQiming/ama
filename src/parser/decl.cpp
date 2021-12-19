@@ -870,7 +870,7 @@ namespace ama {
 					is_array_assignment = 1;
 				} else if (  
 				(nd_cdecl->p->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(nd_cdecl->p->data) && nd_cdecl == nd_cdecl->p->c->s) || 
-				nd_cdecl->p->node_class == ama::N_PREFIX ) {
+				nd_cdecl->p->node_class == ama::N_PREFIX) {
 					//it's OK
 				} else {
 					break;
@@ -887,6 +887,10 @@ namespace ama {
 						//foo in `for(foo:bar)`
 						is_ok = 1;
 					}
+				}
+				while ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_LABELED && nd_cdecl->p->c->s == nd_cdecl ) {
+					//public: int a;
+					nd_cdecl = nd_cdecl->p;
 				}
 				if ( nd_cdecl == nd_stmt ) {
 					//foo in `type foo;` or `type bar,*foo[8];`
