@@ -493,6 +493,10 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 	return p;
 };
 
+__global.LoadFile=function(fn,options){
+	return __require(__init_js_path,'depends').LoadFile(fn,options);
+}
+
 __global.__GetFilterByName=function(name) {
 	if(name==='ParseSimplePairing'){
 		return ParseSimplePairing;

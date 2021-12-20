@@ -63,6 +63,8 @@ function Translate(nd_root, options) {
 		if (!nd_func.GetFunctionNameNode()) {continue;}
 		//reject main
 		if (nd_func.data == 'main') {continue;}
+		//reject lambda
+		if(nd_func.c.isRawNode('[',']')){continue;}
 		//gotta sync to header
 		to_sync.push(nd_func);
 	}

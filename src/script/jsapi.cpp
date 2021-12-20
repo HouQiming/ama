@@ -280,6 +280,17 @@ namespace ama {
 		JS_FreeValue(ama::jsctx, options);
 		return nd_root;
 	}
+	ama::Node* LoadFile(char const* fn) {
+		JSValue val_fn = JS_NewString(ama::jsctx, fn);
+		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "LoadFile"), 1, &val_fn);
+		JS_FreeValue(ama::jsctx, val_fn);
+		if ( JS_IsException(ret) ) {
+			return nullptr;
+		}
+		ama::Node* nd_ret = ama::UnwrapNode(ret);
+		JS_FreeValue(ama::jsctx, ret);
+		return nd_ret;
+	}
 	static JSValueConst JSParseSimplePairing(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		JSValue options{};
 		if ( argc < 1 ) {

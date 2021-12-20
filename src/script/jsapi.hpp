@@ -15,6 +15,7 @@ namespace ama {
 	static const int PROCESS_AMA_SCRIPT_FAILED = 0;
 	static const int PROCESS_AMA_SUCCESS = 1;
 	int ProcessAmaFile(char const* fn, std::span<char> extra_script);
+	ama::Node* LoadFile(char const* fn);
 };
 
 #endif
