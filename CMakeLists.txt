@@ -40,6 +40,7 @@ add_library(amal SHARED
 	"src/util/fs.cpp"
 	"src/util/path_posix.cpp"
 	"src/util/path_win32.cpp"
+	"src/util/wcwidth.cpp"
 	"src/script/jsenv.cpp"
 	"src/ast/node.cpp"
 	"src/script/jsapi.cpp")
