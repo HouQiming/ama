@@ -267,8 +267,9 @@ namespace ama {
 					if ( ndi->node_class == ama::N_SYMBOL ) {
 						if ( ndi->data != "=" ) {
 							//fold ambiguous_type_suffix as postfix if we got another symbol that isn't =
+							//when && follows a symbol, it can't be the computed-goto prefix
 							if ( stack.size() >= 2 && stack.back()->node_class == ama::N_SYMBOL && is_type_suffix--->get(stack.back()->data) && 
-							stack[stack.size() - 2]->node_class != ama::N_SYMBOL && (!prefix_ops--->get(ndi->data) || cv_qualifiers--->get(ndi->data)) ) {
+							stack[stack.size() - 2]->node_class != ama::N_SYMBOL && (!prefix_ops--->get(ndi->data) || cv_qualifiers--->get(ndi->data) || ndi->data == "&&") ) {
 								ama::Node* nd_operator = stack--->pop();
 								ama::Node* nd_operand = stack--->pop();
 								nd_operand = FoldPostfix(nd_operand, nd_operator);

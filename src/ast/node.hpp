@@ -606,6 +606,24 @@ namespace ama {
 		nd->s = nullptr;
 		return ama::CreateNode(N_DEPENDENCY, nd);
 	}
+	static inline ama::Node* nDot(ama::gcstring name, Node* nd_obj) {
+		return nd_obj->dot(name);
+	}
+	static inline ama::Node* NodeList(ama::Node* first) {
+		return cons(first, nullptr);
+	}
+	template<typename... Types>
+	static inline ama::Node* NodeList(ama::Node* first, Types... args) {
+		return cons(first, NodeList(args...));
+	}
+	template<typename... Types>
+	static inline ama::Node* nCall(Types... args) {
+		return CreateNode(N_CALL, NodeList(args...));
+	}
+	template<typename... Types>
+	static inline ama::Node* nRaw(Types... args) {
+		return CreateNode(N_RAW, NodeList(args...));
+	}
 	///////////////
 	static inline ama::Node* GetPlaceHolder() {
 		assert(!g_placeholder->p);

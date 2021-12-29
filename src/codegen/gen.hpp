@@ -1,6 +1,7 @@
 #ifndef _GEN_JCH_HPP
 #define _GEN_JCH_HPP
 #include "../ast/node.hpp"
+#include "../script/jsenv.hpp"
 #include <string>
 #include "../util/jc_array.h"
 /*#pragma add("jc_files", "./gen.jc");*/

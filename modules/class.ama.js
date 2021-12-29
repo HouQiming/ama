@@ -73,6 +73,9 @@ function ListOwnProperties(properties, nd_class) {
 			});
 			ndi = ndi.PreorderSkip();
 			continue;
+		} else if (ndi.node_class == N_SCOPED_STATEMENT && ndi.data == 'template') {
+			//skip template parameters
+			ndi = ndi.c.PreorderSkip();
 		}
 	}
 }

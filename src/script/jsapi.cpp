@@ -281,6 +281,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* LoadFile(char const* fn) {
+		LazyInitScriptEnv();
 		JSValue val_fn = JS_NewString(ama::jsctx, fn);
 		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "LoadFile"), 1, &val_fn);
 		JS_FreeValue(ama::jsctx, val_fn);

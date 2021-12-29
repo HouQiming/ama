@@ -20,7 +20,8 @@ module.exports = function Translate(nd_root) {
 				continue;
 			}
 			let type = typing.ComputeType(nd_dot.c);
-			if (type && type.node_class == N_POSTFIX && type.data == '*') {
+			//unique_ptr has .get()... so no == '^' check
+			if (type && type.node_class == N_POSTFIX && (type.data == '*')) {
 				nd_dot.flags = DOT_PTR;
 			} else if (type && type.node_class == N_CLASS && type.data == 'namespace') {
 				nd_dot.flags = DOT_CLASS;

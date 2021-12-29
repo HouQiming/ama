@@ -4,6 +4,7 @@ let g_templates = {
 	view: {from: @(@(Node.MatchAny('TElement'))[:]), to: @(std::span<@(Node.MatchAny('TElement'))>)},
 	fixed_array: {from: nPostfix(@(@(Node.MatchAny('TElement'))[@(Node.MatchAny('size'))]), '!'), to: @(std::array<@(Node.MatchAny('TElement')), @(Node.MatchAny('size'))>)},
 	map: {from: @(Map<@(Node.MatchAny('TKey')), @(Node.MatchAny('TValue'))>), to: @(std::unordered_map<@(Node.MatchAny('TKey')), @(Node.MatchAny('TValue'))>)},
+	unique_ptr: {from: @(@(Node.MatchAny('TElement'))^), to: @(std::unique_ptr<@(Node.MatchAny('TElement'))>)},
 };
 
 /*
@@ -11,15 +12,17 @@ let g_templates = {
 The filter itself has no visible effect and must be used before `require("sane_types")`.
 */
 function FixArrayTypes(nd_root) {
-	for (let nd_mul of nd_root.FindAll(N_BINOP, '*')) {
-		//[]
-		if (nd_mul.c.s.isRawNode('[', ']')) {
-			let nd_subscripts = nd_mul.c.BreakSibling().c;
-			let nd_item = nItem(nPostfix(nd_mul.BreakChild(), '*'));
-			if (nd_subscripts) {
-				nd_item.Insert(POS_BACK, nd_subscripts);
+	for (let nd_mul of nd_root.FindAll(N_BINOP)) {
+		if (nd_mul.data == '*' || nd_mul.data == '^') {
+			//[]
+			if (nd_mul.c.s.isRawNode('[', ']')) {
+				let nd_subscripts = nd_mul.c.BreakSibling().c;
+				let nd_item = nItem(nPostfix(nd_mul.BreakChild(), nd_mul.data));
+				if (nd_subscripts) {
+					nd_item.Insert(POS_BACK, nd_subscripts);
+				}
+				nd_mul.ReplaceWith(nd_item);
 			}
-			nd_mul.ReplaceWith(nd_item);
 		}
 	}
 }
