@@ -91,10 +91,10 @@ namespace ama {
 			if ( fn--->endsWith(".ama.js") ) {
 				ama::Node* nd_root = DefaultParseCode(s_code->c_str());
 				if (nd_root) {
-					for (ama::Node* nd: nd_root->FindAll(ama::N_BINOP, "!=")) {
+					for (ama::Node * nd: nd_root->FindAll(ama::N_BINOP, "!=")) {
 						nd->data = "!==";
 					}
-					for (ama::Node* nd: nd_root->FindAll(ama::N_BINOP, "==")) {
+					for (ama::Node * nd: nd_root->FindAll(ama::N_BINOP, "==")) {
 						nd->data = "===";
 					}
 					ama::NodeofToASTExpression(nd_root);
@@ -283,7 +283,9 @@ namespace ama {
 	ama::Node* LoadFile(char const* fn) {
 		LazyInitScriptEnv();
 		JSValue val_fn = JS_NewString(ama::jsctx, fn);
-		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), JS_NewAtom(ama::jsctx, "LoadFile"), 1, &val_fn);
+		JSAtom atom_lf = JS_NewAtom(ama::jsctx, "LoadFile");
+		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_lf, 1, &val_fn);
+		JS_FreeAtom(ama::jsctx, atom_lf);
 		JS_FreeValue(ama::jsctx, val_fn);
 		if ( JS_IsException(ret) ) {
 			return nullptr;
@@ -938,6 +940,36 @@ namespace ama {
 			JS_SetPropertyUint32(ctx, ret, p, ama::WrapNode(ndi));
 			p++;
 		}
+		return ret;
+	}
+	ama::Node* ComputeType(ama::Node* nd) {
+		LazyInitScriptEnv();
+		JSValue val_arg = ama::WrapNode(nd);
+		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppComputeType");
+		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 1, &val_arg);
+		JS_FreeAtom(ama::jsctx, atom_method);
+		JS_FreeValue(ama::jsctx, val_arg);
+		if ( JS_IsException(ret) ) {
+			return nullptr;
+		}
+		ama::Node* nd_ret = ama::UnwrapNode(ret);
+		JS_FreeValue(ama::jsctx, ret);
+		return nd_ret;
+	}
+	void DropTypeCache() {
+		LazyInitScriptEnv();
+		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppDropTypeCache");
+		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 0, nullptr);
+		JS_FreeAtom(ama::jsctx, atom_method);
+	}
+	JSValue DeepMatch(ama::Node* nd, ama::Node* nd_pattern) {
+		JSValueConst js_nd = ama::WrapNode(nd);
+		JSValue val_arg = ama::WrapNode(nd_pattern);
+		JSAtom atom_method = JS_NewAtom(ama::jsctx, "Match");
+		JSValueConst ret = JS_Invoke(ama::jsctx, js_nd, atom_method, 1, &val_arg);
+		JS_FreeAtom(ama::jsctx, atom_method);
+		JS_FreeValue(ama::jsctx, val_arg);
+		JS_FreeValue(ama::jsctx, js_nd);
 		return ret;
 	}
 	void InitScriptEnv() {

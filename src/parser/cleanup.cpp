@@ -6,7 +6,7 @@
 namespace ama {
 	ama::Node* CleanupDummyRaws(ama::Node* nd_root) {
 		//need cleanup inside nodeofs
-		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( (nd_raw->flags & 0xffff) != 0 || nd_raw == nd_root ) { continue; }
 			if ( !nd_raw->c && nd_raw->p && nd_raw->p->node_class == ama::N_RAW ) {
 				nd_raw->Unlink();
@@ -148,7 +148,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* FixPriorityReversal(ama::Node* nd_root) {
-		for ( ama::Node* nd_label: nd_root->FindAll(ama::N_LABELED) ) {
+		for ( ama::Node * nd_label: nd_root->FindAll(ama::N_LABELED) ) {
 			if ( nd_label->p && nd_label->p->node_class == ama::N_ASSIGNMENT && nd_label->p->c == nd_label ) {
 				//fix the priority reversal
 				ama::Node* nd_asgn = nd_label->p;
@@ -171,12 +171,12 @@ namespace ama {
 	ama::Node* NodifySemicolonAndParenthesis(ama::Node* nd_root) {
 		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
 		scopes--->push(nd_root);
-		for ( ama::Node const* const& nd_nodeof: nd_root->FindAllWithin(0, ama::N_NODEOF) ) {
+		for ( ama::Node const* const & nd_nodeof: nd_root->FindAllWithin(0, ama::N_NODEOF) ) {
 			if ( nd_nodeof->c ) {
 				scopes--->push(nd_nodeof->c);
 			}
 		}
-		for ( ama::Node* nd_scope: scopes ) {
+		for ( ama::Node * nd_scope: scopes ) {
 			for (ama::Node* ndi = nd_scope->c; ndi; ndi = ndi->s) {
 				while ( ndi->s && ndi->s->isSymbol(";") ) {
 					ama::Node* nd_semicolon = ndi->s;
@@ -191,7 +191,7 @@ namespace ama {
 				}
 			}
 		}
-		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( nd_raw->isRawNode('(', ')') && nd_raw->c && !nd_raw->c->s ) {
 				nd_raw->node_class = ama::N_PAREN;
 				nd_raw->flags = 0;

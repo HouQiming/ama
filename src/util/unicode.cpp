@@ -36,7 +36,7 @@ std::string unicode::UTF16ToUTF8(std::span<uint16_t> s) {
 	std::string ret{};
 	int32_t surrogate_1st = -1;
 	intptr_t surrogate_II = intptr_t(0L);
-	for ( uint16_t const &ch: s ) {
+	for ( uint16_t const & ch: s ) {
 		int32_t chi = int32_t(uint32_t(ch));
 		if ( (chi & ~0x3ff) == 0xd800 ) {
 			surrogate_1st = chi & 0x3ff;
@@ -57,7 +57,7 @@ std::string unicode::UTF16ToUTF8(std::span<uint16_t> s) {
 }
 std::string unicode::UTF32ToUTF8(std::span<int32_t> s) {
 	std::string ret{};
-	for ( int32_t const &chi: s ) {
+	for ( int32_t const & chi: s ) {
 		unicode::AppendUTF8Char(ret, chi);
 	}
 	return std::move(ret);

@@ -498,6 +498,14 @@ __global.LoadFile=function(fn,options){
 }
 __global.require=__require.bind(__global,__init_js_path);
 
+__global.CppComputeType=function(nd){
+	return __require(__init_js_path,'cpp/typing').ComputeType(nd);
+}
+
+__global.CppDropTypeCache=function(nd){
+	__require(__init_js_path,'cpp/typing').DropCache();
+}
+
 __global.__GetFilterByName=function(name) {
 	if(name==='ParseSimplePairing'){
 		return ParseSimplePairing;

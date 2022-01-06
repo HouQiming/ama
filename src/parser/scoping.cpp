@@ -67,7 +67,7 @@ namespace ama {
 				assert(line_group.size() > 1);
 				ama::Node* nd_raw = ama::CreateNodeFromChildren(ama::N_RAW, line_group);
 				nd_raw->indent_level = line_group[0]->indent_level;
-				for ( ama::Node* ndj: line_group ) {
+				for ( ama::Node * ndj: line_group ) {
 					ndj->AdjustIndentLevel(-nd_raw->indent_level);
 				}
 				line_out_final.push_back(nd_raw);
@@ -189,7 +189,7 @@ namespace ama {
 			}
 			if ( changed != ';' ) {
 				std::vector<ama::Node*> comma_children{};
-				for ( ama::Node* ndj: new_children ) {
+				for ( ama::Node * ndj: new_children ) {
 					ndi = ndj;
 					comma_children.push_back(ndi);
 					while ( ndi ) {
@@ -240,13 +240,13 @@ namespace ama {
 		int32_t auto_curly_bracket = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "auto_curly_bracket"), 0);
 		int32_t but_merge_cpp_ctor_lines = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_indent_as_scope_but_merge_cpp_ctor_lines"), 0);
 		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
-		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( nd_raw->isRawNode('{', '}') ) {
 				scopes--->push(nd_raw);
 			}
 		}
 		scopes.push_back(nd_root);
-		for ( ama::Node* nd_scope: scopes ) {
+		for ( ama::Node * nd_scope: scopes ) {
 			if (nd_scope->p && nd_scope->p->isRawNode('(', ')')) {
 				ama::Node* nd_prev = nd_scope->Prev();
 				if (!nd_prev || nd_prev->isSymbol(",")) {
@@ -313,7 +313,7 @@ namespace ama {
 			//merge scopes into surrounding raws
 			std::vector<ama::Node*> line_out_final = MergeScopesIntoStatements(keywords_extension_clause, but_merge_cpp_ctor_lines, lines_out);
 			//replace old children
-			for ( ama::Node* ndi: line_out_final ) {
+			for ( ama::Node * ndi: line_out_final ) {
 				ndi->p = nd_scope;
 				//if( ndi.s ) {
 				//	console.log('has s', ndi.toSource());

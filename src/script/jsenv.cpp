@@ -148,7 +148,7 @@ namespace ama {
 		JSAtom atom = JS_NewAtom(ama::jsctx, name);
 		JSValue ret = JS_Invoke(jsctx, this_val, atom, int(args.size()), args.data());
 		JS_FreeAtom(ama::jsctx, atom);
-		for (JSValue &val: args) {
+		for (JSValue & val: args) {
 			JS_FreeValue(ama::jsctx, val);
 			val = JS_UNDEFINED;
 		}

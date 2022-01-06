@@ -28,7 +28,7 @@ namespace ama {
 		//mark: if nd is alive, so is nd.p
 		//so we only mark root nodes and only propagate along c / s
 		std::vector<ama::Node*> Q{};
-		for ( auto&& pair_nd_v: ama::g_js_node_map ) {
+		for ( auto && pair_nd_v: ama::g_js_node_map ) {
 			//we could have hacky ->p which screws up rooting
 			ama::Node const* nd = pair_nd_v.first;
 			mark(Q, (ama::Node*)nd);

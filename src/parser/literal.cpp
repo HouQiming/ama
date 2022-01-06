@@ -10,7 +10,7 @@ namespace ama {
 	std::string escapeJSString(std::span<char> s) {
 		std::string ret{};
 		ret--->push('\'');
-		for ( char const &ch: s ) {
+		for ( char const & ch: s ) {
 			switch ( ch ) {
 				default: {
 					if ( uint8_t(ch) >= uint8_t(' ') ) {

@@ -406,9 +406,18 @@ Return the role of `nd` in a CFG (Control Flow Graph):
 
 --------------
 - `nd.isChildCFGDependent(nd_child)`
-- `nd.ComputeChildCount()`
 
 Return 1 if whether `nd_child` gets executed depends on `nd`, `nd_child` must be a child of `nd`.
+
+--------------
+- `nd.ComputeChildCount()`
+
+Compute the number of `nd`'s child nodes.
+
+--------------
+- `nd.FindAllDef()`
+
+Return a list of all `N_REF` nodes with the `REF_DECLARED` flag under `nd`.
 
 
 --------------

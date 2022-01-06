@@ -694,7 +694,7 @@ int ama::Node::isMethodCall(std::span<char> name) const {
 }
 ///dependency is global: have to re-ParseDependency after you InsertDependency
 ama::Node* ama::Node::InsertDependency(uint32_t flags, ama::gcstring name) {
-	for ( ama::Node* const &ndi: this->FindAll(ama::N_DEPENDENCY, name) ) {
+	for ( ama::Node* const & ndi: this->FindAll(ama::N_DEPENDENCY, name) ) {
 		if ( ndi->flags == flags ) { return ndi; }
 	}
 	return this->Insert(ama::POS_FRONT, ama::nDependency(ama::nString(name))->setFlags(flags));
@@ -885,6 +885,10 @@ ama::Node* ama::Node::PostorderNext(ama::Node* nd_root) {
 ama::Node* ama::Node::ParentStatement() {
 	ama::Node* nd = (ama::Node*)(this);
 	while ( nd->p != nullptr && nd->p->node_class != ama::N_SCOPE && nd->p->node_class != ama::N_FILE ) {
+		if (nd->p->node_class == ama::N_RAW && (nd->p->flags & 0xffff) && nd->p->p && nd->p->p->node_class == ama::N_SCOPED_STATEMENT && nd->p == nd->p->p->c) {
+			//statement inside for(;;)
+			break;
+		}
 		nd = nd->p;
 	}
 	return nd;
@@ -1033,4 +1037,17 @@ intptr_t ama::Node::ComputeChildCount() const {
 		ret++;
 	}
 	return ret;
+}
+
+std::vector<ama::Node*> ama::Node::FindAllDef() {
+	std::vector<ama::Node*> ret = this->FindAll(ama::N_REF);
+	intptr_t n2 = 0;
+	for (int i = 0; i < ret.size(); i++) {
+		if (ret[i]->flags & ama::REF_DECLARED) {
+			ret[n2] = ret[i];
+			n2 += 1;
+		}
+	}
+	ret.resize(n2);
+	return std::move(ret);
 }

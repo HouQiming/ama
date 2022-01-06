@@ -22,7 +22,7 @@ namespace ama {
 	}
 	static void dfsTranslate(std::string& ret, ama::Node* nd) {
 		if ( nd->node_class == ama::N_NODEOF ) {
-			for ( ama::Node* const &nd_nodeof: nd->c->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF) ) {
+			for ( ama::Node* const & nd_nodeof: nd->c->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF) ) {
 				std::string ret2{};
 				dfsTranslateList(ret2, nd_nodeof->c->c);
 				nd_nodeof->ReplaceWith(DefaultParseCode(ret2.c_str()));
@@ -74,7 +74,7 @@ namespace ama {
 		}
 	}
 	ama::Node* NodeofToASTExpression(ama::Node* nd_root) {
-		for ( ama::Node* const &nd_nodeof: nd_root->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF) ) {
+		for ( ama::Node* const & nd_nodeof: nd_root->FindAllWithin(ama::BOUNDARY_MATCH, ama::N_NODEOF) ) {
 			std::string ret{};
 			ama::Node* nd_tmp = nd_nodeof->c->c;
 			int8_t bk_ind = nd_tmp->indent_level;
@@ -86,7 +86,7 @@ namespace ama {
 			nd_tmp->comments_after = bk_cmta;
 			//preserve line numbers
 			int comment_pushed = 0;
-			for ( char const& ch: nd_nodeof->toSource() ) {
+			for ( char const & ch: nd_nodeof->toSource() ) {
 				if ( ch == '\n' ) {
 					if ( !comment_pushed ) {
 						comment_pushed = 1;

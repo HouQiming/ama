@@ -16,6 +16,9 @@ namespace ama {
 	static const int PROCESS_AMA_SUCCESS = 1;
 	int ProcessAmaFile(char const* fn, std::span<char> extra_script);
 	ama::Node* LoadFile(char const* fn);
+	ama::Node* ComputeType(ama::Node* nd);
+	JSValue DeepMatch(ama::Node* nd, ama::Node* nd_pattern);
+	void DropTypeCache();
 };
 
 #endif

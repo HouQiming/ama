@@ -62,7 +62,7 @@ namespace ama {
 	ama::Node* ParseColons(ama::Node* nd_root, JSValueConst options) {
 		int has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_conditional"), 1);
 		//int has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_labels"), 1);
-		for ( ama::Node* const &nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+		for ( ama::Node* const & nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( !nd_raw->c ) { continue; }
 			//console.error('--------');
 			//console.error(nd_raw.toSource());
@@ -159,7 +159,7 @@ namespace ama {
 			}
 		}
 		//fix assignment - function associativity
-		for (ama::Node* nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION)) {
+		for (ama::Node * nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION)) {
 			if (nd_func->c->node_class == ama::N_ASSIGNMENT) {
 				ama::Node* nd_asgn = nd_func->c;
 				ama::Node* nd_name = nd_asgn->c;
@@ -172,7 +172,7 @@ namespace ama {
 			}
 		}
 		//fix parameter faux assignment once we get a real one
-		for (ama::Node* nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)) {
+		for (ama::Node * nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)) {
 			for (ama::Node* ndi = nd_paramlist->c; ndi; ndi = ndi->s) {
 				if (ndi->node_class == ama::N_ASSIGNMENT && ndi->c->node_class == ama::N_ASSIGNMENT && ndi->c->s->node_class == ama::N_AIR) {
 					ndi = ndi->ReplaceWith(ndi->c->Unlink());
@@ -246,7 +246,7 @@ namespace ama {
 			named_ops--->set(iter.first, 1);
 		}
 		//named operators: convert refs to symbols
-		for ( ama::Node* nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
+		for ( ama::Node * nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( named_ops--->get(nd_ref->data) || (c_type_prefix_operators--->get(nd_ref->data) && nd_ref->s && nd_ref->s->node_class == ama::N_REF && nd_ref->p && nd_ref->p->node_class == ama::N_RAW) ) {
 				nd_ref->node_class = ama::N_SYMBOL;
 			}
@@ -354,7 +354,7 @@ namespace ama {
 		//	}
 		//}
 		//convert failed-to-fold named ops back
-		for ( ama::Node* const &nd_ref: nd_root->FindAllWithin(0, ama::N_SYMBOL) ) {
+		for ( ama::Node* const & nd_ref: nd_root->FindAllWithin(0, ama::N_SYMBOL) ) {
 			if ( named_ops--->get(nd_ref->data) || c_type_prefix_operators--->get(nd_ref->data) ) {
 				nd_ref->node_class = ama::N_REF;
 			}
@@ -362,7 +362,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* ParsePointedBrackets(ama::Node* nd_root) {
-		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			//actually split it
 			std::vector<ama::Node*> stack{};
 			int was_ref = 0;

@@ -524,7 +524,10 @@ namespace ama {
 		uint8_t GetCFGRole()const;
 		//Return 1 if whether `nd_child` gets executed depends on `nd`, `nd_child` must be a child of `nd`.
 		int isChildCFGDependent(ama::Node const* nd_child)const;
+		//Compute the number of `nd`'s child nodes.
 		intptr_t ComputeChildCount() const;
+		//Return a list of all `N_REF` nodes with the `REF_DECLARED` flag under `nd`.
+		std::vector<ama::Node*> FindAllDef();
 	};
 	extern ama::Node* g_placeholder;
 	ama::Node* AllocNode();
@@ -605,6 +608,10 @@ namespace ama {
 	static inline ama::Node* nDependency(Node* nd) {
 		nd->s = nullptr;
 		return ama::CreateNode(N_DEPENDENCY, nd);
+	}
+	static inline ama::Node* nSemicolon(Node* nd) {
+		nd->s = nullptr;
+		return ama::CreateNode(N_SEMICOLON, nd);
 	}
 	static inline ama::Node* nDot(ama::gcstring name, Node* nd_obj) {
 		return nd_obj->dot(name);

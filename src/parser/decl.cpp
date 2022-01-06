@@ -571,15 +571,13 @@ namespace ama {
 		}
 		//C forward declaration
 		if ( parse_c_forward_declarations ) {
-			for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+			for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 				//have to rely on context? we can do Owner tests here 
 				ama::Node* nd_owner = nd_raw->Owner();
 				if ( !(nd_raw->p && (nd_raw->p->node_class == ama::N_SCOPE || nd_raw->p->node_class == ama::N_FILE)) || nd_owner->node_class == ama::N_FUNCTION ) { continue; }
 				if ( !nd_raw->isRawNode(0, 0) ) { continue; }
 				ama::Node* nd_proto{};
-				//console.log('>>>', nd_owner.node_class, nd_raw.toSource());
 				for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
-					//console.log(ndi.node_class)
 					if ( (ndi->node_class == ama::N_REF && keywords_not_a_function--->get(ndi->data)) || ndi->isSymbol("=") ) {
 						nd_proto = nullptr;
 						break;
@@ -604,7 +602,7 @@ namespace ama {
 		/////////
 		//don't set REF_WRITTEN for function / class names: it's not profitable to treat them as "written" in our current AST formulation
 		//turn params into N_ASSIGNMENT
-		for ( ama::Node* nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
+		for ( ama::Node * nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
 			for (ama::Node* nd_param = nd_paramlist->node_class == ama::N_CALL_TEMPLATE ? nd_paramlist->c->s : nd_paramlist->c; nd_param; nd_param = nd_param->s) {
 				if ( nd_param->node_class == ama::N_ASSIGNMENT ) { continue; }
 				//if ( nd_param->node_class == ama::N_SYMBOL || (nd_param->node_class == ama::N_RAW && nd_param->c && nd_param->c->node_class == ama::N_SYMBOL) ) {
@@ -620,7 +618,7 @@ namespace ama {
 	}
 	ama::Node* ParseKeywordStatements(ama::Node* nd_root, JSValue options) {
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
-		for ( ama::Node* nd_keyword: nd_root->FindAllWithin(0, ama::N_REF) ) {
+		for ( ama::Node * nd_keyword: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( !keywords_statement--->get(nd_keyword->data) ) { continue; }
 			ama::Node* nd_parent = nd_keyword->p;
 			if ( !nd_parent ) { continue; }
@@ -755,7 +753,7 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_not_variable_name = ama::GetPrioritizedList(options, "keywords_not_variable_name");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
-		for ( ama::Node* nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
+		for ( ama::Node * nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( nd_ref->p->node_class == ama::N_CLASS && nd_ref->p->c->s == nd_ref ) {
 				//class, just declared and nothing else
 				nd_ref->flags |= ama::REF_DECLARED;
@@ -883,7 +881,7 @@ namespace ama {
 				int is_ok = 0;
 				if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_LABELED && nd_cdecl->p->c == nd_cdecl ) {
 					ama::Node* nd_loop = nd_cdecl->Owning(ama::N_SCOPED_STATEMENT);
-					if ( nd_loop && nd_stmt->isAncestorOf(nd_loop) && nd_loop->c->isAncestorOf(nd_cdecl) ) {
+					if ( nd_loop && (nd_stmt->isAncestorOf(nd_loop) || nd_loop->c->isAncestorOf(nd_stmt)) && nd_loop->c->isAncestorOf(nd_cdecl) ) {
 						//foo in `for(foo:bar)`
 						is_ok = 1;
 					}
@@ -916,7 +914,7 @@ namespace ama {
 		}
 		//detect type before dotted function name
 		//non-dotted non-C-macro functions should have been handled above
-		for ( ama::Node* nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION) ) {
+		for ( ama::Node * nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION) ) {
 			if ( !nd_func->data.empty() ) { continue; }
 			//C++ dotted declaration: `type foo::bar(){}`
 			//common C macro style: `FOO_DECL(int,foo)(int bar){}`

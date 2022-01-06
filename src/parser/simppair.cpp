@@ -423,7 +423,7 @@ namespace ama {
 						feed = ama::SkipChars(feed, cset_number);
 						has_exponent = feed[-intptr_t(1L)] == 'e' || feed[-intptr_t(1L)] == 'E';
 					}
-					if ( (feed[intptr_t(0L)] == '+' || feed[intptr_t(0L)] == '-') && has_exponent ) {
+					if ( (feed[intptr_t(0L)] == '+' || feed[intptr_t(0L)] == '-')&& has_exponent ) {
 						//0.000e+00
 						feed += intptr_t(1L);
 						feed = ama::SkipChars(feed, cset_exponent);

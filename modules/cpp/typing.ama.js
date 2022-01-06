@@ -375,13 +375,18 @@ typing.TryGettingClass = function(type_obj) {
 	}
 	//we could enter an infinite loop here for:
 	//`const Multilib &Multilib;`
-	let dedup = new Set();while (type_obj && !dedup.has(type_obj) && type_obj.node_class == N_POSTFIX && (type_obj.data == '&' || type_obj.data == 'const' || type_obj.data == 'volatile')) {
+	let dedup = new Set();
+	let count = 0;
+	while (type_obj && count < 1024 && !dedup.has(type_obj) && type_obj.node_class == N_POSTFIX && (type_obj.data == '&' || type_obj.data == 'const' || type_obj.data == 'volatile')) {
 		dedup.add(type_obj);
 		type_obj = typing.ComputeType(type_obj.c);
+		count++;
 	}
-	while (type_obj && !dedup.has(type_obj) && type_obj.node_class == N_CALL_TEMPLATE) {
+	count = 0;
+	while (type_obj && count < 1024 && !dedup.has(type_obj) && type_obj.node_class == N_CALL_TEMPLATE) {
 		dedup.add(type_obj);
 		type_obj = typing.ComputeType(type_obj.c);
+		count++;
 	}
 	return type_obj;
 };
@@ -537,6 +542,8 @@ typing.ComputeType = function(nd_expr) {
 			//assume self-representing
 			if (typing.options.nulls.has(nd_expr.data)) {
 				type = typing.null_type;
+			} else if (nd_expr.p && nd_expr.p.node_class == N_ASSIGNMENT && nd_expr == nd_expr.p.c.s) {
+				//immediate r-value of an assignment, unlikely to be self-representing
 			} else {
 				type = nd_expr;
 			}
@@ -569,8 +576,12 @@ typing.ComputeType = function(nd_expr) {
 		//COULDDO: substitute template parameters
 		//COULDDO: try to resolve overloading
 		let type_func = typing.ComputeType(nd_expr.c);
-		while (type_func && type_func.node_class == N_CALL_TEMPLATE) {
+		let dedup = new Set();
+		let count = 0;
+		while (type_func && count < 1024 && !dedup.has(type_func) && type_func.node_class == N_CALL_TEMPLATE) {
+			dedup.add(type_func);
 			type_func = typing.ComputeType(type_func.c);
+			count += 1;
 		}
 		if (type_func && type_func.node_class == N_FUNCTION) {
 			type = typing.ComputeReturnType(type_func);
@@ -647,6 +658,7 @@ typing.AccessTypeAt = function(type, nd_site) {
 
 typing.DeduceAutoTypedDef = function(nd_def) {
 	assert(nd_def.flags & REF_DECLARED);
+	//COULDDO: more precise scope
 	let nd_scope = nd_def.Owning(N_SCOPE) || nd_def.Root();
 	let nd_owner = nd_def.Owner();
 	//don't deduce fields
@@ -704,7 +716,7 @@ This filter is intended for source feedback, i.e., save the deduction result to 
 The deduction is backed by ama's simple typing engine so the result may not be available or correct.
 */
 typing.DeduceAuto = function(nd_root) {
-	for (let nd_def of nd_root.FindAll(N_REF, null)) {
+	for (let nd_def of nd_root.FindAll(N_REF)) {
 		if (!(nd_def.flags & REF_DECLARED) || nd_def.data == 'auto') {continue;}
 		if (!(nd_def.p && nd_def.p.node_class == N_RAW && nd_def.p.Find(N_REF, 'auto'))) {continue;}
 		typing.DeduceAutoTypedDef(nd_def);
