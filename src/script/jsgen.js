@@ -349,7 +349,11 @@ function Generate(version,nd_root) {
 					code=nd_root.then(auto_paren).then(auto_semicolon).NodeofToASTExpression().toSource();
 				}
 			}
-			code_func.push('\n\t',JSON.stringify(fn_rel),', ',JSON.stringify(code),',');
+			code_func.push('\n\t',JSON.stringify(fn_rel),', ');
+			for(let ofs=0;ofs<code.length;ofs+=1024){
+				code_func.push(JSON.stringify(code.substr(ofs,1024)))
+			}
+			code_func.push(',');
 		}
 	}catch(err){
 		if(err){

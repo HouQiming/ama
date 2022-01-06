@@ -26,6 +26,7 @@ namespace ama {
 	extern JSContext* jsctx;
 	extern JSRuntime* g_runtime_handle;
 	extern std::string std_module_dir;
+	JSContext* GetGlobalJSContext();
 	void DumpError(JSContext* ctx);
 	static inline ama::gcstring UnwrapString(JSValueConst val) {
 		size_t len = int64_t(0uLL);
@@ -47,7 +48,7 @@ namespace ama {
 	}
 	static inline int32_t UnwrapInt32(JSValueConst val, int32_t dflt) {
 		int32_t ret = 0;
-		if ( JS_IsUndefined(val) || JS_ToInt32(jsctx, &ret, val) < 0 ) {
+		if ( JS_IsUndefined(val) || JS_ToInt32(ama::jsctx, &ret, val) < 0 ) {
 			ret = dflt;
 		}
 		return ret;

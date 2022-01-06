@@ -12,24 +12,26 @@
 /*#pragma add("ldflags", "amal");*/
 static int RunCommandLineUtility(int argc, char const* const* argv) {
 	ama::LazyInitScriptEnv();
-	JSValue obj_process = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), "process");
-	JSValue obj_argv = JS_GetPropertyStr(ama::jsctx, obj_process, "argv");
-	JS_FreeValue(ama::jsctx, obj_process);
+	JSContext* ctx = ama::GetGlobalJSContext();
+	JSValue obj_process = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "process");
+	JSValue obj_argv = JS_GetPropertyStr(ctx, obj_process, "argv");
+	JS_FreeValue(ctx, obj_process);
 	for (int ai = 0; ai < argc; ai += 1) {
-		JS_SetPropertyUint32(ama::jsctx, obj_argv, ai, JS_NewString(ama::jsctx, argv[ai]));
+		JS_SetPropertyUint32(ctx, obj_argv, ai, JS_NewString(ctx, argv[ai]));
 	}
-	JS_FreeValue(ama::jsctx, obj_argv);
-	//JSValue arg = JS_NewString(ama::jsctx, argv[i] + 2);
-	JSAtom atom = JS_NewAtom(ama::jsctx, "RunCommandLineUtility");
-	JSValue ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom, 0, nullptr);
-	JS_FreeAtom(ama::jsctx, atom);
+	JS_FreeValue(ctx, obj_argv);
+	//JSValue arg = JS_NewString(ctx, argv[i] + 2);
+	JSAtom atom = JS_NewAtom(ctx, "RunCommandLineUtility");
+	JSValue ret = JS_Invoke(ctx, JS_GetGlobalObject(ctx), atom, 0, nullptr);
+	JS_FreeAtom(ctx, atom);
 	int ret_code = 1;
 	if (JS_IsException(ret)) {
-		ama::DumpError(ama::jsctx);
+		ama::DumpError(ctx);
 		ret_code = 1;
 	} else {
-		ret_code = ama::UnwrapInt32(ret, 0);
-		JS_FreeValue(ama::jsctx, ret);
+		ret_code = 1;
+		JS_ToInt32(ctx, &ret_code, ret);
+		JS_FreeValue(ctx, ret);
 	}
 	return ret_code;
 }

@@ -12,6 +12,7 @@ struct PackageJSON {
 };
 namespace ama {
 	JSContext* jsctx{};
+	JSContext* GetGlobalJSContext() {return jsctx;}
 	JSRuntime* g_runtime_handle{};
 	uint32_t g_node_classid = 0u;
 	JSValue g_node_proto = JS_NULL;
