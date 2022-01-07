@@ -1,11 +1,3 @@
-/*
-@ama
-let nd_root=ParseCurrentFile();
-nd_root.Validate();
-console.log(JSON.stringify(nd_root,null,2))
-console.log(nd_root.toSource())
-*/
-
 template<>
 class TestClass<int>:Base{
 	union TestUnion extends Base{

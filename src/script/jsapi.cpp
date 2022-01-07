@@ -950,6 +950,7 @@ namespace ama {
 		JS_FreeAtom(ama::jsctx, atom_method);
 		JS_FreeValue(ama::jsctx, val_arg);
 		if ( JS_IsException(ret) ) {
+			ama::DumpError(ama::jsctx);
 			return nullptr;
 		}
 		ama::Node* nd_ret = ama::UnwrapNode(ret);

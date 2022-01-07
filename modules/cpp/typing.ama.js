@@ -196,10 +196,19 @@ typing.ComputeDeclaredType = function(nd_def) {
 		if (ndi.node_class == N_ITEM || ndi.node_class == N_PREFIX || ndi.node_class == N_POSTFIX) {
 			modifiers.push(ndi);
 		} else if (ndi.node_class == N_RAW) {
-			//just pick the last expr
-			for (let ndj = ndi.c; ndj; ndj = ndj.s) {
-				if (ndj.isAncestorOf(nd_def)) {break;}
+			//just pick the last expr with a type
+			let found_self = 0;
+			for (let ndj = ndi.LastChild(); ndj; ndj = ndj.Prev()) {
+				if (ndj.isAncestorOf(nd_def)) {found_self = 1;continue;}
+				//skip everything after us: we could be the `foo` in `int foo, __SOME_WEIRD_ATTRIBUTE__ bar;`
+				//in that case we don't want to return `__SOME_WEIRD_ATTRIBUTE__`
+				if (!found_self) {continue;}
+				//in `foo foo`, don't test any `foo`
+				if (ndj.isRef(nd_def.data)) {continue;}
+				//skip anything before a ',': could be another variable declaration on which recursion will hang
+				if (ndj.isSymbol(',')) {ndj = ndj.Prev();continue;}
 				type = typing.ComputeType(ndj);
+				if (type) {break;}
 			}
 			break;
 		} else if (ndi.node_class == N_CLASS || ndi.node_class == N_FUNCTION) {
@@ -529,6 +538,11 @@ typing.ComputeType = function(nd_expr) {
 			}
 		}
 		let all_defs = typing.LookupSymbol(nd_expr, true);
+		//prevent parser-bug or degenerate source from hanging
+		const MAX_SYMBOLS_CHECKED = 1024;
+		if (all_defs.length > MAX_SYMBOLS_CHECKED) {
+			all_defs.length = MAX_SYMBOLS_CHECKED;
+		}
 		for (let nd_def of all_defs) {
 			let type_def = typing.ComputeDeclaredType(nd_def);
 			if (!type_def) {continue;}
