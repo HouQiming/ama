@@ -7,7 +7,7 @@ For example, we could write a `fizzbuzz.cpp` like this:
 ```Python
 int main()
   for i<10
-    if i%3==0
+    if i%3==0&&i%5==0
       console.log("FizzBuzz");
     else if i%3==0
       console.log("Fizz");
