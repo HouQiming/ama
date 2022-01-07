@@ -515,10 +515,18 @@ __global.__GetFilterByName=function(name) {
 			return nd[name](options);
 		}
 	}
-	if(name.startsWith('{')){return JSON.parse(name);}
+	if(name.startsWith('{')){
+		if(name.endsWith('?')){return {};}
+		return JSON.parse(name);
+	}
 	let parts=name.split('.');
 	if(parts.length>=1){
-		let obj=__require(__init_js_path,parts[0]);
+		let obj=undefined;
+		try{
+			obj=__require(__init_js_path,parts[0]);
+		}catch(err){
+			if(name.endsWith('?')){return {};}
+		}
 		for(let i=1;i<parts.length;i++){
 			if(!obj){break;}
 			if(parts[i].endsWith('?')){
