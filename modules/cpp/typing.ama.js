@@ -206,7 +206,7 @@ typing.ComputeDeclaredType = function(nd_def) {
 				//in `foo foo`, don't test any `foo`
 				if (ndj.isRef(nd_def.data)) {continue;}
 				//skip anything before a ',': could be another variable declaration on which recursion will hang
-				if (ndj.isSymbol(',')) {ndj = ndj.Prev();continue;}
+				if (ndj.isSymbol(',')) {ndj = ndj.Prev();if (!ndj) {break;}continue;}
 				type = typing.ComputeType(ndj);
 				if (type) {break;}
 			}
