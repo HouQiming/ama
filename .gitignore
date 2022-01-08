@@ -8,3 +8,4 @@ a.out
 /test/test_tmp.*
 /example/cmake/CMakeLists.txt
 /test/test_auto_header.hpp
+*.audit
