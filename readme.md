@@ -1,6 +1,6 @@
 # Amalang
 
-A system to amalgamate any features you want into any language you need, while still interacting with upstream in the original language.
+A system to amalgamate features from other languages into any code base you work on, and you can keep interacting with upstream in the original language.
 
 For example, we could write a `fizzbuzz.cpp` like this:
 
