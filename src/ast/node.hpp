@@ -510,8 +510,8 @@ namespace ama {
 		//Unparse turns a node back to a less-parsed state (usually N_RAW).
 		//It's mainly used to correct mistakes in an earlier parsing step.
 		ama::Node* Unparse();
-		//Format a clang-style message, referencing `this`
-		//We intentionally limit our messages to warnings and notes
+		//Format a clang-style message, referencing `this`.
+		//We intentionally limit our messages to warnings and notes.
 		std::string FormatFancyMessage(std::span<char> msg, int flags)const;
 		//ComputeLineNumber currently traverses the entire AST up to `this`
 		int32_t ComputeLineNumber() const;

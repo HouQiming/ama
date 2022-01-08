@@ -11,7 +11,7 @@ function TranslatePureFunction(nd_stmt){
 	if(nd_stmt.node_class==N_EXTENSION_CLAUSE&&nd_stmt.data=='else'){
 		let nd_else=TranslatePureFunction(nd_stmt.c.s);
 		if(!nd_else){return undefined;}
-		return @(else @(TranslatePureFunction(nd_else)));
+		return @( else @(TranslatePureFunction(nd_else)));
 	}
 	if(nd_stmt.node_class==N_SCOPED_STATEMENT&&nd_stmt.data=='if'){
 		let nd_then=TranslatePureFunction(nd_stmt.c.s);

@@ -506,7 +506,7 @@ __global.CppDropTypeCache=function(nd){
 	__require(__init_js_path,'cpp/typing').DropCache();
 }
 
-__global.__GetFilterByName=function(name) {
+__global.__GetFilterByName=function(name,options) {
 	if(name==='ParseSimplePairing'){
 		return ParseSimplePairing;
 	}
@@ -520,10 +520,17 @@ __global.__GetFilterByName=function(name) {
 		return JSON.parse(name);
 	}
 	let parts=name.split('.');
+	let fn_prefix=name.match(/.*?\.js/);
+	if(fn_prefix){
+		fn_prefix=fn_prefix[0];
+		parts=name.substr(fn_prefix.length).split('.');
+		parts[0]=fn_prefix;
+	}
 	if(parts.length>=1){
 		let obj=undefined;
+		let require_base=options&&options.full_path||__init_js_path;
 		try{
-			obj=__require(__init_js_path,parts[0]);
+			obj=__require(require_base,parts[0]);
 		}catch(err){
 			if(name.endsWith('?')){return {};}
 		}
@@ -553,7 +560,7 @@ __global.ParseCode=function(input,options_or_pipeline){
 	for (let i = 0; i < p.length; i++) {
 		let item = p[i];
 		if (typeof(item) === 'string') {
-			item = __global.__GetFilterByName(item);
+			item = __global.__GetFilterByName(item,options);
 		}
 		if (typeof(item) === 'function') {
 			let ret = item(input, options);

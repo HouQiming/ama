@@ -386,7 +386,7 @@ Unparse turns a node back to a less-parsed state (usually N_RAW). It's mainly us
 --------------
 - `nd.FormatFancyMessage(msg, flags)`
 
-Format a clang-style message, referencing `this` We intentionally limit our messages to warnings and notes
+Format a clang-style message, referencing `this`. We intentionally limit our messages to warnings and notes.
 
 --------------
 - `nd.ComputeLineNumber()`

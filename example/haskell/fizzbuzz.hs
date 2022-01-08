@@ -1,12 +1,4 @@
--- ama fizzbuzz.hs && ghc fizzbuzz.audit.hs && ./fizzbuzz.audit
--- @ama
--- __pipeline.unshift(require('cpp/cpp_indent').setup);
--- __pipeline.push(
---   require('cpp/cpp_indent'),
---   require('./c2hs.ama.js'),
---   {change_ext:'.audit.hs'},
---   'Save'
--- )
+-- ama -f cpp/cpp_indent -f ./c2hs.ama.js -f '{"change_ext":".audit.hs"}' -f Save fizzbuzz.hs && ghc fizzbuzz.audit.hs && ./fizzbuzz.audit
  
 int main()
   for i<10

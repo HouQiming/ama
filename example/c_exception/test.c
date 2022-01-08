@@ -1,5 +1,4 @@
 //@ama ParseCurrentFile().then(require('./sjlj_exception.ama.js')).Save('.audit.c')
-//ama test.c && cc test.audit.c -lm && ./a.out
 #include <stdio.h>
 #include <math.h>
 

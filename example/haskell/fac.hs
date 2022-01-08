@@ -1,12 +1,4 @@
--- ama fac.hs && ghc fac.audit.hs && ./fac.audit
--- @ama
--- __pipeline.unshift(require('cpp/cpp_indent').setup);
--- __pipeline.push(
---   require('cpp/cpp_indent'),
---   require('./c2hs.ama.js'),
---   {change_ext:'.audit.hs'},
---   'Save'
--- )
+-- ama -f cpp/cpp_indent -f ./c2hs.ama.js -f '{"change_ext":".audit.hs"}' -f Save fac.hs && ghc fac.audit.hs && ./fac.audit
 
 int fac(int a)
   if a == 0
