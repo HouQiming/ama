@@ -368,6 +368,15 @@ namespace ama {
 			int was_ref = 0;
 			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
 				if ( ndi->node_class == ama::N_SYMBOL ) {
+					if (stack.size() >= 1 && ndi->data == ">=") {
+						ndi->Insert(ama::POS_BEFORE, ama::nSymbol(">"));
+						ndi->data = "=";
+						ndi = ndi->Prev();
+					} else if (stack.size() >= 2 && ndi->data == ">>=") {
+						ndi->Insert(ama::POS_BEFORE, ama::nSymbol(">>"));
+						ndi->data = "=";
+						ndi = ndi->Prev();
+					}
 					if ( was_ref && ndi->data == "<" ) {
 						stack.push_back(ndi);
 					} else if ( (ndi->data == ">" || ndi->data == ">>" || ndi->data == ">>>") && stack.size() >= ndi->data.size() ) {

@@ -68,8 +68,9 @@ int main(int argc, char const* const* argv) {
 			if (strcmp(argv[i + 1], "cmake.AutoCreate") != 0) {
 				need_dump = 1;
 			}
+			//after the full path
 			extra_script--->push(
-				"__pipeline.unshift(", JSON::stringify(JC::string_concat(argv[i + 1], ".setup?")), ");\n",
+				"__pipeline.splice(1, 0, ", JSON::stringify(JC::string_concat(argv[i + 1], ".setup?")), ");\n",
 				"__pipeline.push(", JSON::stringify(argv[i + 1]), ");\n"
 			);
 			i += 1;
