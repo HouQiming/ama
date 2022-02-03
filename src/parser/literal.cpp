@@ -7,9 +7,7 @@
 namespace ama {
 	static char const* g_hex = "0123456789abcdef";
 	static const std::array<uint32_t, 8> g_hex_charset = ama::CreateCharSet("0-9A-Fa-f");
-	std::string escapeJSString(std::span<char> s) {
-		std::string ret{};
-		ret--->push('\'');
+	void escapeStringBody(std::string &ret, std::span<char> s) {
 		for ( char const & ch: s ) {
 			switch ( ch ) {
 				default: {
@@ -51,16 +49,18 @@ namespace ama {
 				}
 			}
 		}
+	}
+	std::string escapeJSString(std::span<char> s) {
+		std::string ret{};
+		ret--->push('\'');
+		escapeStringBody(ret, s);
 		ret--->push('\'');
 		return std::move(ret);
 	}
 	//we don't have to be fully conformant here - this won't get executed when we convert C / C++ code
-	std::string ParseJCString(std::span<char> s) {
-		if ( !s.size() || (s[intptr_t(0L)] != '\'' && s[intptr_t(0L)] != '"') ) {
-			return JC::array_cast<std::string>(s);
-		}
+	std::string ParseStringBody(std::span<char> s) {
 		std::string ret{};
-		for (intptr_t i = intptr_t(1L); i < intptr_t(s.size() - intptr_t(1L)); ++i) {
+		for (intptr_t i = 0; i < intptr_t(s.size()); ++i) {
 			char ch = s[i];
 			if ( ch == '\\' ) {
 				i += intptr_t(1L);
@@ -154,5 +154,11 @@ namespace ama {
 			}
 		}
 		return std::move(ret);
+	}
+	std::string ParseJCString(std::span<char> s) {
+		if ( !s.size() || (s[intptr_t(0L)] != '\'' && s[intptr_t(0L)] != '"') || s.size() < 2 ) {
+			return JC::array_cast<std::string>(s);
+		}
+		return ParseStringBody(s--->subarray(1, s.size() - 2));
 	}
 };

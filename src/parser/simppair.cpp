@@ -20,12 +20,14 @@ static const int CHAR_TYPE_ZERO = 7;
 static const int CHAR_TYPE_BACKSLASH = 8;
 static const int CHAR_TYPE_OPENING = 9;
 static const int CHAR_TYPE_CLOSING = 10;
+static const int CHAR_TYPE_SHELL_STRING = 11;
 static std::array<uint32_t, 8> g_spaces = ama::CreateCharSet(" \t\r");
 static std::array<uint32_t, 8> g_not_newline = ama::CreateCharSet("^\n");
 struct ParserState {
 	ama::Node* nd_parent{};
 	ama::Node** p_nd_next{};
 	intptr_t indent_level{};
+	char is_shell_arg = 0;
 };
 //updates comment_indent_level0 to the minimum indent inside the comment, which could be larger than its original value
 static ama::gcstring FormatComment(std::vector<char>& tmp, intptr_t& comment_indent_level0, int32_t tab_width, char const* comment_begin, char const* comment_end) {
@@ -181,6 +183,10 @@ namespace ama {
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "enable_hash_comment"), 0) ) {
 			char_lut['#'] = CHAR_TYPE_SLASH;
 		}
+		char const* shell_string_quotes = JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, "shell_string_quotes"));
+		for (; *shell_string_quotes; shell_string_quotes += 1) {
+			char_lut[intptr_t(*shell_string_quotes) & 0xff] = CHAR_TYPE_SHELL_STRING;
+		}
 		std::array<uint32_t, 8> cset_identifier{};
 		cset_identifier--->fill(0u);
 		for (int i = 0; i <= 255; i += 1) {
@@ -209,7 +215,6 @@ namespace ama {
 		intptr_t vote_spaceness = intptr_t(0L);
 		for (; ;) {
 			uint32_t ch = uint32_t(uint8_t(feed[intptr_t(0L)]));
-			ama::Node* nd{};
 			// [ \t\r] \n "' / 0-9 A-Za-z_\u0080+
 			switch ( char_lut[intptr_t(ch)] ) {
 				case CHAR_TYPE_SLASH: {
@@ -272,7 +277,7 @@ namespace ama {
 						}
 						//search flags
 						char const* feed_end = ama::SkipChars(feed + lg, cset_regexp_flags);
-						nd = ama::CreateNode(ama::N_JS_REGEXP, nullptr);
+						ama::Node* nd = ama::CreateNode(ama::N_JS_REGEXP, nullptr);
 						nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 						nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 						if ( premature_close && finish_incomplete_code ) {
@@ -314,7 +319,7 @@ namespace ama {
 							break;
 						}
 					}
-					nd = ama::CreateNode(ama::N_SYMBOL, nullptr);
+					ama::Node* nd = ama::CreateNode(ama::N_SYMBOL, nullptr);
 					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd->data = ama::gcstring(feed, lg);
@@ -344,6 +349,7 @@ namespace ama {
 				}
 				case CHAR_TYPE_CLOSING: {
 					if ( state_stack.size() > intptr_t(1L) ) {
+						char is_shell_arg = state_stack.back().is_shell_arg;
 						ama::Node* nd = state_stack.back().nd_parent;
 						if ( (comment_end - comment_begin) > 0 ) {
 							ama::gcstring trailing_comment = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
@@ -378,6 +384,11 @@ namespace ama {
 						comment_indent_level = current_indent_level;
 						comment_begin = feed;
 						comment_end = feed;
+						if (is_shell_arg) {
+							//continue the shell string, tag 0x100 to update lg
+							ch = uint32_t(uint8_t(is_shell_arg)) | 0x100;
+							goto continue_shell_string;
+						}
 					} else {
 						goto handle_symbol;
 					}
@@ -402,7 +413,7 @@ namespace ama {
 				case CHAR_TYPE_IDENTIFIER: {
 					char const* feed0 = feed;
 					feed = ama::SkipChars(feed, cset_identifier);
-					nd = ama::CreateNode(ama::N_REF, nullptr);
+					ama::Node* nd = ama::CreateNode(ama::N_REF, nullptr);
 					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd->data = ama::gcstring(feed0, feed - feed0);
@@ -429,7 +440,7 @@ namespace ama {
 						feed = ama::SkipChars(feed, cset_exponent);
 					}
 					assert(feed != feed0);
-					nd = ama::CreateNode(ama::N_NUMBER, nullptr);
+					ama::Node* nd = ama::CreateNode(ama::N_NUMBER, nullptr);
 					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					nd->data = ama::gcstring(feed0, feed - feed0);
@@ -440,15 +451,28 @@ namespace ama {
 					comment_end = feed;
 					break;
 				}
+				case CHAR_TYPE_SHELL_STRING:
 				case CHAR_TYPE_QUOTE: {
-					uint32_t ch_closing = ch;
+				continue_shell_string: {
+					uint32_t ss_start = ch;
 					intptr_t lg = intptr_t(1L);
+					if (ch & 0x100) {
+						//continuation
+						lg = 0;
+						ch &= 0xff;
+						ss_start = 0;
+					}
+					uint32_t ch_closing = ch;
+					uint32_t ss_end = ch;
 					int backslash_counter = 0;
-					int premature_close = 0;
+					bool premature_close = false;
+					bool is_shell_string = char_lut[intptr_t(ch)] == CHAR_TYPE_SHELL_STRING;
+					char is_shell_arg = 0;
+					int done = 0;
 					for (; ;) {
 						uint8_t ch_i = feed[lg];
 						if ( ch_i == uint8_t(0) ) {
-							premature_close = 1;
+							premature_close = true;
 							break;
 						}
 						lg += intptr_t(1L);
@@ -458,10 +482,36 @@ namespace ama {
 							if ( uint32_t(ch_i) == ch_closing && !backslash_counter ) {
 								break;
 							}
+							if (is_shell_string && ch_i == '$' && feed[lg] == '{') {
+								//treat as termination
+								is_shell_arg = ch_closing;
+								ss_end = '$';
+								break;
+							}
 							backslash_counter = 0;
 						}
 					}
-					nd = ama::CreateNode(ama::N_STRING, nullptr);
+					if (is_shell_string && is_shell_arg && ss_start == ch) {
+						//we're the beginning, push a raw
+						ama::Node* nd = ama::CreateNode(ama::N_RAW, nullptr);
+						nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
+						nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
+						nd->flags = uint32_t(ch);
+						*state_stack.back().p_nd_next = nd;
+						state_stack.back().p_nd_next = &nd->s;
+						state_stack.push_back(
+							ParserState{.nd_parent = nd, .p_nd_next = &nd->c, .indent_level = current_indent_level}
+						);
+						comment_indent_level = current_indent_level;
+						comment_begin = feed;
+						comment_end = feed;
+					}
+					ama::Node* nd = ama::CreateNode(ama::N_STRING, nullptr);
+					if (is_shell_string) {
+						nd->flags |= ama::STRING_SHELL_LIKE;
+						if (ss_start == ch) {nd->flags |= ama::STRING_SHELL_LIKE_START;}
+						if (ss_end == ch) {nd->flags |= ama::STRING_SHELL_LIKE_END;}
+					}
 					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					if ( premature_close && finish_incomplete_code ) {
@@ -473,7 +523,18 @@ namespace ama {
 						tmp_buffer.push_back(char(ch_closing));
 						nd->data = ama::gcstring(tmp_buffer);
 					} else {
-						nd->data = ama::gcstring(feed, lg);
+						char const* s0 = feed;
+						intptr_t lg0 = lg;
+						if (is_shell_string) {
+							if (ss_start == ch && lg0 > 0) {
+								s0 += 1;
+								lg0 -= 1;
+							}
+							if (ss_end == ch && lg0 > 0) {
+								lg0 -= 1;
+							}
+						}
+						nd->data = ama::gcstring(s0, lg0);
 					}
 					*state_stack.back().p_nd_next = nd;
 					state_stack.back().p_nd_next = &nd->s;
@@ -481,7 +542,32 @@ namespace ama {
 					comment_indent_level = current_indent_level;
 					comment_begin = feed;
 					comment_end = feed;
+					/////////////
+					if (is_shell_arg) {
+						ch = uint32_t(uint8_t(feed[intptr_t(0L)]));
+						assert(ch == '{');
+						//push the attached bracket here
+						ama::Node* nd = ama::CreateNode(ama::N_RAW, nullptr);
+						//nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
+						nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
+						nd->flags = uint32_t(ch);
+						*state_stack.back().p_nd_next = nd;
+						state_stack.back().p_nd_next = &nd->s;
+						state_stack.push_back(
+							ParserState{.nd_parent = nd, .p_nd_next = &nd->c, .indent_level = current_indent_level,.is_shell_arg = is_shell_arg}
+						);
+						feed += 1;
+						comment_indent_level = current_indent_level;
+						comment_begin = feed;
+						comment_end = feed;
+					} else if (is_shell_string && ss_end == ch) {
+						//we're closing, pop once more
+						ama::Node* nd = state_stack.back().nd_parent;
+						nd->flags |= uint32_t(ch) << 8;
+						state_stack.pop_back();
+					}
 					break;
+				}
 				}
 				case CHAR_TYPE_NEWLINE: {
 					current_indent_level = intptr_t(0L);

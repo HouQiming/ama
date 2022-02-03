@@ -514,9 +514,18 @@ ama::gcstring ama::Node::GetStringValue() {
 	assert(nd_this->node_class == ama::N_STRING);
 	if ( nd_this->node_class != ama::N_STRING || nd_this->data.empty() || (nd_this->flags & ama::LITERAL_PARSED) ) {
 		return nd_this->data;
+	} else if (nd_this->flags&STRING_SHELL_LIKE) {
+		//we need to handle all combinations of ` / $
+		//we could have ``, `$, .$, .`
+		std::span<char> string_body = nd_this->data--->subarray(0, nd_this->data.size() - 1);
+		//if ((nd_this->flags & STRING_SHELL_LIKE_START) && nd_this->data.size() >= 1) {
+		//	string_body = string_body--->subarray(1);
+		//}
+		nd_this->data = ama::gcstring(ama::ParseStringBody(string_body));
+		nd_this->flags |= ama::LITERAL_PARSED;
+		return nd_this->data;
 	} else {
 		//process on demand
-		assert(int(nd_this->node_class) == ama::N_STRING);
 		if ( nd_this->data.size() && nd_this->data[intptr_t(0L)] == '\'' ) {
 			nd_this->flags |= ama::STRING_SINGLE_QUOTED;
 		}

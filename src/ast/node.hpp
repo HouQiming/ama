@@ -242,6 +242,10 @@ namespace ama {
 	//const uint32_t! CALL_IS_UNARY_OPERATOR = 1u;
 	static const uint32_t LITERAL_PARSED = 1u;
 	static const uint32_t STRING_SINGLE_QUOTED = 2u;
+	//for JS / shell `foo ${bar} baz`
+	static const uint32_t STRING_SHELL_LIKE = 4u;
+	static const uint32_t STRING_SHELL_LIKE_START = 8u;
+	static const uint32_t STRING_SHELL_LIKE_END = 16u;
 	static const uint32_t DOT_PTR = 1u;
 	static const uint32_t DOT_CLASS = 2u;
 	static const uint32_t DEP_C_INCLUDE = 0u;

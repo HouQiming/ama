@@ -307,6 +307,7 @@ __global.default_options = {
 	//whether to enable `#foo` comments
 	enable_hash_comment: 0,
 	symbols: '!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->* <<<',
+	shell_string_quotes:'',
 	//we treat # as an identifier character to make C stuff like `#define` more idiosyncratic
 	identifier_charset: '0-9A-Za-z_$#',
 	number_charset: '0-9bouUlLfFn.eE',
@@ -486,6 +487,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			cv_qualifiers: '',
 			named_operators: 'typeof delete await new in of instanceof as',
 			parse_js_regexp: 1,
+			shell_string_quotes:'`',
 		});
 		p.push(ParseJSLambdas);
 	}
