@@ -450,7 +450,8 @@ namespace ama {
 										break;
 									}
 									if (ndj->node_class == ama::N_SYMBOL && ndj != nd_paramlist_start && ndj->Prev()->node_class == ama::N_REF && 
-									!(nd_raw->p && (nd_raw->p->isRawNode('[', ']') || nd_raw->p->isRawNode('{', '}') || nd_raw->p->node_class == ama::N_SCOPE))) {
+									!(nd_raw->p && (nd_raw->p->isRawNode('[', ']') || nd_raw->p->isRawNode('{', '}') || nd_raw->p->node_class == ama::N_SCOPE)) &&
+									!(nd_raw && (nd_raw->isRawNode('[', ']') || nd_raw->isRawNode('{', '}') || nd_raw->node_class == ama::N_SCOPE))) {
 										//for function-indicator symbols like the Javascript '=>'
 										//this conflicts with destructuring - {a:{b}}
 										//don't count as function if it's immediately under {} or []
@@ -546,8 +547,10 @@ namespace ama {
 				//C forward declaration with extern
 				TranslateCForwardDeclaration(nd_raw);
 				//note that extern is not necessarily function... we may have extern "C"{}
-			} else if ( nd_keyword && kw_mode == KW_CLASS ) {
+			} else if ( nd_keyword && kw_mode == KW_CLASS && !(nd_raw->isRawNode('<', '>')) && !(nd_raw->p && nd_raw->p->isRawNode('<', '>')) &&
+			!(nd_raw->p && nd_raw->p->node_class == ama::N_PARAMETER_LIST)) {
 				//class forward declaration, treat as keyword statement
+				//but not inside template<>
 				nd_keyword->BreakSelf();
 				ama::Node* nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword->BreakSibling()));
 				nd_stmt->indent_level = nd_keyword->indent_level;
