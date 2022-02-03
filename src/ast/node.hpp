@@ -605,9 +605,16 @@ namespace ama {
 	static inline ama::Node* nLabeled(Node* nd_label, Node* nd_value) {
 		return ama::CreateNode(N_LABELED, cons(nd_label, cons(nd_value, nullptr)));
 	}
+	static inline ama::Node* nItem(Node* nd_label, Node* nd_value) {
+		return ama::CreateNode(N_ITEM, cons(nd_label, cons(nd_value, nullptr)));
+	}
 	static inline ama::Node* nDependency(Node* nd) {
 		nd->s = nullptr;
 		return ama::CreateNode(N_DEPENDENCY, nd);
+	}
+	static inline ama::Node* nParen(Node* nd) {
+		nd->s = nullptr;
+		return ama::CreateNode(N_PAREN, nd);
 	}
 	static inline ama::Node* nSemicolon(Node* nd) {
 		nd->s = nullptr;

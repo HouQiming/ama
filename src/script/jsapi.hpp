@@ -19,6 +19,8 @@ namespace ama {
 	ama::Node* ComputeType(ama::Node* nd);
 	JSValue DeepMatch(ama::Node* nd, ama::Node* nd_pattern);
 	void DropTypeCache();
+	void DropDependsCache();
+	JSValue MatchAll(ama::Node* nd, ama::Node* nd_pattern);
 };
 
 #endif

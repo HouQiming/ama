@@ -51,7 +51,7 @@ int main(){
 jsism.EnableConsole = function(nd_root, options) {
 	options = options || {};
 	let backend = options.backend || 'iostream';
-	let console_uses = nd_root.FindAll(N_CALL, null).filter(nd_call => {
+	let console_uses = nd_root.FindAll(N_CALL).filter(nd_call => {
 		return nd_call.c.node_class == N_DOT && nd_call.c.c.node_class == N_REF && nd_call.c.c.data == 'console' && console_method_to_options[nd_call.c.data];
 	});
 	if (!console_uses.length) {

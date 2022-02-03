@@ -15,11 +15,20 @@ function FixArrayTypes(nd_root) {
 	for (let nd_mul of nd_root.FindAll(N_BINOP)) {
 		if (nd_mul.data == '*' || nd_mul.data == '^') {
 			//[]
-			if (nd_mul.c.s.isRawNode('[', ']')) {
-				let nd_subscripts = nd_mul.c.BreakSibling().c;
+			let nd_postfix_core = nd_mul.c.s;
+			while (nd_postfix_core.node_class == N_POSTFIX) {
+				nd_postfix_core = nd_postfix_core.c;
+			}
+			if (nd_postfix_core.isRawNode('[', ']')) {
+				let nd_their_operand = nd_mul.c.BreakSibling();
+				let nd_subscripts = nd_postfix_core.c;
 				let nd_item = nItem(nPostfix(nd_mul.BreakChild(), nd_mul.data));
 				if (nd_subscripts) {
 					nd_item.Insert(POS_BACK, nd_subscripts);
+				}
+				if (nd_their_operand.node_class == N_POSTFIX) {
+					nd_postfix_core.ReplaceWith(nd_item);
+					nd_item = nd_their_operand;
 				}
 				nd_mul.ReplaceWith(nd_item);
 			}

@@ -362,7 +362,7 @@ __global.default_options = {
 	keywords_not_variable_name: 'static const volatile private public protected final noexcept throw override virtual operator',
 	//`case` is better treated as a part of a label
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
-	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template',
+	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template import package',
 	keywords_operator_escape: 'operator',
 	///////////
 	//codegen
@@ -502,8 +502,12 @@ __global.CppComputeType=function(nd){
 	return __require(__init_js_path,'cpp/typing').ComputeType(nd);
 }
 
-__global.CppDropTypeCache=function(nd){
+__global.CppDropTypeCache=function(){
 	__require(__init_js_path,'cpp/typing').DropCache();
+}
+
+__global.CppDropDependsCache=function(){
+	return __require(__init_js_path,'depends').DropCache();
 }
 
 __global.__GetFilterByName=function(name,options) {
@@ -520,7 +524,7 @@ __global.__GetFilterByName=function(name,options) {
 		return JSON.parse(name);
 	}
 	let parts=name.split('.');
-	let fn_prefix=name.match(/.*?\.js/);
+	let fn_prefix=name.match(/^.*?\.js/);
 	if(fn_prefix){
 		fn_prefix=fn_prefix[0];
 		parts=name.substr(fn_prefix.length).split('.');

@@ -75,7 +75,7 @@ namespace ama {
 			nd_body = nd_body->BreakSibling();
 		} else {
 			//Python-like : separation handling
-			ama::Node* nd_last_colon{};
+			ama::Node* nd_last_colon = nullptr;
 			for (ama::Node* ndi = nd_body; ndi; ndi = ndi->s) {
 				if ( ndi->isSymbol(":") ) {
 					nd_last_colon = ndi;
@@ -449,19 +449,11 @@ namespace ama {
 									if (nd_paramlist) {
 										break;
 									}
-									if (ndj->node_class == ama::N_SYMBOL && ndj != nd_paramlist_start && ndj->Prev()->node_class == ama::N_REF) {
+									if (ndj->node_class == ama::N_SYMBOL && ndj != nd_paramlist_start && ndj->Prev()->node_class == ama::N_REF && 
+									!(nd_raw->p && (nd_raw->p->isRawNode('[', ']') || nd_raw->p->isRawNode('{', '}') || nd_raw->p->node_class == ama::N_SCOPE))) {
 										//for function-indicator symbols like the Javascript '=>'
-										//ama::Node* nd_was_paramlist = ndj->Prev();
-										//ama::Node* nd_tmp = ama::GetPlaceHolder();
-										//nd_was_paramlist->ReplaceWith(nd_tmp);
-										//nd_paramlist = nd_tmp->ReplaceWith(ama::CreateNode(ama::N_RAW, nd_was_paramlist)->setFlags(u32('(') | (u32(')') << 8)));
-										//is_unwrapped_parameter_list = 1;
-										//if (nd_was_paramlist == nd_paramlist_start) {
-										//	nd_paramlist_start = nd_paramlist;
-										//}
-										//if (nd_was_paramlist == nd_prototype_start) {
-										//	nd_prototype_start = nd_paramlist;
-										//}
+										//this conflicts with destructuring - {a:{b}}
+										//don't count as function if it's immediately under {} or []
 										nd_paramlist = ndj->Prev();
 										break;
 									}

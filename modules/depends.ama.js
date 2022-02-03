@@ -51,7 +51,11 @@ depends.LoadFile = function(fn, options) {
 			//do nothing
 		};
 		if (!data) {return undefined;}
-		nd_cached = ParseCode(data, options || __global.GetPipelineFromFilename(fn));
+		if (path.basename(fn).toLowerCase() == 'cmakelists.txt') {
+			nd_cached = require('cmake').LoadCMakeFile(fn);
+		} else {
+			nd_cached = ParseCode(data, options || __global.GetPipelineFromFilename(fn));
+		}
 		nd_cached.data = fn;
 		depends.cache.set(fn, nd_cached);
 	}
