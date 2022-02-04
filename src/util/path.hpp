@@ -34,7 +34,7 @@ namespace path {
 			return *this;
 		}
 		std::string done() const {
-			return std::move(toAbsolute(this->cur_path));
+			return std::move(normalize(this->cur_path));
 		}
 	};
 	struct CPathResolver {

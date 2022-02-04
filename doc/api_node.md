@@ -77,7 +77,7 @@ __global.default_options = {
 	keywords_scoped_statement: 'enum if for while do try switch',
 	keywords_extension_clause: 'until else elif except catch finally while',
 	keywords_function: 'extern function fn def inline',
-	keywords_after_class_name: ': extends implements for where',
+	keywords_after_class_name: ': extends implements for where final',
 	keywords_after_prototype: ': -> => throw const noexcept override',
 	keywords_not_a_function: 'switch case #define #if #else #elif return',
 	keywords_not_variable_name: 'static const volatile private public protected final noexcept throw override virtual operator',
