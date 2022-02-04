@@ -109,6 +109,14 @@ static int canHaveRegexpAfter(ama::Node* nd) {
 namespace ama {
 	//we rely on zero termination, thus the char*
 	//start with comments_before almost everywhere
+	static std::array<uint32_t, 8> GetOptionCSet(JSValueConst options, char const* name) {
+		JSValue ppt = JS_GetPropertyStr(ama::jsctx, options, name);
+		char const* cstr = JS_ToCString(ama::jsctx, ppt);
+		std::array<uint32_t, 8> ret = ama::CreateCharSet(cstr);
+		JS_FreeCString(ama::jsctx, cstr);
+		JS_FreeValue(ama::jsctx, ppt);
+		return std::move(ret);
+	}
 	ama::Node* ParseSimplePairing(char const* feed, JSValueConst options) {
 		//for debugging
 		//char const* feed_all_begin = feed;
@@ -150,7 +158,7 @@ namespace ama {
 		//create char LUT
 		std::array<uint8_t, 256> char_lut{};
 		memset(char_lut.data(), CHAR_TYPE_SYMBOL, char_lut.size());
-		std::array<uint32_t, 8> identifier_charset = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, "identifier_charset")));
+		std::array<uint32_t, 8> identifier_charset = GetOptionCSet(options, "identifier_charset");
 		for (int ch = 0; ch <= 255; ch += 1) {
 			if ( identifier_charset[ch >> 5] & 1u << (ch & 31) ) {
 				char_lut[ch] = CHAR_TYPE_IDENTIFIER;
@@ -183,10 +191,14 @@ namespace ama {
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "enable_hash_comment"), 0) ) {
 			char_lut['#'] = CHAR_TYPE_SLASH;
 		}
-		char const* shell_string_quotes = JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, "shell_string_quotes"));
+		JSValue ppt{};
+		char const* shell_string_quotes0 = JS_ToCString(ama::jsctx, ppt = JS_GetPropertyStr(ama::jsctx, options, "shell_string_quotes"));
+		char const* shell_string_quotes = shell_string_quotes0;
 		for (; *shell_string_quotes; shell_string_quotes += 1) {
 			char_lut[intptr_t(*shell_string_quotes) & 0xff] = CHAR_TYPE_SHELL_STRING;
 		}
+		JS_FreeCString(ama::jsctx, shell_string_quotes0);
+		JS_FreeValue(ama::jsctx, ppt);
 		std::array<uint32_t, 8> cset_identifier{};
 		cset_identifier--->fill(0u);
 		for (int i = 0; i <= 255; i += 1) {
@@ -197,10 +209,10 @@ namespace ama {
 		//////////////////
 		//p and P are for C++ hex float, u and L are for C/C++ integers, n is for JS BigInt
 		//b and o are for 0b and 0o
-		std::array<uint32_t, 8> cset_number = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, "number_charset")));
-		std::array<uint32_t, 8> cset_hex_number = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, "hex_number_charset")));
-		std::array<uint32_t, 8> cset_exponent = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, "exponent_charset")));
-		std::array<uint32_t, 8> cset_regexp_flags = ama::CreateCharSet(JS_ToCString(ama::jsctx, JS_GetPropertyStr(ama::jsctx, options, "regexp_flags_charset")));
+		std::array<uint32_t, 8> cset_number = GetOptionCSet(options, "number_charset");
+		std::array<uint32_t, 8> cset_hex_number = GetOptionCSet(options, "hex_number_charset");
+		std::array<uint32_t, 8> cset_exponent = GetOptionCSet(options, "exponent_charset");
+		std::array<uint32_t, 8> cset_regexp_flags = GetOptionCSet(options, "regexp_flags_charset");
 		//UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, ''),0)
 		ama::Node* nd_root = ama::CreateNode(ama::N_RAW, nullptr);
 		std::vector<ParserState> state_stack{

@@ -155,8 +155,8 @@ namespace ama {
 		if ( argc < 2 ) {
 			return JS_ThrowReferenceError(ctx, "need base name and required name");
 		}
-		std::span<char> fn_base = ama::UnwrapStringSpan(argv[intptr_t(0L)]);
-		std::span<char> fn_required = ama::UnwrapStringSpan(argv[intptr_t(1L)]);
+		std::string fn_base = ama::UnwrapStringResizable(argv[intptr_t(0L)]);
+		std::string fn_required = ama::UnwrapStringResizable(argv[intptr_t(1L)]);
 		return ama::WrapString(ResolveJSRequire(fn_base, fn_required));
 	}
 	static JSValueConst JSRequire(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
@@ -164,8 +164,8 @@ namespace ama {
 		//we MUST NOT hold any ama::gcstring when calling JS - it could get gc-ed
 		std::string fn_final{};
 		{
-			std::span<char> fn_base = ama::UnwrapStringSpan(argv[intptr_t(0L)]);
-			std::span<char> fn_required = ama::UnwrapStringSpan(argv[intptr_t(1L)]);
+			std::string fn_base = ama::UnwrapStringResizable(argv[intptr_t(0L)]);
+			std::string fn_required = ama::UnwrapStringResizable(argv[intptr_t(1L)]);
 			fn_final = ResolveJSRequire(fn_base, fn_required);
 		}
 		/////////////
@@ -238,7 +238,11 @@ namespace ama {
 	}
 	void DumpASTAsJSON(ama::Node* nd) {
 		LazyInitScriptEnv();
-		printf("%s\n", (char const*)(JS_ToCString(ama::jsctx, JS_JSONStringify(ama::jsctx, ama::WrapNode(nd), JS_NULL, JS_NewInt32(ama::jsctx, 2)))));
+		JSValue val = JS_JSONStringify(ama::jsctx, ama::WrapNode(nd), JS_NULL, JS_NewInt32(ama::jsctx, 2));
+		char const *cstr = JS_ToCString(ama::jsctx, val);
+		printf("%s\n", cstr);
+		JS_FreeCString(ama::jsctx, cstr);
+		JS_FreeValue(ama::jsctx, val);
 	}
 	static ama::Node* ConvertRootToFile(ama::Node* nd_root, JSValueConst options) {
 		nd_root->node_class = ama::N_FILE;
@@ -323,7 +327,10 @@ namespace ama {
 		} else {
 			options = argv[1];
 		}
-		return ama::WrapNode(ama::ParseSimplePairing(JS_ToCString(ama::jsctx, argv[0]), options));
+		char const *cstr = JS_ToCString(ama::jsctx, argv[0]);
+		ama::Node* ret = ama::ParseSimplePairing(cstr, options);
+		JS_FreeCString(ama::jsctx, cstr);
+		return ama::WrapNode(ret);
 	}
 	static JSValueConst JSGenerateCode(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		return ama::WrapString(ama::GenerateCode(ama::UnwrapNode(this_val), argc > 0 ? argv[0] : JS_NULL));
@@ -336,7 +343,7 @@ namespace ama {
 		if (argc < 1) {
 			return JS_ThrowReferenceError(ctx, "need a tag");
 		}
-		ama::Node* addr = (ama::Node*)(JSON::parse<intptr_t>(ama::UnwrapStringSpan(argv[0])));
+		ama::Node* addr = (ama::Node*)(JSON::parse<intptr_t>(ama::UnwrapStringResizable(argv[0])));
 		if (ama::isValidNodePointer(addr)) {
 			return ama::WrapNode(addr);
 		} else {
@@ -426,7 +433,10 @@ namespace ama {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a file name");
 		}
-		return JS_NewInt32(ctx, ProcessAmaFile(JS_ToCString(ctx, argv[0]), argc < 2 ? (ama::gcstring("")) : ama::UnwrapString(argv[1])));
+		char const *cstr = JS_ToCString(ctx, argv[0]);
+		int ret = ProcessAmaFile(cstr, argc < 2 ? (ama::gcstring("")) : ama::UnwrapString(argv[1]));
+		JS_FreeCString(ctx, cstr);
+		return JS_NewInt32(ctx, ret);
 	}
 	static JSValueConst JSCreateNode(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv, int magic) {
 		ama::Node* c = (ama::Node*)(nullptr);
@@ -500,6 +510,7 @@ namespace ama {
 			} else {
 				fprintf(stderr, "%s", s);
 			}
+			JS_FreeCString(ctx, s);
 		}
 		if (!(magic & 2)) {
 			if ( magic & 1 ) {
@@ -573,8 +584,9 @@ namespace ama {
 			return JS_ThrowReferenceError(ctx, "need a path and a string");
 		}
 		size_t len = int64_t(0uLL);
-		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, argv[1]);
+		char const* ptr = JS_ToCStringLen(ctx, &len, argv[1]);
 		intptr_t n_written = fs::writeFileSync(ama::UnwrapString(argv[0]), std::span<char>(ptr, intptr_t(len)));
+		JS_FreeCString(ctx, ptr);
 		return JS_NewInt64(ctx, n_written);
 	}
 	static JSValueConst JSExistsSync(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
@@ -661,13 +673,13 @@ namespace ama {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a path");
 		}
-		return ama::WrapString(JSON::stringify(fs::readdirSync(ama::UnwrapStringSpan(argv[0]))));
+		return ama::WrapString(JSON::stringify(fs::readdirSync(ama::UnwrapStringResizable(argv[0]))));
 	}
 	static JSValueConst JSSyncTimestamp(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 2 ) {
 			return JS_ThrowReferenceError(ctx, "need two file names");
 		}
-		return JS_NewBool(ctx, fs::SyncTimestamp(ama::UnwrapStringSpan(argv[0]), ama::UnwrapStringSpan(argv[1])));
+		return JS_NewBool(ctx, fs::SyncTimestamp(ama::UnwrapStringResizable(argv[0]), ama::UnwrapStringResizable(argv[1])));
 	}
 	static JSValueConst JSPathNormalize(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 1 ) {
@@ -690,12 +702,14 @@ namespace ama {
 		if ( argc > 0 && !JS_IsUndefined(argv[0]) ) {
 			char const* encoding = JS_ToCString(ctx, argv[0]);
 			if ( strcmp(encoding, "latin1") == 0 || strcmp(encoding, "binary") == 0 || strcmp(encoding, "ascii") == 0 ) {
+				JS_FreeCString(ctx, encoding);
 				std::string ret{};
 				for (size_t i = 0; i < size; i++) {
 					unicode::AppendUTF8Char(ret, int(uint32_t(ptr[i])));
 				}
 				return JS_NewStringLen(ctx, (char const*)(ret.data()), ret.size());
 			} else if ( strcmp(encoding, "hex") == 0 ) {
+				JS_FreeCString(ctx, encoding);
 				char const* hex = "0123456789abcdef";
 				std::string ret{};
 				for (size_t i = 0; i < size; i++) {
@@ -703,6 +717,7 @@ namespace ama {
 				}
 				return JS_NewStringLen(ctx, (char const*)(ret.data()), ret.size());
 			} else if ( strcmp(encoding, "utf8") != 0 && strcmp(encoding, "utf-8") != 0 ) {
+				JS_FreeCString(ctx, encoding);
 				return JS_ThrowReferenceError(ctx, "unsupported encoding %s", encoding);
 			}
 		}
@@ -733,7 +748,10 @@ namespace ama {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a command");
 		}
-		return JS_NewInt32(ctx, system(JS_ToCString(ctx, argv[0])));
+		char const *cstr = JS_ToCString(ctx, argv[0]);
+		int ret = system(cstr);
+		JS_FreeCString(ctx, cstr);
+		return JS_NewInt32(ctx, ret);
 	}
 	static JSValueConst JSChdir(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 1 ) {
@@ -749,7 +767,7 @@ namespace ama {
 			return JS_ThrowReferenceError(ctx, "need a string");
 		}
 		size_t len = 0;
-		JS_ToCStringLen(ctx, &len, argv[0]);
+		JS_FreeCString(ctx, JS_ToCStringLen(ctx, &len, argv[0]));
 		return JS_NewInt64(ctx, len);
 	}
 	static JSValueConst JSByteAt(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
@@ -760,9 +778,12 @@ namespace ama {
 		char const* s = JS_ToCStringLen(ctx, &len, argv[0]);
 		int32_t index = ama::UnwrapInt32(argv[1], -1);
 		if ( !s || size_t(index) >= len ) {
+			if (s) {JS_FreeCString(ctx, s);}
 			return JS_UNDEFINED;
 		}
-		return JS_NewInt32(ctx, int32_t(uint32_t(uint8_t(s[index]))));
+		int32_t ch = int32_t(uint32_t(uint8_t(s[index])));
+		JS_FreeCString(ctx, s);
+		return JS_NewInt32(ctx, ch);
 	}
 	static JSValueConst JSByteSubstr(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 2 ) {
@@ -773,9 +794,12 @@ namespace ama {
 		int32_t index = ama::UnwrapInt32(argv[1], -1);
 		int32_t length = argc < 3 ? int32_t(len - index) : ama::UnwrapInt32(argv[2], -1);
 		if ( !s || size_t(index) > len || size_t(index + length) > len || size_t(index) > size_t(index + length) ) {
+			if (s) {JS_FreeCString(ctx, s);}
 			return JS_UNDEFINED;
 		}
-		return JS_NewStringLen(ctx, s + index, length);
+		JSValue ret = JS_NewStringLen(ctx, s + index, length);
+		JS_FreeCString(ctx, s);
+		return ret;
 	}
 	static JSValueConst JSCons(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 2 ) {
@@ -793,9 +817,11 @@ namespace ama {
 		char const* s = JS_ToCString(ctx, argv[0]);
 		for (char const** ps = ama::g_builtin_modules.data(); *ps; ps += 2) {
 			if (strcmp(s, ps[0]) == 0) {
+				JS_FreeCString(ctx, s);
 				return JS_NewString(ctx, ps[1]);
 			}
 		}
+		JS_FreeCString(ctx, s);
 		return JS_ThrowReferenceError(ctx, "not found");
 	}
 	static void SetupConfigDirs() {
@@ -827,14 +853,16 @@ namespace ama {
 			return JS_ThrowReferenceError(ctx, "need a file name");
 		}
 		void* hmodule{};
+		char const *cstr = JS_ToCString(ctx, argv[0]);
 		#if defined(_WIN32)
-			hmodule = (void*)(LoadLibraryA(JS_ToCString(ctx, argv[0])));
+			hmodule = (void*)(LoadLibraryA());
 		#else
-			hmodule = dlopen(JS_ToCString(ctx, argv[0]), RTLD_NOW);
+			hmodule = dlopen(cstr, RTLD_NOW);
 		#endif
 		if ( !hmodule ) {
-			return JS_ThrowReferenceError(ctx, "failed to load module %s", JS_ToCString(ctx, argv[0]));
+			return JS_ThrowReferenceError(ctx, "failed to load module %s", cstr);
 		}
+		JS_FreeCString(ctx, cstr);
 		JSValue ret = JS_NewObjectProtoClass(ama::jsctx, g_native_library_proto, g_native_library_classid);
 		JS_SetOpaque(ret, hmodule);
 		return ret;
@@ -860,14 +888,16 @@ namespace ama {
 			return JS_ThrowReferenceError(ctx, "panic: module already unloaded");
 		}
 		void* addr{};
+		char const *cstr = JS_ToCString(ctx, argv[0]);
 		#if defined(_WIN32)
-			addr = (void*)(GetProcAddress(HMODULE(hmodule), JS_ToCString(ctx, argv[0])));
+			addr = (void*)(GetProcAddress(HMODULE(hmodule), cstr));
 		#else
-			addr = dlsym(hmodule, JS_ToCString(ctx, argv[0]));
+			addr = dlsym(hmodule, cstr);
 		#endif
 		if ( !addr ) {
-			return JS_ThrowReferenceError(ctx, "failed to find the symbol '%s'", JS_ToCString(ctx, argv[0]));
+			return JS_ThrowReferenceError(ctx, "failed to find the symbol '%s'", cstr);
 		}
+		JS_FreeCString(ctx, cstr);
 		int32_t ret_code = NativeLibraryFunction(addr)(argc < 2 ? JS_UNDEFINED : argv[1]);
 		return JS_NewInt32(ctx, ret_code);
 	}
@@ -924,7 +954,7 @@ namespace ama {
 		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "Sandbox", JS_DupValue(sbctx, g_sandbox_object));
 		//JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "console", JS_DupValue(sbctx, g_sandbox_object));
 		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "__global", JS_GetGlobalObject(sbctx));
-		std::span<char> code = ama::UnwrapStringSpan(argv[0]);
+		std::string code = ama::UnwrapStringResizable(argv[0]);
 		JSValueConst ret = JS_Eval(
 			sbctx, code.c_str(),
 			code.size(), "sandboxed code", JS_EVAL_TYPE_GLOBAL
@@ -946,6 +976,7 @@ namespace ama {
 			size_t len = 0;
 			const char *s = JS_ToCStringLen(sbctx, &len, ret);
 			my_ret = JS_NewStringLen(ama::jsctx, s, len);
+			JS_FreeCString(sbctx, s);
 			JS_FreeValue(sbctx, ret);
 		}
 		JS_FreeContext(sbctx);

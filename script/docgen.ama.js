@@ -176,7 +176,7 @@ function GenerateDocuments(){
 	for (let fn of fsext.FindAllFiles(dir_modules).sort()) {
 		if (!fn.endsWith('.js')) {continue;}
 		let nd_root = depends.LoadFile(fn);
-		if (!nd_root) {continue;}
+		if (!nd_root||!nd_root.c) {continue;}
 		let fn_require = path.relative(dir_modules, fn).replace(/[.].*/, '').replace(/\\/g,'/');
 		//per-file document
 		let module_doc=CleanupDocString(nd_root.c.comments_before);

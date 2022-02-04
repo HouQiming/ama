@@ -56,10 +56,12 @@ namespace ama {
 		std::vector<ama::Node*> node_ranges = ama::GetAllPossibleNodeRanges();
 		intptr_t n_freed = intptr_t(0L);
 		intptr_t n_kept = intptr_t(0L);
+		intptr_t n_swept = intptr_t(0L);
 		//reorganize the free list
 		ama::g_free_nodes = nullptr;
 		for (int i = 0; i < node_ranges.size(); i += 2) {
 			for (ama::Node* nd = node_ranges[i]; nd != node_ranges[i + 1]; nd += 1) {
+				n_swept += 1;
 				if ( (nd->tmp_flags & (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE)) == ama::TMPF_IS_NODE ) {
 					//unreachable but un-free, release
 					//console.log('freed node', nd.node_class, nd.data == NULL ? "NULL" : nd.data.c_str());
@@ -89,7 +91,7 @@ namespace ama {
 				}
 			}
 		}
-		//fprintf(stderr, "n_kept = %d, n_freed = %d\n", int(n_kept), int(n_freed));
+		//fprintf(stderr, "n_kept = %d, n_freed = %d, n_swept = %lld\n", int(n_kept), int(n_freed), (long long)n_swept);
 		ama::gcstring_gcsweep();
 		return n_freed;
 	}

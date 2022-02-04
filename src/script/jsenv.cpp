@@ -122,7 +122,7 @@ namespace ama {
 		return "";
 	}
 	std::unordered_map<ama::gcstring, int> GetPrioritizedList(JSValueConst options, char const* name) {
-		std::span<char> s_binops = ama::UnwrapStringSpan(JS_GetPropertyStr(ama::jsctx, options, name));
+		std::string s_binops = ama::UnwrapStringResizable(JS_GetPropertyStr(ama::jsctx, options, name));
 		std::unordered_map<ama::gcstring, int> ret{};
 		int priority = 1;
 		//coulddo: SSE / NEON vectorization
@@ -190,7 +190,9 @@ namespace JSON {
 			while ( ctx.begin != ctx.end && ctx.begin[0] != '}' ) {
 				ctx.SkipSpace();
 				if ( !ctx.TrySkipName("\"main\"") ) {
-					goto skip;
+					ctx.SkipField();
+					
+					goto skip_after_name;
 				} else {
 					{
 						ctx.SkipColon();
@@ -206,6 +208,7 @@ namespace JSON {
 				}
 				skip:
 				ctx.SkipStringBody();
+				skip_after_name:
 				ctx.SkipField();
 				done:
 				if ( ctx.error ) {

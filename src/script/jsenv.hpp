@@ -31,18 +31,24 @@ namespace ama {
 	static inline ama::gcstring UnwrapString(JSValueConst val) {
 		size_t len = int64_t(0uLL);
 		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
-		return ama::gcstring(ptr, intptr_t(len));
+		auto ret = ama::gcstring(ptr, intptr_t(len));
+		JS_FreeCString(ama::jsctx, ptr);
+		return std::move(ret);
 	}
 	static inline std::string UnwrapStringResizable(JSValueConst val) {
 		size_t len = int64_t(0uLL);
 		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
-		return std::string(ptr, intptr_t(len));
+		auto ret = std::string(ptr, intptr_t(len));
+		JS_FreeCString(ama::jsctx, ptr);
+		return std::move(ret);
 	}
-	static inline std::span<char> UnwrapStringSpan(JSValueConst val) {
-		size_t len = int64_t(0uLL);
-		char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
-		return std::span<char>(ptr, intptr_t(len));
-	}
+	//static inline char[:] UnwrapStringSpan(JSValueConst val) {
+	//	size_t len = i64(0uLL);
+	//	char const* ptr = JS_ToCStringLen(ama::jsctx, &len, val);
+	//	auto ret=char[:](ptr, iptr(len));
+	//	//JS_FreeCString(ama::jsctx,ptr);
+	//	return ret;
+	//}
 	static inline JSValueConst WrapString(std::span<char> s) {
 		return JS_NewStringLen(ama::jsctx, s.data(), s.size());
 	}
