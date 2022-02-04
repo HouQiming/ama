@@ -551,7 +551,7 @@ __global.CppDropTypeCache=function(){
 }
 
 __global.CppDropDependsCache=function(){
-	return __require(__init_js_path,'depends').DropCache();
+	__require(__init_js_path,'depends').DropCache();
 }
 
 __global.__GetFilterByName=function(name,options) {

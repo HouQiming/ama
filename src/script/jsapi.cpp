@@ -980,12 +980,18 @@ namespace ama {
 		LazyInitScriptEnv();
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppDropTypeCache");
 		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 0, nullptr);
+		if ( JS_IsException(ret) ) {
+			ama::DumpError(ama::jsctx);
+		}
 		JS_FreeAtom(ama::jsctx, atom_method);
 	}
 	void DropDependsCache() {
 		LazyInitScriptEnv();
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppDropDependsCache");
 		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 0, nullptr);
+		if ( JS_IsException(ret) ) {
+			ama::DumpError(ama::jsctx);
+		}
 		JS_FreeAtom(ama::jsctx, atom_method);
 	}
 	JSValue DeepMatch(ama::Node* nd, ama::Node* nd_pattern) {
@@ -993,6 +999,9 @@ namespace ama {
 		JSValue val_arg = ama::WrapNode(nd_pattern);
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "Match");
 		JSValueConst ret = JS_Invoke(ama::jsctx, js_nd, atom_method, 1, &val_arg);
+		if ( JS_IsException(ret) ) {
+			ama::DumpError(ama::jsctx);
+		}
 		JS_FreeAtom(ama::jsctx, atom_method);
 		JS_FreeValue(ama::jsctx, val_arg);
 		JS_FreeValue(ama::jsctx, js_nd);
@@ -1003,6 +1012,9 @@ namespace ama {
 		JSValue val_arg = ama::WrapNode(nd_pattern);
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "MatchAll");
 		JSValueConst ret = JS_Invoke(ama::jsctx, js_nd, atom_method, 1, &val_arg);
+		if ( JS_IsException(ret) ) {
+			ama::DumpError(ama::jsctx);
+		}
 		JS_FreeAtom(ama::jsctx, atom_method);
 		JS_FreeValue(ama::jsctx, val_arg);
 		JS_FreeValue(ama::jsctx, js_nd);

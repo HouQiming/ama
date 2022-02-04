@@ -55,7 +55,7 @@ namespace ama {
 		//sweep
 		std::vector<ama::Node*> node_ranges = ama::GetAllPossibleNodeRanges();
 		intptr_t n_freed = intptr_t(0L);
-		//iptr n_kept = iptr(0L);
+		intptr_t n_kept = intptr_t(0L);
 		//reorganize the free list
 		ama::g_free_nodes = nullptr;
 		for (int i = 0; i < node_ranges.size(); i += 2) {
@@ -77,7 +77,7 @@ namespace ama {
 				} else if ( nd->tmp_flags & ama::TMPF_IS_NODE ) {
 					//clear the marked flag for the next gc
 					//fprintf(stderr,"keep node %p\n",nd);
-					//n_kept += 1;
+					n_kept += 1;
 					nd->tmp_flags &= ~ama::TMPF_GC_MARKED;
 					//if (!nd->p && nd->node_class == ama::N_FILE) {
 					//	fprintf(stderr, "keep file %s\n", nd->data.data());
@@ -89,7 +89,7 @@ namespace ama {
 				}
 			}
 		}
-		//fprintf(stderr, "n_kept = %d\n", int(n_kept));
+		//fprintf(stderr, "n_kept = %d, n_freed = %d\n", int(n_kept), int(n_freed));
 		ama::gcstring_gcsweep();
 		return n_freed;
 	}
