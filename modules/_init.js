@@ -410,8 +410,47 @@ function ParsePythonLambdas(nd_root){
 	for(let nd_lambda of nd_root.FindAll(N_REF,'lambda')){
 		if(nd_lambda.p.node_class!==N_RAW){continue;}
 		let nd_raw=nd_lambda.p;
-		if(nd_raw.p.node_class!==N_LABELED){
-			//misparsed multi-parameter lambda
+		if(nd_raw.p.node_class===N_ASSIGNMENT&&nd_raw.p.p&&nd_lambda.s){
+			//lambda foo=bar:baz
+			let nd_asgn=nd_raw.p;
+			let nd_param_name=nd_lambda.BreakSibling();
+			nd_raw.ReplaceWith(nd_param_name.toSingleNode());
+			nd_asgn.ReplaceWith(nd_raw);
+			nd_raw.Insert(POS_BACK,nd_asgn);
+			let nd_value=nd_asgn.c.s;
+			//nd_value could be another assignment (for another initialized parameter) / N_LABELED here
+			while(nd_value.node_class===N_ASSIGNMENT&&nd_value.c.node_class===N_RAW){
+				let nd_comma=undefined;
+				for(let ndi=nd_value.c.c;ndi;ndi=ndi.s){
+					if(ndi.isSymbol(',')){
+						nd_comma=ndi;
+						break;
+					}
+				}
+				if(!nd_comma){break;}
+				let nd_next=nd_comma.BreakSibling();
+				nd_comma.Unlink();
+				let nd_real_value=nd_value.c;
+				nd_real_value.ReplaceWith(nd_next);
+				nd_value.ReplaceWith(nd_real_value);
+				nd_raw.Insert(POS_BACK,nd_comma);
+				nd_raw.Insert(POS_BACK,nd_value);
+				nd_value=nd_value.c.s;
+				if(nd_real_value.node_class===N_RAW&&nd_real_value.c&&!nd_real_value.c.s){
+					nd_real_value.ReplaceWith(nd_real_value.BreakChild());
+				}
+			}
+			if(nd_value.node_class===N_LABELED){
+				let nd_real_value=nd_value.c;
+				let nd_tmp=Node.GetPlaceHolder();
+				nd_real_value.ReplaceWith(nd_tmp);
+				nd_value.ReplaceWith(nd_real_value);
+				nd_raw.ReplaceWith(nd_value);
+				nd_tmp.ReplaceWith(nd_raw);
+			}
+		}
+		if(nd_raw.p.node_class===N_CALL){
+			//misparsed multi-parameter lambda inside a call
 			let ndi=nd_raw;
 			while(ndi&&ndi.node_class!==N_LABELED){
 				ndi=ndi.s;
@@ -429,10 +468,13 @@ function ParsePythonLambdas(nd_root){
 			//COULDDO: add back comma if removed
 		}
 		let nd_labeled=nd_raw.p;
+		if(nd_labeled.node_class!==N_LABELED){continue;}
 		let params=[];
 		for(let ndi=nd_raw.c.s;ndi;ndi=ndi.s){
 			if(ndi.node_class===N_REF){
 				params.push(nAssignment(ndi.Clone(),nAir()));
+			}else if(ndi.node_class===N_ASSIGNMENT){
+				params.push(ndi.Clone());
 			}
 		}
 		let nd_body=nd_labeled.c.s;

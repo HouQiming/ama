@@ -50,6 +50,25 @@ ama::Node* ama::Node::Unparse() {
 		case ama::N_RAW: {
 			return ama::UnparseRaw(this);
 		}
+		case ama::N_ASSIGNMENT: {
+			ama::Node* nd_parent = this->p;
+			if ( !nd_parent || nd_parent->node_class != ama::N_RAW ) {
+				nd_parent = this->ReplaceWith(ama::CreateNode(ama::N_RAW, nullptr));
+				nd_parent->Insert(ama::POS_FRONT, this);
+				//nd_parent->indent_level = this->indent_level;
+			}
+			ama::Node* nd_a = this->BreakChild();
+			ama::Node* nd_b = nd_a->s;
+			ama::Node* ret = this->ReplaceWith(ama::cons(nd_a, ama::cons(ama::nSymbol(this->data + "="), nd_b)));
+			if ( nd_a->isRawNode(0, 0) ) {
+				ama::UnparseRaw(nd_a);
+			}
+			if ( nd_b->isRawNode(0, 0) ) {
+				ama::UnparseRaw(nd_b);
+			}
+			this->FreeASTStorage();
+			return ret;
+		}
 		case ama::N_BINOP: {
 			return ama::UnparseBinop(this);
 		}
