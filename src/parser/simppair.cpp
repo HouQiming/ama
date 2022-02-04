@@ -560,7 +560,7 @@ namespace ama {
 						comment_indent_level = current_indent_level;
 						comment_begin = feed;
 						comment_end = feed;
-					} else if (is_shell_string && ss_end == ch) {
+					} else if (is_shell_string && ss_start != ch && ss_end == ch && state_stack.size() && state_stack.back().nd_parent->flags == uint32_t(ch)) {
 						//we're closing, pop once more
 						ama::Node* nd = state_stack.back().nd_parent;
 						nd->flags |= uint32_t(ch) << 8;

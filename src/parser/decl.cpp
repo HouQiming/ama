@@ -970,7 +970,7 @@ namespace ama {
 				ama::Node* nd_maybe_c_macro = nd_before->node_class == ama::N_RAW ? nd_before : nd_before->LastChild();
 				if ( nd_maybe_c_macro && (nd_maybe_c_macro->node_class == ama::N_CALL || nd_maybe_c_macro->isRawNode('(', ')')) ) {
 					ama::Node* nd_maybe_name = nd_maybe_c_macro->LastChild();
-					if ( nd_maybe_name->node_class == ama::N_REF ) {
+					if ( nd_maybe_name && nd_maybe_name->node_class == ama::N_REF ) {
 						//C macros won't have dotted name / mistaken-N_BINOP here
 						nd_func->data = nd_maybe_name->data;
 					}
