@@ -362,6 +362,7 @@ jsism.EnableJSON = function(nd_root) {
 							__PARSE_FIELD_HERE;
 							skip:
 							ctx.SkipStringBody();
+							skip_after_name:
 							ctx.SkipField();
 							done:
 							if ( ctx.error ) {
@@ -417,7 +418,7 @@ jsism.EnableJSON = function(nd_root) {
 			if (lg_prefix > 0) {
 				nd_prefix = @(
 					if ( !ctx.TrySkipName(@(nString(__byte_substr(name0, lg_eaten, lg_prefix)))) ) {
-						goto skip;
+						@(lg_eaten ? @(goto skip;) : @(ctx.SkipField();goto skip_after_name;))
 					} else {
 						__SWITCH;
 					}
