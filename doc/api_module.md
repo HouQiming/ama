@@ -621,6 +621,12 @@ After:
 void* g_ptr = nullptr;
 ```
 
+### dump_ast
+
+- Syntax: `require("dump_ast")`
+- Description: Dump the AST (Abstract Syntax Tree).
+
+
 
 ## Modules
 
