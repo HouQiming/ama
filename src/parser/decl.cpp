@@ -64,6 +64,11 @@ namespace ama {
 				}
 			}
 		}
+		if (!nd_arg && (nd_keyword->data == "if" || nd_keyword->data == "for" || nd_keyword->data == "while")) {
+			//it's saner to treat the `foo` in dangling `if foo` as the condition than the body
+			nd_arg = nd_body;
+			nd_body = nullptr;
+		}
 		if (is_elseif) {
 			//there is no arg
 			nd_arg = nullptr;

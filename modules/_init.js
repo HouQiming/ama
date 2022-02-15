@@ -488,8 +488,8 @@ function ParsePythonLambdas(nd_root){
 	return nd_root;
 }
 
-function ParseJSLambdas(nd_root){
-	for(let nd_func_sym of nd_root.FindAll(N_SYMBOL,'=>')){
+function ParseJXXLambdas(nd_root,sym){
+	for(let nd_func_sym of nd_root.FindAll(N_SYMBOL,sym)){
 		let nd_parent=nd_func_sym.p;
 		if(nd_parent&&nd_parent.node_class===N_RAW&&nd_func_sym.Prev()&&nd_func_sym.s){
 			let nd_body=nd_func_sym.BreakSibling();
@@ -504,6 +504,14 @@ function ParseJSLambdas(nd_root){
 		}
 	}
 	return nd_root;
+}
+
+function ParseJavaLambdas(nd_root){
+	return ParseJXXLambdas(nd_root,'->');
+}
+
+function ParseJSLambdas(nd_root){
+	return ParseJXXLambdas(nd_root,'=>');
 }
 
 __global.GetPipelineFromFilename=function(filename,default_pipeline){
@@ -532,6 +540,8 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			shell_string_quotes:'`',
 		});
 		p.push(ParseJSLambdas);
+	}else if(ext==='.java'){
+		p.push(ParseJavaLambdas);
 	}
 	p.unshift({full_path:filename});
 	return p;
