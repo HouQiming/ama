@@ -364,7 +364,7 @@ __global.default_options = {
 	//`case` is better treated as a part of a label
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
 	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template import package',
-	keywords_operator_escape: 'operator',
+	keywords_operator_escape: 'case operator',
 	///////////
 	//codegen
 	tab_width: 4,
