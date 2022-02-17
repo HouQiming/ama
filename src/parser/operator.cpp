@@ -222,7 +222,7 @@ namespace ama {
 					//nd_raw->AdjustIndentLevel(-nd_asgn->indent_level);
 					//nd_value doesn't need adjusting: it was a child, while nd_raw was the parent
 					//always allow :=
-					if ( ndi->node_class == ama::N_SYMBOL && (binop_priority--->get(ndi->data) || ndi->data == ":") && ndi != nd_raw->c ) {
+					if ( ndi->node_class == ama::N_SYMBOL && (binop_priority--->get(ndi->data) || ndi->data == ":") && ndi != nd_raw->c && ndi != nd_lhs ) {
 						//updating assignment
 						ndi->Unlink();
 						nd_asgn->data = ndi->DestroyForSymbol();

@@ -9,7 +9,11 @@ namespace ama {
 		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( (nd_raw->flags & 0xffff) != 0 || nd_raw == nd_root ) { continue; }
 			if ( !nd_raw->c && nd_raw->p && nd_raw->p->node_class == ama::N_RAW ) {
-				nd_raw->Unlink();
+				if (nd_raw->p->node_class == ama::N_BINOP || nd_raw->p->node_class == ama::N_ASSIGNMENT) {
+					nd_raw->ReplaceWith(ama::nAir());
+				} else {
+					nd_raw->Unlink();
+				}
 			} else if ( nd_raw->c && !nd_raw->c->s ) {
 				//nd_raw.ReplaceWith(nd_raw.c);
 				ama::UnparseRaw(nd_raw);
