@@ -539,6 +539,9 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			parse_js_regexp: 1,
 			shell_string_quotes:'`',
 		});
+		if(Node.InsertJSSemicolons){
+			p.splice(p.indexOf('DelimitCLikeStatements'),0,'InsertJSSemicolons');
+		}
 		p.push(ParseJSLambdas);
 	}else if(ext==='.java'){
 		p.push(ParseJavaLambdas);

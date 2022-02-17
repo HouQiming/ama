@@ -30,7 +30,7 @@ omnichecker.CreateTestingCode = function CreateTestingCode(nd_root, options) {
 	options.properties.unshift({
 		name: 'f',
 		type: 'array'
-	})
+	});
 	let templates_by_class = __node_class_names.map(name => []);
 	for (let t of options.templates) {
 		if (t.pattern.node_class == N_NODEOF) {

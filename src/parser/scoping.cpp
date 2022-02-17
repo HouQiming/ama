@@ -114,6 +114,52 @@ namespace ama {
 		lines_out.resize(lineno);
 		lines_out.push_back(nd_new_scope);
 	}
+	//before DelimitCLikeStatements
+	static bool hasTrailingNewline(std::span<char> s) {
+		for (intptr_t i = s.size() - 1; i >= 0; i--) {
+			if (s[i] == '\n') {return 1;}
+			if (uint8_t(s[i]) > uint8_t(' ')) {break;}
+		}
+		return 0;
+	}
+	static bool hasLeadingNewline(std::span<char> s) {
+		for (intptr_t i = 0; i < s.size(); i++) {
+			if (s[i] == '\n') {return 1;}
+			if (uint8_t(s[i]) > uint8_t(' ')) {break;}
+		}
+		return 0;
+	}
+	ama::Node* InsertJSSemicolons(ama::Node* nd_root) {
+		//just insert ';', leave the original RAW structure untouched
+		for (ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW)) {
+			//only in scopes / statements
+			if (!(nd_raw->isRawNode(0, 0) || nd_raw->isRawNode('{', '}'))) { continue;}
+			ama::Node* nd_last = nullptr;
+			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
+				nd_last = ndi->Prev();
+				//search for newline in-between
+				if (!(nd_last && (hasTrailingNewline(nd_last->comments_after) || hasLeadingNewline(ndi->comments_before)))) { continue;}
+				//allow operators to cross line boundary
+				if (nd_last->node_class == ama::N_SYMBOL && nd_last->data != "--" && nd_last->data != "++" ||
+				ndi->node_class == ama::N_SYMBOL && ndi->data != "--" && ndi->data != "++") {
+					continue;
+				}
+				//never after <> / {}
+				if (nd_last->isRawNode('<', '>') || nd_last->isRawNode('{', '}')) {continue;}
+				//allow () [] {} on the next line
+				if (ndi->isRawNode('(', ')') || ndi->isRawNode('[', ']') || ndi->isRawNode('{', '}')) {continue;}
+				//certain keywords are valid at eol
+				if (nd_last->isRef("function") || nd_last->isRef("class") || nd_last->isRef("async") || 
+				nd_last->isRef("await") || nd_last->isRef("case") || nd_last->isRef("else") ||
+				nd_last->isRef("try") || nd_last->isRef("import")) {
+					continue;
+				}
+				//insert ';'
+				ndi->Insert(ama::POS_BEFORE, ama::nSymbol(";"));
+			}
+		}
+		return nd_root;
+	}
 	ama::Node* DelimitCLikeStatements(ama::Node* nd_root, JSValue options) {
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		std::vector<ama::Node*> all_raws = nd_root->FindAllWithin(0, ama::N_RAW);

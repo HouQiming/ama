@@ -5,6 +5,7 @@ namespace ama {
 	ama::Node* DelimitCLikeStatements(ama::Node* nd_root, JSValue options);
 	void ConvertToScope(ama::Node* nd_raw);
 	ama::Node* ConvertIndentToScope(ama::Node* nd_root, JSValue options);
+	ama::Node* InsertJSSemicolons(ama::Node* nd_root);
 };
 
 #endif

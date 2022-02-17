@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 const assert = require('assert');
 let jsism = module.exports;
 
@@ -68,10 +68,10 @@ jsism.EnableConsole = function(nd_root, options) {
 			if (format_parts.length && options.separator) {
 				format_parts.push(options.separator);
 			}
-			let nd_value = ndi
+			let nd_value = ndi;
 			let fmt = '';
 			if (nd_value.node_class == N_STRING) {
-				format_parts.push(nd_value.GetStringValue())
+				format_parts.push(nd_value.GetStringValue());
 				continue;
 			}
 			if (nd_value.isMethodCall('padStart') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
@@ -96,7 +96,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				fmt = fmt + '.' + nd_value.c.s.data + 'f';
 				nd_value = nd_value.c.c;
 			}
-			format_parts.push('{' + fmt + '}')
+			format_parts.push('{' + fmt + '}');
 			args.push(nd_value);
 		}
 		if (options.tail) {
@@ -111,7 +111,7 @@ jsism.EnableConsole = function(nd_root, options) {
 				nd_format = nCall(nRef('fprintf'), nRef(options.std_stream), nString('%s'), nCall(nd_format.dot('c_str')));  
 			}
 		}
-		nd_format.comments_before = nd_call.c.c.comments_before
+		nd_format.comments_before = nd_call.c.c.comments_before;
 		nd_call.ReplaceWith(nd_format);
 	}
 	function ReplaceWithIOStream(nd_call) {
@@ -129,7 +129,7 @@ jsism.EnableConsole = function(nd_root, options) {
 			if (nd_value.isMethodCall('padStart') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				need_iomanip = 1;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('right').setFlags(DOT_CLASS))  ;
-				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s))  
+				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s));  
 				nd_value = nd_value.c.c;
 				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
 					nd_value = nd_value.c.c;
@@ -137,7 +137,7 @@ jsism.EnableConsole = function(nd_root, options) {
 			} else if (nd_value.isMethodCall('padEnd') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				need_iomanip = 1;
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('left').setFlags(DOT_CLASS))  ;
-				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s))  
+				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setw').setFlags(DOT_CLASS).call(nd_value.c.s));  
 				nd_value = nd_value.c.c;
 				if (nd_value.isMethodCall('toString') && !nd_value.c.s) {
 					nd_value = nd_value.c.c;
@@ -145,8 +145,8 @@ jsism.EnableConsole = function(nd_root, options) {
 			}
 			if (nd_value.isMethodCall('toExponential') && !nd_value.c.s) {
 				need_iomanip = 1;
-				need_ios = 1
-				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('scientific').setFlags(DOT_CLASS))  
+				need_ios = 1;
+				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('scientific').setFlags(DOT_CLASS));  
 				nd_value = nd_value.c.c;
 				nd_stream = nBinop(nd_stream, '<<', nd_value);
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('defaultfloat').setFlags(DOT_CLASS))  ;
@@ -155,7 +155,7 @@ jsism.EnableConsole = function(nd_root, options) {
 			} else if (nd_value.isMethodCall('toFixed') && nd_value.c.s && nd_value.c.s.node_class == N_NUMBER) {
 				need_iomanip = 1;
 				need_ios = 1;
-				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('fixed').setFlags(DOT_CLASS))  
+				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('fixed').setFlags(DOT_CLASS));  
 				nd_stream = nBinop(nd_stream, '<<', nRef('std').dot('setprecision').setFlags(DOT_CLASS).call(nd_value.c.s))  ;
 				nd_value = nd_value.c.c;
 				nd_stream = nBinop(nd_stream, '<<', nd_value);
@@ -483,8 +483,8 @@ jsism.EnableJSON = function(nd_root) {
 					nd_body.Insert(POS_BACK, @(
 						case @(nd_char): {
 							ctx.begin += 1;
-							@(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten + 1))
-							break;
+							@(GenerateParseField(properties.slice(cases[i].start, cases[i].end), lg_eaten + 1))/*
+							*/break;
 						}
 					));
 				}

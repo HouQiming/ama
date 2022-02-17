@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 const assert = require('assert');
 let gentag = module.exports;
 

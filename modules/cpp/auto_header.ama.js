@@ -143,7 +143,7 @@ function Translate(nd_root, options) {
 					//sync to that private class instead
 					if (!nd_scope.Find(N_FUNCTION, names[0]) && !nd_scope.Find(N_CALL, names[0])) {
 						let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
-						nd_forward.GetFunctionNameNode().ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
+						nd_forward.GetFunctionNameNode().ReplaceWith(nRef(names[0]).setCommentsBefore(' '));
 						nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
 						if (nd_forward.c.s.s.node_class == N_LABELED) {
 							//C++ constructor
@@ -182,7 +182,7 @@ function Translate(nd_root, options) {
 			nd_scope = nd_namespace.LastChild();
 		}
 		let nd_forward = nd_func.Clone().setCommentsBefore('').setCommentsAfter('');
-		nd_forward.GetFunctionNameNode().ReplaceWith(nRef(names[0]).setCommentsBefore(' '))
+		nd_forward.GetFunctionNameNode().ReplaceWith(nRef(names[0]).setCommentsBefore(' '));
 		nd_forward.LastChild().ReplaceWith(nAir()).setCommentsBefore('').setCommentsAfter('');
 		nd_forward = nSemicolon(nd_forward);
 		if (!nd_insertion_root) {

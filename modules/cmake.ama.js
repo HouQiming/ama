@@ -41,7 +41,7 @@ cmake.LoadCMakeFile = function(fn, template) {
 			} else if (name == 'endif' && if_stk.length > 0) {
 				let nd0 = if_stk.pop();
 				let nd_tmp = Node.GetPlaceHolder();
-				nd0.ReplaceUpto(ndi, nd_tmp)
+				nd0.ReplaceUpto(ndi, nd_tmp);
 				ndi = nd_tmp.ReplaceWith(CreateNode(N_RAW, nd0));
 			} else {
 				//do nothing
@@ -60,14 +60,14 @@ Node.TokenizeCMakeArgs = function() {
 		//unquoted args - merge and convert. quoting individual names in target is fine
 		if (merge_group.length == 1 && merge_group[0].node_class == N_REF) {
 			//leave single identifiers alone
-			ret.push(merge_group[0])
+			ret.push(merge_group[0]);
 			merge_group.length = 0;
 		} else {
 			let n0 = ret.length;
 			for (let str of merge_group.map(nd => nd.toSource(cmake_options)).join('').trim().split(' ')) {
 				ret.push(nString(str).setCommentsBefore(' '));
 			}
-			merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nScope.apply(null, ret.slice(n0)).c)
+			merge_group[0].ReplaceUpto(merge_group[merge_group.length - 1], nScope.apply(null, ret.slice(n0)).c);
 			merge_group.length = 0;
 		}
 	}
@@ -245,7 +245,7 @@ Node.CreateCXXCMakeTarget = function(fn_cmake, options) {
 	let nd_cmake = cmake.LoadCMakeFile(fn_cmake, () => [
 		'cmake_minimum_required (VERSION 3.0)\n',
 		'project(', path.basename(path.dirname(path.resolve(fn_cmake))).replace(/[^0-9a-zA-Z]+/g, '_'), ')\n',
-	].join(''))   
+	].join(''));   
 	//insert files
 	let src_name_abs = path.resolve(this.data);
 	let dir_cmake = path.dirname(fn_cmake);

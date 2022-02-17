@@ -35,7 +35,7 @@ module.exports = function(nd_root) {
 			nd_tmp.ReplaceWith(@((auto @(nd_i.Clone().setFlags(REF_DECLARED | REF_WRITTEN)) = 0; @(nd_range); @(nd_i.Clone())++)));
 			continue;
 		} else if (nd_range.node_class == N_RAW && nd_range.c && nd_range.LastChild().node_class == N_BINOP && (nd_range.LastChild().data == '<' || nd_range.LastChild().data == '<=')) {
-			let nd_cmp = nd_range.LastChild().Unlink()
+			let nd_cmp = nd_range.LastChild().Unlink();
 			let nd_i = nd_cmp.c;
 			let nd_n = nd_cmp.c.s;
 			let nd_tmp = Node.GetPlaceHolder();

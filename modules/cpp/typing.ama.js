@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 const depends = require('depends');
 const classes = require('class');
 const assert = require('assert');

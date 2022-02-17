@@ -90,7 +90,7 @@ function Translate(nd_root, options) {
 			if (declared) {continue;}
 			//make it a declaration
 			let nd_tmp = Node.GetPlaceHolder();
-			nd_ref.ReplaceWith(nd_tmp)
+			nd_ref.ReplaceWith(nd_tmp);
 			nd_tmp.ReplaceWith(nRaw(nRef(keyword).setCommentsAfter(' '), nd_ref));
 			nd_ref.flags |= REF_DECLARED;
 			///////////

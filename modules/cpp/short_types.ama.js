@@ -13,7 +13,7 @@ let g_templates = [
 	{from: nRef('f16'), to: nRef('__half')},
 	{from: nRef('f32'), to: nRef('float')},
 	{from: nRef('f64'), to: nRef('double')},
-]
+];
 
 function BidirTransform(nd_root, alt_templates, is_forward) {
 	return nd_root.TranslateTemplates(g_templates, is_forward);
