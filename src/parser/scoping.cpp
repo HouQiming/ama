@@ -125,7 +125,11 @@ namespace ama {
 	static bool hasLeadingNewline(std::span<char> s) {
 		for (intptr_t i = 0; i < s.size(); i++) {
 			if (s[i] == '\n') {return 1;}
-			if (uint8_t(s[i]) > uint8_t(' ')) {break;}
+			if (uint8_t(s[i]) > uint8_t(' ')) {
+				//treat // as newline
+				if (s--->subarray(i)--->startsWith("//")) {return 1;}
+				break;
+			}
 		}
 		return 0;
 	}

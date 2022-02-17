@@ -57,7 +57,7 @@ namespace ama {
 			ama::Node* nd_raw = nd_ret->p;
 			ama::Node* nd_asgn = nd_raw->p;
 			ama::Node* nd_var = nd_ret->c->s;
-			if (nd_var->node_class == ama::N_AIR) {
+			if (nd_var->node_class == ama::N_AIR && nd_ret->s) {
 				//case / default
 				if (nd_raw->comments_before.size()) {
 					nd_ret->comments_before = nd_raw->comments_before + nd_ret->comments_before;
@@ -72,6 +72,9 @@ namespace ama {
 				nd_asgn->Insert(ama::POS_BEFORE, nd_ret);
 				nd_ret->indent_level = new_indent_level;
 				//need to re-sanitize the new assignment variable's comment placement
+				if (!nd_raw->c) {
+					nd_raw->Insert(ama::POS_FRONT, ama::nAir());
+				}
 				if ( nd_raw->c->comments_before.size() ) {
 					nd_raw->comments_before = (nd_raw->comments_before + nd_raw->c->comments_before);
 					nd_raw->c->comments_before = "";
@@ -159,6 +162,7 @@ namespace ama {
 							}
 							cstk--->push(ColonStackItem{.nd_head = nd_next, .nd_qmark = nullptr, .nd_colon = nullptr});
 							ndi = nd_next;
+							if (!ndi) {break;}
 							goto again;
 						}
 					}
