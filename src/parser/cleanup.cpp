@@ -147,27 +147,27 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	ama::Node* FixPriorityReversal(ama::Node* nd_root) {
-		for ( ama::Node * nd_label: nd_root->FindAll(ama::N_LABELED) ) {
-			if ( nd_label->p && nd_label->p->node_class == ama::N_ASSIGNMENT && nd_label->p->c == nd_label ) {
-				//fix the priority reversal
-				ama::Node* nd_asgn = nd_label->p;
-				ama::Node* nd_var = nd_label->c->s->Unlink();
-				int32_t indent_asgn = nd_asgn->indent_level;
-				int32_t indent_var = nd_var->indent_level;
-				int32_t indent_label = nd_label->indent_level;
-				nd_label->ReplaceWith(nd_var);
-				nd_asgn->ReplaceWith(nd_label);
-				nd_label->Insert(ama::POS_BACK, nd_asgn);
-				nd_label->indent_level = indent_asgn;
-				nd_asgn->indent_level = indent_var;
-				nd_var->indent_level = 0;
-				//the shenanigans above ignored the assignment value
-				nd_asgn->c->s->AdjustIndentLevel(indent_asgn - indent_var);
-			}
-		}
-		return nd_root;
-	}
+	//public ama::Node* FixPriorityReversal(ama::Node* nd_root) {
+	//	for ( ama::Node * nd_label: nd_root->FindAll(ama::N_LABELED) ) {
+	//		if ( nd_label->p && nd_label->p->node_class == ama::N_ASSIGNMENT && nd_label->p->c == nd_label ) {
+	//			//fix the priority reversal
+	//			ama::Node* nd_asgn = nd_label->p;
+	//			ama::Node* nd_var = nd_label->c->s->Unlink();
+	//			i32 indent_asgn = nd_asgn->indent_level;
+	//			i32 indent_var = nd_var->indent_level;
+	//			i32 indent_label = nd_label->indent_level;
+	//			nd_label->ReplaceWith(nd_var);
+	//			nd_asgn->ReplaceWith(nd_label);
+	//			nd_label->Insert(ama::POS_BACK, nd_asgn);
+	//			nd_label->indent_level = indent_asgn;
+	//			nd_asgn->indent_level = indent_var;
+	//			nd_var->indent_level = 0;
+	//			//the shenanigans above ignored the assignment value
+	//			nd_asgn->c->s->AdjustIndentLevel(indent_asgn - indent_var);
+	//		}
+	//	}
+	//	return nd_root;
+	//}
 	ama::Node* NodifySemicolonAndParenthesis(ama::Node* nd_root) {
 		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
 		scopes--->push(nd_root);

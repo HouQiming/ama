@@ -17,7 +17,6 @@ namespace ama {
 		//COULDDO: range mode
 		ama::Node* nd_tmp = ama::GetPlaceHolder();
 		nd_head->ReplaceUpto(nd_next ? nd_next->Prev() : nd_head->p->LastChild(), nd_tmp);
-		//if( nd_next ) { nd_next.BreakSelf(); }
 		ama::Node* nd_colon = cstk.back().nd_colon->BreakSelf();
 		ama::Node* nd_ret{};
 		if ( nd_head == nd_colon ) { nd_head = ama::nAir(); }
@@ -52,7 +51,52 @@ namespace ama {
 		for (ama::Node* ndi = nd_ret->c; ndi; ndi = ndi->s) {
 			ndi->AdjustIndentLevel(-nd_ret->indent_level);
 		}
-		//if( nd_next ) { nd_ret.Insert(ama::POS_AFTER, nd_next); }
+		if (nd_ret->node_class == ama::N_LABELED && nd_ret->p && nd_ret->p->p && nd_ret->p->p->node_class == ama::N_ASSIGNMENT && 
+		nd_ret->p->p->c == nd_ret->p && !nd_ret->Prev()) {
+			//do FixPriorityReversal here aggressively
+			ama::Node* nd_raw = nd_ret->p;
+			ama::Node* nd_asgn = nd_raw->p;
+			ama::Node* nd_var = nd_ret->c->s;
+			if (nd_var->node_class == ama::N_AIR) {
+				//case / default
+				if (nd_raw->comments_before.size()) {
+					nd_ret->comments_before = nd_raw->comments_before + nd_ret->comments_before;
+					nd_raw->comments_before = "";
+				}
+				if (nd_asgn->comments_before.size()) {
+					nd_ret->comments_before = nd_asgn->comments_before + nd_ret->comments_before;
+					nd_asgn->comments_before = "";
+				}
+				int8_t new_indent_level = ama::ClampIndentLevel(int32_t(nd_ret->indent_level) + nd_raw->indent_level + nd_asgn->indent_level);
+				nd_ret->Unlink();
+				nd_asgn->Insert(ama::POS_BEFORE, nd_ret);
+				nd_ret->indent_level = new_indent_level;
+				//need to re-sanitize the new assignment variable's comment placement
+				if ( nd_raw->c->comments_before.size() ) {
+					nd_raw->comments_before = (nd_raw->comments_before + nd_raw->c->comments_before);
+					nd_raw->c->comments_before = "";
+				}
+				nd_raw->AdjustIndentLevel(nd_raw->c->indent_level);
+				nd_raw->c->indent_level = 0;
+			} else if (nd_ret->s) {
+				//not a case but we have a sibling, can't do anything
+			} else {
+				ama::UnparseRaw(nd_raw);
+				assert(nd_ret->p == nd_asgn && nd_asgn->c == nd_ret);
+				nd_var = nd_var->Unlink();
+				int32_t indent_asgn = nd_asgn->indent_level;
+				int32_t indent_var = nd_var->indent_level;
+				int32_t indent_label = nd_ret->indent_level;
+				nd_ret->ReplaceWith(nd_var);
+				nd_asgn->ReplaceWith(nd_ret);
+				nd_ret->Insert(ama::POS_BACK, nd_asgn);
+				nd_ret->indent_level = indent_asgn;
+				nd_asgn->indent_level = indent_var;
+				nd_var->indent_level = 0;
+				//the shenanigans above ignored the assignment value
+				nd_asgn->c->s->AdjustIndentLevel(indent_asgn - indent_var);
+			}
+		}
 		cstk--->pop();
 		if ( !cstk.size() ) {
 			cstk--->push(ColonStackItem{.nd_head = nd_ret, .nd_qmark = nullptr, .nd_colon = nullptr});

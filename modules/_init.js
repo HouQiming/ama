@@ -398,7 +398,7 @@ __global.default_pipeline=[
 	'ParseColons',
 	'ParseOperators',
 	'CleanupDummyRaws',
-	'FixPriorityReversal',
+	Node.FixPriorityReversal?'FixPriorityReversal':{},
 	'ParseDeclarations',
 	'NodifySemicolonAndParenthesis',
 	'CleanupDummyRaws',

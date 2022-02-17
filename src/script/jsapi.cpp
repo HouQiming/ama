@@ -291,7 +291,7 @@ namespace ama {
 			ama::ParseOperators(nd_root, options);
 		}
 		ama::CleanupDummyRaws(nd_root);
-		ama::FixPriorityReversal(nd_root);
+		//ama::FixPriorityReversal(nd_root);
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_declarations"), 1) ) {
 			ama::ParseDeclarations(nd_root, options);
 		}
@@ -553,7 +553,7 @@ namespace ama {
 		NodeFilterDesc{"ParseAssignment", nullptr,ama::ParseAssignment},
 		NodeFilterDesc{"ParseColons", nullptr,ama::ParseColons},
 		NodeFilterDesc{"ParseOperators", nullptr,ama::ParseOperators},
-		NodeFilterDesc{"FixPriorityReversal", ama::FixPriorityReversal,nullptr},
+		//NodeFilterDesc{"FixPriorityReversal", ama::FixPriorityReversal,nullptr},
 		NodeFilterDesc{"ParseDeclarations", nullptr,ama::ParseDeclarations},
 		NodeFilterDesc{"NodifySemicolonAndParenthesis", ama::NodifySemicolonAndParenthesis,nullptr},
 		NodeFilterDesc{"SanitizeCommentPlacement", ama::SanitizeCommentPlacement, nullptr},
