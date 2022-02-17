@@ -180,26 +180,45 @@ namespace ama {
 	}
 	ama::Node* ParseAssignment(ama::Node* nd_root, JSValueConst options) {
 		std::unordered_map<ama::gcstring, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
+		std::unordered_map<ama::gcstring, int> lower_than_assignment_operators = ama::GetPrioritizedList(options, "lower_than_assignment_operators");
 		std::vector<ama::Node*> Q = nd_root->FindAllWithin(0, ama::N_RAW);
 		for (intptr_t i = 0; i < intptr_t(Q.size()); i++) {
 			ama::Node* nd_raw = Q[i];
 			ama::Node* ndi = nd_raw->c;
+			ama::Node* nd_before_lhs = nullptr;
 			while ( ndi ) {
 				ama::Node* ndi_next = ndi->s;
-				if ( ndi_next && ndi_next->s && 
-				ndi_next->isSymbol("=") ) {
+				if ( ndi_next && ndi_next->s && ndi_next->isSymbol("=") ) {
 					ama::Node* ndi_next_next = ndi_next->BreakSibling();
 					//move the comments
 					ndi->MergeCommentsAfter(ndi_next);
 					ndi_next->Unlink();
+					ama::Node* nd_after = nullptr;
+					for (ama::Node* ndj = ndi_next_next->s; ndj; ndj = ndj->s) {
+						if (ndj->node_class == ama::N_SYMBOL && lower_than_assignment_operators--->get(ndj->data)) {
+							//must be non-NULL: ndj starts at ndi_next_next->s
+							nd_after = ndj->Prev()->BreakSibling();
+							break;
+						}
+					}
 					ama::Node* nd_value = ama::toSingleNode(ndi_next_next);
 					nd_value->comments_before = ndi_next_next->comments_before;
 					ndi_next_next->comments_before = "";
 					nd_value->MergeCommentsBefore(ndi_next);
 					ama::Node* nd_tmp = ama::GetPlaceHolder();
-					nd_raw->ReplaceWith(nd_tmp);
+					ama::Node* nd_lhs = nullptr;
+					if (nd_before_lhs) {
+						nd_lhs = nd_before_lhs->BreakSibling()->toSingleNode();
+						nd_before_lhs->Insert(ama::POS_AFTER, nd_tmp);
+					} else if (nd_after) {
+						nd_lhs = nd_raw->BreakChild()->toSingleNode();
+						nd_raw->Insert(ama::POS_FRONT, nd_tmp);
+					} else {
+						nd_raw->ReplaceWith(nd_tmp);
+						nd_lhs = nd_raw;
+					}
 					//ndi.s = NULL;
-					ama::Node* nd_asgn = nd_tmp->ReplaceWith(ama::nAssignment(nd_raw, nd_value));
+					ama::Node* nd_asgn = nd_tmp->ReplaceWith(ama::nAssignment(nd_lhs, nd_value));
 					//nd_raw->AdjustIndentLevel(-nd_asgn->indent_level);
 					//nd_value doesn't need adjusting: it was a child, while nd_raw was the parent
 					//always allow :=
@@ -213,10 +232,22 @@ namespace ama {
 						Q.push_back(nd_value);
 					}
 					ndi_next->FreeASTStorage();
-					if ( nd_raw->c && !nd_raw->c->s && nd_raw->isRawNode(0, 0) ) {
+					if ( nd_raw == nd_lhs && nd_raw->c && !nd_raw->c->s && nd_raw->isRawNode(0, 0) ) {
 						ama::UnparseRaw(nd_raw);
 					}
-					break;
+					if (nd_after) {
+						assert(nd_asgn->p == nd_raw);
+						nd_asgn->Insert(ama::POS_AFTER, nd_after);
+						ndi = nd_asgn;
+						ndi_next = nd_asgn->s;
+						//gotta continue looping
+					} else {
+						break;
+					}
+				} else if (ndi->node_class == ama::N_SYMBOL && lower_than_assignment_operators--->get(ndi->data)) {
+					//mark the lhs range
+					//?: immediately before = isn't considered as a separate operator
+					nd_before_lhs = ndi;
 				}
 				ndi = ndi_next;
 			}
