@@ -337,7 +337,7 @@ ama::Node* ama::Node::Insert(int pos, ama::Node* nd_new) {
 	//	nd_new_parent.tmp_flags &= ~SYSF_NONJC_UNTOUCHED;
 	//}
 	switch ( pos ) {
-		case ama::POS_BEFORE: {
+		case ama::POS_BEFORE:{
 			ama::Node* nd_prev = this->v;
 			if ( ama::isValidPreviousSibling(nd_prev) ) {
 				assert(nd_prev->s == this);
@@ -352,7 +352,7 @@ ama::Node* ama::Node::Insert(int pos, ama::Node* nd_new) {
 			this->v = nd_tail;
 			break;
 		}
-		case ama::POS_AFTER: {
+		case ama::POS_AFTER:{
 			ama::Node* nd_next = this->s;
 			nd_tail->s = nd_next;
 			if ( nd_next ) {
@@ -365,7 +365,7 @@ ama::Node* ama::Node::Insert(int pos, ama::Node* nd_new) {
 			nd_new->v = this;
 			break;
 		}
-		case ama::POS_FRONT: {
+		case ama::POS_FRONT:{
 			nd_tail->s = this->c;
 			if ( this->c ) {
 				nd_new->v = this->c->v;
@@ -376,7 +376,7 @@ ama::Node* ama::Node::Insert(int pos, ama::Node* nd_new) {
 			this->c = nd_new;
 			break;
 		}
-		case ama::POS_BACK: {
+		case ama::POS_BACK:{
 			//nd_tail.s = NULL;
 			if ( !this->c ) {
 				this->c = nd_new;
@@ -388,7 +388,7 @@ ama::Node* ama::Node::Insert(int pos, ama::Node* nd_new) {
 			this->c->v = ama::PackTailPointer(nd_tail);
 			break;
 		}
-		case ama::POS_REPLACE: {
+		case ama::POS_REPLACE:{
 			nd_tail->s = this->s;
 			if ( this->s ) {
 				this->s->v = nd_tail;
@@ -953,7 +953,7 @@ ama::Node* ama::Node::toSingleNode() {
 }
 uint8_t ama::Node::GetCFGRole() const {
 	switch ( this->node_class ) {
-		case ama::N_SCOPED_STATEMENT: {
+		case ama::N_SCOPED_STATEMENT:{
 			if ( this->data == "if" || this->data == "switch" ) {
 				return ama::CFG_BRANCH;
 			} else if ( this->data == "for" || this->data == "while" || this->data == "do" ) {
@@ -963,19 +963,19 @@ uint8_t ama::Node::GetCFGRole() const {
 			}
 			break;
 		}
-		case ama::N_KEYWORD_STATEMENT: {
+		case ama::N_KEYWORD_STATEMENT:{
 			if ( this->data == "return" || this->data == "throw" || this->data == "goto" || this->data == "break" || this->data == "continue" ) {
 				return ama::CFG_JUMP;
 			}
 			break;
 		}
-		case ama::N_FUNCTION: case ama::N_CLASS: {
+		case ama::N_FUNCTION: case ama::N_CLASS:{
 			return ama::CFG_DECL;
 		}
-		case ama::N_CONDITIONAL: {
+		case ama::N_CONDITIONAL:{
 			return ama::CFG_BRANCH;
 		}
-		case ama::N_BINOP: {
+		case ama::N_BINOP:{
 			if ( this->data == "&&" || this->data == "||" ) {
 				return ama::CFG_BRANCH;
 			}
@@ -992,13 +992,13 @@ int ama::Node::isChildCFGDependent(ama::Node const* nd_child) const {
 		return 0;
 	}
 	switch ( this->node_class ) {
-		case ama::N_SCOPED_STATEMENT: {
+		case ama::N_SCOPED_STATEMENT:{
 			return nd_child->node_class == ama::N_SCOPE;
 		}
-		case ama::N_CONDITIONAL: {
+		case ama::N_CONDITIONAL:{
 			return nd_child != this->c;
 		}
-		case ama::N_BINOP: {
+		case ama::N_BINOP:{
 			if ( this->data == "&&" || this->data == "||" ) {
 				return nd_child != this->c;
 			}

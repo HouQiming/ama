@@ -301,7 +301,7 @@ namespace ama {
 					nd_keyword = nullptr;
 				} else if (ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi) {
 					switch ( kw_mode ) {
-						case KW_CLASS: {
+						case KW_CLASS:{
 							//search for the class name
 							ama::Node* nd_class_name{};
 							for (ama::Node* ndj = nd_keyword->s; ndj != ndi; ndj = ndj->s) {
@@ -356,7 +356,7 @@ namespace ama {
 							nd_keyword = nullptr;
 							break;
 						}
-						case KW_STMT: {
+						case KW_STMT:{
 							//pull keyword out of raw, separate "condition" (even if it's empty) and scope
 							if ( nd_keyword->node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
@@ -400,7 +400,7 @@ namespace ama {
 							nd_keyword = nullptr;
 							continue;
 						}
-						case KW_EXT: {
+						case KW_EXT:{
 							if ( nd_keyword->node_class == ama::N_CALL ) {
 								nd_keyword = ama::UnparseCall(nd_keyword);
 							}
@@ -423,11 +423,11 @@ namespace ama {
 							nd_keyword = nullptr;
 							continue;
 						}
-						case KW_NOT_FUNC: {
+						case KW_NOT_FUNC:{
 							//it's not a function
 							break;
 						}
-						case KW_FUNC: default: {
+						case KW_FUNC: default:{
 							its_actually_a_function:
 							//it's not necessarily a declaration, detect C / C++11 / Java / etc. keywordless functions
 							//what else could it be? C/C++ initializer list, new (which could have (){} for JC)

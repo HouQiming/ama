@@ -229,7 +229,7 @@ namespace ama {
 			uint32_t ch = uint32_t(uint8_t(feed[intptr_t(0L)]));
 			// [ \t\r] \n "' / 0-9 A-Za-z_\u0080+
 			switch ( char_lut[intptr_t(ch)] ) {
-				case CHAR_TYPE_SLASH: {
+				case CHAR_TYPE_SLASH:{
 					if ( ch == '#' || feed[intptr_t(1L)] == '/' ) {
 						feed = ama::SkipChars(feed, g_not_newline);
 						comment_end = feed;
@@ -321,7 +321,7 @@ namespace ama {
 						goto handle_symbol;
 					}
 				}
-				case CHAR_TYPE_SYMBOL: {
+				case CHAR_TYPE_SYMBOL:{
 					handle_symbol:
 					intptr_t lg = intptr_t(1L);
 					for (intptr_t i = 0; i < intptr_t(n_symbol[ch]); i += intptr_t(1L)) {
@@ -343,7 +343,7 @@ namespace ama {
 					comment_end = feed;
 					break;
 				}
-				case CHAR_TYPE_OPENING: {
+				case CHAR_TYPE_OPENING:{
 					ama::Node* nd = ama::CreateNode(ama::N_RAW, nullptr);
 					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
@@ -359,7 +359,7 @@ namespace ama {
 					comment_end = feed;
 					break;
 				}
-				case CHAR_TYPE_CLOSING: {
+				case CHAR_TYPE_CLOSING:{
 					if ( state_stack.size() > intptr_t(1L) ) {
 						char is_shell_arg = state_stack.back().is_shell_arg;
 						ama::Node* nd = state_stack.back().nd_parent;
@@ -406,7 +406,7 @@ namespace ama {
 					}
 					break;
 				}
-				case CHAR_TYPE_BACKSLASH: {
+				case CHAR_TYPE_BACKSLASH:{
 					if ( feed[intptr_t(1L)] == '\n' ) {
 						feed += 2;
 					} else if ( feed[intptr_t(1L)] == '\r' && feed[intptr_t(2L)] == '\n' ) {
@@ -417,12 +417,12 @@ namespace ama {
 					comment_end = feed;
 					break;
 				}
-				case CHAR_TYPE_SPACE: {
+				case CHAR_TYPE_SPACE:{
 					feed = ama::SkipChars(feed, g_spaces);
 					comment_end = feed;
 					break;
 				}
-				case CHAR_TYPE_IDENTIFIER: {
+				case CHAR_TYPE_IDENTIFIER:{
 					char const* feed0 = feed;
 					feed = ama::SkipChars(feed, cset_identifier);
 					ama::Node* nd = ama::CreateNode(ama::N_REF, nullptr);
@@ -436,7 +436,7 @@ namespace ama {
 					comment_end = feed;
 					break;
 				}
-				case CHAR_TYPE_NUMBER: {
+				case CHAR_TYPE_NUMBER:{
 					char const* feed0 = feed;
 					int has_exponent = 0;
 					if ( feed[intptr_t(0L)] == '0' && feed[intptr_t(1L)] == 'x' ) {
@@ -464,7 +464,7 @@ namespace ama {
 					break;
 				}
 				case CHAR_TYPE_SHELL_STRING:
-				case CHAR_TYPE_QUOTE: {
+				case CHAR_TYPE_QUOTE:{
 				continue_shell_string: {
 					uint32_t ss_start = ch;
 					intptr_t lg = intptr_t(1L);
@@ -581,7 +581,7 @@ namespace ama {
 					break;
 				}
 				}
-				case CHAR_TYPE_NEWLINE: {
+				case CHAR_TYPE_NEWLINE:{
 					current_indent_level = intptr_t(0L);
 					feed += intptr_t(1L);
 					if ( ama::isInCharSet(g_spaces, uint32_t(uint8_t(feed[intptr_t(0L)]))) ) {
@@ -605,7 +605,7 @@ namespace ama {
 					comment_end = feed;
 					break;
 				}
-				case CHAR_TYPE_ZERO: {
+				case CHAR_TYPE_ZERO:{
 					if ( finish_incomplete_code ) {
 						ama::Node* nd_last = state_stack.back().nd_parent;
 						if (nd_last->c) {nd_last = nd_last->LastChildSP();}

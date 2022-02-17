@@ -69,6 +69,7 @@ namespace ama {
 			std::vector<ColonStackItem> cstk{};
 			cstk--->push(ColonStackItem{.nd_head = nd_raw->c, .nd_qmark = nullptr, .nd_colon = nullptr});
 			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
+				again:
 				if ( has_c_conditional && ndi->isSymbol("?") ) {
 					assert(cstk.size() > 0);
 					if ( cstk.back().nd_colon ) {
@@ -102,6 +103,20 @@ namespace ama {
 					if ( !cstk.back().nd_qmark || cstk.back().nd_head != ndi ) {
 						assert(cstk.back().nd_qmark != ndi);
 						cstk.back().nd_colon = ndi;
+						if ( !cstk.back().nd_qmark && cstk.back().nd_head && (cstk.back().nd_head->isRef("case") || cstk.back().nd_head->isRef("default")) ) {
+							//`case` / `default` case: flush EVERYTHING immediately
+							ama::Node* nd_next = ndi->s;
+							while ( cstk.size() ) {
+								if ( cstk.back().nd_colon ) {
+									FoldColonStack(cstk, nd_next);
+								} else {
+									cstk--->pop();
+								}
+							}
+							cstk--->push(ColonStackItem{.nd_head = nd_next, .nd_qmark = nullptr, .nd_colon = nullptr});
+							ndi = nd_next;
+							goto again;
+						}
 					}
 				}
 			}

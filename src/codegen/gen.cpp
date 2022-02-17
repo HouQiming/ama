@@ -26,7 +26,7 @@ namespace ama {
 	}
 	void ama::CodeGenerator::GenerateDefault(ama::Node* nd) {
 		switch ( nd->node_class ) {
-			default: {
+			default:{
 				this->code--->push("/* unsupported node class ", JSON::stringify(nd->node_class), " with children */ (");
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					this->Generate(ndi);
@@ -35,7 +35,7 @@ namespace ama {
 				this->code--->push(')');
 				break;
 			}
-			case ama::N_FILE: case ama::N_RAW: {
+			case ama::N_FILE: case ama::N_RAW:{
 				char ch_opening = char(nd->flags & 0xff);
 				if ( nd->node_class == ama::N_RAW && ch_opening ) {
 					this->code.push_back(ch_opening);
@@ -52,7 +52,7 @@ namespace ama {
 				}
 				break;
 			}
-			case ama::N_SCOPE: {
+			case ama::N_SCOPE:{
 				if (!(nd->flags & ama::SCOPE_FROM_INDENT) ) {
 					this->code.push_back('{');
 				}
@@ -64,7 +64,7 @@ namespace ama {
 				}
 				break;
 			}
-			case ama::N_STRING: {
+			case ama::N_STRING:{
 				if ( nd->flags & ama::LITERAL_PARSED ) {
 					if ( nd->flags & ama::STRING_SHELL_LIKE ) {
 						escapeStringBody(this->code, nd->data);
@@ -81,11 +81,11 @@ namespace ama {
 					break;
 				}
 			}
-			case ama::N_JS_REGEXP: case ama::N_SYMBOL: case ama::N_REF: case ama::N_NUMBER: {
+			case ama::N_JS_REGEXP: case ama::N_SYMBOL: case ama::N_REF: case ama::N_NUMBER:{
 				this->code--->push(nd->data);
 				break;
 			}
-			case ama::N_DOT: {
+			case ama::N_DOT:{
 				//this->RebuildOperand(nd, nd.c, ama::OPERAND_POSTFIX);
 				this->Generate(nd->c);
 				if ( nd->flags == ama::DOT_CLASS ) {
@@ -98,7 +98,7 @@ namespace ama {
 				this->code--->push(nd->data);
 				break;
 			}
-			case ama::N_CALL: case ama::N_CALL_TEMPLATE: case ama::N_CALL_CUDA_KERNEL: case ama::N_ITEM: {
+			case ama::N_CALL: case ama::N_CALL_TEMPLATE: case ama::N_CALL_CUDA_KERNEL: case ama::N_ITEM:{
 				if ( nd->c ) {
 					this->Generate(nd->c);
 				} else {
@@ -143,7 +143,7 @@ namespace ama {
 				}
 				break;
 			}
-			case ama::N_PARAMETER_LIST: {
+			case ama::N_PARAMETER_LIST:{
 				if (!(nd->flags & ama::PARAMLIST_UNWRAPPED)) {
 					this->code.push_back(nd->flags & ama::PARAMLIST_TEMPLATE ? '<' : '(');
 				}
@@ -165,7 +165,7 @@ namespace ama {
 			//	}
 			//	break;
 			//}
-			case ama::N_DEPENDENCY: {
+			case ama::N_DEPENDENCY:{
 				if ( (nd->flags & ama::DEP_TYPE_MASK) == ama::DEP_C_INCLUDE ) {
 					this->code--->push("#include");
 					this->GenerateSpaceBefore(nd->c);
@@ -186,7 +186,7 @@ namespace ama {
 				}
 				break;
 			}
-			case ama::N_BINOP: {
+			case ama::N_BINOP:{
 				this->Generate(nd->c);
 				this->GenerateSpaceAfter(nd->c);
 				this->code--->push(nd->data);
@@ -194,12 +194,12 @@ namespace ama {
 				this->Generate(nd->c->s);
 				break;
 			}
-			case ama::N_POSTFIX: {
+			case ama::N_POSTFIX:{
 				this->Generate(nd->c);
 				this->code--->push(nd->data);
 				break;
 			}
-			case ama::N_PREFIX: {
+			case ama::N_PREFIX:{
 				this->code--->push(nd->data);
 				if (nd->data.size() > 0 && nd->data.back() >= 'a' && nd->data.back() <= 'z') {
 					//unsigned and stuff
@@ -208,7 +208,7 @@ namespace ama {
 				this->Generate(nd->c);
 				break;
 			}
-			case ama::N_ASSIGNMENT: {
+			case ama::N_ASSIGNMENT:{
 				this->Generate(nd->c);
 				if ( nd->c->s->node_class == ama::N_AIR ) {
 					//do nothing
@@ -221,7 +221,7 @@ namespace ama {
 				}
 				break;
 			}
-			case ama::N_CLASS: case ama::N_KEYWORD_STATEMENT: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE: {
+			case ama::N_CLASS: case ama::N_KEYWORD_STATEMENT: case ama::N_SCOPED_STATEMENT: case ama::N_EXTENSION_CLAUSE:{
 				this->code--->push(nd->data);
 				if ( nd->c && !(
 					nd->c->node_class == ama::N_EXTENSION_CLAUSE || nd->c->node_class == ama::N_SCOPE || 
@@ -231,7 +231,7 @@ namespace ama {
 				}
 				//*** PASS THROUGH ***
 			}
-			case ama::N_FUNCTION: {
+			case ama::N_FUNCTION:{
 				//N_CLASS: before, name, after, body
 				//N_FUNCTION: before, paramlist, after, body
 				//N_SCOPED_STATEMENT, N_EXTENSION_CLAUSE: arg, body
@@ -254,12 +254,12 @@ namespace ama {
 				}
 				break;
 			}
-			case ama::N_NODEOF: {
+			case ama::N_NODEOF:{
 				this->code--->push('@');
 				this->Generate(nd->c);
 				break;
 			}
-			case ama::N_CONDITIONAL: {
+			case ama::N_CONDITIONAL:{
 				this->Generate(nd->c);
 				this->GenerateSpaceAfter(nd->c);
 				this->code--->push('?');
@@ -271,7 +271,7 @@ namespace ama {
 				this->Generate(nd->c->s->s);
 				break;
 			}
-			case ama::N_LABELED: {
+			case ama::N_LABELED:{
 				this->Generate(nd->c);
 				this->code--->push(':');
 				if (nd->c->s->node_class != ama::N_AIR) {
@@ -280,16 +280,16 @@ namespace ama {
 				this->Generate(nd->c->s);
 				break;
 			}
-			case ama::N_AIR: {
+			case ama::N_AIR:{
 				//nothing
 				break;
 			}
-			case ama::N_SEMICOLON: {
+			case ama::N_SEMICOLON:{
 				this->Generate(nd->c);
 				this->code--->push(';');
 				break;
 			}
-			case ama::N_PAREN: {
+			case ama::N_PAREN:{
 				this->code--->push('(');
 				this->Generate(nd->c);
 				this->code--->push(')');

@@ -39,18 +39,18 @@
 #include "jsgen.hpp"
 ama::Node* ama::Node::Unparse() {
 	switch ( this->node_class ) {
-		default: {
+		default:{
 			return this;
 		}
-		case ama::N_PAREN: {
+		case ama::N_PAREN:{
 			this->flags = uint32_t('(') | uint32_t(')') << 8;
 			this->node_class = ama::N_RAW;
 			return this;
 		}
-		case ama::N_RAW: {
+		case ama::N_RAW:{
 			return ama::UnparseRaw(this);
 		}
-		case ama::N_ASSIGNMENT: {
+		case ama::N_ASSIGNMENT:{
 			ama::Node* nd_parent = this->p;
 			if ( !nd_parent || nd_parent->node_class != ama::N_RAW ) {
 				nd_parent = this->ReplaceWith(ama::CreateNode(ama::N_RAW, nullptr));
@@ -69,19 +69,19 @@ ama::Node* ama::Node::Unparse() {
 			this->FreeASTStorage();
 			return ret;
 		}
-		case ama::N_BINOP: {
+		case ama::N_BINOP:{
 			return ama::UnparseBinop(this);
 		}
-		case ama::N_CALL: {
+		case ama::N_CALL:{
 			return ama::UnparseCall(this);
 		}
-		case ama::N_LABELED: {
+		case ama::N_LABELED:{
 			return ama::UnparseLabel(this);
 		}
-		case ama::N_PREFIX: {
+		case ama::N_PREFIX:{
 			return ama::UnparsePrefix(this);
 		}
-		case ama::N_POSTFIX: {
+		case ama::N_POSTFIX:{
 			return ama::UnparsePostfix(this);
 		}
 	}

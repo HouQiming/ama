@@ -109,15 +109,15 @@ namespace DumpStack {
 		}
 		PEXCEPTION_RECORD err = ExceptionInfo->ExceptionRecord;
 		switch (err->ExceptionCode) {
-		default: {
+		default:{
 			fprintf(stderr, "Exception code %x at address %p\n", err->ExceptionCode, err->ExceptionAddress);
 			break;
 		}
-		case DUMP_STACK_EXCEPTION: {
+		case DUMP_STACK_EXCEPTION:{
 			fprintf(stderr, "Stack dump\n");
 			break;
 		}
-		case EXCEPTION_ACCESS_VIOLATION: {
+		case EXCEPTION_ACCESS_VIOLATION:{
 			const char* how = "access";
 			if (err->ExceptionInformation[0] == 0) {
 				how = "read";
@@ -133,75 +133,75 @@ namespace DumpStack {
 			}
 			break;
 		}
-		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: {
+		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:{
 			fprintf(stderr, "EXCEPTION_ARRAY_BOUNDS_EXCEEDED at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_BREAKPOINT: {
+		case EXCEPTION_BREAKPOINT:{
 			fprintf(stderr, "EXCEPTION_BREAKPOINT at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_FLT_DENORMAL_OPERAND: {
+		case EXCEPTION_FLT_DENORMAL_OPERAND:{
 			fprintf(stderr, "EXCEPTION_FLT_DENORMAL_OPERAND at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_FLT_DIVIDE_BY_ZERO: {
+		case EXCEPTION_FLT_DIVIDE_BY_ZERO:{
 			fprintf(stderr, "EXCEPTION_FLT_DIVIDE_BY_ZERO at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_FLT_INEXACT_RESULT: {
+		case EXCEPTION_FLT_INEXACT_RESULT:{
 			fprintf(stderr, "EXCEPTION_FLT_INEXACT_RESULT at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_FLT_INVALID_OPERATION: {
+		case EXCEPTION_FLT_INVALID_OPERATION:{
 			fprintf(stderr, "EXCEPTION_FLT_INVALID_OPERATION at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_FLT_OVERFLOW: {
+		case EXCEPTION_FLT_OVERFLOW:{
 			fprintf(stderr, "EXCEPTION_FLT_OVERFLOW at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_FLT_STACK_CHECK: {
+		case EXCEPTION_FLT_STACK_CHECK:{
 			fprintf(stderr, "EXCEPTION_FLT_STACK_CHECK at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_FLT_UNDERFLOW: {
+		case EXCEPTION_FLT_UNDERFLOW:{
 			fprintf(stderr, "EXCEPTION_FLT_UNDERFLOW at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_ILLEGAL_INSTRUCTION: {
+		case EXCEPTION_ILLEGAL_INSTRUCTION:{
 			fprintf(stderr, "EXCEPTION_ILLEGAL_INSTRUCTION at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_IN_PAGE_ERROR: {
+		case EXCEPTION_IN_PAGE_ERROR:{
 			fprintf(stderr, "EXCEPTION_IN_PAGE_ERROR at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_INT_DIVIDE_BY_ZERO: {
+		case EXCEPTION_INT_DIVIDE_BY_ZERO:{
 			fprintf(stderr, "EXCEPTION_INT_DIVIDE_BY_ZERO at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_INT_OVERFLOW: {
+		case EXCEPTION_INT_OVERFLOW:{
 			fprintf(stderr, "EXCEPTION_INT_OVERFLOW at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_INVALID_DISPOSITION: {
+		case EXCEPTION_INVALID_DISPOSITION:{
 			fprintf(stderr, "EXCEPTION_INVALID_DISPOSITION at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_NONCONTINUABLE_EXCEPTION: {
+		case EXCEPTION_NONCONTINUABLE_EXCEPTION:{
 			fprintf(stderr, "EXCEPTION_NONCONTINUABLE_EXCEPTION at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_PRIV_INSTRUCTION: {
+		case EXCEPTION_PRIV_INSTRUCTION:{
 			fprintf(stderr, "EXCEPTION_PRIV_INSTRUCTION at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_SINGLE_STEP: {
+		case EXCEPTION_SINGLE_STEP:{
 			fprintf(stderr, "EXCEPTION_SINGLE_STEP at address %p\n", err->ExceptionAddress);
 			break;
 		}
-		case EXCEPTION_STACK_OVERFLOW: {
+		case EXCEPTION_STACK_OVERFLOW:{
 			fprintf(stderr, "EXCEPTION_STACK_OVERFLOW at address %p\n", err->ExceptionAddress);
 			break;
 		}}
