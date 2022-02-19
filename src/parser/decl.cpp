@@ -66,9 +66,17 @@ namespace ama {
 		}
 		if (!nd_arg && nd_keyword && (nd_keyword->data == "if" || nd_keyword->data == "while") && nd_body && 
 		nd_body->node_class != ama::N_LABELED && nd_body->node_class != ama::N_RAW) {
-			//it's saner to treat the `foo` in dangling `if foo` as the condition than the body
-			nd_arg = nd_body;
-			nd_body = nullptr;
+			ama::Node* nd_last_colon = nullptr;
+			for (ama::Node* ndi = nd_body; ndi; ndi = ndi->s) {
+				if ( ndi->isSymbol(":") ) {
+					nd_last_colon = ndi;
+				}
+			}
+			if (!nd_last_colon) {
+				//it's saner to treat the `foo` in dangling `if foo` as the condition than the body
+				nd_arg = nd_body;
+				nd_body = nullptr;
+			}
 		}
 		if (is_elseif) {
 			//there is no arg

@@ -701,6 +701,9 @@ int ama::Node::isRef(std::span<char> name) const {
 int ama::Node::isMethodCall(std::span<char> name) const {
 	return this->node_class == ama::N_CALL && this->c->node_class == ama::N_DOT && this->c->data == name;
 }
+int ama::Node::isStatement(std::span<char> name) const {
+	return (this->node_class == ama::N_KEYWORD_STATEMENT || this->node_class == ama::N_SCOPED_STATEMENT) && this->data == name;
+}
 ///dependency is global: have to re-ParseDependency after you InsertDependency
 ama::Node* ama::Node::InsertDependency(uint32_t flags, ama::gcstring name) {
 	for ( ama::Node* const & ndi: this->FindAll(ama::N_DEPENDENCY, name) ) {

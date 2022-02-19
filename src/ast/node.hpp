@@ -412,6 +412,7 @@ namespace ama {
 		//Test for specific nodes. They are cheaper than the Javascript-only `nd.Match`.
 		int isRawNode(char ch_open, char ch_close)const;
 		int isMethodCall(std::span<char> name)const;
+		int isStatement(std::span<char> name)const;
 		int isSymbol(std::span<char> name)const;
 		int isRef(std::span<char> name)const;
 		//Return true if `nd` is an ancestor of `nd_maybe_child`
@@ -627,6 +628,9 @@ namespace ama {
 	static inline ama::Node* nDot(ama::gcstring name, Node* nd_obj) {
 		return nd_obj->dot(name);
 	}
+	static inline ama::Node* NodeList() {
+		return nullptr;
+	}
 	static inline ama::Node* NodeList(ama::Node* first) {
 		return cons(first, nullptr);
 	}
@@ -641,6 +645,19 @@ namespace ama {
 	template<typename... Types>
 	static inline ama::Node* nRaw(Types... args) {
 		return CreateNode(N_RAW, NodeList(args...));
+	}
+	template<typename... Types>
+	static inline ama::Node* nScope(Types... args) {
+		return CreateNode(N_SCOPE, NodeList(args...));
+	}
+	static inline ama::Node* nIf(Node* nd_cond, Node* nd_scope) {
+		return CreateNode(N_SCOPED_STATEMENT, cons(nd_cond, nd_scope))->setData("if");
+	}
+	static inline ama::Node* nIf(Node* nd_cond, Node* nd_scope, Node* nd_else_scope) {
+		return CreateNode(N_SCOPED_STATEMENT, cons(nd_cond, cons(
+			nd_scope,
+			CreateNode(N_EXTENSION_CLAUSE, cons(nAir(), nd_else_scope))
+		)))->setData("if");
 	}
 	///////////////
 	static inline ama::Node* GetPlaceHolder() {

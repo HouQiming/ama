@@ -231,6 +231,7 @@ The definition of statements are lexical: they are immediate children of `N_FILE
 --------------
 - `nd.isRawNode(ch_open, ch_close)`
 - `nd.isMethodCall(name)`
+- `nd.isStatement(name)`
 - `nd.isSymbol(name)`
 - `nd.isRef(name)`
 
