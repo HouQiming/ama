@@ -100,8 +100,12 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
+		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		for (auto iter: keywords_scoped_statement) {
+			keywords_statement--->set(iter.first, 1);
+		}
+		for (auto iter: keywords_extension_clause) {
 			keywords_statement--->set(iter.first, 1);
 		}
 		for (auto iter: keywords_operator_escape) {
@@ -144,7 +148,7 @@ namespace ama {
 					continue;
 				} else if (ndi->node_class == ama::N_SYMBOL) {
 					//do nothing
-				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0) && !ndi->isRef("else")) {
+				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)) {
 					//postfix operator
 					ndi->MergeCommentsAfter(ndi_next);
 					ama::Node* nd_tmp = ama::GetPlaceHolder();
