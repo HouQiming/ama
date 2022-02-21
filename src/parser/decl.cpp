@@ -302,7 +302,7 @@ namespace ama {
 					nd_prototype_start = ndi_next;
 					kw_mode = KW_NONE;
 					nd_keyword = nullptr;
-				} else if ( ndi->isRawNode('[', ']') && ndi_next && ndi_next->isRawNode('(', ')') ) {
+				} else if ( (ndi->node_class == N_ARRAY || ndi->isRawNode('[', ']')) && ndi_next && ndi_next->isRawNode('(', ')') ) {
 					//C++11 lambda
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
@@ -464,15 +464,15 @@ namespace ama {
 										break;
 									}
 									if (ndj->node_class == ama::N_SYMBOL && ndj != nd_paramlist_start && ndj->Prev()->node_class == ama::N_REF && 
-									!(nd_raw->p && (nd_raw->p->isRawNode('[', ']') || nd_raw->p->isRawNode('{', '}') || nd_raw->p->node_class == ama::N_SCOPE)) &&
-									!(nd_raw && (nd_raw->isRawNode('[', ']') || nd_raw->isRawNode('{', '}') || nd_raw->node_class == ama::N_SCOPE))) {
+									!(nd_raw->p && (nd_raw->p->node_class == N_ARRAY || nd_raw->p->isRawNode('[', ']') || nd_raw->p->isRawNode('{', '}') || nd_raw->p->node_class == ama::N_SCOPE)) &&
+									!(nd_raw && (nd_raw->node_class == N_ARRAY || nd_raw->isRawNode('[', ']') || nd_raw->isRawNode('{', '}') || nd_raw->node_class == ama::N_SCOPE))) {
 										//for function-indicator symbols like the Javascript '=>'
 										//this conflicts with destructuring - {a:{b}}
 										//don't count as function if it's immediately under {} or []
 										nd_paramlist = ndj->Prev();
 										break;
 									}
-								} else if ( parse_cpp11_lambda && ndj->isRawNode('[', ']') && ndj->s->isRawNode('(', ')') ) {
+								} else if ( parse_cpp11_lambda && (ndj->node_class == N_ARRAY || ndj->isRawNode('[', ']')) && ndj->s->isRawNode('(', ')') ) {
 									nd_paramlist = ndj->s;
 									break;
 								}
@@ -836,7 +836,9 @@ namespace ama {
 				ama::Node* nd_destructuring = nd_ref;
 				int destructured = 0;
 				while ( nd_destructuring != nd_stmt ) {
-					if ( nd_destructuring->node_class == ama::N_SCOPE || nd_destructuring->isRawNode('[', ']') || nd_destructuring->isRawNode('{', '}') || nd_destructuring->isRawNode('(', ')') ) {
+					if ( nd_destructuring->node_class == ama::N_SCOPE || 
+					nd_destructuring->node_class == N_ARRAY || nd_destructuring->isRawNode('[', ']') || 
+					nd_destructuring->isRawNode('{', '}') || nd_destructuring->isRawNode('(', ')') ) {
 						destructured = 1;
 						break;
 					}

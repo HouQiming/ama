@@ -73,6 +73,12 @@ int main() {
 }
 ```
 
+### check_raw
+
+- Syntax: `require("check_raw")`
+- Description: Dump long N_RAW nodes.
+
+
 ### cmake.AutoCreate
 
 - Syntax: `require("cmake").AutoCreate`

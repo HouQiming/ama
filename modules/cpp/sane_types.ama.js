@@ -19,12 +19,17 @@ function FixArrayTypes(nd_root) {
 			while (nd_postfix_core.node_class == N_POSTFIX) {
 				nd_postfix_core = nd_postfix_core.c;
 			}
-			if (nd_postfix_core.isRawNode('[', ']')) {
+			if (nd_postfix_core.isRawNode('[', ']') || nd_postfix_core.node_class == N_ARRAY) {
 				let nd_their_operand = nd_mul.c.BreakSibling();
 				let nd_subscripts = nd_postfix_core.c;
 				let nd_item = nItem(nPostfix(nd_mul.BreakChild(), nd_mul.data));
 				if (nd_subscripts) {
 					nd_item.Insert(POS_BACK, nd_subscripts);
+					for (let ndi = nd_subscripts; ndi; ndi = ndi.s) {
+						while (ndi.node_class == N_SEMICOLON) {
+							ndi = ndi.ReplaceWith(ndi.BreakChild());
+						}
+					}
 				}
 				if (nd_their_operand.node_class == N_POSTFIX) {
 					nd_postfix_core.ReplaceWith(nd_item);

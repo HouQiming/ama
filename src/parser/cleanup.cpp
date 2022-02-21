@@ -173,35 +173,35 @@ namespace ama {
 	//	return nd_root;
 	//}
 	ama::Node* NodifySemicolonAndParenthesis(ama::Node* nd_root) {
-		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
-		scopes--->push(nd_root);
-		for ( ama::Node const* const & nd_nodeof: nd_root->FindAllWithin(0, ama::N_NODEOF) ) {
-			if ( nd_nodeof->c ) {
-				scopes--->push(nd_nodeof->c);
+		for (ama::Node * nd_scope = nd_root; nd_scope; nd_scope = nd_scope->PreorderNext(nullptr)) {
+			std::span<char> symbol = "";
+			if (nd_scope == nd_root || nd_scope->node_class == ama::N_SCOPE) {
+				symbol = ";";
+			} else if (nd_scope->node_class == ama::N_ARRAY || nd_scope->node_class == ama::N_OBJECT) {
+				symbol = ",";
 			}
-		}
-		for ( ama::Node * nd_scope: scopes ) {
-			for (ama::Node* ndi = nd_scope->c; ndi; ndi = ndi->s) {
-				while ( ndi->s && ndi->s->isSymbol(";") ) {
-					ama::Node* nd_semicolon = ndi->s;
-					ndi->Unlink();
-					nd_semicolon->node_class = ama::N_SEMICOLON;
-					nd_semicolon->data = "";
-					nd_semicolon->indent_level = ndi->indent_level;
-					nd_semicolon->Insert(ama::POS_FRONT, ndi);
-					ndi->indent_level = 0;
-					ndi->MergeCommentsAfter(nd_semicolon);
-					ndi = nd_semicolon;
+			if (symbol.size()) {
+				for (ama::Node* ndi = nd_scope->c; ndi; ndi = ndi->s) {
+					while ( ndi->s && ndi->s->isSymbol(symbol) ) {
+						ama::Node* nd_semicolon = ndi->s;
+						ndi->Unlink();
+						nd_semicolon->flags = symbol == "," ? ama::SEMICOLON_COMMA : 0;
+						nd_semicolon->node_class = ama::N_SEMICOLON;
+						nd_semicolon->data = "";
+						nd_semicolon->indent_level = ndi->indent_level;
+						nd_semicolon->Insert(ama::POS_FRONT, ndi);
+						ndi->indent_level = 0;
+						ndi->MergeCommentsAfter(nd_semicolon);
+						ndi = nd_semicolon;
+					}
 				}
 			}
-		}
-		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
-			if ( nd_raw->isRawNode('(', ')') && nd_raw->c && !nd_raw->c->s ) {
-				nd_raw->node_class = ama::N_PAREN;
-				nd_raw->flags = 0;
-			} else if ( nd_raw->isRawNode(0, 0) && nd_raw->c && nd_raw->LastChild()->isSymbol(";") ) {
-				nd_raw->LastChild()->Unlink();
-				nd_raw->ReplaceWith(ama::CreateNode(ama::N_SEMICOLON, ama::toSingleNode(nd_raw->c)));
+			if ( nd_scope->isRawNode('(', ')') && nd_scope->c && !nd_scope->c->s ) {
+				nd_scope->node_class = ama::N_PAREN;
+				nd_scope->flags = 0;
+			} else if ( nd_scope->isRawNode(0, 0) && nd_scope->c && nd_scope->LastChild()->isSymbol(";") ) {
+				nd_scope->LastChild()->Unlink();
+				nd_scope->ReplaceWith(ama::CreateNode(ama::N_SEMICOLON, ama::toSingleNode(nd_scope->c)));
 			}
 		}
 		return nd_root;

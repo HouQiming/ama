@@ -13,7 +13,7 @@ namespace ama {
 		uint8_t call_class = ama::N_CALL;
 		if ( nd_arglist->isRawNode('<', '>') ) {
 			call_class = ama::N_CALL_TEMPLATE;
-		} else if ( nd_arglist->isRawNode('[', ']') ) {
+		} else if ( nd_arglist->node_class == ama::N_ARRAY || nd_arglist->isRawNode('[', ']') ) {
 			call_class = ama::N_ITEM;
 		}
 		ndi->MergeCommentsAfter(nd_arglist);
@@ -136,14 +136,15 @@ namespace ama {
 					ndi->p = nullptr; ndi->s = nullptr; ndi->FreeASTStorage();
 					ndi = nd_dot;
 					continue;
-				} else if ( (ndi->isSymbol(".") || ndi->isSymbol("@")) && ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('{', '}') || ndi_next->node_class == ama::N_SCOPE) ) {
+				} else if ( (ndi->isSymbol(".") || ndi->isSymbol("@")) && ndi_next && (ndi_next->isRawNode('(', ')') || 
+				ndi_next->isRawNode('{', '}') || ndi_next->node_class == ama::N_SCOPE || ndi_next->node_class == ama::N_OBJECT) ) {
 					//nodeof
 					ndi_next->Unlink();
 					ndi = ndi->ReplaceWith(ama::nNodeof(ndi_next)->setIndent(ndi->indent_level));
 					continue;
 				} else if (ndi->node_class == ama::N_SYMBOL) {
 					//do nothing
-				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)) {
+				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0) && !ndi->isRef("else")) {
 					//postfix operator
 					ndi->MergeCommentsAfter(ndi_next);
 					ama::Node* nd_tmp = ama::GetPlaceHolder();
@@ -174,7 +175,9 @@ namespace ama {
 					nd_name->p = nullptr; nd_name->FreeASTStorage();
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					continue;
-				} else if (ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') || ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()) {
+				} else if (ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') ||
+					ndi_next->node_class == ama::N_ARRAY || 
+					ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()) {
 					//call
 					ndi = TranslatePostfixCall(ndi);
 					continue;

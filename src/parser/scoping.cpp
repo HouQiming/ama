@@ -16,6 +16,11 @@ namespace ama {
 			nd_raw->flags &= 0xffff0000u;
 		}
 	}
+	static void ConvertToOA(ama::Node* nd_raw, uint8_t new_node_class) {
+		if (nd_raw->node_class != ama::N_RAW) {return;}
+		nd_raw->node_class = new_node_class;
+		nd_raw->flags = 0;
+	}
 	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<ama::gcstring, int> const& keywords_extension_clause, int32_t but_merge_cpp_ctor_lines, std::span<ama::Node*> lines_out) {
 		std::vector<ama::Node*> line_group{};
 		std::vector<ama::Node*> line_out_final{};
@@ -239,6 +244,7 @@ namespace ama {
 			}
 			if ( changed != ';' ) {
 				std::vector<ama::Node*> comma_children{};
+				changed = ' ';
 				for ( ama::Node * ndj: new_children ) {
 					ndi = ndj;
 					comma_children.push_back(ndi);
@@ -260,6 +266,11 @@ namespace ama {
 					}
 				}
 				std::swap(new_children, comma_children);
+				if ( changed == ',' && nd_raw->isRawNode('{', '}') ) {
+					ConvertToOA(nd_raw, ama::N_OBJECT);
+				} else if ( nd_raw->isRawNode('[', ']') ) {
+					ConvertToOA(nd_raw, ama::N_ARRAY);
+				}
 			}
 			if ( changed || (!nd_raw->isRawNode('{', '}') && nd_raw->c && nd_raw->c->s) ) {
 				for (int i = 0; i < new_children.size(); i += 1) {

@@ -749,6 +749,13 @@ Use an empty string for plain assignment.
 
 
 --------------
+- Node class: `N_MOV`
+- Constructor: `nMov(nd_target, [symbol, ]nd_value)`
+
+Alias of `N_ASSIGNMENT`
+
+
+--------------
 - Node class: `N_SCOPED_STATEMENT`
 - Constructor: `nScopedStatement(keyword, nd_parameter, nd_body[, ...extension_clauses])`
 
@@ -761,6 +768,13 @@ It can be `N_AIR` for statements like `try{}` or `do{}while()`.
 
 - `nd_body` is the statement block. It can take values other than `N_SCOPE` in C when the scope is omitten.
 - `extension_clauses` pack follow-ups after the body, like `else` clauses for `if` and `catch` clauses for `try.
+
+
+--------------
+- Node class: `N_SSTMT`
+- Constructor: `nSstmt(nd)`
+
+Alias of `N_SCOPED_STATEMENT`
 
 
 --------------
@@ -826,14 +840,24 @@ A source file. Must be the root node:
 - Node class: `N_SEMICOLON`
 - Constructor: `nSemicolon(nd)`
 
-A trailing semicolon: `nd;`
+A trailing semicolon: `nd;`. The node is assumed as purely syntactic, i.e., it doesn't "do" anything.
+
+- `.flags` can be:
+  - `SEMICOLON_COMMA` means it's `nd,` instead of `nd;`
+
+
+--------------
+- Node class: `N_DELIMITED`
+- Constructor: `nDelimited(nd)`
+
+Alias of `N_DELIMITED`
 
 
 --------------
 - Node class: `N_PAREN`
 - Constructor: `nParen(nd)`
 
-A pair of parenthesis: `(nd)`
+A pair of parenthesis: `(nd)`. The node is assumed as purely syntactic.
 
 
 --------------
@@ -847,12 +871,47 @@ A special statement that cannot take a statement block, like `return`:
 
 
 --------------
+- Node class: `N_KSTMT`
+- Constructor: `nKstmt(nd)`
+
+Alias of `N_KEYWORD_STATEMENT`
+
+
+--------------
 - Node class: `N_JS_REGEXP`
 - Constructor: `nJsRegexp(string)`
 
 A Javascript regular expression in the form of `/foo/flags`.
 
 - `.data` stores the original textual form of the regular expression.
+
+
+--------------
+- Node class: `N_DECL`
+- Constructor: `nDecl(...nodes)`
+
+C-like multi-variable declaration
+
+
+--------------
+- Node class: `N_ARRAY`
+- Constructor: `nArray(...nodes)`
+
+JS / Python [] array
+
+
+--------------
+- Node class: `N_OBJECT`
+- Constructor: `nObject(...nodes)`
+
+JS / C++ {} object / initializer
+
+
+--------------
+- Node class: `N_TYPED_OBJECT`
+- Constructor: `nTypedObject(...nodes)`
+
+C++ Foo{} object
 
 
 

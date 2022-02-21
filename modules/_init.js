@@ -4,6 +4,10 @@
 //@ama ParseCurrentFile().Save()
 (function() {
 /////////////
+if(!__global.nAssignment){__global.nAssignment=__global.nMov;__global.N_ASSIGNMENT=__global.N_MOV;}
+if(!__global.nSemicolon){__global.nSemicolon=__global.nDelimited;__global.N_SEMICOLON=__global.N_DELIMITED;}
+if(!__global.nScopedStatement){__global.nScopedStatement=__global.nSstmt;__global.N_SCOPED_STATEMENT=__global.N_SSTMT;}
+if(!__global.nKeywordStatement){__global.nKeywordStatement=__global.nKstmt;__global.N_KEYWORD_STATEMENT=__global.N_KSTMT;}
 Node.setFlags = function(flags) {
 	this.flags = flags;
 	return this;

@@ -286,13 +286,43 @@ namespace ama {
 			}
 			case ama::N_SEMICOLON:{
 				this->Generate(nd->c);
-				this->code--->push(';');
+				this->code--->push((nd->flags & ama::SEMICOLON_COMMA) ? ',' : ';');
 				break;
 			}
 			case ama::N_PAREN:{
 				this->code--->push('(');
 				this->Generate(nd->c);
 				this->code--->push(')');
+				break;
+			}
+			case ama::N_DECL:{
+				assert(0);//TODO
+				break;
+			}
+			case ama::N_ARRAY:{
+				this->code--->push('[');
+				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
+					this->Generate(ndi);
+					if ( ndi->s && (ndi->node_class == ama::N_SEMICOLON || ndi->isSymbol(",") || ndi->isSymbol(";")) ) {
+						this->GenerateSpaceBetween(ndi, ndi->s);
+					}
+				}
+				this->code--->push(']');
+				break;
+			}
+			case ama::N_OBJECT:{
+				this->code--->push('{');
+				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
+					this->Generate(ndi);
+					if ( ndi->s && (ndi->node_class == ama::N_SEMICOLON || ndi->isSymbol(",") || ndi->isSymbol(";")) ) {
+						this->GenerateSpaceBetween(ndi, ndi->s);
+					}
+				}
+				this->code--->push('}');
+				break;
+			}
+			case ama::N_TYPED_OBJECT:{
+				assert(0);//TODO
 				break;
 			}
 		}

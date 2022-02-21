@@ -117,7 +117,12 @@ namespace ama {
 		JS_FreeValue(ama::jsctx, ppt);
 		return std::move(ret);
 	}
+	static uint8_t g_utf8_bof[3] = {0xef,0xbb,0xbf};
 	ama::Node* ParseSimplePairing(char const* feed, JSValueConst options) {
+		if (memcmp(feed, g_utf8_bof, 3) == 0) {
+			//UTF-8 BOF marker
+			feed += 3;
+		}
 		//for debugging
 		//char const* feed_all_begin = feed;
 		//use a shared buffer to avoid excessive allocations

@@ -156,6 +156,10 @@ namespace ama {
 	//- `nd_target` is the target.
 	//- `nd_value` is the value.
 	static const uint8_t N_ASSIGNMENT = 19;
+	//`nMov(nd_target, [symbol, ]nd_value)`
+	//
+	//Alias of `N_ASSIGNMENT`
+	static const uint8_t N_MOV = 19;
 	//`nScopedStatement(keyword, nd_parameter, nd_body[, ...extension_clauses])`
 	//
 	//A special statement that canonically takes a statement block, like `if`:
@@ -165,6 +169,10 @@ namespace ama {
 	//- `nd_body` is the statement block. It can take values other than `N_SCOPE` in C when the scope is omitten.
 	//- `extension_clauses` pack follow-ups after the body, like `else` clauses for `if` and `catch` clauses for `try.
 	static const uint8_t N_SCOPED_STATEMENT = 20;
+	//`nSstmt(nd)`
+	//
+	//Alias of `N_SCOPED_STATEMENT`
+	static const uint8_t N_SSTMT = 20;
 	//`nExtensionClause(keyword, nd_parameter, nd_body)`
 	//
 	//An extension clause. Parameters and fields are similar to `N_SCOPED_STATEMENT`.
@@ -205,11 +213,17 @@ namespace ama {
 	static const uint8_t N_FILE = 26;
 	//`nSemicolon(nd)`
 	//
-	//A trailing semicolon: `nd;`
+	//A trailing semicolon: `nd;`. The node is assumed as purely syntactic, i.e., it doesn't "do" anything. 
+	//- `.flags` can be:
+	//  - `SEMICOLON_COMMA` means it's `nd,` instead of `nd;`
 	static const uint8_t N_SEMICOLON = 27;
+	//`nDelimited(nd)`
+	//
+	//Alias of `N_DELIMITED`
+	static const uint8_t N_DELIMITED = 27;
 	//`nParen(nd)`
 	//
-	//A pair of parenthesis: `(nd)`
+	//A pair of parenthesis: `(nd)`. The node is assumed as purely syntactic.
 	static const uint8_t N_PAREN = 28;
 	//`nKeywordStatement(keyword, nd_parameter)`
 	//
@@ -217,11 +231,31 @@ namespace ama {
 	//- `.data`, provided by `keyword`, stores the keyword, like the `goto` in `goto end;`
 	//- `nd_parameter` pack whatever that follows the keyword, or `N_AIR` if there is no follow-up, like in `break;`.
 	static const uint8_t N_KEYWORD_STATEMENT = 29;
+	//`nKstmt(nd)`
+	//
+	//Alias of `N_KEYWORD_STATEMENT`
+	static const uint8_t N_KSTMT = 29;
 	//`nJsRegexp(string)`
 	//
 	//A Javascript regular expression in the form of `/foo/flags`.
 	//- `.data` stores the original textual form of the regular expression.
 	static const uint8_t N_JS_REGEXP = 30;
+	//`nDecl(...nodes)`
+	//
+	//C-like multi-variable declaration
+	static const uint8_t N_DECL = 31;
+	//`nArray(...nodes)`
+	//
+	//JS / Python [] array
+	static const uint8_t N_ARRAY = 32;
+	//`nObject(...nodes)`
+	//
+	//JS / C++ {} object / initializer
+	static const uint8_t N_OBJECT = 33;
+	//`nTypedObject(...nodes)`
+	//
+	//C++ Foo{} object
+	static const uint8_t N_TYPED_OBJECT = 34;
 	/////////////////
 	//don't start any other constant with "N_", jsgen.cpp depends on this
 	/////////////////
@@ -254,6 +288,7 @@ namespace ama {
 	static const uint32_t DEPF_C_INCLUDE_NONSTR = 32u;
 	static const uint32_t PARAMLIST_TEMPLATE = 1u;
 	static const uint32_t PARAMLIST_UNWRAPPED = 2u;
+	static const uint32_t SEMICOLON_COMMA = 1u;
 	//for Node::indent_level, reserve 1 bit for future use
 	static const intptr_t MAX_INDENT = 63;
 	/////////////////
