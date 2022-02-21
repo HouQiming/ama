@@ -371,6 +371,7 @@ namespace ama {
 								changed = 1;
 							}
 						}
+						//COULDDO: N_ARRAY after type suffix: need an option
 						int pr = 0x7fffffff;
 						if ( postfix_ops--->get(ndi->data) && stack.size() > 0 && stack.back()->node_class != ama::N_SYMBOL ) {
 							//precedence problem - need to replace the prefix-core instead

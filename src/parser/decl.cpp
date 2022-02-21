@@ -48,7 +48,7 @@ namespace ama {
 	static const int KW_FUNC = 4;
 	static const int KW_NOT_FUNC = 5;
 	//void! DumpASTAsJSON(ama::Node*+! nd);
-	static ama::Node* TranslateCUnscopedStatement(ama::Node* nd_keyword, ama::Node* nd_end, int is_elseif) {
+	static ama::Node* TranslateCUnscopedStatement(std::vector<ama::Node*> &Q, ama::Node* nd_keyword, ama::Node* nd_end, int is_elseif) {
 		ama::Node* nd_tmp = ama::GetPlaceHolder();
 		nd_keyword->ReplaceUpto(nd_end, nd_tmp);
 		ama::Node* nd_body = nd_keyword->BreakSibling();
@@ -100,7 +100,7 @@ namespace ama {
 				nd_body = nd_last_colon->BreakSibling();
 			}
 		}
-		ama::Node* nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
+		ama::Node* nd_stmt = ama::CreateNode(ama::N_SSTMT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
 		nd_body = ama::toSingleNode(nd_body);
 		//if (!is_elseif) {
 		//	ama::Node* nd_scoped_body = ama::CreateNode(ama::N_SCOPE, nd_body);
@@ -127,6 +127,10 @@ namespace ama {
 		nd_tmp->ReplaceWith(nd_stmt);
 		nd_keyword->s = nullptr;
 		nd_keyword->FreeASTStorage();
+		if (nd_body->node_class == ama::N_RAW) {
+			//things could nest
+			Q.push_back(nd_body);
+		}
 		return nd_stmt;
 	}
 	static ama::Node* TranslateDoWhileClause(ama::Node* nd_keyword, ama::Node* nd_end) {
@@ -166,7 +170,7 @@ namespace ama {
 		ama::Node* nd_func = ama::nFunction(nd_before, ConvertToParameterList(nd_proto), nd_after, ama::nAir());
 		//nd_func.data = GetFunctionName(0, nd_func);
 		nd_raw->ReplaceWith(nd_func);
-		nd_raw->FreeASTStorage();
+		//nd_raw->FreeASTStorage();
 		return nd_func;
 	}
 	////pp1 is inclusive, also breaks the pp1 link
@@ -192,7 +196,7 @@ namespace ama {
 		for ( intptr_t qi = 0; qi < intptr_t(Q.size()); qi++ ) {
 			ama::Node* nd_raw = Q[qi];
 			if ( !nd_raw->p ) { continue; }
-			if ( nd_raw->p->node_class == ama::N_KEYWORD_STATEMENT && nd_raw->p->data--->startsWith('#') ) {
+			if ( nd_raw->p->node_class == ama::N_KSTMT && nd_raw->p->data--->startsWith('#') ) {
 				//the `defined()` in #if defined(){}
 				continue;
 			}
@@ -240,7 +244,7 @@ namespace ama {
 							} else if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 								//extension of unscoped statement
 								//ama::Node*+! nd_ext_keyword = ndi.BreakSelf();
-								ama::Node* nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi->Prev(), 0);
+								ama::Node* nd_stmt = TranslateCUnscopedStatement(Q, nd_keyword, ndi->Prev(), 0);
 								//nd_stmt.Insert(ama::POS_AFTER, nd_ext_keyword);
 								nd_last_scoped_stmt = nd_stmt;
 								nd_keyword = ndi;
@@ -276,7 +280,7 @@ namespace ama {
 						if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
 							nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
 						} else {
-							nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi, 0);
+							nd_stmt = TranslateCUnscopedStatement(Q, nd_keyword, ndi, 0);
 						}
 						if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 							nd_stmt->node_class = ama::N_EXTENSION_CLAUSE;
@@ -302,7 +306,7 @@ namespace ama {
 					nd_prototype_start = ndi_next;
 					kw_mode = KW_NONE;
 					nd_keyword = nullptr;
-				} else if ( (ndi->node_class == N_ARRAY || ndi->isRawNode('[', ']')) && ndi_next && ndi_next->isRawNode('(', ')') ) {
+				} else if ( (ndi->node_class == ama::N_ARRAY || ndi->isRawNode('[', ']')) && ndi_next && ndi_next->isRawNode('(', ')') ) {
 					//C++11 lambda
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
@@ -371,7 +375,7 @@ namespace ama {
 							}
 							ama::Node* nd_stmt = nd_keyword->ReplaceUpto(
 								ndi,
-								ama::CreateNode(ama::N_SCOPED_STATEMENT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level)
+								ama::CreateNode(ama::N_SSTMT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level)
 							);
 							ama::Node* nd_arg = nd_keyword->s == ndi ? ama::nAir() : ama::toSingleNode(nd_keyword->s);
 							nd_arg->MergeCommentsBefore(nd_keyword);
@@ -386,7 +390,7 @@ namespace ama {
 							//a=b;while(foo){} case - we could have mistaken the statement as an extension clause and didn't delimit at the previous ; / {}
 							//delimit it
 							ama::Node* nd_prev = ndi->Prev();
-							if ( nd_prev && (nd_prev->node_class == ama::N_SCOPE || nd_prev->node_class == ama::N_SCOPED_STATEMENT || nd_prev->node_class == ama::N_KEYWORD_STATEMENT || 
+							if ( nd_prev && (nd_prev->node_class == ama::N_SCOPE || nd_prev->node_class == ama::N_SSTMT || nd_prev->node_class == ama::N_KSTMT || 
 							nd_prev->isSymbol(";") || nd_prev->isSymbol(",")) ) {
 								ama::Node* nd_last_stmt_head = nd_raw->c;
 								nd_last_stmt_head->ReplaceUpto(nd_prev, nullptr);
@@ -464,15 +468,15 @@ namespace ama {
 										break;
 									}
 									if (ndj->node_class == ama::N_SYMBOL && ndj != nd_paramlist_start && ndj->Prev()->node_class == ama::N_REF && 
-									!(nd_raw->p && (nd_raw->p->node_class == N_ARRAY || nd_raw->p->isRawNode('[', ']') || nd_raw->p->isRawNode('{', '}') || nd_raw->p->node_class == ama::N_SCOPE)) &&
-									!(nd_raw && (nd_raw->node_class == N_ARRAY || nd_raw->isRawNode('[', ']') || nd_raw->isRawNode('{', '}') || nd_raw->node_class == ama::N_SCOPE))) {
+									!(nd_raw->p && (nd_raw->p->node_class == ama::N_ARRAY || nd_raw->p->isRawNode('[', ']') || nd_raw->p->isRawNode('{', '}') || nd_raw->p->node_class == ama::N_SCOPE)) &&
+									!(nd_raw && (nd_raw->node_class == ama::N_ARRAY || nd_raw->isRawNode('[', ']') || nd_raw->isRawNode('{', '}') || nd_raw->node_class == ama::N_SCOPE))) {
 										//for function-indicator symbols like the Javascript '=>'
 										//this conflicts with destructuring - {a:{b}}
 										//don't count as function if it's immediately under {} or []
 										nd_paramlist = ndj->Prev();
 										break;
 									}
-								} else if ( parse_cpp11_lambda && (ndj->node_class == N_ARRAY || ndj->isRawNode('[', ']')) && ndj->s->isRawNode('(', ')') ) {
+								} else if ( parse_cpp11_lambda && (ndj->node_class == ama::N_ARRAY || ndj->isRawNode('[', ']')) && ndj->s->isRawNode('(', ')') ) {
 									nd_paramlist = ndj->s;
 									break;
 								}
@@ -541,15 +545,15 @@ namespace ama {
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
 					nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
 				} else {
-					nd_stmt = TranslateCUnscopedStatement(nd_keyword, ndi, is_elseif);
-					if (is_elseif) {
-						//re-queue the if part
-						ama::Node* nd_elseif = nd_stmt->LastChild();
-						//the counter-example where it's not N_RAW: `#define for if (0) {} else for`
-						if (nd_elseif->node_class == ama::N_RAW) {
-							Q.push_back(nd_elseif);
-						}
-					}
+					nd_stmt = TranslateCUnscopedStatement(Q, nd_keyword, ndi, is_elseif);
+					//if (is_elseif) {
+					//	//re-queue the if part
+					//	ama::Node* nd_elseif = nd_stmt->LastChild();
+					//	//the counter-example where it's not N_RAW: `#define for if (0) {} else for`
+					//	if (nd_elseif->node_class == ama::N_RAW) {
+					//		Q.push_back(nd_elseif);
+					//	}
+					//}
 				}
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 					nd_stmt->node_class = ama::N_EXTENSION_CLAUSE;
@@ -566,7 +570,7 @@ namespace ama {
 				//class forward declaration, treat as keyword statement
 				//but not inside template<>
 				nd_keyword->BreakSelf();
-				ama::Node* nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword->BreakSibling()));
+				ama::Node* nd_stmt = ama::CreateNode(ama::N_KSTMT, ama::toSingleNode(nd_keyword->BreakSibling()));
 				nd_stmt->indent_level = nd_keyword->indent_level;
 				nd_stmt->comments_before = nd_keyword->comments_before;
 				if ( nd_stmt->c ) {
@@ -576,6 +580,38 @@ namespace ama {
 				}
 				nd_stmt->data = nd_keyword->DestroyForSymbol();
 				ndi = nd_raw->Insert(ama::POS_BACK, nd_stmt);
+			}
+			/////////////////////
+			//split / remove nd_raw based on parsed scoped stuff
+			if (nd_raw->isRawNode(0, 0) && nd_raw->p && (
+			nd_raw->p->node_class == ama::N_SCOPE || nd_raw->p->node_class == ama::N_FILE ||
+			nd_raw->p->node_class == ama::N_ARRAY || nd_raw->p->node_class == ama::N_OBJECT ||
+			nd_raw->p->node_class == ama::N_RAW)) {
+				for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
+					again:
+					if (ndi->node_class == ama::N_SSTMT || ndi->node_class == ama::N_KSTMT) {
+						ama::Node* nd_stmt = ndi->BreakSelf();
+						ama::Node* nd_next = ndi->BreakSibling();
+						nd_stmt->AdjustIndentLevel(nd_raw->indent_level);
+						nd_raw->Insert(ama::POS_AFTER, nd_stmt);
+						if (nd_next) {
+							nd_next = nd_next->toSingleNode();
+							nd_next->AdjustIndentLevel(nd_raw->indent_level);
+							nd_stmt->Insert(ama::POS_AFTER, nd_next);
+							nd_next->comments_after = nd_next->comments_after + nd_raw->comments_after;
+							nd_raw->comments_after = "";
+						} else {
+							nd_stmt->comments_after = nd_stmt->comments_after + nd_raw->comments_after;
+							nd_raw->comments_after = "";
+						}
+						if (nd_next && nd_next->isRawNode(0, 0)) {
+							ndi = nd_next->c;
+							goto again;
+						} else {
+							break;
+						}
+					}
+				}
 			}
 		}
 		//C forward declaration
@@ -632,7 +668,7 @@ namespace ama {
 			ama::Node* nd_parent = nd_keyword->p;
 			if ( !nd_parent ) { continue; }
 			if ( nd_parent->node_class == ama::N_SCOPE || nd_parent->node_class == ama::N_FILE ) {
-				nd_keyword->node_class = ama::N_KEYWORD_STATEMENT;
+				nd_keyword->node_class = ama::N_KSTMT;
 				nd_keyword->Insert(ama::POS_FRONT, ama::nAir());
 			} else if ( nd_parent->node_class == ama::N_RAW ) {
 				if ( nd_keyword->data == "template" && nd_keyword->s && nd_keyword->s->isRawNode('<', '>') ) {
@@ -647,7 +683,7 @@ namespace ama {
 					nd_keyword->ReplaceUpto(nd_last, nd_tmp);
 					//////////
 					ama::Node* nd_body = ama::toSingleNode(nd_paramlist->BreakSibling());
-					ama::Node* nd_stmt = ama::CreateNode(ama::N_SCOPED_STATEMENT, ama::cons(ConvertToParameterList(nd_paramlist), nd_body));
+					ama::Node* nd_stmt = ama::CreateNode(ama::N_SSTMT, ama::cons(ConvertToParameterList(nd_paramlist), nd_body));
 					nd_stmt->indent_level = nd_keyword->indent_level;
 					nd_stmt->comments_before = nd_keyword->comments_before;
 					if ( nd_stmt->c ) {
@@ -666,7 +702,7 @@ namespace ama {
 					nd_last = nd_last->s;
 				}
 				nd_keyword->ReplaceUpto(nd_last, nd_tmp);
-				ama::Node* nd_stmt = ama::CreateNode(ama::N_KEYWORD_STATEMENT, ama::toSingleNode(nd_keyword->BreakSibling()));
+				ama::Node* nd_stmt = ama::CreateNode(ama::N_KSTMT, ama::toSingleNode(nd_keyword->BreakSibling()));
 				nd_stmt->indent_level = nd_keyword->indent_level;
 				nd_stmt->comments_before = nd_keyword->comments_before;
 				if ( nd_stmt->c ) {
@@ -768,7 +804,7 @@ namespace ama {
 				nd_ref->flags |= ama::REF_DECLARED;
 				continue;
 			}
-			if (nd_ref->p->node_class == ama::N_KEYWORD_STATEMENT && nd_ref->p->c == nd_ref && keywords_class--->get(nd_ref->p->data, 0)) {
+			if (nd_ref->p->node_class == ama::N_KSTMT && nd_ref->p->c == nd_ref && keywords_class--->get(nd_ref->p->data, 0)) {
 				//forward declaration
 				nd_ref->flags |= ama::REF_DECLARED;
 				continue;
@@ -783,7 +819,7 @@ namespace ama {
 				nd_asgn = nd_asgn->p;
 			}
 			ama::Node* nd_owner = nd_ref->Owner();
-			if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_stmt->p->p->data == "enum" && 
+			if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SSTMT && nd_stmt->p->p->data == "enum" && 
 			!(nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->s->isAncestorOf(nd_ref)) ) {
 				nd_ref->flags |= ama::REF_DECLARED;
 			}
@@ -792,7 +828,7 @@ namespace ama {
 				if ( nd_asgn->data == ":" || nd_asgn->data == "" ) {
 					if ( nd_ref == nd_asgn->c ) {
 						if ( nd_asgn->p && (
-							nd_asgn->p->node_class == ama::N_SCOPE && nd_asgn->p->p && nd_asgn->p->p->node_class == ama::N_SCOPED_STATEMENT && nd_asgn->p->p->data == "enum" ||
+							nd_asgn->p->node_class == ama::N_SCOPE && nd_asgn->p->p && nd_asgn->p->p->node_class == ama::N_SSTMT && nd_asgn->p->p->data == "enum" ||
 							nd_asgn->p->node_class == ama::N_PARAMETER_LIST
 						)) {
 							nd_ref->flags |= ama::REF_DECLARED;
@@ -837,7 +873,7 @@ namespace ama {
 				int destructured = 0;
 				while ( nd_destructuring != nd_stmt ) {
 					if ( nd_destructuring->node_class == ama::N_SCOPE || 
-					nd_destructuring->node_class == N_ARRAY || nd_destructuring->isRawNode('[', ']') || 
+					nd_destructuring->node_class == ama::N_ARRAY || nd_destructuring->isRawNode('[', ']') || 
 					nd_destructuring->isRawNode('{', '}') || nd_destructuring->isRawNode('(', ')') ) {
 						destructured = 1;
 						break;
@@ -891,7 +927,7 @@ namespace ama {
 				//check parent
 				int is_ok = 0;
 				if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_LABELED && nd_cdecl->p->c == nd_cdecl ) {
-					ama::Node* nd_loop = nd_cdecl->Owning(ama::N_SCOPED_STATEMENT);
+					ama::Node* nd_loop = nd_cdecl->Owning(ama::N_SSTMT);
 					if ( nd_loop && (nd_stmt->isAncestorOf(nd_loop) || nd_loop->c->isAncestorOf(nd_stmt)) && nd_loop->c->isAncestorOf(nd_cdecl) ) {
 						//foo in `for(foo:bar)`
 						is_ok = 1;
