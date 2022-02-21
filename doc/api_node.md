@@ -55,6 +55,8 @@ __global.default_options = {
 	parse_indent_as_scope: 0,
 	parse_indent_as_scope_but_merge_cpp_ctor_lines: 0,
 	parse_c_forward_declarations: 1,
+	parse_comma_expr: 1,
+	parse_typed_object: 1,
 	struct_can_be_type_prefix: 1,
 	parse_js_regexp: 1,
 	enable_c_include: 1,

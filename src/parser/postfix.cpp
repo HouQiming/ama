@@ -112,6 +112,7 @@ namespace ama {
 			keywords_statement--->set(iter.first, 1);
 		}
 		int32_t parse_air_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1);
+		int32_t parse_typed_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_typed_object"), 1);
 		std::vector<ama::Node*> a = (std::vector<ama::Node*>{nd_root})--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
 		for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 			ama::Node* ndi = a[i]->c;
@@ -180,10 +181,20 @@ namespace ama {
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					continue;
 				} else if (ndi_next && (ndi_next->isRawNode('(', ')') || ndi_next->isRawNode('<', '>') ||
-					ndi_next->node_class == ama::N_ARRAY || 
-					ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()) {
+				ndi_next->node_class == ama::N_ARRAY || 
+				ndi_next->isRawNode('[', ']')) && !ndi_next->FindAllWithin(ama::BOUNDARY_ONE_LEVEL, ama::N_SYMBOL, ";").size()) {
 					//call
 					ndi = TranslatePostfixCall(ndi);
+					continue;
+				} else if (parse_typed_object && ndi_next && (ndi_next->node_class == ama::N_SCOPE && (!ndi_next->c || !ndi_next->c->s) || ndi_next->node_class == ama::N_OBJECT)) {
+					//0-1 children scope / object: N_TYPED_OBJECT
+					if (ndi_next->node_class == ama::N_SCOPE) {
+						ndi_next->node_class = ama::N_OBJECT;
+					}
+					ama::Node* nd_tmp = ama::GetPlaceHolder();
+					ndi->ReplaceUpto(ndi_next, nd_tmp);
+					ndi->BreakSibling();
+					ndi = nd_tmp->ReplaceWith(ama::nTypedObject(ndi, ndi_next));
 					continue;
 				} else if (ndi_next && ndi_next->isSymbol("<<<")) {
 					ama::Node* ndj = nullptr;

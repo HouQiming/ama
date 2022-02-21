@@ -13,7 +13,8 @@ namespace ama {
 			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
 				again:
 				if (ndi->isSymbol(",")) {
-					ama::Node* nd_next = ndi->BreakSibling()->toSingleNode();
+					ama::Node* nd_next = ndi->BreakSibling();
+					if (!nd_next) {nd_next = ama::nAir();}
 					ndi->Unlink();
 					ama::Node* nd_last = nd_raw->BreakChild();
 					nd_raw->Insert(ama::POS_FRONT, nd_next);

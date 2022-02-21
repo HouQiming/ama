@@ -619,6 +619,9 @@ namespace ama {
 	static inline ama::Node* nAssignment(Node* nd_def, Node* nd_value) {
 		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, nullptr)))->setData("");
 	}
+	static inline ama::Node* nMov(Node* nd_def, Node* nd_value) {
+		return ama::CreateNode(N_MOV, cons(nd_def, cons(nd_value, nullptr)))->setData("");
+	}
 	static inline ama::Node* nUpdate(Node* nd_def, ama::gcstring op, Node* nd_value) {
 		return ama::CreateNode(N_ASSIGNMENT, cons(nd_def, cons(nd_value, nullptr)))->setData(op);
 	}
@@ -693,6 +696,10 @@ namespace ama {
 			nd_scope,
 			CreateNode(N_EXTENSION_CLAUSE, cons(nAir(), nd_else_scope))
 		)))->setData("if");
+	}
+	static inline ama::Node* nTypedObject(Node* nd_type, Node* nd_object) {
+		assert(nd_object->node_class == N_OBJECT);
+		return ama::CreateNode(N_TYPED_OBJECT, cons(nd_type, cons(nd_object, nullptr)));
 	}
 	///////////////
 	static inline ama::Node* GetPlaceHolder() {

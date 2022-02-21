@@ -328,7 +328,8 @@ namespace ama {
 				break;
 			}
 			case ama::N_TYPED_OBJECT:{
-				assert(0);//TODO
+				this->Generate(nd->c);
+				this->Generate(nd->c->s);
 				break;
 			}
 		}
