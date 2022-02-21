@@ -190,6 +190,7 @@ namespace ama {
 						cstk.back().nd_colon = ndi;
 						if ( !cstk.back().nd_qmark && cstk.back().nd_head && (cstk.back().nd_head->isRef("case") || cstk.back().nd_head->isRef("default")) ) {
 							//`case` / `default` case: flush EVERYTHING immediately
+							ama::Node* nd_raw_current = ndi->p;
 							ama::Node* nd_next = ndi->s;
 							while ( cstk.size() ) {
 								if ( cstk.back().nd_colon ) {
@@ -199,6 +200,16 @@ namespace ama {
 								}
 							}
 							cstk--->push(ColonStackItem{.nd_head = nd_next, .nd_qmark = nullptr, .nd_colon = nullptr});
+							if (nd_raw_current && nd_next && nd_next->Prev()) {
+								ama::Node* nd_air_label = nd_next->Prev();
+								if (nd_air_label->node_class == ama::N_LABELED && !nd_air_label->Prev()) {
+									nd_air_label->Unlink();
+									nd_air_label->comments_before = nd_raw_current->comments_before + nd_air_label->comments_before;
+									nd_raw_current->comments_before = "";
+									nd_air_label->AdjustIndentLevel(nd_raw_current->indent_level);
+									nd_raw_current->Insert(ama::POS_BEFORE, nd_air_label);
+								}
+							}
 							ndi = nd_next;
 							if (!ndi) {break;}
 							goto again;
