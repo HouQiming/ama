@@ -218,6 +218,8 @@ namespace ama {
 			ama::Node* nd_keyword{};
 			int kw_mode = KW_NONE;
 			int is_elseif = 0;
+			int after_qmark = 0;
+			int after_colon = 0;
 			while ( ndi ) {
 				ama::Node* ndi_next = ndi->s;
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && ndi == nd_keyword->s && 
@@ -225,6 +227,16 @@ namespace ama {
 					//`else if` case: translate if into N_RAW and queue it
 					is_elseif = 1;
 					break;
+				}
+				if (ndi->isSymbol("?")) {
+					after_qmark += 1;
+				}
+				if (ndi->isSymbol(":")) {
+					if (after_qmark > 0) {
+						after_qmark -= 1;
+					} else {
+						after_colon += 1;
+					}
 				}
 				if ( !nd_keyword && (ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL) ) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
@@ -268,9 +280,10 @@ namespace ama {
 							continue;
 						}
 					}
-				} else if ( ndi->isSymbol(";") ) {
-					//we can't delimit at ",": C++ constructor parameter list
-					//ndi.data == ","
+				} else if ( ndi->isSymbol(";") || after_colon == 0 && ndi->isSymbol(",") ) {
+					//we can't just delimit with "," everywhere: C++ constructor parameter list
+					//but we DO need to delimit with "," for mixed C++ / C declarations like `int a(0),b`
+					//so test for ':' before that isn't paired with '?'
 					if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 						//unscoped statement
 						//ndi_next = ndi.BreakSibling();

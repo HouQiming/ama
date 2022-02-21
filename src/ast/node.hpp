@@ -240,9 +240,9 @@ namespace ama {
 	//A Javascript regular expression in the form of `/foo/flags`.
 	//- `.data` stores the original textual form of the regular expression.
 	static const uint8_t N_JS_REGEXP = 30;
-	//`nDecl(...nodes)`
+	//`nComma(...nodes)`
 	//
-	//C-like multi-variable declaration
+	//JS / C / C++ comma expression
 	static const uint8_t N_COMMA = 31;
 	//`nArray(...nodes)`
 	//
@@ -250,7 +250,7 @@ namespace ama {
 	static const uint8_t N_ARRAY = 32;
 	//`nObject(...nodes)`
 	//
-	//JS / C++ {} object / initializer
+	//JS object / C++ initializer
 	static const uint8_t N_OBJECT = 33;
 	//`nTypedObject(...nodes)`
 	//

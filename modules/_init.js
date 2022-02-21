@@ -409,6 +409,7 @@ __global.default_pipeline=[
 	'ParseScopedStatements',
 	'ParseAssignment',
 	'ParseColons',
+	Node.ParseCommaExpr?'ParseCommaExpr':{},
 	'ParseOperators',
 	'CleanupDummyRaws',
 	Node.FixPriorityReversal?'FixPriorityReversal':{},

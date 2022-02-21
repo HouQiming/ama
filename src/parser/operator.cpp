@@ -5,6 +5,35 @@
 #include "../script/jsenv.hpp"
 #include "operator.hpp"
 namespace ama {
+	ama::Node* ParseCommaExpr(ama::Node* nd_root) {
+		//things inside [] or {} don't count
+		for ( ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+			if (!(nd_raw->isRawNode(0, 0) || nd_raw->isRawNode('(', ')'))) {continue;}
+			std::vector<ama::Node*> comma_children{};
+			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
+				again:
+				if (ndi->isSymbol(",")) {
+					ama::Node* nd_next = ndi->BreakSibling()->toSingleNode();
+					ndi->Unlink();
+					ama::Node* nd_last = nd_raw->BreakChild();
+					nd_raw->Insert(ama::POS_FRONT, nd_next);
+					comma_children.push_back(nd_last->toSingleNode());
+					ndi = nd_next;
+					goto again;
+				}
+			}
+			if (comma_children.size()) {
+				comma_children.push_back(nd_raw->BreakChild()->toSingleNode());
+				ama::Node* nd_comma = ama::CreateNodeFromChildren(ama::N_COMMA, comma_children);
+				if (nd_raw->isRawNode('(', ')')) {
+					nd_raw->Insert(ama::POS_FRONT, nd_comma);
+				} else {
+					nd_raw->ReplaceWith(nd_comma);
+				}
+			}
+		}
+		return nd_root;
+	}
 	struct ColonStackItem {
 		ama::Node* nd_head{};
 		ama::Node* nd_qmark{};
@@ -30,7 +59,15 @@ namespace ama {
 			nd_true->MergeCommentsBefore(nd_qmark);
 			nd_true->MergeCommentsAfter(nd_colon);
 			nd_false->MergeCommentsBefore(nd_colon);
-			nd_ret = ama::nConditional(nd_cond, nd_true, nd_false);
+			if (nd_cond->node_class == ama::N_MOV) {
+				//priority reversal
+				ama::Node* nd_asgn = nd_cond;
+				nd_cond = nd_asgn->c->BreakSibling();
+				nd_asgn->Insert(ama::POS_BACK, ama::nConditional(nd_cond, nd_true, nd_false));
+				nd_ret = nd_asgn;
+			} else {
+				nd_ret = ama::nConditional(nd_cond, nd_true, nd_false);
+			}
 			nd_qmark->p = nullptr; nd_qmark->FreeASTStorage();
 			nd_colon->p = nullptr; nd_colon->FreeASTStorage();
 		} else {
@@ -51,7 +88,7 @@ namespace ama {
 		for (ama::Node* ndi = nd_ret->c; ndi; ndi = ndi->s) {
 			ndi->AdjustIndentLevel(-nd_ret->indent_level);
 		}
-		if (nd_ret->node_class == ama::N_LABELED && nd_ret->p && nd_ret->p->p && nd_ret->p->p->node_class == ama::N_ASSIGNMENT && 
+		if (nd_ret->node_class == ama::N_LABELED && nd_ret->p && nd_ret->p->p && nd_ret->p->p->node_class == ama::N_MOV && 
 		nd_ret->p->p->c == nd_ret->p && !nd_ret->Prev()) {
 			//do FixPriorityReversal here aggressively
 			ama::Node* nd_raw = nd_ret->p;
@@ -166,6 +203,11 @@ namespace ama {
 							goto again;
 						}
 					}
+				} else if ( ndi->isSymbol(",") ) {
+					//fold ?:
+					while ( cstk.size() > 0 && cstk.back().nd_colon ) {
+						ndi = FoldColonStack(cstk, ndi);
+					}
 				}
 			}
 			while ( cstk.size() ) {
@@ -194,6 +236,7 @@ namespace ama {
 					ndi->MergeCommentsAfter(ndi_next);
 					ndi_next->Unlink();
 					ama::Node* nd_after = nullptr;
+					//this will break at '?': fix in ParseColon
 					for (ama::Node* ndj = ndi_next_next->s; ndj; ndj = ndj->s) {
 						if (ndj->node_class == ama::N_SYMBOL && lower_than_assignment_operators--->get(ndj->data)) {
 							//must be non-NULL: ndj starts at ndi_next_next->s
@@ -254,7 +297,7 @@ namespace ama {
 		}
 		//fix assignment - function associativity
 		for (ama::Node * nd_func: nd_root->FindAllWithin(0, ama::N_FUNCTION)) {
-			if (nd_func->c->node_class == ama::N_ASSIGNMENT) {
+			if (nd_func->c->node_class == ama::N_MOV) {
 				ama::Node* nd_asgn = nd_func->c;
 				ama::Node* nd_name = nd_asgn->c;
 				ama::Node* nd_value = nd_asgn->c->s;
@@ -268,7 +311,7 @@ namespace ama {
 		//fix parameter faux assignment once we get a real one
 		for (ama::Node * nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)) {
 			for (ama::Node* ndi = nd_paramlist->c; ndi; ndi = ndi->s) {
-				if (ndi->node_class == ama::N_ASSIGNMENT && ndi->c->node_class == ama::N_ASSIGNMENT && ndi->c->s->node_class == ama::N_AIR) {
+				if (ndi->node_class == ama::N_MOV && ndi->c->node_class == ama::N_MOV && ndi->c->s->node_class == ama::N_AIR) {
 					ndi = ndi->ReplaceWith(ndi->c->Unlink());
 				}
 			}

@@ -213,7 +213,7 @@ namespace ama {
 						new_children.push_back(ndi_next);
 					}
 				} else if ( ndi->isRawNode('{', '}') || ndi->node_class == ama::N_SCOPE ) {
-					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || ndi->s->isSymbol("=")) ) {
+					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || ndi->s->isSymbol("=") || ndi->s->isSymbol(",")) ) {
 						ndi = ndi_next;
 						continue;
 					}
@@ -242,7 +242,8 @@ namespace ama {
 				//COULDDO: case:, default:
 				ndi = ndi_next;
 			}
-			if ( changed != ';' ) {
+			//no , delimiting in root
+			if ( changed != ';' && nd_raw->p ) {
 				std::vector<ama::Node*> comma_children{};
 				changed = ' ';
 				for ( ama::Node * ndj: new_children ) {

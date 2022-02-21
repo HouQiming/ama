@@ -286,6 +286,10 @@ namespace ama {
 		if ( has_c_conditional || has_labels ) {
 			ama::ParseColons(nd_root, options);
 		}
+		//need to handle comma-inside-?: above
+		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_comma_expr"), 1) ) {
+			ama::ParseCommaExpr(nd_root);
+		}
 		//nd_root.Validate();
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_operators"), 1) ) {
 			ama::ParseOperators(nd_root, options);
@@ -552,6 +556,7 @@ namespace ama {
 		NodeFilterDesc{"ParseKeywordStatements", nullptr,ama::ParseKeywordStatements},
 		NodeFilterDesc{"ParseScopedStatements", nullptr,ama::ParseScopedStatements},
 		NodeFilterDesc{"ParseAssignment", nullptr,ama::ParseAssignment},
+		NodeFilterDesc{"ParseCommaExpr", ama::ParseCommaExpr,nullptr},
 		NodeFilterDesc{"ParseColons", nullptr,ama::ParseColons},
 		NodeFilterDesc{"ParseOperators", nullptr,ama::ParseOperators},
 		//NodeFilterDesc{"FixPriorityReversal", ama::FixPriorityReversal,nullptr},

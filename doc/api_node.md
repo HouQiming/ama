@@ -888,9 +888,9 @@ A Javascript regular expression in the form of `/foo/flags`.
 
 --------------
 - Node class: `N_COMMA`
-- Constructor: `nDecl(...nodes)`
+- Constructor: `nComma(...nodes)`
 
-C-like multi-variable declaration
+JS / C / C++ comma expression
 
 
 --------------
@@ -904,7 +904,7 @@ JS / Python [] array
 - Node class: `N_OBJECT`
 - Constructor: `nObject(...nodes)`
 
-JS / C++ {} object / initializer
+JS object / C++ initializer
 
 
 --------------

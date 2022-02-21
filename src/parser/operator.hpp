@@ -10,6 +10,7 @@ namespace ama {
 	ama::Node* UnparseLabel(ama::Node* nd_label);
 	ama::Node* UnparsePrefix(ama::Node* nd_unary);
 	ama::Node* UnparsePostfix(ama::Node* nd_unary);
+	ama::Node* ParseCommaExpr(ama::Node* nd_root);
 };
 
 #endif
