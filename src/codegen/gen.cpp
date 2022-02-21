@@ -295,8 +295,14 @@ namespace ama {
 				this->code--->push(')');
 				break;
 			}
-			case ama::N_DECL:{
-				assert(0);//TODO
+			case ama::N_COMMA:{
+				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
+					this->Generate(ndi);
+					if ( ndi->s ) {
+						this->code.push_back(',');
+						this->GenerateSpaceBefore(ndi->s);
+					}
+				}
 				break;
 			}
 			case ama::N_ARRAY:{

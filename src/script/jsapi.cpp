@@ -290,6 +290,7 @@ namespace ama {
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_operators"), 1) ) {
 			ama::ParseOperators(nd_root, options);
 		}
+		//TODO: ParseCommas
 		ama::CleanupDummyRaws(nd_root);
 		//ama::FixPriorityReversal(nd_root);
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_declarations"), 1) ) {

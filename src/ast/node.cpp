@@ -897,8 +897,8 @@ ama::Node* ama::Node::PostorderNext(ama::Node* nd_root) {
 ama::Node* ama::Node::ParentStatement() {
 	ama::Node* nd = (ama::Node*)(this);
 	while ( nd->p != nullptr && nd->p->node_class != ama::N_SCOPE && nd->p->node_class != ama::N_FILE ) {
-		if (nd->p->node_class == ama::N_RAW && (nd->p->flags & 0xffff) && nd->p->p && nd->p->p->node_class == ama::N_SCOPED_STATEMENT && nd->p == nd->p->p->c) {
-			//statement inside for(;;)
+		if (nd->p->isRawNode('(', ')') && nd->p->p && nd->p->p->node_class == ama::N_SCOPED_STATEMENT && nd == nd->p->c && nd->p == nd->p->p->c && nd->p->p->data == "for") {
+			//init statement inside for(;;)
 			break;
 		}
 		nd = nd->p;

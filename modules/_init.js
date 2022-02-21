@@ -4,10 +4,18 @@
 //@ama ParseCurrentFile().Save()
 (function() {
 /////////////
-if(!__global.nAssignment){__global.nAssignment=__global.nMov;__global.N_ASSIGNMENT=__global.N_MOV;}
-if(!__global.nSemicolon){__global.nSemicolon=__global.nDelimited;__global.N_SEMICOLON=__global.N_DELIMITED;}
-if(!__global.nScopedStatement){__global.nScopedStatement=__global.nSstmt;__global.N_SCOPED_STATEMENT=__global.N_SSTMT;}
-if(!__global.nKeywordStatement){__global.nKeywordStatement=__global.nKstmt;__global.N_KEYWORD_STATEMENT=__global.N_KSTMT;}
+//alias polyfill
+if(!__global.nAssignment){__global.nAssignment=__global.nMov;__global.N_ASSIGNMENT=__global.N_MOV;}else{__global.nMov=__global.nAssignment;__global.N_MOVE=__global.N_ASSIGNMENT;}
+if(!__global.nSemicolon){__global.nSemicolon=__global.nDelimited;__global.N_SEMICOLON=__global.N_DELIMITED;}else{__global.nDelimited=__global.nSemicolon;__global.N_DELIMITED=__global.N_SEMICOLON;}
+if(!__global.nScopedStatement){__global.nScopedStatement=__global.nSstmt;__global.N_SCOPED_STATEMENT=__global.N_SSTMT;}else{__global.nSstmt=__global.nScopedStatement;__global.N_SSTMT=__global.N_SCOPED_STATEMENT;}
+if(!__global.nKeywordStatement){__global.nKeywordStatement=__global.nKstmt;__global.N_KEYWORD_STATEMENT=__global.N_KSTMT;}else{__global.nKstmt=__global.nKeywordStatement;__global.N_KSTMT=__global.N_KEYWORD_STATEMENT;}
+if(!__global.N_ARRAY){
+	__global.N_COMMA=-1;
+	__global.N_ARRAY=-1;
+	__global.N_OBJECT=-1;
+	__global.N_TYPED_OBJECT=-1;
+}
+/////////////
 Node.setFlags = function(flags) {
 	this.flags = flags;
 	return this;
@@ -350,7 +358,7 @@ __global.default_options = {
 	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in of instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
 	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
 	postfix_operators: 'const volatile ++ --',
-	lower_than_assignment_operators: '? :',
+	lower_than_assignment_operators: '? : ,',
 	cv_qualifiers: 'const volatile',
 	//the JS `void` is too common in C/C++ to be treated as an operator by default
 	named_operators: 'typeof delete sizeof await co_await new in of instanceof as const volatile',
@@ -531,6 +539,8 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			parse_indent_as_scope: 1,
 			parse_js_regexp: 0,
 			auto_curly_bracket: 0,
+			//Python allows ',' in assignment LHS, and ? isn't an operator
+			lower_than_assignment_operators: ':',
 		});
 		p.push(ParsePythonLambdas);
 	}else if(ext==='.js'){

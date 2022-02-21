@@ -243,7 +243,7 @@ namespace ama {
 	//`nDecl(...nodes)`
 	//
 	//C-like multi-variable declaration
-	static const uint8_t N_DECL = 31;
+	static const uint8_t N_COMMA = 31;
 	//`nArray(...nodes)`
 	//
 	//JS / Python [] array

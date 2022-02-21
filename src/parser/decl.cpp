@@ -604,6 +604,11 @@ namespace ama {
 							nd_stmt->comments_after = nd_stmt->comments_after + nd_raw->comments_after;
 							nd_raw->comments_after = "";
 						}
+						//eagerly drop dummy raw
+						if (!nd_raw->c) {
+							nd_stmt->comments_before = nd_raw->comments_before + nd_stmt->comments_before;
+							nd_raw->Unlink();
+						}
 						if (nd_next && nd_next->isRawNode(0, 0)) {
 							ndi = nd_next->c;
 							goto again;
