@@ -47,6 +47,11 @@ int main(int argc){
 }
 ```
 */
+let g_builtins = new Set([
+	'bool', 'char', 'int8_t', 'uint8_t', 'short', 'int16_t', 'uint16_t', 'int', 'long', 'unsigned', 'int32_t', 'uint32_t', 'int64_t', 'uint64_t',
+	'__half', 'half', 'float', 'double',
+	'let', 'var', 'function', 'def', 'const', 'volatile'
+]);
 function Translate(nd_root, options) {
 	let all_refs = nd_root.FindAll(N_REF, null);
 	//track the locally undeclared
@@ -170,7 +175,7 @@ function Translate(nd_root, options) {
 				nd_ret = nd_ret.dot(names.pop()).setFlags(DOT_CLASS);
 			};
 			nd_ref.ReplaceWith(nd_ret);
-		} else if (nd_owner.node_class == N_FUNCTION && nd_owner.GetName() && !nd_owner.c.s.Find(N_REF, nd_ref.data)) {
+		} else if (nd_owner.node_class == N_FUNCTION && nd_owner.GetName() && !nd_owner.c.s.Find(N_REF, nd_ref.data) && !g_builtins.has(nd_ref.data)) {
 			//auto-param: check for the name at all call sites
 			//if it's found in the prototype, assume it's a type
 			let name = nd_owner.GetName();

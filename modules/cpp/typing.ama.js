@@ -184,14 +184,20 @@ typing.ComputeDeclaredType = function(nd_def) {
 		//forward declaration: self-representing
 		return nd_def;
 	}
-	let modifiers = [];
-	let type = undefined;
 	let nd_owner = nd_def.Owner();
 	if (nd_owner && (nd_owner.node_class == N_CLASS && nd_owner.c.s.isAncestorOf(nd_def) ||
 	nd_owner.node_class == N_FUNCTION && nd_owner.c.isAncestorOf(nd_def))) {
 		//class / function
 		return nd_owner;
 	}
+	return typing.ComputeDeclaredTypeRaw(nd_def);
+};
+
+//don't test for function / class / self-representing forward
+typing.ComputeDeclaredTypeRaw = function(nd_def) {
+	let modifiers = [];
+	let type = undefined;
+	let nd_owner = nd_def.Owner();
 	for (let ndi = nd_def.p; ndi; ndi = ndi.p) {
 		if (ndi.node_class == N_ITEM || ndi.node_class == N_PREFIX || ndi.node_class == N_POSTFIX) {
 			modifiers.push(ndi);
@@ -214,7 +220,7 @@ typing.ComputeDeclaredType = function(nd_def) {
 		} else if (ndi.node_class == N_CLASS || ndi.node_class == N_FUNCTION) {
 			type = ndi;
 			break;
-		} else if (ndi.node_class == N_SEMICOLON || ndi.node_class == N_SCOPE) {
+		} else if (ndi.node_class == N_SEMICOLON || ndi.node_class == N_SCOPE || ndi.node_class == N_PARAMETER_LIST) {
 			break;
 		}
 	}
@@ -302,6 +308,11 @@ typing.ComputeReturnType = function(type_func) {
 	} else if (nd_before.node_class == N_RAW) {
 		//we could have `static __attribute__(foo) void __attribute__(bar) __cdecl f`
 		//go back to front and filter out the calling conventions
+		let defs = nd_before.FindAllDef();
+		if (defs.length) {
+			type = typing.ComputeDeclaredTypeRaw(defs[0]);
+			if (type) {return type;}
+		}
 		for (let ndi = nd_before.LastChild(); ndi; ndi = ndi.Prev()) {
 			if (ndi.node_class == N_REF && typing.options.non_type_function_keywords.has(ndi.data)) {
 				if (type) {break;} else {continue;}

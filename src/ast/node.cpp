@@ -603,7 +603,15 @@ ama::gcstring ama::Node::GetName() const {
 		} else {
 			return "";
 		}
-	} else if ( this->node_class == ama::N_MOV || this->node_class == ama::N_DEPENDENCY || this->node_class == ama::N_TYPED_OBJECT ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
+	} else if ( this->node_class == ama::N_MOV) {
+		if (this->p && this->p->node_class == ama::N_PARAMETER_LIST) {
+			for (ama::Node* ndi = (ama::Node*)this; ndi; ndi = ndi->PreorderNext((ama::Node*)this)) {
+				if (ndi->node_class == ama::N_RAW) {ndi = ndi->LastChild();}
+				if (ndi->node_class == ama::N_REF && (ndi->flags & ama::REF_DECLARED)) {return ndi->data;}
+			}
+		}
+		return this->c->GetName();
+	} else if (this->node_class == ama::N_DEPENDENCY || this->node_class == ama::N_TYPED_OBJECT ) /*||int(this.node_class) == ama::N_YIELD || int(this.node_class) == ama::N_NO_INFER_TYPE */ {
 		return this->c->GetName();
 	} else if (this->node_class == ama::N_CLASS) {
 		return this->c->s->GetName();
@@ -611,9 +619,6 @@ ama::gcstring ama::Node::GetName() const {
 		ama::Node* nd_hack = (ama::Node*)(this);
 		return nd_hack->GetStringValue();
 	} else if (this->node_class == ama::N_RAW) {
-		if (!(this->flags & 0xffff) && this->LastChild()->node_class == ama::N_MOV) {
-			return this->LastChild()->GetName();
-		}
 		for (ama::Node* ndi = this->c; ndi; ndi = ndi->s) {
 			if (ndi->node_class == ama::N_REF && (ndi->flags & ama::REF_DECLARED)) {return ndi->data;}
 		}

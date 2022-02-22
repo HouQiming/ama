@@ -35,7 +35,8 @@ namespace ama {
 				}
 			}
 			if ( nd->c && 
-			(nd->node_class == ama::N_CALL || nd->node_class == ama::N_CALL_TEMPLATE || nd->node_class == ama::N_CALL_CUDA_KERNEL || 
+			(nd->node_class == ama::N_CALL || nd->node_class == ama::N_CALL_TEMPLATE || nd->node_class == ama::N_CALL_CUDA_KERNEL ||
+			nd->node_class == ama::N_TYPED_OBJECT || nd->node_class == ama::N_COMMA ||
 			nd->node_class == ama::N_BINOP || nd->node_class == ama::N_POSTFIX || 
 			nd->node_class == ama::N_DOT || nd->node_class == ama::N_ITEM || nd->node_class == ama::N_FUNCTION || 
 			nd->node_class == ama::N_ASSIGNMENT || nd->node_class == ama::N_CONDITIONAL || 
@@ -51,6 +52,7 @@ namespace ama {
 			}
 			if ( nd->c && 
 			(nd->node_class == ama::N_BINOP || nd->node_class == ama::N_PREFIX || 
+			nd->node_class == ama::N_TYPED_OBJECT || nd->node_class == ama::N_COMMA ||
 			nd->node_class == ama::N_FUNCTION || nd->node_class == ama::N_CLASS || 
 			nd->node_class == ama::N_ASSIGNMENT || nd->node_class == ama::N_CONDITIONAL || 
 			nd->node_class == ama::N_LABELED || nd->node_class == ama::N_SCOPED_STATEMENT || nd->node_class == ama::N_EXTENSION_CLAUSE || 
