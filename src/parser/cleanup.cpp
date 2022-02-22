@@ -39,7 +39,7 @@ namespace ama {
 			nd->node_class == ama::N_BINOP || nd->node_class == ama::N_POSTFIX || 
 			nd->node_class == ama::N_DOT || nd->node_class == ama::N_ITEM || nd->node_class == ama::N_FUNCTION || 
 			nd->node_class == ama::N_ASSIGNMENT || nd->node_class == ama::N_CONDITIONAL || 
-			nd->node_class == ama::N_LABELED || nd->node_class == ama::N_SEMICOLON ||
+			nd->node_class == ama::N_LABELED || nd->node_class == ama::N_DELIMITED ||
 			nd->node_class == ama::N_PARAMETER_LIST && (nd->flags & ama::PARAMLIST_UNWRAPPED) || 
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
 				if ( nd->c->comments_before.size() ) {
@@ -151,57 +151,48 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	//public ama::Node* FixPriorityReversal(ama::Node* nd_root) {
-	//	for ( ama::Node * nd_label: nd_root->FindAll(ama::N_LABELED) ) {
-	//		if ( nd_label->p && nd_label->p->node_class == ama::N_ASSIGNMENT && nd_label->p->c == nd_label ) {
-	//			//fix the priority reversal
-	//			ama::Node* nd_asgn = nd_label->p;
-	//			ama::Node* nd_var = nd_label->c->s->Unlink();
-	//			i32 indent_asgn = nd_asgn->indent_level;
-	//			i32 indent_var = nd_var->indent_level;
-	//			i32 indent_label = nd_label->indent_level;
-	//			nd_label->ReplaceWith(nd_var);
-	//			nd_asgn->ReplaceWith(nd_label);
-	//			nd_label->Insert(ama::POS_BACK, nd_asgn);
-	//			nd_label->indent_level = indent_asgn;
-	//			nd_asgn->indent_level = indent_var;
-	//			nd_var->indent_level = 0;
-	//			//the shenanigans above ignored the assignment value
-	//			nd_asgn->c->s->AdjustIndentLevel(indent_asgn - indent_var);
-	//		}
-	//	}
-	//	return nd_root;
-	//}
+	//also finalizes N_OBJECT vs N_SCOPE ambiguity
 	ama::Node* NodifySemicolonAndParenthesis(ama::Node* nd_root) {
-		for (ama::Node * nd_scope = nd_root; nd_scope; nd_scope = nd_scope->PreorderNext(nullptr)) {
+		for (ama::Node* ndi = nd_root; ndi; ndi = ndi->PreorderNext(nullptr)) {
 			std::span<char> symbol = "";
-			if (nd_scope == nd_root || nd_scope->node_class == ama::N_SCOPE) {
+			if (ndi == nd_root || ndi->node_class == ama::N_SCOPE) {
 				symbol = ";";
-			} else if (nd_scope->node_class == ama::N_ARRAY || nd_scope->node_class == ama::N_OBJECT) {
+			} else if (ndi->node_class == ama::N_ARRAY || ndi->node_class == ama::N_OBJECT) {
 				symbol = ",";
 			}
 			if (symbol.size()) {
-				for (ama::Node* ndi = nd_scope->c; ndi; ndi = ndi->s) {
-					while ( ndi->s && ndi->s->isSymbol(symbol) ) {
-						ama::Node* nd_semicolon = ndi->s;
-						ndi->Unlink();
+				for (ama::Node* ndj = ndi->c; ndj; ndj = ndj->s) {
+					while ( ndj->s && ndj->s->isSymbol(symbol) ) {
+						ama::Node* nd_semicolon = ndj->s;
+						ndj->Unlink();
 						nd_semicolon->flags = symbol == "," ? ama::SEMICOLON_COMMA : 0;
-						nd_semicolon->node_class = ama::N_SEMICOLON;
+						nd_semicolon->node_class = ama::N_DELIMITED;
 						nd_semicolon->data = "";
-						nd_semicolon->indent_level = ndi->indent_level;
-						nd_semicolon->Insert(ama::POS_FRONT, ndi);
-						ndi->indent_level = 0;
-						ndi->MergeCommentsAfter(nd_semicolon);
-						ndi = nd_semicolon;
+						nd_semicolon->indent_level = ndj->indent_level;
+						nd_semicolon->Insert(ama::POS_FRONT, ndj);
+						ndj->indent_level = 0;
+						ndj->MergeCommentsAfter(nd_semicolon);
+						ndj = nd_semicolon;
 					}
 				}
 			}
-			if ( nd_scope->isRawNode('(', ')') && nd_scope->c && !nd_scope->c->s ) {
-				nd_scope->node_class = ama::N_PAREN;
-				nd_scope->flags = 0;
-			} else if ( nd_scope->isRawNode(0, 0) && nd_scope->c && nd_scope->LastChild()->isSymbol(";") ) {
-				nd_scope->LastChild()->Unlink();
-				nd_scope->ReplaceWith(ama::CreateNode(ama::N_SEMICOLON, ama::toSingleNode(nd_scope->c)));
+			/////////////////
+			if ( ndi->isRawNode('(', ')') && ndi->c && !ndi->c->s ) {
+				ndi->node_class = ama::N_PAREN;
+				ndi->flags = 0;
+			} else if ( ndi->isRawNode(0, 0) && ndi->c && ndi->LastChild()->isSymbol(";") ) {
+				ndi->LastChild()->Unlink();
+				ndi->ReplaceWith(ama::CreateNode(ama::N_DELIMITED, ama::toSingleNode(ndi->c)));
+			}
+			/////////////////
+			if (ndi->node_class == ama::N_SCOPE && !(ndi->flags & ama::SCOPE_FROM_INDENT) && (!ndi->c || ndi->c->node_class != ama::N_DELIMITED && !ndi->c->s) && ndi->p) {
+				//could be N_OBJECT
+				if (ndi->p->node_class == ama::N_CALL || ndi->p->node_class == ama::N_CALL_TEMPLATE ||
+				ndi->p->node_class == ama::N_CALL_CUDA_KERNEL || ndi->p->node_class == ama::N_ITEM ||
+				ndi->p->node_class == ama::N_DOT || ndi->p->node_class == ama::N_ARRAY ||
+				ndi->p->node_class == ama::N_OBJECT || ndi->p->node_class == ama::N_MOV) {
+					ndi->node_class = ama::N_OBJECT;
+				}
 			}
 		}
 		return nd_root;

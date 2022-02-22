@@ -937,6 +937,7 @@ namespace ama {
 			ama::Node* nd_to_fix_core = nullptr;
 			int32_t is_array_assignment = 0;
 			int32_t got_type = 0;
+			int32_t past_mov = 0;
 			while ( nd_cdecl && nd_cdecl != nd_stmt ) {
 				if ( nd_cdecl->p->isRawNode(0, 0) ) {
 					ama::Node* nd_core = nd_cdecl;
@@ -952,11 +953,12 @@ namespace ama {
 					is_array_assignment = 0;
 					break;
 				}
-				if (parse_cpp_declaration_initialization && (nd_cdecl->p->node_class == ama::N_ITEM || nd_cdecl->p->node_class == ama::N_CALL) && nd_cdecl == nd_cdecl->p->c) {
+				if (!past_mov && parse_cpp_declaration_initialization && 
+				(nd_cdecl->p->node_class == ama::N_ITEM || nd_cdecl->p->node_class == ama::N_CALL) && nd_cdecl == nd_cdecl->p->c) {
 					//could be either an array assignment `foo[bar]=baz;` or a C array declaration `baz foo[bar]`
 					//the same applies for `foo(bar)=baz` vs `baz foo(bar)`
 					is_array_assignment = 1;
-				} else if (parse_cpp_declaration_initialization && (  
+				} else if (!past_mov && parse_cpp_declaration_initialization && (  
 				(nd_cdecl->p->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(nd_cdecl->p->data) && nd_cdecl == nd_cdecl->p->c->s) || 
 				nd_cdecl->p->node_class == ama::N_PREFIX) ) {
 					//foo* bar
@@ -966,12 +968,15 @@ namespace ama {
 						nd_to_fix_core = nd_cdecl;
 					}
 					got_type |= 1;
-				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->isRawNode('(', ')')) {
+				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->isRawNode('(', ')') && !(
+					nd_cdecl->p->p && nd_cdecl->p->p->node_class == ama::N_SSTMT && nd_cdecl->p->p->data--->startsWith("for") && nd_cdecl->p->p->c == nd_cdecl->p
+				)) {
 					//(*foo)[bar]
 				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->node_class == ama::N_TYPED_OBJECT) {
 					//foo{bar}
 				} else if (nd_cdecl->p->node_class == ama::N_MOV && nd_cdecl->p->c == nd_cdecl) {
 					//foo=bar
+					past_mov = true;
 				} else if (nd_cdecl->p->node_class == ama::N_COMMA && nd_cdecl->p->p && nd_cdecl->p->p->node_class == ama::N_RAW) {
 					//the last multi-var comma layer
 				} else {
@@ -979,7 +984,7 @@ namespace ama {
 				}
 				nd_cdecl = nd_cdecl->p;
 			}
-			if ( nd_cdecl != nd_ref && !(nd_ref->s && nd_ref->s->node_class == ama::N_REF) && !keywords_not_variable_name[nd_ref->data]) {
+			if ( nd_cdecl != nd_ref && !(nd_ref->p->node_class == ama::N_RAW && nd_ref->s && nd_ref->s->node_class == ama::N_REF) && !keywords_not_variable_name[nd_ref->data]) {
 				//we found at least one feasible declaration-ish
 				//check parent
 				int is_ok = 0;
@@ -999,6 +1004,10 @@ namespace ama {
 					is_ok = 1;
 				} else if ( ama::isUnderParameter(nd_cdecl) && got_type) {
 					//foo in `type foo;` or `type bar,*foo[8];`
+					is_ok = 1;
+				} else if ( nd_cdecl->p && nd_cdecl->p->p && nd_cdecl->p->p->c == nd_cdecl->p &&
+				nd_cdecl->p->isRawNode('(', ')') && nd_cdecl->p->p->node_class == ama::N_SSTMT && nd_cdecl->p->p->data--->startsWith("for")&& got_type) {
+					//foo in `for(int foo;;)`
 					is_ok = 1;
 				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_FUNCTION && nd_cdecl->p->c == nd_cdecl ) {
 					//non-dotted function declaration, handle it here, also name the function
