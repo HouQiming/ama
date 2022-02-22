@@ -67,7 +67,9 @@ function BidirTransform(nd_root, is_forward) {
 				}
 			}
 		}
-		nd_scope.TranslateTemplates([g_obj_init_transform], is_forward);
+	}
+	for (let nd_obj of nd_root.FindAll(N_OBJECT, null)) {
+		nd_obj.TranslateTemplates([g_obj_init_transform], is_forward);
 	}
 	return nd_root;
 }

@@ -1140,7 +1140,8 @@ namespace ama {
 					ndj = ndj->c->s;
 				}
 				if ( ndj->node_class == ama::N_REF || ndj->node_class == ama::N_DOT ) {
-					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, keywords_numerical_qualifier, ndj, true);
+					//don't put '*' on dotted names for now
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, keywords_numerical_qualifier, ndj, false);
 					nd_func->data = ndj->data;
 					found = 1;
 				}

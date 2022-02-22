@@ -98,10 +98,14 @@ namespace ama {
 	ama::Node* ParsePostfix(ama::Node* nd_root, JSValue options) {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
 		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
+		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
+		for (auto iter: keywords_class) {
+			keywords_statement--->set(iter.first, 1);
+		}
 		for (auto iter: keywords_scoped_statement) {
 			keywords_statement--->set(iter.first, 1);
 		}
@@ -116,11 +120,17 @@ namespace ama {
 		std::vector<ama::Node*> a = (std::vector<ama::Node*>{nd_root})--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
 		for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 			ama::Node* ndi = a[i]->c;
+			int32_t after_class = 0;
 			while ( ndi ) {
 				ama::Node* ndi_next = ndi->s;
+				//for struct foo bar{}
+				if (ndi->node_class == ama::N_REF) {after_class = 0;}
 				if (ndi->node_class == ama::N_REF && keywords_statement--->get(ndi->data, 0)) {
 					//it's a statement keyword, do nothing: it cannot dot or call
 					//the C++ 'operator' keyword also ends here
+					if (keywords_class--->get(ndi->data)) {
+						after_class = 1;
+					}
 				} else if ( parse_air_object && 
 				ndi->node_class == ama::N_SYMBOL && (ndi->data == "." || ndi->data == "::") && 
 				ndi->s && ndi->s->node_class == ama::N_REF ) {
@@ -149,6 +159,7 @@ namespace ama {
 					continue;
 				} else if (ndi->node_class == ama::N_SYMBOL) {
 					//do nothing
+					after_class = 0;
 				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && postfix_ops--->get(ndi_next->data, 0)) {
 					//postfix operator
 					ndi->MergeCommentsAfter(ndi_next);
@@ -186,7 +197,7 @@ namespace ama {
 					//call
 					ndi = TranslatePostfixCall(ndi);
 					continue;
-				} else if (parse_typed_object && ndi_next && ndi->node_class != ama::N_CALL && ndi->node_class != ama::N_ARRAY && !ndi->isRawNode('(', ')') && (
+				} else if (parse_typed_object && !after_class && ndi_next && ndi->node_class != ama::N_CALL && ndi->node_class != ama::N_ARRAY && !ndi->isRawNode('(', ')') && (
 					ndi_next->node_class == ama::N_SCOPE && (!ndi_next->c || !ndi_next->c->s) || ndi_next->node_class == ama::N_OBJECT
 				)) {
 					//0-1 children scope / object: N_TYPED_OBJECT
