@@ -20,3 +20,7 @@ ama::Node* nd={
 NodeFilterDesc{"ParseAssignment", NULL,ama::ParseAssignment},
 NodeFilterDesc{"ParseCommaExpr", ama::ParseCommaExpr,NULL},
 };
+case SIGSEGV: name = "SIGSEGV"; break;
+struct dirent* entry = readdir(hdir);
+unsigned long long int ulli=0;
+unsigned long long ull=0;

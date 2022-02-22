@@ -360,7 +360,7 @@ __global.default_options = {
 	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in of instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
 	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
 	postfix_operators: 'const volatile ++ --',
-	lower_than_assignment_operators: '? : ,',
+	lower_than_assignment_operators: '? : , ;',
 	cv_qualifiers: 'const volatile',
 	//the JS `void` is too common in C/C++ to be treated as an operator by default
 	named_operators: 'typeof delete sizeof await co_await new in of instanceof as const volatile',
@@ -543,7 +543,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			parse_js_regexp: 0,
 			auto_curly_bracket: 0,
 			//Python allows ',' in assignment LHS, and ? isn't an operator
-			lower_than_assignment_operators: ':',
+			lower_than_assignment_operators: ': ;',
 		});
 		p.push(ParsePythonLambdas);
 	}else if(ext==='.js'){
