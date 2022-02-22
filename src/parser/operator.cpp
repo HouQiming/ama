@@ -320,31 +320,6 @@ namespace ama {
 						nd_lhs = nd_raw->c;
 						ama::UnparseRaw(nd_raw);
 					}
-					//when nd_lhs is N_RAW, rotate out the "type" to make it consistent with multi-var declaration
-					//but don't do that for parameters yet
-					if (nd_lhs->isRawNode(0, 0) && nd_lhs->c && nd_lhs->c->s && !isUnderParameter(nd_asgn)) {
-						ama::Node* nd_var = nd_lhs->LastChild();
-						nd_var->comments_after = nd_var->comments_after + nd_lhs->comments_after;
-						nd_lhs->comments_after = "";
-						nd_var->Unlink();
-						int32_t indent_asgn = nd_asgn->indent_level;
-						int32_t indent_var = nd_var->indent_level;
-						int32_t indent_raw = nd_lhs->indent_level;
-						ama::Node* nd_tmp = ama::GetPlaceHolder();
-						nd_asgn->ReplaceWith(nd_tmp);
-						nd_lhs->ReplaceWith(nd_var);
-						nd_lhs->Insert(ama::POS_BACK, nd_asgn);
-						nd_tmp->ReplaceWith(nd_lhs);
-						nd_asgn->comments_before = nd_asgn->comments_before + nd_var->comments_before;
-						nd_var->comments_before = "";
-						nd_var->indent_level = 0;
-						nd_lhs->indent_level = ama::ClampIndentLevel(indent_asgn + indent_raw);
-						nd_asgn->indent_level = indent_var;
-						if (nd_after) {
-							ama::UnparseRaw(nd_lhs);
-							assert(nd_asgn->p == nd_raw);
-						}
-					}
 					if (nd_after) {
 						assert(nd_asgn->p == nd_raw);
 						nd_asgn->Insert(ama::POS_AFTER, nd_after);
@@ -626,8 +601,12 @@ namespace ama {
 			//nd_parent->indent_level = nd_binop->indent_level;
 		}
 		ama::Node* nd_a = nd_binop->BreakChild();
-		ama::Node* nd_b = nd_a->s;
+		ama::Node* nd_b = nd_a->BreakSibling();
+		int8_t indent_a = ama::ClampIndentLevel(int32_t(nd_a->indent_level) + nd_binop->indent_level);
+		int8_t indent_b = ama::ClampIndentLevel(int32_t(nd_b->indent_level) + nd_binop->indent_level);
 		ama::Node* ret = nd_binop->ReplaceWith(ama::cons(nd_a, ama::cons(ama::nSymbol(nd_binop->data), nd_b)));
+		nd_a->indent_level = indent_a;
+		nd_b->indent_level = indent_b;
 		if ( nd_a->isRawNode(0, 0) ) {
 			ama::UnparseRaw(nd_a);
 		}

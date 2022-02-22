@@ -785,7 +785,31 @@ namespace ama {
 		}
 		return nd_root;
 	}
-	static void FixTypeSuffixFromInnerRef(std::unordered_map<ama::gcstring, int> const& ambiguous_type_suffix, ama::Node* nd_ref) {
+	static bool TryTypeRotation(ama::Node* ndi) {
+		if ((ndi->node_class == ama::N_COMMA || ndi->node_class == ama::N_MOV) && ndi->c && ndi->c->isRawNode(0, 0) && ndi->c->c && ndi->c->c->s) {
+			//could be C-like declaration, rotate the "type" out of the comma
+			ama::Node* nd_1st_decl = ndi->c;
+			ama::Node* nd_var = nd_1st_decl->LastChild();
+			nd_var->comments_after = nd_var->comments_after + nd_1st_decl->comments_after;
+			nd_1st_decl->comments_after = "";
+			nd_var->Unlink();
+			int32_t indent_ndi = ndi->indent_level;
+			int32_t indent_var = nd_var->indent_level;
+			int32_t indent_raw = nd_1st_decl->indent_level;
+			ama::Node* nd_tmp = ama::GetPlaceHolder();
+			ndi->ReplaceWith(nd_tmp);
+			nd_1st_decl->ReplaceWith(nd_var);
+			ndi->AdjustIndentLevel(-nd_1st_decl->indent_level);
+			nd_1st_decl->Insert(ama::POS_BACK, ndi);
+			nd_tmp->ReplaceWith(nd_1st_decl);
+			nd_var->indent_level = 0;
+			nd_1st_decl->indent_level = ama::ClampIndentLevel(indent_ndi + indent_raw);
+			ndi->indent_level = indent_var;
+			return true;
+		}
+		return false;
+	}
+	static void FixTypeSuffixFromInnerRef(std::unordered_map<ama::gcstring, int> const& ambiguous_type_suffix, ama::Node* nd_ref, bool prefix_associativity) {
 		while ( (nd_ref->p->node_class == ama::N_ITEM || nd_ref->p->node_class == ama::N_CALL) && nd_ref == nd_ref->p->c ) {
 			nd_ref = nd_ref->p;
 		}
@@ -795,13 +819,24 @@ namespace ama {
 		while ( nd_ref->Prev() && nd_ref->Prev()->node_class == ama::N_SYMBOL && ambiguous_type_suffix--->get(nd_ref->Prev()->data) && nd_ref->Prev()->Prev() ) {
 			ama::Node* nd_opr = nd_ref->Prev();
 			ama::Node* ndi = nd_opr->Prev();
-			ndi->MergeCommentsAfter(nd_opr);
 			nd_opr->Unlink();
-			ama::Node* nd_tmp = ama::GetPlaceHolder();
-			ndi->ReplaceWith(nd_tmp);
-			std::swap(ndi->comments_after, nd_tmp->comments_after);
-			ndi = nd_tmp->ReplaceWith(ama::nPostfix(ndi, nd_opr->data)->setCommentsAfter(nd_opr->comments_after));
+			if (prefix_associativity) {
+				nd_ref->MergeCommentsBefore(nd_opr);
+				ama::Node* nd_tmp = ama::GetPlaceHolder();
+				nd_ref->ReplaceWith(nd_tmp);
+				std::swap(nd_ref->comments_before, nd_tmp->comments_before);
+				nd_ref = nd_tmp->ReplaceWith(ama::nPrefix(nd_opr->data, nd_ref)->setCommentsBefore(nd_opr->comments_before));
+			} else {
+				ndi->MergeCommentsAfter(nd_opr);
+				ama::Node* nd_tmp = ama::GetPlaceHolder();
+				ndi->ReplaceWith(nd_tmp);
+				std::swap(ndi->comments_after, nd_tmp->comments_after);
+				ndi = nd_tmp->ReplaceWith(ama::nPostfix(ndi, nd_opr->data)->setCommentsAfter(nd_opr->comments_after));
+			}
 			nd_opr->FreeASTStorage();
+		}
+		for (ama::Node* ndi = nd_ref; ndi; ndi = ndi->p) {
+			TryTypeRotation(ndi);
 		}
 	}
 	//detects N_TYPED_VAR
@@ -817,27 +852,9 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
 		//pull types out of comma
-		for ( ama::Node * nd_comma: nd_root->FindAllWithin(0, ama::N_COMMA) ) {
-			if (nd_comma->c && nd_comma->c->isRawNode(0, 0) && nd_comma->c->c && nd_comma->c->c->s) {
-				//could be C-like declaration, rotate the "type" out of the comma
-				ama::Node* nd_1st_decl = nd_comma->c;
-				ama::Node* nd_var = nd_1st_decl->LastChild();
-				nd_var->comments_after = nd_var->comments_after + nd_1st_decl->comments_after;
-				nd_1st_decl->comments_after = "";
-				nd_var->Unlink();
-				int32_t indent_comma = nd_comma->indent_level;
-				int32_t indent_var = nd_var->indent_level;
-				int32_t indent_raw = nd_1st_decl->indent_level;
-				ama::Node* nd_tmp = ama::GetPlaceHolder();
-				nd_comma->ReplaceWith(nd_tmp);
-				nd_1st_decl->ReplaceWith(nd_var);
-				nd_comma->AdjustIndentLevel(-nd_1st_decl->indent_level);
-				nd_1st_decl->Insert(ama::POS_BACK, nd_comma);
-				nd_tmp->ReplaceWith(nd_1st_decl);
-				nd_var->indent_level = 0;
-				nd_1st_decl->indent_level = ama::ClampIndentLevel(indent_comma + indent_raw);
-				nd_comma->indent_level = indent_var;
-			}
+		//for ( ama::Node * nd_comma: nd_root->FindAllWithin(0, ama::N_COMMA) ) {
+		for (ama::Node* ndi = nd_root->PostorderFirst(); ndi; ndi = ndi->PostorderNext(nd_root)) {
+			TryTypeRotation(ndi);
 		}
 		for ( ama::Node * nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( nd_ref->p->node_class == ama::N_CLASS && nd_ref->p->c->s == nd_ref ) {
@@ -879,7 +896,7 @@ namespace ama {
 					}
 					if ( nd_asgn->data == ":" ) {
 						//Go := operator
-						FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
+						FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref, true);
 						nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 					} else {
 						//destructuring case: `[foo]=...`
@@ -898,7 +915,7 @@ namespace ama {
 							nd_destructuring = nd_destructuring->p;
 						}
 						if ( destructured ) {
-							FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
+							FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref, true);
 							nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 						}
 					}
@@ -967,7 +984,9 @@ namespace ama {
 					if (!nd_to_fix_core) {
 						nd_to_fix_core = nd_cdecl;
 					}
-					got_type |= 1;
+					if (nd_cdecl->p->node_class != ama::N_PREFIX) {
+						got_type |= 1;
+					}
 				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->isRawNode('(', ')') && !(
 					nd_cdecl->p->p && nd_cdecl->p->p->node_class == ama::N_SSTMT && nd_cdecl->p->p->data--->startsWith("for") && nd_cdecl->p->p->c == nd_cdecl->p
 				)) {
@@ -1018,7 +1037,7 @@ namespace ama {
 				}
 				if ( is_ok ) {
 					if (!nd_to_fix_core) {nd_to_fix_core = nd_ref;}
-					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_to_fix_core);
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_to_fix_core, true);
 					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 				}
 			}
@@ -1076,7 +1095,7 @@ namespace ama {
 					ndj = ndj->c->s;
 				}
 				if ( ndj->node_class == ama::N_REF || ndj->node_class == ama::N_DOT ) {
-					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, ndj);
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, ndj, true);
 					nd_func->data = ndj->data;
 					found = 1;
 				}
