@@ -280,6 +280,7 @@ namespace ama {
 									}
 									ndj = ndj->s;
 								}
+								if (!ndj) {break;}
 								continue;
 							}
 							//must be non-NULL: ndj starts at ndi_next_next->s
