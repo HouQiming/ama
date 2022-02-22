@@ -189,7 +189,7 @@ namespace ama {
 			}
 			std::vector<ama::Node*> new_children{};
 			ama::Node* ndi = nd_raw->c;
-			new_children.push_back(ndi);
+			if (ndi) {new_children.push_back(ndi);}
 			char changed = 0;
 			int after_cpp_macro = 0;
 			while ( ndi ) {
@@ -279,7 +279,9 @@ namespace ama {
 					new_children[i] = nd_inner;
 				}
 				nd_raw->c = nullptr;
-				nd_raw->Insert(ama::POS_FRONT, ama::InsertMany(new_children));
+				if (new_children.size()) {
+					nd_raw->Insert(ama::POS_FRONT, ama::InsertMany(new_children));
+				}
 			}
 			//if( nd_raw.isRawNode('{', '}') && (changed == ';' || !nd_raw.c) ) {
 			if ( nd_raw->isRawNode('{', '}') ) {

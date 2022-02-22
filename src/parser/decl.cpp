@@ -667,6 +667,14 @@ namespace ama {
 		//turn params into N_MOV
 		for ( ama::Node * nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
 			for (ama::Node* nd_param = nd_paramlist->node_class == ama::N_CALL_TEMPLATE ? nd_paramlist->c->s : nd_paramlist->c; nd_param; nd_param = nd_param->s) {
+				again_param:
+				if ( nd_param->node_class == ama::N_AIR ) {
+					ama::Node* nd_next = nd_param->s;
+					nd_param->Unlink();
+					if (!nd_next) {break;}
+					nd_param = nd_next;
+					goto again_param;
+				}
 				if ( nd_param->node_class == ama::N_MOV ) { continue; }
 				//if ( nd_param->node_class == ama::N_SYMBOL || (nd_param->node_class == ama::N_RAW && nd_param->c && nd_param->c->node_class == ama::N_SYMBOL) ) {
 				//	//rest args

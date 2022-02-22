@@ -12,3 +12,5 @@ for(
   *
    i=NULL,j;i;i++){for(auto k:j){{k}=C{};}}
 for(int I=0,*J[3];I;I++){*J=I;}
+int fv(){}
+#pragma no_auto_header()

@@ -106,6 +106,7 @@ static int canHaveRegexpAfter(ama::Node* nd) {
 	if ( nd->isSymbol("=") || nd->isSymbol(";") || nd->isSymbol(",") || nd->isSymbol(":") || nd->isSymbol("+") || nd->isSymbol("-") ) { return 1; }
 	return 0;
 }
+static uint8_t g_utf8_bof[3] = {0xef, 0xbb, 0xbf};
 namespace ama {
 	//we rely on zero termination, thus the char*
 	//start with comments_before almost everywhere
@@ -117,7 +118,6 @@ namespace ama {
 		JS_FreeValue(ama::jsctx, ppt);
 		return std::move(ret);
 	}
-	static uint8_t g_utf8_bof[3] = {0xef,0xbb,0xbf};
 	ama::Node* ParseSimplePairing(char const* feed, JSValueConst options) {
 		if (memcmp(feed, g_utf8_bof, 3) == 0) {
 			//UTF-8 BOF marker
@@ -143,7 +143,7 @@ namespace ama {
 				}
 			}
 		}
-		symbol_array--->sortby([] (auto item) -> uint32_t { return (uint32_t(item[0]) << 8) + uint32_t(255u - item.size()); });
+		symbol_array--->sortby([](auto item)  ->uint32_t { return (uint32_t(item[0]) << 8) + uint32_t(255u - item.size()); });
 		if ( symbol_array.size() > 256 ) {
 			fprintf(stderr, "we only support up to 256 symbols\n");
 			symbol_array.resize(256);
@@ -571,7 +571,7 @@ namespace ama {
 						*state_stack.back().p_nd_next = nd;
 						state_stack.back().p_nd_next = &nd->s;
 						state_stack.push_back(
-							ParserState{.nd_parent = nd, .p_nd_next = &nd->c, .indent_level = current_indent_level,.is_shell_arg = is_shell_arg}
+							ParserState{.nd_parent = nd, .p_nd_next = &nd->c, .indent_level = current_indent_level, .is_shell_arg = is_shell_arg}
 						);
 						feed += 1;
 						comment_indent_level = current_indent_level;
