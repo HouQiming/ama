@@ -22,8 +22,12 @@ function BidirTransform(nd_root, is_forward) {
 			if (!nd_ref.s && !nd_stmt.Find(N_REF, 'extern') && !nd_stmt.Find(N_REF, 'struct') && !nd_stmt.Find(N_REF, 'class')) {
 				nd_ref.Insert(POS_AFTER, nScope());
 			}
-		} else {
-			if (nd_ref.s && nd_ref.s.node_class == N_SCOPE && !nd_ref.s.c) {nd_ref.s.Unlink();}
+		} else if (nd_ref.s && nd_ref.s.node_class == N_SCOPE && !nd_ref.s.c) {
+			nd_ref.s.Unlink();
+		} else if (nd_ref.p && nd_ref.p.node_class == N_TYPED_OBJECT && nd_ref.s && !nd_ref.s.c) {
+			let nd_owner = nd_ref.p;
+			nd_ref.Unlink();
+			nd_owner.ReplaceWith(nd_ref);
 		}
 	}
 	for (let nd_scope of nd_root.FindAll(N_SCOPE, null)) {

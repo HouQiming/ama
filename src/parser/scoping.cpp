@@ -249,6 +249,7 @@ namespace ama {
 				for ( ama::Node * ndj: new_children ) {
 					ndi = ndj;
 					comma_children.push_back(ndi);
+					if (ndi->node_class == ama::N_RAW && ndi->c && ndi->LastChild()->isSymbol(",")) {changed = ',';}
 					while ( ndi ) {
 						ama::Node* ndi_next = ndi->s;
 						if ( ndi->isSymbol(",") ) {
