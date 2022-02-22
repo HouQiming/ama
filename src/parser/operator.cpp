@@ -257,8 +257,10 @@ namespace ama {
 						}
 					}
 					ama::Node* nd_value = ama::toSingleNode(ndi_next_next);
-					nd_value->comments_before = ndi_next_next->comments_before;
-					ndi_next_next->comments_before = "";
+					if (nd_value != ndi_next_next) {
+						nd_value->comments_before = ndi_next_next->comments_before;
+						ndi_next_next->comments_before = "";
+					}
 					nd_value->MergeCommentsBefore(ndi_next);
 					ama::Node* nd_tmp = ama::GetPlaceHolder();
 					ama::Node* nd_lhs = nullptr;
@@ -288,7 +290,26 @@ namespace ama {
 					}
 					ndi_next->FreeASTStorage();
 					if ( nd_raw == nd_lhs && nd_raw->c && !nd_raw->c->s && nd_raw->isRawNode(0, 0) ) {
+						nd_lhs = nd_raw->c;
 						ama::UnparseRaw(nd_raw);
+					}
+					//when nd_lhs is N_RAW, rotate out the "type" to make it consistent with multi-var declaration
+					if (nd_lhs->isRawNode(0, 0) && nd_lhs->c && nd_lhs->c->s) {
+						ama::Node* nd_core = nd_lhs->LastChild();
+						nd_core->comments_after = nd_core->comments_after + nd_lhs->comments_after;
+						nd_lhs->comments_after = "";
+						nd_core->Unlink();
+						ama::Node* nd_tmp = ama::GetPlaceHolder();
+						nd_asgn->ReplaceWith(nd_tmp);
+						nd_lhs->ReplaceWith(nd_core);
+						nd_asgn->AdjustIndentLevel(-nd_lhs->indent_level);
+						nd_lhs->Insert(ama::POS_BACK, nd_asgn);
+						nd_tmp->ReplaceWith(nd_lhs);
+						if (nd_after) {
+							ama::UnparseRaw(nd_lhs);
+							assert(nd_asgn->p == nd_raw);
+							ama::DumpASTAsJSON(nd_raw);
+						}
 					}
 					if (nd_after) {
 						assert(nd_asgn->p == nd_raw);

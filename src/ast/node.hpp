@@ -289,6 +289,7 @@ namespace ama {
 	static const uint32_t PARAMLIST_TEMPLATE = 1u;
 	static const uint32_t PARAMLIST_UNWRAPPED = 2u;
 	static const uint32_t SEMICOLON_COMMA = 1u;
+	static const uint32_t DELIMITED_COMMA = 1u;
 	//for Node::indent_level, reserve 1 bit for future use
 	static const intptr_t MAX_INDENT = 63;
 	/////////////////

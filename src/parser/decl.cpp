@@ -667,7 +667,7 @@ namespace ama {
 		//turn params into N_ASSIGNMENT
 		for ( ama::Node * nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
 			for (ama::Node* nd_param = nd_paramlist->node_class == ama::N_CALL_TEMPLATE ? nd_paramlist->c->s : nd_paramlist->c; nd_param; nd_param = nd_param->s) {
-				if ( nd_param->node_class == ama::N_ASSIGNMENT ) { continue; }
+				if ( nd_param->node_class == ama::N_MOV ) { continue; }
 				//if ( nd_param->node_class == ama::N_SYMBOL || (nd_param->node_class == ama::N_RAW && nd_param->c && nd_param->c->node_class == ama::N_SYMBOL) ) {
 				//	//rest args
 				//	continue;
@@ -816,6 +816,24 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_not_variable_name = ama::GetPrioritizedList(options, "keywords_not_variable_name");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
+		//pull types out of comma
+		for ( ama::Node * nd_comma: nd_root->FindAllWithin(0, ama::N_COMMA) ) {
+			//TODO: assignment could have already buried the "type"
+			if (nd_comma->c && nd_comma->c->isRawNode(0, 0) && nd_comma->c->c && nd_comma->c->c->s) {
+				//could be C-like declaration, rotate the "type" out of the comma
+				ama::Node* nd_1st_decl = nd_comma->c;
+				ama::Node* nd_core = nd_1st_decl->LastChild();
+				nd_core->comments_after = nd_core->comments_after + nd_1st_decl->comments_after;
+				nd_1st_decl->comments_after = "";
+				nd_core->Unlink();
+				ama::Node* nd_tmp = ama::GetPlaceHolder();
+				nd_comma->ReplaceWith(nd_tmp);
+				nd_1st_decl->ReplaceWith(nd_core);
+				nd_comma->AdjustIndentLevel(-nd_1st_decl->indent_level);
+				nd_1st_decl->Insert(ama::POS_BACK, nd_comma);
+				nd_tmp->ReplaceWith(nd_1st_decl);
+			}
+		}
 		for ( ama::Node * nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( nd_ref->p->node_class == ama::N_CLASS && nd_ref->p->c->s == nd_ref ) {
 				//class, just declared and nothing else
@@ -829,7 +847,7 @@ namespace ama {
 			}
 			ama::Node* nd_stmt = nd_ref->ParentStatement();
 			ama::Node* nd_asgn = nd_ref;
-			while (nd_asgn && nd_asgn->node_class != ama::N_ASSIGNMENT) {
+			while (nd_asgn && nd_asgn->node_class != ama::N_MOV) {
 				if (nd_asgn->node_class == ama::N_DOT || nd_asgn->node_class == ama::N_ITEM || nd_asgn->node_class == ama::N_CALL) {
 					nd_asgn = nullptr;
 					break;
@@ -838,7 +856,7 @@ namespace ama {
 			}
 			ama::Node* nd_owner = nd_ref->Owner();
 			if ( nd_stmt->p && nd_stmt->p->node_class == ama::N_SCOPE && nd_stmt->p->p && nd_stmt->p->p->node_class == ama::N_SSTMT && nd_stmt->p->p->data == "enum" && 
-			!(nd_stmt->node_class == ama::N_ASSIGNMENT && nd_stmt->c->s->isAncestorOf(nd_ref)) ) {
+			!(nd_stmt->node_class == ama::N_MOV && nd_stmt->c->s->isAncestorOf(nd_ref)) ) {
 				nd_ref->flags |= ama::REF_DECLARED;
 			}
 			if ( nd_asgn && nd_stmt->isAncestorOf(nd_asgn) && nd_asgn->c->isAncestorOf(nd_ref) ) {
@@ -847,9 +865,13 @@ namespace ama {
 					if ( nd_ref == nd_asgn->c ) {
 						if ( nd_asgn->p && (
 							nd_asgn->p->node_class == ama::N_SCOPE && nd_asgn->p->p && nd_asgn->p->p->node_class == ama::N_SSTMT && nd_asgn->p->p->data == "enum" ||
-							nd_asgn->p->node_class == ama::N_PARAMETER_LIST
+							nd_asgn->p->node_class == ama::N_PARAMETER_LIST ||
+							//secondary variables in a multi-variable declaration
+							nd_asgn->p->node_class == ama::N_COMMA && nd_asgn->p == nd_stmt && (
+								nd_asgn->p->c->node_class == ama::N_RAW || nd_asgn->p->c->node_class == ama::N_MOV && nd_asgn->p->c->c->node_class == ama::N_RAW
+							)
 						)) {
-							nd_ref->flags |= ama::REF_DECLARED;
+							nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 						} else {
 							nd_ref->flags |= ama::REF_WRITTEN;
 						}
@@ -918,7 +940,7 @@ namespace ama {
 					ama::Node* nd_core = nd_cdecl;
 					nd_cdecl = nd_cdecl->p;
 					if ( !nd_core->s || nd_core->s->isSymbol(",") || nd_core->s->isSymbol(";") || 
-					(parse_cpp_declaration_initialization && nd_core->s->node_class == ama::N_SCOPE && !(nd_cdecl->p && nd_cdecl->p->node_class == ama::N_ASSIGNMENT)) ) {
+					(parse_cpp_declaration_initialization && nd_core->s->node_class == ama::N_SCOPE && !(nd_cdecl->p && nd_cdecl->p->node_class == ama::N_MOV)) ) {
 						//it could be a declarative raw
 					} else {
 						//don't go to that raw
@@ -933,7 +955,7 @@ namespace ama {
 					is_array_assignment = 1;
 				} else if (  
 				(nd_cdecl->p->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(nd_cdecl->p->data) && nd_cdecl == nd_cdecl->p->c->s) || 
-				nd_cdecl->p->node_class == ama::N_PREFIX) {
+				nd_cdecl->p->node_class == ama::N_PREFIX ) {
 					//it's OK
 				} else {
 					break;
@@ -941,6 +963,7 @@ namespace ama {
 				nd_cdecl = nd_cdecl->p;
 			}
 			if ( nd_cdecl != nd_ref && !(nd_ref->s && nd_ref->s->node_class == ama::N_REF) && !keywords_not_variable_name[nd_ref->data]) {
+				//TODO: dedicated secondary variable test - pull out type first
 				//we found at least one feasible declaration-ish
 				//check parent
 				int is_ok = 0;
@@ -958,7 +981,7 @@ namespace ama {
 				if ( nd_cdecl == nd_stmt ) {
 					//foo in `type foo;` or `type bar,*foo[8];`
 					is_ok = 1;
-				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_ASSIGNMENT && nd_cdecl->p->c == nd_cdecl &&
+				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_MOV && nd_cdecl->p->c == nd_cdecl &&
 				nd_cdecl->p->data.empty() && nd_cdecl->node_class != ama::N_PREFIX &&
 				!is_array_assignment) {
 					//foo in `type foo=bar;` or `type bar,*foo[8],baz=...;`
