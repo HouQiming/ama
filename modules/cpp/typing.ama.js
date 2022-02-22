@@ -178,7 +178,6 @@ typing.LookupSymbol = function(nd_ref, want_all) {
 };
 
 typing.ComputeDeclaredType = function(nd_def) {
-	//TODO: N_COMMA multi-var declaration
 	//COULDDO: non-C++ forms of declaration
 	//COULDDO: handle destructuring and other weird forms
 	if (nd_def.p && nd_def.p.node_class == N_KEYWORD_STATEMENT && nd_def.p.c == nd_def) {

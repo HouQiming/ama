@@ -633,6 +633,12 @@ void* g_ptr = nullptr;
 - Description: Dump the AST (Abstract Syntax Tree).
 
 
+### dump_decl
+
+- Syntax: `require("dump_decl")`
+- Description: Dump detected declarations
+
+
 
 ## Modules
 
