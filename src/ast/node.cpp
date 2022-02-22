@@ -526,7 +526,7 @@ ama::gcstring ama::Node::GetStringValue() {
 	assert(nd_this->node_class == ama::N_STRING);
 	if ( nd_this->node_class != ama::N_STRING || nd_this->data.empty() || (nd_this->flags & ama::LITERAL_PARSED) ) {
 		return nd_this->data;
-	} else if (nd_this->flags&STRING_SHELL_LIKE) {
+	} else if (nd_this->flags & ama::STRING_SHELL_LIKE) {
 		//we need to handle all combinations of ` / $
 		//we could have ``, `$, .$, .`
 		std::span<char> string_body = nd_this->data--->subarray(0, nd_this->data.size() - 1);

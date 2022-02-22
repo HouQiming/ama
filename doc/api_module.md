@@ -127,7 +127,7 @@ After:
 
 ```C++
 namespace ama {
-	struct Node {...};
+	struct Node{...};
 }
 ama::Node* GetChild(ama::Node* nd) {
 	return nd->c;

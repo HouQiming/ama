@@ -190,10 +190,9 @@ namespace JSON {
 			while ( ctx.begin != ctx.end && ctx.begin[0] != '}' ) {
 				ctx.SkipSpace();
 				if ( !ctx.TrySkipName("\"main\"") ) {
-					ctx.SkipField();
-					
-					goto skip_after_name;
-				} else {
+					ctx.SkipField()
+				;
+					goto skip_after_name;} else {
 					{
 						ctx.SkipColon();
 						if ( ctx.error ) {

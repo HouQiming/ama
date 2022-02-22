@@ -127,7 +127,7 @@ Node.ParseClass = function() {
 		nd: this,
 		base_classes: base_classes,
 		properties: properties,
-	}
+	};
 };
 
 function LookupClassInFile(ret, nd_root, nd_name) {

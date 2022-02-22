@@ -125,7 +125,7 @@ omnichecker.CreateTestingCode = function CreateTestingCode(nd_root, options) {
 				let name = nd_def.GetName();
 				nd_func = @(
 					Declare(ctx, @(nString(name)), @(nString(nd_def.GetUniqueTag())));
-					Assign(ctx, ctx[@(nString(name))], {f: [{value: @(nd_func),addr: @(nString(utag))}]}, @(nString(utag)));
+					Assign(ctx, ctx[@(nString(name))], {f: [{value: @(nd_func), addr: @(nString(utag))}]}, @(nString(utag)));
 				);
 			}
 			return nd_func;

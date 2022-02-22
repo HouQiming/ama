@@ -143,7 +143,7 @@ namespace ama {
 				}
 			}
 		}
-		symbol_array--->sortby([](auto item)  ->uint32_t { return (uint32_t(item[0]) << 8) + uint32_t(255u - item.size()); });
+		symbol_array--->sortby([](auto item)->uint32_t{ return (uint32_t(item[0]) << 8) + uint32_t(255u - item.size()); });
 		if ( symbol_array.size() > 256 ) {
 			fprintf(stderr, "we only support up to 256 symbols\n");
 			symbol_array.resize(256);
@@ -451,7 +451,7 @@ namespace ama {
 						feed = ama::SkipChars(feed, cset_number);
 						has_exponent = feed[-intptr_t(1L)] == 'e' || feed[-intptr_t(1L)] == 'E';
 					}
-					if ( (feed[intptr_t(0L)] == '+' || feed[intptr_t(0L)] == '-')&& has_exponent ) {
+					if ( (feed[intptr_t(0L)] == '+' || feed[intptr_t(0L)] == '-') && has_exponent ) {
 						//0.000e+00
 						feed += intptr_t(1L);
 						feed = ama::SkipChars(feed, cset_exponent);

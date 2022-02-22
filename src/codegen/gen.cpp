@@ -67,13 +67,13 @@ namespace ama {
 			case ama::N_STRING:{
 				if ( nd->flags & ama::LITERAL_PARSED ) {
 					if ( nd->flags & ama::STRING_SHELL_LIKE ) {
-						escapeStringBody(this->code, nd->data);
+						ama::escapeStringBody(this->code, nd->data);
 						if ( !(nd->flags & ama::STRING_SHELL_LIKE_END) ) {
 							this->code.push_back('$');
 						}
 					} else if ( nd->flags & ama::STRING_SINGLE_QUOTED ) {
 						this->code.push_back('\'');
-						escapeStringBody(this->code, nd->data);
+						ama::escapeStringBody(this->code, nd->data);
 						this->code.push_back('\'');
 					} else {
 						this->code--->push(JSON::stringify(nd->data));

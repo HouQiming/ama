@@ -295,7 +295,7 @@ int fs::SyncTimestamp(std::span<char> fn_src, std::span<char> fn_tar) {
 	#else
 		std::string fn_srcz = JC::array_cast<std::string>(fn_src);
 		std::string fn_tarz = JC::array_cast<std::string>(fn_tar);
-		struct stat sb;
+		struct stat sb{};
 		if ( stat(fn_srcz.c_str(), &sb) != 0 ) {
 			return 0;
 		}

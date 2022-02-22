@@ -377,7 +377,7 @@ typing.LookupDottedName = function(nd_site, name, nd_class, want_all) {
 		for (let ndi = nd_class; ndi; ndi = ndi.p) {
 			if (ndi.node_class == N_CLASS) {names.push(ndi.GetName());}
 		}
-		for (let nd_scope of typing.LookupClassesByNames(nd_site.Root(), names, {must_be: 'namespace',include_dependency: 1})) {
+		for (let nd_scope of typing.LookupClassesByNames(nd_site.Root(), names, {must_be: 'namespace', include_dependency: 1})) {
 			nd_def = typing.GetDefs(nd_scope).get(name);
 			if (nd_def) {
 				if (want_all) {

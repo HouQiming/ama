@@ -15,5 +15,5 @@ module.exports = function ParseCFor(nd_for) {
 		init: raw_parts[0],
 		cond: raw_parts[2],
 		iter: raw_parts[4],
-	}
+	};
 };

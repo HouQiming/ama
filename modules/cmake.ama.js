@@ -17,7 +17,7 @@ let cmake_options = {
 	struct_can_be_type_prefix: 0,
 	keywords_scoped_statement: '',
 	//////////
-	tab_indent: 2,//2 for auto
+	tab_indent: 2, //2 for auto
 	auto_space: 0,
 };
 
