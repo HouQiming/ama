@@ -14,3 +14,9 @@ for(
 for(int I=0,*J[3];I;I++){*J=I;}
 int fv(){}
 #pragma no_auto_header()
+lbl:
+//some comment
+ama::Node* nd={
+NodeFilterDesc{"ParseAssignment", NULL,ama::ParseAssignment},
+NodeFilterDesc{"ParseCommaExpr", ama::ParseCommaExpr,NULL},
+};

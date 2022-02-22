@@ -170,8 +170,9 @@ function Translate(nd_root, options) {
 				nd_ret = nd_ret.dot(names.pop()).setFlags(DOT_CLASS);
 			};
 			nd_ref.ReplaceWith(nd_ret);
-		} else if (nd_owner.node_class == N_FUNCTION && nd_owner.GetName()) {
+		} else if (nd_owner.node_class == N_FUNCTION && nd_owner.GetName() && !nd_owner.c.s.Find(N_REF, nd_ref.data)) {
 			//auto-param: check for the name at all call sites
+			//if it's found in the prototype, assume it's a type
 			let name = nd_owner.GetName();
 			let call_sites = nd_root.FindAll(N_CALL, name);
 			let all_found = 1;

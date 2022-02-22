@@ -45,7 +45,7 @@ module.exports = function(nd_root) {
 					ndi.node_class === N_PREFIX
 				)) {
 					ndi=ndi.toSingleNode();
-					new_children[i] = nSemicolon(ndi).setIndent(ndi.indent_level);
+					new_children[i] = nDelimited(ndi).setIndent(ndi.indent_level);
 					ndi.indent_level=0;
 				}
 			}
@@ -57,7 +57,7 @@ module.exports = function(nd_root) {
 		if(nd.p&&nd.p.node_class===N_SCOPED_STATEMENT&&nd.p.data==='enum'){continue;}
 		let found_semic=0;
 		for(let ndi=nd.c;ndi;ndi=ndi.s){
-			if(ndi.node_class===N_SEMICOLON){
+			if(ndi.node_class===N_DELIMITED){
 				found_semic=1;
 				break;
 			}
@@ -95,14 +95,18 @@ module.exports = function(nd_root) {
 					if (ndj.comments_after) {
 						all_comments.push(ndj.comments_after);
 					}
-					if (ndj.node_class == N_SCOPE || ndj.node_class == N_CALL || ndj.node_class == N_CALL_TEMPLATE || ndj.node_class == N_SCOPED_STATEMENT || !ndj.c) {break;}
+					if (ndj.node_class == N_SCOPE || ndj.node_class == N_OBJECT || ndj.node_class == N_ARRAY || 
+					ndj.node_class == N_CALL || ndj.node_class == N_CALL_TEMPLATE || ndj.node_class == N_SCOPED_STATEMENT ||
+					ndj.node_class == N_TYPED_OBJECT || !ndj.c) {break;}
 				}
 				if (all_comments.length > 0) {
 					for (let ndj = ndi; ; ndj = ndj.LastChild()) {
 						if (ndj.comments_after) {
 							ndj.comments_after = '';
 						}
-						if (ndj.node_class == N_SCOPE || ndj.node_class == N_CALL || ndj.node_class == N_CALL_TEMPLATE || ndj.node_class == N_SCOPED_STATEMENT || !ndj.c) {break;}
+						if (ndj.node_class == N_SCOPE || ndj.node_class == N_OBJECT || ndj.node_class == N_ARRAY || 
+						ndj.node_class == N_CALL || ndj.node_class == N_CALL_TEMPLATE || ndj.node_class == N_SCOPED_STATEMENT ||
+						ndj.node_class == N_TYPED_OBJECT || !ndj.c) {break;}
 					}
 					ndi.comments_after = all_comments.reverse().join('');
 				}

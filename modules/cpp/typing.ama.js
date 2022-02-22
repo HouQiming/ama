@@ -230,8 +230,10 @@ typing.ComputeDeclaredType = function(nd_def) {
 				type = type_new;
 			} else if (nd_modifier.node_class == N_PREFIX) {
 				//*& and stuff
+				if (type.node_class == N_CLASS) {type = typing.AccessTypeAt(type, nd_def);}
 				type = nPostfix(type, nd_modifier.data);
 			} else if (nd_modifier.node_class == N_POSTFIX) {
+				if (type.node_class == N_CLASS) {type = typing.AccessTypeAt(type, nd_def);}
 				type = nPostfix(type, nd_modifier.data);
 			}
 		}

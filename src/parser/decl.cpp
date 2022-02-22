@@ -794,11 +794,15 @@ namespace ama {
 		return nd_root;
 	}
 	static bool TryTypeRotation(ama::Node* ndi) {
-		if ((ndi->node_class == ama::N_COMMA || ndi->node_class == ama::N_MOV) && ndi->c && ndi->c->isRawNode(0, 0) && ndi->c->c && ndi->c->c->s) {
+		if ((ndi->node_class == ama::N_COMMA || ndi->node_class == ama::N_MOV && ndi->p && ndi->p->node_class != ama::N_PARAMETER_LIST) && 
+		ndi->c && ndi->c->isRawNode(0, 0) && ndi->c->c && ndi->c->c->s) {
 			//could be C-like declaration, rotate the "type" out of the comma
 			ama::Node* nd_1st_decl = ndi->c;
 			ama::Node* nd_var = nd_1st_decl->LastChild();
 			nd_var->comments_after = nd_var->comments_after + nd_1st_decl->comments_after;
+			ama::gcstring final_comments_before = ndi->comments_before + nd_1st_decl->comments_before;
+			nd_1st_decl->comments_before = "";
+			ndi->comments_before = "";
 			nd_1st_decl->comments_after = "";
 			nd_var->Unlink();
 			int32_t indent_ndi = ndi->indent_level;
@@ -813,6 +817,7 @@ namespace ama {
 			nd_var->indent_level = 0;
 			nd_1st_decl->indent_level = ama::ClampIndentLevel(indent_ndi + indent_raw);
 			ndi->indent_level = indent_var;
+			nd_1st_decl->comments_before = final_comments_before;
 			return true;
 		}
 		return false;
@@ -1029,7 +1034,7 @@ namespace ama {
 				if ( nd_cdecl == nd_stmt && got_type) {
 					//foo in `type foo;` or `type bar,*foo[8];`
 					is_ok = 1;
-				} else if ( ama::isUnderParameter(nd_cdecl) && got_type) {
+				} else if ( ama::isUnderParameter(nd_cdecl)) {
 					//foo in `type foo;` or `type bar,*foo[8];`
 					is_ok = 1;
 				} else if ( nd_cdecl->p && nd_cdecl->p->p && nd_cdecl->p->p->c == nd_cdecl->p &&

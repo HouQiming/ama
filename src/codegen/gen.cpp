@@ -284,7 +284,7 @@ namespace ama {
 				//nothing
 				break;
 			}
-			case ama::N_SEMICOLON:{
+			case ama::N_DELIMITED:{
 				this->Generate(nd->c);
 				this->code--->push((nd->flags & ama::SEMICOLON_COMMA) ? ',' : ';');
 				break;
@@ -309,7 +309,7 @@ namespace ama {
 				this->code--->push('[');
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					this->Generate(ndi);
-					if ( ndi->s && (ndi->node_class == ama::N_SEMICOLON || ndi->isSymbol(",") || ndi->isSymbol(";")) ) {
+					if ( ndi->s && (ndi->node_class == ama::N_DELIMITED || ndi->isSymbol(",") || ndi->isSymbol(";")) ) {
 						this->GenerateSpaceBetween(ndi, ndi->s);
 					}
 				}
@@ -320,7 +320,7 @@ namespace ama {
 				this->code--->push('{');
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					this->Generate(ndi);
-					if ( ndi->s && (ndi->node_class == ama::N_SEMICOLON || ndi->isSymbol(",") || ndi->isSymbol(";")) ) {
+					if ( ndi->s && (ndi->node_class == ama::N_DELIMITED || ndi->isSymbol(",") || ndi->isSymbol(";")) ) {
 						this->GenerateSpaceBetween(ndi, ndi->s);
 					}
 				}

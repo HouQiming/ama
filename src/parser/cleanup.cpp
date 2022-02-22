@@ -164,14 +164,15 @@ namespace ama {
 				for (ama::Node* ndj = ndi->c; ndj; ndj = ndj->s) {
 					while ( ndj->s && ndj->s->isSymbol(symbol) ) {
 						ama::Node* nd_semicolon = ndj->s;
+						ndj->MergeCommentsAfter(nd_semicolon);
 						ndj->Unlink();
 						nd_semicolon->flags = symbol == "," ? ama::SEMICOLON_COMMA : 0;
 						nd_semicolon->node_class = ama::N_DELIMITED;
 						nd_semicolon->data = "";
 						nd_semicolon->indent_level = ndj->indent_level;
 						nd_semicolon->Insert(ama::POS_FRONT, ndj);
+						std::swap(nd_semicolon->comments_before, ndj->comments_before);
 						ndj->indent_level = 0;
-						ndj->MergeCommentsAfter(nd_semicolon);
 						ndj = nd_semicolon;
 					}
 				}
@@ -190,7 +191,8 @@ namespace ama {
 				if (ndi->p->node_class == ama::N_CALL || ndi->p->node_class == ama::N_CALL_TEMPLATE ||
 				ndi->p->node_class == ama::N_CALL_CUDA_KERNEL || ndi->p->node_class == ama::N_ITEM ||
 				ndi->p->node_class == ama::N_DOT || ndi->p->node_class == ama::N_ARRAY ||
-				ndi->p->node_class == ama::N_OBJECT || ndi->p->node_class == ama::N_MOV) {
+				ndi->p->node_class == ama::N_OBJECT || ndi->p->node_class == ama::N_MOV ||
+				ndi->p->isStatement("return")) {
 					ndi->node_class = ama::N_OBJECT;
 				}
 			}
