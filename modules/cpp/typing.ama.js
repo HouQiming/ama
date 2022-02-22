@@ -34,6 +34,7 @@ typing.options = {
 		'__attribute__', '__declspec', '__cdecl', '__stdcall', '__fastcall',
 		'extern', 'function', 'inline', '__inline', 'def', 'fn'
 	]),
+	must_be_type_prefixes: new Set(['const', 'volatile', 'unsigned', 'signed', 'long', 'short']),
 	non_type_postfixes: new Set(['++', '--']),
 	nulls: new Set(['NULL', 'nullptr']),
 	ComputeNumberType: function(nd) {
@@ -505,9 +506,13 @@ typing.ComputeType = function(nd_expr) {
 	case N_PREFIX: {
 		//COULDDO: try to find overloaded operators
 		//here we cheat and return the operand
-		type = typing.ComputeType(nd_expr.c);
-		if (nd_expr.data == '&') {
-			type = typing.PointerType(type);
+		if (typing.options.must_be_type_prefixes.has(nd_expr.data)) {
+			type = nd_expr;
+		} else {
+			type = typing.ComputeType(nd_expr.c);
+			if (nd_expr.data == '&') {
+				type = typing.PointerType(type);
+			}
 		}
 		break;
 	}

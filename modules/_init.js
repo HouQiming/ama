@@ -380,6 +380,7 @@ __global.default_options = {
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
 	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template import package',
 	keywords_operator_escape: 'case operator',
+	keywords_numerical_qualifier: 'unsigned signed long short',
 	///////////
 	//codegen
 	tab_width: 4,

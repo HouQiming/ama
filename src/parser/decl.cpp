@@ -822,11 +822,32 @@ namespace ama {
 		}
 		return false;
 	}
-	static void FixTypeSuffixFromInnerRef(std::unordered_map<ama::gcstring, int> const& ambiguous_type_suffix, ama::Node* nd_ref, bool prefix_associativity) {
+	static void FixTypeSuffixFromInnerRef(std::unordered_map<ama::gcstring, int> const& ambiguous_type_suffix, std::unordered_map<ama::gcstring, int> const& keywords_numerical_qualifier, ama::Node* nd_ref, bool prefix_associativity) {
 		while ( (nd_ref->p->node_class == ama::N_ITEM || nd_ref->p->node_class == ama::N_CALL) && nd_ref == nd_ref->p->c ) {
 			nd_ref = nd_ref->p;
 		}
-		if ( nd_ref->p->node_class == ama::N_BINOP && nd_ref->p->c->s == nd_ref && ambiguous_type_suffix--->get(nd_ref->p->data) ) {
+		if (nd_ref->p->node_class == ama::N_PREFIX && keywords_numerical_qualifier--->get(nd_ref->p->data, 0)) {
+			//it's unsigned / signed / long / short *without* a core type
+			int32_t ref_indent = 0;
+			ama::Node* nd_outer = nd_ref;
+			while ( nd_outer->p->node_class == ama::N_PREFIX || nd_outer->p->node_class == ama::N_POSTFIX ) {
+				ref_indent += int32_t(nd_outer->indent_level);
+				nd_outer = nd_outer->p;
+			}
+			ama::gcstring ref_comments_before = nd_ref->comments_before;
+			ama::gcstring ref_comments_after = nd_ref->comments_after;
+			nd_ref->comments_before = "";
+			nd_ref->comments_after = "";
+			nd_ref->p->node_class = ama::N_REF;
+			nd_ref->p->flags = 0;
+			nd_ref->Unlink();
+			ama::Node* nd_raw = nd_outer->ReplaceWith(ama::nRaw(nd_ref)->setCommentsAfter(ref_comments_after));
+			nd_ref->Insert(ama::POS_BEFORE, nd_outer);
+			nd_raw->comments_before = nd_raw->comments_before + nd_outer->comments_before;
+			nd_ref->comments_before = ref_comments_before;
+			nd_ref->indent_level = ama::ClampIndentLevel(ref_indent);
+			nd_outer->comments_before = "";
+		} else if ( nd_ref->p->node_class == ama::N_BINOP && nd_ref->p->c->s == nd_ref && ambiguous_type_suffix--->get(nd_ref->p->data) ) {
 			ama::UnparseBinop(nd_ref->p);
 		}
 		while ( nd_ref->Prev() && nd_ref->Prev()->node_class == ama::N_SYMBOL && ambiguous_type_suffix--->get(nd_ref->Prev()->data) && nd_ref->Prev()->Prev() ) {
@@ -859,6 +880,7 @@ namespace ama {
 		//find declaratives and set REF_DECLARED
 		//also find writes and set REF_WRITTEN
 		std::unordered_map<ama::gcstring, int> ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
+		std::unordered_map<ama::gcstring, int> keywords_numerical_qualifier = ama::GetPrioritizedList(options, "keywords_numerical_qualifier");
 		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		std::unordered_map<ama::gcstring, int> keywords_function = ama::GetPrioritizedList(options, "keywords_function");
 		std::unordered_map<ama::gcstring, int> keywords_not_variable_name = ama::GetPrioritizedList(options, "keywords_not_variable_name");
@@ -909,7 +931,7 @@ namespace ama {
 					}
 					if ( nd_asgn->data == ":" ) {
 						//Go := operator
-						FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref, true);
+						FixTypeSuffixFromInnerRef(ambiguous_type_suffix, keywords_numerical_qualifier, nd_ref, true);
 						nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 					} else {
 						//destructuring case: `[foo]=...`
@@ -928,7 +950,7 @@ namespace ama {
 							nd_destructuring = nd_destructuring->p;
 						}
 						if ( destructured ) {
-							FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref, true);
+							FixTypeSuffixFromInnerRef(ambiguous_type_suffix, keywords_numerical_qualifier, nd_ref, true);
 							nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 						}
 					}
@@ -997,7 +1019,7 @@ namespace ama {
 					if (!nd_to_fix_core) {
 						nd_to_fix_core = nd_cdecl;
 					}
-					if (nd_cdecl->p->node_class != ama::N_PREFIX) {
+					if (nd_cdecl->p->node_class != ama::N_PREFIX || nd_cdecl->node_class == ama::N_REF && keywords_numerical_qualifier--->get(nd_cdecl->p->data, 0)) {
 						got_type |= 1;
 					}
 				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->isRawNode('(', ')') && !(
@@ -1050,7 +1072,7 @@ namespace ama {
 				}
 				if ( is_ok ) {
 					if (!nd_to_fix_core) {nd_to_fix_core = nd_ref;}
-					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_to_fix_core, true);
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, keywords_numerical_qualifier, nd_to_fix_core, true);
 					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 				}
 			}
@@ -1108,7 +1130,7 @@ namespace ama {
 					ndj = ndj->c->s;
 				}
 				if ( ndj->node_class == ama::N_REF || ndj->node_class == ama::N_DOT ) {
-					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, ndj, true);
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, keywords_numerical_qualifier, ndj, true);
 					nd_func->data = ndj->data;
 					found = 1;
 				}
