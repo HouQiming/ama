@@ -11,7 +11,7 @@ function BidirTransform(nd_root, is_forward) {
 		if (!(nd_owner.node_class == N_CLASS && nd_owner.data == 'namespace' || nd_owner.node_class == N_FILE)) {
 			continue;
 		}
-		if (!(nd_func.c.node_class == N_RAW && nd_func.c.c && nd_func.c.LastChild().node_class == N_REF)) {
+		if (!(nd_func.c.node_class == N_RAW && nd_func.c.c && nd_func.c.FindAllDef().length)) {
 			//don't do the static magic on method implementations
 			continue;
 		}
