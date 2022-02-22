@@ -229,7 +229,8 @@ typing.ComputeDeclaredType = function(nd_def) {
 				type_new.c.ReplaceWith(type);
 				type = type_new;
 			} else if (nd_modifier.node_class == N_PREFIX) {
-				type = nPrefix(nd_modifier.data, type);
+				//*& and stuff
+				type = nPostfix(type, nd_modifier.data);
 			} else if (nd_modifier.node_class == N_POSTFIX) {
 				type = nPostfix(type, nd_modifier.data);
 			}

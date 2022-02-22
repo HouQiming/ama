@@ -664,7 +664,7 @@ namespace ama {
 		}
 		/////////
 		//don't set REF_WRITTEN for function / class names: it's not profitable to treat them as "written" in our current AST formulation
-		//turn params into N_ASSIGNMENT
+		//turn params into N_MOV
 		for ( ama::Node * nd_paramlist: nd_root->FindAllWithin(0, ama::N_PARAMETER_LIST)--->concat(nd_root->FindAllWithin(0, ama::N_CALL_TEMPLATE, "template")) ) {
 			for (ama::Node* nd_param = nd_paramlist->node_class == ama::N_CALL_TEMPLATE ? nd_paramlist->c->s : nd_paramlist->c; nd_param; nd_param = nd_param->s) {
 				if ( nd_param->node_class == ama::N_MOV ) { continue; }
@@ -934,15 +934,16 @@ namespace ama {
 			//C/C++ `type foo, *foo[bar], foo=bar, foo(bar), foo{bar,baz};`
 			//C++/JS LHS {} destructuring
 			ama::Node* nd_cdecl = nd_ref;
+			ama::Node* nd_to_fix_core = nullptr;
 			int32_t is_array_assignment = 0;
 			int32_t got_type = 0;
 			while ( nd_cdecl && nd_cdecl != nd_stmt ) {
-				if ( nd_cdecl->p->node_class == ama::N_RAW ) {
+				if ( nd_cdecl->p->isRawNode(0, 0) ) {
 					ama::Node* nd_core = nd_cdecl;
 					nd_cdecl = nd_cdecl->p;
 					if ( !nd_core->s || nd_core->s->isSymbol(",") || nd_core->s->isSymbol(";")) {
 						//it could be a declarative raw
-						got_type = (nd_cdecl->c != nd_core);
+						got_type |= (nd_cdecl->c != nd_core);
 					} else {
 						//don't go to that raw
 						nd_cdecl = nd_core;
@@ -960,9 +961,16 @@ namespace ama {
 				nd_cdecl->p->node_class == ama::N_PREFIX) ) {
 					//foo* bar
 					//*bar
-				} else if (nd_cdecl->p->node_class == ama::N_TYPED_OBJECT) {
+					//the mis-parsed part counts as type
+					if (!nd_to_fix_core) {
+						nd_to_fix_core = nd_cdecl;
+					}
+					got_type |= 1;
+				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->isRawNode('(', ')')) {
+					//(*foo)[bar]
+				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->node_class == ama::N_TYPED_OBJECT) {
 					//foo{bar}
-				} else if (nd_cdecl->p->node_class == ama::N_ASSIGNMENT) {
+				} else if (nd_cdecl->p->node_class == ama::N_MOV) {
 					//foo=bar
 				} else if (nd_cdecl->p->node_class == ama::N_COMMA && nd_cdecl->p->p && nd_cdecl->p->p->node_class == ama::N_RAW) {
 					//the last multi-var comma layer
@@ -997,7 +1005,8 @@ namespace ama {
 					}
 				}
 				if ( is_ok ) {
-					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_ref);
+					if (!nd_to_fix_core) {nd_to_fix_core = nd_ref;}
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, nd_to_fix_core);
 					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 				}
 			}
