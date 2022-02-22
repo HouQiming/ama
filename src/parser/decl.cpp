@@ -818,20 +818,25 @@ namespace ama {
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
 		//pull types out of comma
 		for ( ama::Node * nd_comma: nd_root->FindAllWithin(0, ama::N_COMMA) ) {
-			//TODO: assignment could have already buried the "type"
 			if (nd_comma->c && nd_comma->c->isRawNode(0, 0) && nd_comma->c->c && nd_comma->c->c->s) {
 				//could be C-like declaration, rotate the "type" out of the comma
 				ama::Node* nd_1st_decl = nd_comma->c;
-				ama::Node* nd_core = nd_1st_decl->LastChild();
-				nd_core->comments_after = nd_core->comments_after + nd_1st_decl->comments_after;
+				ama::Node* nd_var = nd_1st_decl->LastChild();
+				nd_var->comments_after = nd_var->comments_after + nd_1st_decl->comments_after;
 				nd_1st_decl->comments_after = "";
-				nd_core->Unlink();
+				nd_var->Unlink();
+				int32_t indent_comma = nd_comma->indent_level;
+				int32_t indent_var = nd_var->indent_level;
+				int32_t indent_raw = nd_1st_decl->indent_level;
 				ama::Node* nd_tmp = ama::GetPlaceHolder();
 				nd_comma->ReplaceWith(nd_tmp);
-				nd_1st_decl->ReplaceWith(nd_core);
+				nd_1st_decl->ReplaceWith(nd_var);
 				nd_comma->AdjustIndentLevel(-nd_1st_decl->indent_level);
 				nd_1st_decl->Insert(ama::POS_BACK, nd_comma);
 				nd_tmp->ReplaceWith(nd_1st_decl);
+				nd_var->indent_level = 0;
+				nd_1st_decl->indent_level = ama::ClampIndentLevel(indent_comma + indent_raw);
+				nd_comma->indent_level = indent_var;
 			}
 		}
 		for ( ama::Node * nd_ref: nd_root->FindAllWithin(0, ama::N_REF) ) {

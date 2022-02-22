@@ -60,15 +60,16 @@ namespace ama {
 			nd_true->MergeCommentsBefore(nd_qmark);
 			nd_true->MergeCommentsAfter(nd_colon);
 			nd_false->MergeCommentsBefore(nd_colon);
-			if (nd_cond->node_class == ama::N_MOV) {
-				//priority reversal
-				ama::Node* nd_asgn = nd_cond;
-				nd_cond = nd_asgn->c->BreakSibling();
-				nd_asgn->Insert(ama::POS_BACK, ama::nConditional(nd_cond, nd_true, nd_false));
-				nd_ret = nd_asgn;
-			} else {
-				nd_ret = ama::nConditional(nd_cond, nd_true, nd_false);
-			}
+			//if (nd_cond->node_class == ama::N_MOV) {
+			//	//priority reversal
+			//	ama::Node* nd_asgn = nd_cond;
+			//	nd_cond = nd_asgn->c->BreakSibling();
+			//	nd_asgn->Insert(ama::POS_BACK, ama::nConditional(nd_cond, nd_true, nd_false));
+			//	nd_ret = nd_asgn;
+			//} else {
+			//	nd_ret = ama::nConditional(nd_cond, nd_true, nd_false);
+			//}
+			nd_ret = ama::nConditional(nd_cond, nd_true, nd_false);
 			nd_qmark->p = nullptr; nd_qmark->FreeASTStorage();
 			nd_colon->p = nullptr; nd_colon->FreeASTStorage();
 		} else {
@@ -248,9 +249,23 @@ namespace ama {
 					ndi->MergeCommentsAfter(ndi_next);
 					ndi_next->Unlink();
 					ama::Node* nd_after = nullptr;
-					//this will break at '?': fix in ParseColon
 					for (ama::Node* ndj = ndi_next_next->s; ndj; ndj = ndj->s) {
 						if (ndj->node_class == ama::N_SYMBOL && lower_than_assignment_operators--->get(ndj->data)) {
+							if (ndj->data == "?") {
+								//skip next :
+								intptr_t c_cond_level = 1;
+								ndj = ndj->s;
+								while (ndj) {
+									if (ndj->isSymbol(":")) {
+										c_cond_level -= 1;
+										if (c_cond_level <= 0) {break;}
+									} else if (ndj->isSymbol("?")) {
+										c_cond_level += 1;
+									}
+									ndj = ndj->s;
+								}
+								continue;
+							}
 							//must be non-NULL: ndj starts at ndi_next_next->s
 							nd_after = ndj->Prev()->BreakSibling();
 							break;
@@ -258,7 +273,7 @@ namespace ama {
 					}
 					ama::Node* nd_value = ama::toSingleNode(ndi_next_next);
 					if (nd_value != ndi_next_next) {
-						nd_value->comments_before = ndi_next_next->comments_before;
+						nd_value->comments_before = nd_value->comments_before + ndi_next_next->comments_before;
 						ndi_next_next->comments_before = "";
 					}
 					nd_value->MergeCommentsBefore(ndi_next);
@@ -295,20 +310,26 @@ namespace ama {
 					}
 					//when nd_lhs is N_RAW, rotate out the "type" to make it consistent with multi-var declaration
 					if (nd_lhs->isRawNode(0, 0) && nd_lhs->c && nd_lhs->c->s) {
-						ama::Node* nd_core = nd_lhs->LastChild();
-						nd_core->comments_after = nd_core->comments_after + nd_lhs->comments_after;
+						ama::Node* nd_var = nd_lhs->LastChild();
+						nd_var->comments_after = nd_var->comments_after + nd_lhs->comments_after;
 						nd_lhs->comments_after = "";
-						nd_core->Unlink();
+						nd_var->Unlink();
+						int32_t indent_asgn = nd_asgn->indent_level;
+						int32_t indent_var = nd_var->indent_level;
+						int32_t indent_raw = nd_lhs->indent_level;
 						ama::Node* nd_tmp = ama::GetPlaceHolder();
 						nd_asgn->ReplaceWith(nd_tmp);
-						nd_lhs->ReplaceWith(nd_core);
-						nd_asgn->AdjustIndentLevel(-nd_lhs->indent_level);
+						nd_lhs->ReplaceWith(nd_var);
 						nd_lhs->Insert(ama::POS_BACK, nd_asgn);
 						nd_tmp->ReplaceWith(nd_lhs);
+						nd_asgn->comments_before = nd_asgn->comments_before + nd_var->comments_before;
+						nd_var->comments_before = "";
+						nd_var->indent_level = 0;
+						nd_lhs->indent_level = ama::ClampIndentLevel(indent_asgn + indent_raw);
+						nd_asgn->indent_level = indent_var;
 						if (nd_after) {
 							ama::UnparseRaw(nd_lhs);
 							assert(nd_asgn->p == nd_raw);
-							ama::DumpASTAsJSON(nd_raw);
 						}
 					}
 					if (nd_after) {

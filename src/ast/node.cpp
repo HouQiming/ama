@@ -128,8 +128,20 @@ namespace ama {
 	}
 	ama::Node* UnparseRaw(ama::Node* nd_raw) {
 		assert(nd_raw->isRawNode(0, 0));
-		ama::Node* nd_ret = nd_raw->ReplaceWith(nd_raw->c);
-		nd_raw->c = nullptr;
+		if (nd_raw->c) {
+			nd_raw->c->comments_before = nd_raw->comments_before + nd_raw->c->comments_before;
+			nd_raw->LastChild()->comments_after = nd_raw->LastChild()->comments_after + nd_raw->comments_after;
+			nd_raw->comments_before = "";
+			nd_raw->comments_after = "";
+		}
+		ama::Node* nd_ret = nd_raw->BreakChild();
+		for (ama::Node* ndi = nd_ret; ndi; ndi = ndi->s) {
+			ndi->AdjustIndentLevel(nd_raw->indent_level);
+		}
+		if (nd_ret) {
+			nd_raw->Insert(ama::POS_AFTER, nd_ret);
+		}
+		nd_raw->Unlink();
 		nd_raw->FreeASTStorage();
 		return nd_ret;
 	}
