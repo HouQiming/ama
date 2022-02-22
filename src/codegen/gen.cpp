@@ -300,7 +300,9 @@ namespace ama {
 					this->Generate(ndi);
 					if ( ndi->s ) {
 						this->code.push_back(',');
-						this->GenerateSpaceBefore(ndi->s);
+						if (ndi->s->node_class != ama::N_AIR) {
+							this->GenerateSpaceBefore(ndi->s);
+						}
 					}
 				}
 				break;

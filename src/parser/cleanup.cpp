@@ -183,9 +183,12 @@ namespace ama {
 			if ( ndi->isRawNode('(', ')') && ndi->c && !ndi->c->s ) {
 				ndi->node_class = ama::N_PAREN;
 				ndi->flags = 0;
-			} else if ( ndi->isRawNode(0, 0) && ndi->c && ndi->LastChild()->isSymbol(";") ) {
-				ndi->LastChild()->Unlink();
-				ndi->ReplaceWith(ama::CreateNode(ama::N_DELIMITED, ama::toSingleNode(ndi->c)));
+			} else if ( ndi->isRawNode(0, 0) && ndi->c && (ndi->LastChild()->isSymbol(";") || ndi->LastChild()->isSymbol(",")) ) {
+				ama::Node* nd_sym = ndi->LastChild();
+				nd_sym->Unlink();
+				ama::Node* nd_body = ama::toSingleNode(ndi->BreakChild());
+				nd_body->MergeCommentsAfter(nd_sym);
+				ndi = ndi->ReplaceWith(ama::CreateNode(ama::N_DELIMITED, nd_body)->setFlags(nd_sym->data == "," ? ama::DELIMITED_COMMA : 0)->setCommentsAfter(nd_sym->comments_after));
 			}
 			/////////////////
 			if (ndi->node_class == ama::N_SCOPE && !(ndi->flags & ama::SCOPE_FROM_INDENT) && (!ndi->c || ndi->c->node_class != ama::N_DELIMITED && !ndi->c->s) && ndi->p) {

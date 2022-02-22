@@ -57,7 +57,7 @@ module.exports = function(nd_root) {
 		if(nd.p&&nd.p.node_class===N_SCOPED_STATEMENT&&nd.p.data==='enum'){continue;}
 		let found_semic=0;
 		for(let ndi=nd.c;ndi;ndi=ndi.s){
-			if(ndi.node_class===N_DELIMITED){
+			if(ndi.node_class===N_DELIMITED&&!ndi.flags){
 				found_semic=1;
 				break;
 			}

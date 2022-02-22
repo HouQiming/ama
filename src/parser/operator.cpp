@@ -13,6 +13,10 @@ namespace ama {
 			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
 				again:
 				if (ndi->isSymbol(",")) {
+					if (!comma_children.size() && !ndi->s) {
+						//trailing ',', ignore
+						continue;
+					}
 					ama::Node* nd_next = ndi->BreakSibling();
 					if (!nd_next) {nd_next = ama::nAir();}
 					ndi->Unlink();
