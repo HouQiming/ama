@@ -319,15 +319,12 @@ jsism.EnableJSON = function(nd_root) {
 			}
 			if (body.length) {
 				body.push(@(
-					buf.push_back(',');
-				));
+					buf.push_back(',');));
 			}
 			body.push(@(
-				buf.append(@(nString(JSON.stringify(ppt.name) + ':')));
-			));
+				buf.append(@(nString(JSON.stringify(ppt.name) + ':')));));
 			body.push(@(
-				JSON::stringifyTo(buf, @(nRef('a').dot(ppt.name)));
-			));
+				JSON::stringifyTo(buf, @(nRef('a').dot(ppt.name)));));
 		}
 		nd_generated.Find(N_REF, '__INSERT_HERE').ParentStatement().ReplaceWith(nScope.apply(null, body).c);
 		gentag.UpdateGenTagContent(match.gentag, nd_generated);
