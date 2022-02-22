@@ -66,14 +66,14 @@ __global.default_options = {
 	//binary operators, each \n denotes a change of priority level, it must be followed by a ' '
 	//the 'of' operator is a hack to improve JS for-of parsing
 	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in of instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
-	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short',
+	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short struct union',
 	postfix_operators: 'const volatile ++ --',
 	lower_than_assignment_operators: '? : , ;',
 	cv_qualifiers: 'const volatile',
 	//the JS `void` is too common in C/C++ to be treated as an operator by default
 	named_operators: 'typeof delete sizeof await co_await new in of instanceof as const volatile',
 	//unlike generic named_operators, c_type_prefix_operators only make sense when used before another identifier
-	c_type_prefix_operators: 'unsigned signed long short',
+	c_type_prefix_operators: 'unsigned signed long short struct union',
 	ambiguous_type_suffix: '* ** ^ & &&',
 	///////////
 	keywords_class: 'class struct union namespace interface impl trait',

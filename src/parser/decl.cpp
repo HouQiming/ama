@@ -189,6 +189,8 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_after_class_name = ama::GetPrioritizedList(options, "keywords_after_class_name");
 		std::unordered_map<ama::gcstring, int> keywords_after_prototype = ama::GetPrioritizedList(options, "keywords_after_prototype");
 		std::unordered_map<ama::gcstring, int> keywords_not_a_function = ama::GetPrioritizedList(options, "keywords_not_a_function");
+		std::unordered_map<ama::gcstring, int> c_type_prefix_operators = ama::GetPrioritizedList(options, "c_type_prefix_operators");
+		std::unordered_map<ama::gcstring, int> ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
 		int32_t parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_forward_declarations"), 1);
 		int32_t parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp11_lambda"), 1);
 		int32_t struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "struct_can_be_type_prefix"), 1);
@@ -220,6 +222,7 @@ namespace ama {
 			int is_elseif = 0;
 			int after_qmark = 0;
 			int after_colon = 0;
+			int kw_class_could_be_type_prefix = 0;
 			while ( ndi ) {
 				ama::Node* ndi_next = ndi->s;
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && ndi == nd_keyword->s && 
@@ -245,6 +248,7 @@ namespace ama {
 						if ( keywords_class--->get(name) ) {
 							nd_keyword = ndi;
 							kw_mode = KW_CLASS;
+							kw_class_could_be_type_prefix = 0;
 							continue;
 						} else if ( keywords_extension_clause--->get(name) ) {
 							if (name == "while" && !(nd_last_scoped_stmt && nd_last_scoped_stmt->data == "do") && !(nd_keyword && nd_keyword->data == "do")) {
@@ -324,6 +328,18 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_NONE;
 					nd_keyword = nullptr;
+				} else if (struct_can_be_type_prefix && kw_mode == KW_CLASS && ndi->node_class == ama::N_SYMBOL && ambiguous_type_suffix--->get(ndi->data) && c_type_prefix_operators--->get(nd_keyword->data)) {
+					//struct / union as prefix operator: `struct foo*`
+					//nd_prototype_start = ndi;
+					//kw_mode = KW_NONE;
+					//nd_keyword = NULL;
+					kw_class_could_be_type_prefix = 1;
+				} else if (struct_can_be_type_prefix && kw_mode == KW_CLASS && ndi != nd_keyword && ndi->node_class == ama::N_REF && ndi->s && ndi->s->node_class == ama::N_REF && c_type_prefix_operators--->get(nd_keyword->data)) {
+					//struct / union as prefix operator: `struct foo bar`
+					//nd_prototype_start = ndi;
+					//kw_mode = KW_NONE;
+					//nd_keyword = NULL;
+					kw_class_could_be_type_prefix = 1;
 				} else if (ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi) {
 					switch ( kw_mode ) {
 						case KW_CLASS:{
@@ -579,7 +595,7 @@ namespace ama {
 				TranslateCForwardDeclaration(nd_raw);
 				//note that extern is not necessarily function... we may have extern "C"{}
 			} else if ( nd_keyword && kw_mode == KW_CLASS && !(nd_raw->isRawNode('<', '>')) && !(nd_raw->p && nd_raw->p->isRawNode('<', '>')) &&
-			!(nd_raw->p && nd_raw->p->node_class == ama::N_PARAMETER_LIST)) {
+			!(nd_raw->p && nd_raw->p->node_class == ama::N_PARAMETER_LIST) && !kw_class_could_be_type_prefix) {
 				//class forward declaration, treat as keyword statement
 				//but not inside template<>
 				nd_keyword->BreakSelf();

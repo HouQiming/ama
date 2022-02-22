@@ -415,7 +415,9 @@ jsism.EnableJSON = function(nd_root) {
 			if (lg_prefix > 0) {
 				nd_prefix = @(
 					if ( !ctx.TrySkipName(@(nString(__byte_substr(name0, lg_eaten, lg_prefix)))) ) {
-						@(lg_eaten ? @(goto skip;) : @(ctx.SkipField();goto skip_after_name;))
+						@(lg_eaten ? @(goto skip;) : @(
+							ctx.SkipField();
+							goto skip_after_name;))
 					} else {
 						__SWITCH;
 					}
