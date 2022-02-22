@@ -870,11 +870,7 @@ namespace ama {
 					if ( nd_ref == nd_asgn->c ) {
 						if ( nd_asgn->p && (
 							nd_asgn->p->node_class == ama::N_SCOPE && nd_asgn->p->p && nd_asgn->p->p->node_class == ama::N_SSTMT && nd_asgn->p->p->data == "enum" ||
-							nd_asgn->p->node_class == ama::N_PARAMETER_LIST ||
-							//secondary variables in a multi-variable declaration
-							nd_asgn->p->node_class == ama::N_COMMA && nd_asgn->p == nd_stmt && (
-								nd_asgn->p->c->node_class == ama::N_RAW || nd_asgn->p->c->node_class == ama::N_MOV && nd_asgn->p->c->c->node_class == ama::N_RAW
-							)
+							nd_asgn->p->node_class == ama::N_PARAMETER_LIST
 						)) {
 							nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 						} else {
@@ -935,46 +931,53 @@ namespace ama {
 				}
 			}
 			//Rust / JS / Go var / let keyword
-			//C/C++ type foo
-			//C/C++ type foo, *bar[baz]
+			//C/C++ `type foo, *foo[bar], foo=bar, foo(bar), foo{bar,baz};`
 			//C++/JS LHS {} destructuring
 			ama::Node* nd_cdecl = nd_ref;
 			int32_t is_array_assignment = 0;
+			int32_t got_type = 0;
 			while ( nd_cdecl && nd_cdecl != nd_stmt ) {
 				if ( nd_cdecl->p->node_class == ama::N_RAW ) {
 					ama::Node* nd_core = nd_cdecl;
 					nd_cdecl = nd_cdecl->p;
-					if ( !nd_core->s || nd_core->s->isSymbol(",") || nd_core->s->isSymbol(";") || 
-					(parse_cpp_declaration_initialization && nd_core->s->node_class == ama::N_SCOPE && !(nd_cdecl->p && nd_cdecl->p->node_class == ama::N_MOV)) ) {
+					if ( !nd_core->s || nd_core->s->isSymbol(",") || nd_core->s->isSymbol(";")) {
 						//it could be a declarative raw
+						got_type = (nd_cdecl->c != nd_core);
 					} else {
 						//don't go to that raw
 						nd_cdecl = nd_core;
 					}
-					//assume N_ITEM as C array declaration `baz foo[bar]`
+					//assume N_ITEM and N_CALL as C array declaration `baz foo[bar]`
 					is_array_assignment = 0;
 					break;
 				}
-				if ((nd_cdecl->p->node_class == ama::N_ITEM || nd_cdecl->p->node_class == ama::N_CALL) && nd_cdecl == nd_cdecl->p->c) {
+				if (parse_cpp_declaration_initialization && (nd_cdecl->p->node_class == ama::N_ITEM || nd_cdecl->p->node_class == ama::N_CALL) && nd_cdecl == nd_cdecl->p->c) {
 					//could be either an array assignment `foo[bar]=baz;` or a C array declaration `baz foo[bar]`
+					//the same applies for `foo(bar)=baz` vs `baz foo(bar)`
 					is_array_assignment = 1;
-				} else if (  
+				} else if (parse_cpp_declaration_initialization && (  
 				(nd_cdecl->p->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(nd_cdecl->p->data) && nd_cdecl == nd_cdecl->p->c->s) || 
-				nd_cdecl->p->node_class == ama::N_PREFIX ) {
-					//it's OK
+				nd_cdecl->p->node_class == ama::N_PREFIX) ) {
+					//foo* bar
+					//*bar
+				} else if (nd_cdecl->p->node_class == ama::N_TYPED_OBJECT) {
+					//foo{bar}
+				} else if (nd_cdecl->p->node_class == ama::N_ASSIGNMENT) {
+					//foo=bar
+				} else if (nd_cdecl->p->node_class == ama::N_COMMA && nd_cdecl->p->p && nd_cdecl->p->p->node_class == ama::N_RAW) {
+					//the last multi-var comma layer
 				} else {
 					break;
 				}
 				nd_cdecl = nd_cdecl->p;
 			}
 			if ( nd_cdecl != nd_ref && !(nd_ref->s && nd_ref->s->node_class == ama::N_REF) && !keywords_not_variable_name[nd_ref->data]) {
-				//TODO: dedicated secondary variable test - pull out type first
 				//we found at least one feasible declaration-ish
 				//check parent
 				int is_ok = 0;
 				if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_LABELED && nd_cdecl->p->c == nd_cdecl ) {
 					ama::Node* nd_loop = nd_cdecl->Owning(ama::N_SSTMT);
-					if ( nd_loop && (nd_stmt->isAncestorOf(nd_loop) || nd_loop->c->isAncestorOf(nd_stmt)) && nd_loop->c->isAncestorOf(nd_cdecl) ) {
+					if ( nd_loop && nd_loop->data--->startsWith("for") && (nd_stmt->isAncestorOf(nd_loop) || nd_loop->c->isAncestorOf(nd_stmt)) && nd_loop->c->isAncestorOf(nd_cdecl) ) {
 						//foo in `for(foo:bar)`
 						is_ok = 1;
 					}
@@ -983,14 +986,8 @@ namespace ama {
 					//public: int a;
 					nd_cdecl = nd_cdecl->p;
 				}
-				if ( nd_cdecl == nd_stmt ) {
+				if ( nd_cdecl == nd_stmt && got_type) {
 					//foo in `type foo;` or `type bar,*foo[8];`
-					is_ok = 1;
-				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_MOV && nd_cdecl->p->c == nd_cdecl &&
-				nd_cdecl->p->data.empty() && nd_cdecl->node_class != ama::N_PREFIX &&
-				!is_array_assignment) {
-					//foo in `type foo=bar;` or `type bar,*foo[8],baz=...;`
-					//exclude *y+=1; / *y=1;
 					is_ok = 1;
 				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_FUNCTION && nd_cdecl->p->c == nd_cdecl ) {
 					//non-dotted function declaration, handle it here, also name the function

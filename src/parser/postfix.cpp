@@ -186,7 +186,9 @@ namespace ama {
 					//call
 					ndi = TranslatePostfixCall(ndi);
 					continue;
-				} else if (parse_typed_object && ndi_next && (ndi_next->node_class == ama::N_SCOPE && (!ndi_next->c || !ndi_next->c->s) || ndi_next->node_class == ama::N_OBJECT)) {
+				} else if (parse_typed_object && ndi_next && ndi->node_class != ama::N_CALL && ndi->node_class != ama::N_ARRAY && !ndi->isRawNode('(', ')') && (
+					ndi_next->node_class == ama::N_SCOPE && (!ndi_next->c || !ndi_next->c->s) || ndi_next->node_class == ama::N_OBJECT
+				)) {
 					//0-1 children scope / object: N_TYPED_OBJECT
 					if (ndi_next->node_class == ama::N_SCOPE) {
 						ndi_next->node_class = ama::N_OBJECT;
