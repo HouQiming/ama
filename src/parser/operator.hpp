@@ -11,6 +11,7 @@ namespace ama {
 	ama::Node* UnparsePrefix(ama::Node* nd_unary);
 	ama::Node* UnparsePostfix(ama::Node* nd_unary);
 	ama::Node* ParseCommaExpr(ama::Node* nd_root);
+	bool isUnderParameter(ama::Node* nd_asgn);
 };
 
 #endif

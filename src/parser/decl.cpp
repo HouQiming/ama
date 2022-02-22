@@ -674,7 +674,7 @@ namespace ama {
 				//}
 				ama::Node* nd_tmp = ama::GetPlaceHolder();
 				nd_param->ReplaceWith(nd_tmp);
-				nd_param = nd_tmp->ReplaceWith(ama::nAssignment(nd_param, ama::nAir()));
+				nd_param = nd_tmp->ReplaceWith(ama::nMov(nd_param, ama::nAir()));
 			}
 		}
 		return nd_root;
@@ -970,7 +970,7 @@ namespace ama {
 					//(*foo)[bar]
 				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->node_class == ama::N_TYPED_OBJECT) {
 					//foo{bar}
-				} else if (nd_cdecl->p->node_class == ama::N_MOV) {
+				} else if (nd_cdecl->p->node_class == ama::N_MOV && nd_cdecl->p->c == nd_cdecl) {
 					//foo=bar
 				} else if (nd_cdecl->p->node_class == ama::N_COMMA && nd_cdecl->p->p && nd_cdecl->p->p->node_class == ama::N_RAW) {
 					//the last multi-var comma layer
@@ -995,6 +995,9 @@ namespace ama {
 					nd_cdecl = nd_cdecl->p;
 				}
 				if ( nd_cdecl == nd_stmt && got_type) {
+					//foo in `type foo;` or `type bar,*foo[8];`
+					is_ok = 1;
+				} else if ( ama::isUnderParameter(nd_cdecl) && got_type) {
 					//foo in `type foo;` or `type bar,*foo[8];`
 					is_ok = 1;
 				} else if ( nd_cdecl->p && nd_cdecl->p->node_class == ama::N_FUNCTION && nd_cdecl->p->c == nd_cdecl ) {

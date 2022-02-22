@@ -233,6 +233,18 @@ namespace ama {
 		}
 		return nd_root;
 	}
+	bool isUnderParameter(ama::Node* nd_asgn) {
+		ama::Node* ndi = nd_asgn;
+		for (; ;) {
+			ama::Node* nd_last = ndi;
+			ndi = ndi->p;
+			if (!ndi) {return false;}
+			if (ndi->node_class == ama::N_MOV && ndi->c == nd_last) {continue;}
+			if (ndi->isRawNode(0, 0) && ndi->c == nd_last) {continue;}
+			if (ndi->node_class == ama::N_PARAMETER_LIST) {return true;}
+			return false;
+		}
+	}
 	ama::Node* ParseAssignment(ama::Node* nd_root, JSValueConst options) {
 		std::unordered_map<ama::gcstring, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
 		std::unordered_map<ama::gcstring, int> lower_than_assignment_operators = ama::GetPrioritizedList(options, "lower_than_assignment_operators");
@@ -309,7 +321,8 @@ namespace ama {
 						ama::UnparseRaw(nd_raw);
 					}
 					//when nd_lhs is N_RAW, rotate out the "type" to make it consistent with multi-var declaration
-					if (nd_lhs->isRawNode(0, 0) && nd_lhs->c && nd_lhs->c->s) {
+					//but don't do that for parameters yet
+					if (nd_lhs->isRawNode(0, 0) && nd_lhs->c && nd_lhs->c->s && !isUnderParameter(nd_asgn)) {
 						ama::Node* nd_var = nd_lhs->LastChild();
 						nd_var->comments_after = nd_var->comments_after + nd_lhs->comments_after;
 						nd_lhs->comments_after = "";
@@ -445,92 +458,90 @@ namespace ama {
 		//sentenial operand
 		//we need to leave uninterpreted structures alone
 		//reverse() to fold smaller raws first
-		{
-			std::vector<ama::Node*> a = nd_root->FindAllWithin(0, ama::N_RAW);
-			for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
-				//binary and unary in one pass
-				std::vector<ama::Node*> stack{};
-				ama::Node* nd_raw = a[i];
-				ama::Node* ndi = nd_raw->c;
-				int changed = 0;
-				while ( ndi ) {
-					ama::Node* ndi_next = ndi->s;
-					if ( ndi->node_class == ama::N_SYMBOL ) {
-						if ( ndi->data != "=" ) {
-							//fold ambiguous_type_suffix as postfix if we got another symbol that isn't =
-							//when && follows a symbol, it can't be the computed-goto prefix
-							if ( stack.size() >= 2 && stack.back()->node_class == ama::N_SYMBOL && is_type_suffix--->get(stack.back()->data) && 
-							stack[stack.size() - 2]->node_class != ama::N_SYMBOL && (!prefix_ops--->get(ndi->data) || cv_qualifiers--->get(ndi->data) || ndi->data == "&&") ) {
-								ama::Node* nd_operator = stack--->pop();
-								ama::Node* nd_operand = stack--->pop();
-								nd_operand = FoldPostfix(nd_operand, nd_operator);
-								stack.push_back(nd_operand);
-								changed = 1;
-							}
-						}
-						//COULDDO: N_ARRAY after type suffix: need an option
-						int pr = 0x7fffffff;
-						if ( postfix_ops--->get(ndi->data) && stack.size() > 0 && stack.back()->node_class != ama::N_SYMBOL ) {
-							//precedence problem - need to replace the prefix-core instead
+		std::vector<ama::Node*> raws = nd_root->FindAllWithin(0, ama::N_RAW);
+		for (intptr_t i = intptr_t(raws.size()) - 1; i >= 0; --i) {
+			//binary and unary in one pass
+			std::vector<ama::Node*> stack{};
+			ama::Node* nd_raw = raws[i];
+			ama::Node* ndi = nd_raw->c;
+			int changed = 0;
+			while ( ndi ) {
+				ama::Node* ndi_next = ndi->s;
+				if ( ndi->node_class == ama::N_SYMBOL ) {
+					if ( ndi->data != "=" ) {
+						//fold ambiguous_type_suffix as postfix if we got another symbol that isn't =
+						//when && follows a symbol, it can't be the computed-goto prefix
+						if ( stack.size() >= 2 && stack.back()->node_class == ama::N_SYMBOL && is_type_suffix--->get(stack.back()->data) && 
+						stack[stack.size() - 2]->node_class != ama::N_SYMBOL && (!prefix_ops--->get(ndi->data) || cv_qualifiers--->get(ndi->data) || ndi->data == "&&") ) {
+							ama::Node* nd_operator = stack--->pop();
 							ama::Node* nd_operand = stack--->pop();
-							nd_operand = FoldPostfix(nd_operand, ndi);
+							nd_operand = FoldPostfix(nd_operand, nd_operator);
 							stack.push_back(nd_operand);
-							ndi = ndi_next;
 							changed = 1;
-							continue;
-						} else {
-							pr = binop_priority--->get(ndi->data);
-							if ( pr ) {
-								//flush >=pr
-								changed |= FoldBinop(binop_priority, stack, pr);
-							} else {
-								//separator: ; or , or ...
-								changed |= FoldBinop(binop_priority, stack, 1);
-							}
 						}
+					}
+					//COULDDO: N_ARRAY after type suffix: need an option
+					int pr = 0x7fffffff;
+					if ( postfix_ops--->get(ndi->data) && stack.size() > 0 && stack.back()->node_class != ama::N_SYMBOL ) {
+						//precedence problem - need to replace the prefix-core instead
+						ama::Node* nd_operand = stack--->pop();
+						nd_operand = FoldPostfix(nd_operand, ndi);
+						stack.push_back(nd_operand);
+						ndi = ndi_next;
+						changed = 1;
+						continue;
 					} else {
-						//operand, fold prefix
-						while ( stack.size() >= 1 && stack.back()->node_class == ama::N_SYMBOL && prefix_ops--->get(stack.back()->data) ) {
-							if ( stack.size() >= 2 && stack[stack.size() - 2]->node_class != ama::N_SYMBOL && binop_priority--->get(stack.back()->data) ) {
-								//prefix-binary ambiguity: assume binary
-								break;
-							}
-							ama::Node* nd_prefix_operator = stack--->pop();
-							ndi = ama::nPrefix(nd_prefix_operator->data, ndi->MergeCommentsBefore(nd_prefix_operator))->setCommentsBefore(nd_prefix_operator->comments_before);
-							nd_prefix_operator->p = nullptr;
-							nd_prefix_operator->FreeASTStorage();
-							changed = 1;
-						}
-						if ( stack.size() >= 1 && stack.back()->node_class != ama::N_SYMBOL ) {
-							//pushing an operand while we have another operand, fold binop
+						pr = binop_priority--->get(ndi->data);
+						if ( pr ) {
+							//flush >=pr
+							changed |= FoldBinop(binop_priority, stack, pr);
+						} else {
+							//separator: ; or , or ...
 							changed |= FoldBinop(binop_priority, stack, 1);
 						}
 					}
-					stack.push_back(ndi);
-					ndi = ndi_next;
-				}
-				//fold any leftover ambiguous_type_suffix as postfix at the end
-				if ( stack.size() >= 2 && stack.back()->node_class == ama::N_SYMBOL && is_type_suffix--->get(stack.back()->data) && stack[stack.size() - 2]->node_class != ama::N_SYMBOL ) {
-					ama::Node* nd_operator = stack--->pop();
-					ama::Node* nd_operand = stack--->pop();
-					nd_operand = FoldPostfix(nd_operand, nd_operator);
-					stack.push_back(nd_operand);
-					changed = 1;
-				}
-				//fold remaining binops
-				changed |= FoldBinop(binop_priority, stack, 1);
-				if ( changed ) {
-					if ( stack.size() == 1 && !(nd_raw->flags & 0xffff) ) {
-						assert(!stack[0]->s);
-						nd_raw->c = nullptr;
-						nd_raw->ReplaceWith(stack[0]);
-						nd_raw->FreeASTStorage();
-					} else {
-						//we still have uninterpreted things, replace children
-						assert(stack.size() > 0);
-						nd_raw->c = nullptr;
-						nd_raw->Insert(ama::POS_FRONT, ama::InsertMany(stack));
+				} else {
+					//operand, fold prefix
+					while ( stack.size() >= 1 && stack.back()->node_class == ama::N_SYMBOL && prefix_ops--->get(stack.back()->data) ) {
+						if ( stack.size() >= 2 && stack[stack.size() - 2]->node_class != ama::N_SYMBOL && binop_priority--->get(stack.back()->data) ) {
+							//prefix-binary ambiguity: assume binary
+							break;
+						}
+						ama::Node* nd_prefix_operator = stack--->pop();
+						ndi = ama::nPrefix(nd_prefix_operator->data, ndi->MergeCommentsBefore(nd_prefix_operator))->setCommentsBefore(nd_prefix_operator->comments_before);
+						nd_prefix_operator->p = nullptr;
+						nd_prefix_operator->FreeASTStorage();
+						changed = 1;
 					}
+					if ( stack.size() >= 1 && stack.back()->node_class != ama::N_SYMBOL ) {
+						//pushing an operand while we have another operand, fold binop
+						changed |= FoldBinop(binop_priority, stack, 1);
+					}
+				}
+				stack.push_back(ndi);
+				ndi = ndi_next;
+			}
+			//fold any leftover ambiguous_type_suffix as postfix at the end
+			if ( stack.size() >= 2 && stack.back()->node_class == ama::N_SYMBOL && is_type_suffix--->get(stack.back()->data) && stack[stack.size() - 2]->node_class != ama::N_SYMBOL ) {
+				ama::Node* nd_operator = stack--->pop();
+				ama::Node* nd_operand = stack--->pop();
+				nd_operand = FoldPostfix(nd_operand, nd_operator);
+				stack.push_back(nd_operand);
+				changed = 1;
+			}
+			//fold remaining binops
+			changed |= FoldBinop(binop_priority, stack, 1);
+			if ( changed ) {
+				if ( stack.size() == 1 && !(nd_raw->flags & 0xffff) ) {
+					assert(!stack[0]->s);
+					nd_raw->c = nullptr;
+					nd_raw->ReplaceWith(stack[0]);
+					nd_raw->FreeASTStorage();
+				} else {
+					//we still have uninterpreted things, replace children
+					assert(stack.size() > 0);
+					nd_raw->c = nullptr;
+					nd_raw->Insert(ama::POS_FRONT, ama::InsertMany(stack));
 				}
 			}
 		}
