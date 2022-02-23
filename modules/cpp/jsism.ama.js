@@ -186,19 +186,19 @@ jsism.EnableConsole = function(nd_root, options) {
 		}
 	}
 	if (backend == 'std::format') {
-		nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<format>');
-		nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<stdio.h>');
+		nd_root.InsertCInclude('<format>');
+		nd_root.InsertCInclude('<stdio.h>');
 	} else if (backend == 'iostream') {
 		if (need_ios) {
-			nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<ios>');
+			nd_root.InsertCInclude('<ios>');
 		}
 		if (need_iomanip) {
-			nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<iomanip>');
+			nd_root.InsertCInclude('<iomanip>');
 		}
 		if (need_sstream) {
-			nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<sstream>');
+			nd_root.InsertCInclude('<sstream>');
 		}
-		nd_root.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, '<iostream>');
+		nd_root.InsertCInclude('<iostream>');
 	}
 };
 

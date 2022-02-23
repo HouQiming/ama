@@ -506,8 +506,8 @@ namespace ama {
 		//
 		//Implemented in src/codegen/gen.jc
 		std::string dump()const;
-		//Insert a `N_DEPENDENCY` with the specific name and flags if it's not already in the code.
-		ama::Node* InsertDependency(uint32_t flags, ama::gcstring name);
+		//Insert a `#include` with the specific name if it's not already in the code.
+		ama::Node* InsertCInclude(ama::gcstring name);
 		//Insert more comment before `nd`
 		ama::Node* InsertCommentBefore(std::span<char> s);
 		//Move their comments into `nd` before merging another node.
@@ -661,10 +661,6 @@ namespace ama {
 	}
 	static inline ama::Node* nItem(Node* nd_label, Node* nd_value) {
 		return ama::CreateNode(N_ITEM, cons(nd_label, cons(nd_value, nullptr)));
-	}
-	static inline ama::Node* nDependency(Node* nd) {
-		nd->s = nullptr;
-		return ama::CreateNode(N_DEPENDENCY, nd);
 	}
 	static inline ama::Node* nParen(Node* nd) {
 		nd->s = nullptr;

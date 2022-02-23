@@ -310,9 +310,9 @@ Return an abbreviated string dump of the code, useful in error messages.
 Implemented in src/codegen/gen.jc
 
 --------------
-- `nd.InsertDependency(flags, name)`
+- `nd.InsertCInclude(name)`
 
-Insert a `N_DEPENDENCY` with the specific name and flags if it's not already in the code.
+Insert a `#include` with the specific name if it's not already in the code.
 
 --------------
 - `nd.InsertCommentBefore(s)`

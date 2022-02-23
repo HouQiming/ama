@@ -728,11 +728,14 @@ int ama::Node::isStatement(std::span<char> name) const {
 	return (this->node_class == ama::N_KEYWORD_STATEMENT || this->node_class == ama::N_SCOPED_STATEMENT) && this->data == name;
 }
 ///dependency is global: have to re-ParseDependency after you InsertDependency
-ama::Node* ama::Node::InsertDependency(uint32_t flags, ama::gcstring name) {
-	for ( ama::Node* const & ndi: this->FindAll(ama::N_DEPENDENCY, name) ) {
-		if ( ndi->flags == flags ) { return ndi; }
+ama::Node* ama::Node::InsertCInclude(ama::gcstring name) {
+	for ( ama::Node* const & ndi: this->FindAll(ama::N_KEYWORD_STATEMENT, "#include") ) {
+		if ( ndi->c && ndi->c->node_class == ama::N_STRING && ndi->c->GetStringValue() == name ) { return ndi; }
 	}
-	return this->Insert(ama::POS_FRONT, ama::nDependency(ama::nString(name))->setFlags(flags));
+	//return this->Insert(ama::POS_FRONT, ama::nDependency(ama::nString(name))->setFlags(flags));
+	return this->Insert(ama::POS_FRONT, ama::CreateNode(ama::N_KSTMT, ama::nString(name)->setFlags(
+		name--->startsWith('<') ? ama::STRING_C_STD_INCLUDE : 0
+	))->setData("#include")->setCommentsAfter("\n"));
 }
 ama::Node* ama::Node::InsertCommentBefore(std::span<char> s) {
 	this->comments_before = (ama::gcscat(s, this->comments_before));

@@ -9,11 +9,11 @@ if(!__global.nAssignment){__global.nAssignment=__global.nMov;__global.N_ASSIGNME
 if(!__global.nSemicolon){__global.nSemicolon=__global.nDelimited;__global.N_SEMICOLON=__global.N_DELIMITED;}else{__global.nDelimited=__global.nSemicolon;__global.N_DELIMITED=__global.N_SEMICOLON;}
 if(!__global.nScopedStatement){__global.nScopedStatement=__global.nSstmt;__global.N_SCOPED_STATEMENT=__global.N_SSTMT;}else{__global.nSstmt=__global.nScopedStatement;__global.N_SSTMT=__global.N_SCOPED_STATEMENT;}
 if(!__global.nKeywordStatement){__global.nKeywordStatement=__global.nKstmt;__global.N_KEYWORD_STATEMENT=__global.N_KSTMT;}else{__global.nKstmt=__global.nKeywordStatement;__global.N_KSTMT=__global.N_KEYWORD_STATEMENT;}
-if(!__global.N_ARRAY){
-	__global.N_COMMA=-1;
-	__global.N_ARRAY=-1;
-	__global.N_OBJECT=-1;
-	__global.N_TYPED_OBJECT=-1;
+if(!__global.N_ARRAY){__global.N_COMMA=-1;__global.N_ARRAY=-1;__global.N_OBJECT=-1;__global.N_TYPED_OBJECT=-1;__global.N_IMPORT=-1;}
+if(!Node.InsertCInclude){
+	Node.InsertCInclude=function(name){
+		return this.InsertDependency(DEP_C_INCLUDE | DEPF_C_INCLUDE_NONSTR, name);
+	}
 }
 /////////////
 Node.setFlags = function(flags) {
