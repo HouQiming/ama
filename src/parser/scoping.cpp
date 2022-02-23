@@ -154,7 +154,21 @@ namespace ama {
 					continue;
 				}
 				//never after <> / {}
-				if (nd_last->isRawNode('<', '>') || nd_last->isRawNode('{', '}')) {continue;}
+				if (nd_last->isRawNode('<', '>') ) {continue;}
+				if (nd_last->isRawNode('{', '}')) {
+					if (ndi->node_class != ama::N_REF) {continue;}
+					bool is_scope = false;
+					bool has_comma = false;
+					for (ama::Node* ndj = nd_last->c; ndj; ndj = ndj->s) {
+						if (ndj->isSymbol(";")) {
+							is_scope = true;
+							break;
+						} else if (ndj->isSymbol(",")) {
+							has_comma = true;
+						}
+					}
+					if (is_scope || !has_comma) {continue;}
+				}
 				//allow () [] {} on the next line
 				if (ndi->isRawNode('(', ')') || ndi->isRawNode('[', ']') || ndi->isRawNode('{', '}')) {continue;}
 				//certain keywords are valid at eol
