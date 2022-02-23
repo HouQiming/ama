@@ -328,6 +328,9 @@ namespace ama {
 				}
 				case CHAR_TYPE_SYMBOL:{
 					handle_symbol:
+					if (ch == '.' && char_lut[feed[1]] == CHAR_TYPE_NUMBER) {
+						goto handle_number;
+					}
 					intptr_t lg = intptr_t(1L);
 					for (intptr_t i = 0; i < intptr_t(n_symbol[ch]); i += intptr_t(1L)) {
 						std::span<char> sym_i = symbol_array[p_symbol[ch] + i];
@@ -442,6 +445,7 @@ namespace ama {
 					break;
 				}
 				case CHAR_TYPE_NUMBER:{
+					handle_number:
 					char const* feed0 = feed;
 					int has_exponent = 0;
 					if ( feed[intptr_t(0L)] == '0' && feed[intptr_t(1L)] == 'x' ) {
