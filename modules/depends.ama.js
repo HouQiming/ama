@@ -10,32 +10,67 @@ depends.oracle = function nullOracle(name, referrer) {
 depends.c_include_paths = (process.env.INCLUDE || '').split(process.platform == 'win32' ? ';' : ':').filter(s => s);
 
 depends.Resolve = function(nd) {
-	assert(nd.node_class == N_DEPENDENCY);
-	if ((nd.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE) {
-		let fn = nd.c.GetStringValue();
-		if (nd.flags & DEPF_C_INCLUDE_NONSTR) {
-			fn = fn.replace(new RegExp('[<>]', 'g'), '');
-		}
-		if (!(nd.flags & DEPF_C_INCLUDE_NONSTR)) {
-			let fn_test = path.resolve(path.dirname(nd.Root().data), fn);
-			if (fs.existsSync(fn_test)) {
-				return fn_test;
+	if (Node.ParseDependency) {
+		assert(nd.node_class == N_DEPENDENCY);
+		if ((nd.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE) {
+			let fn = nd.c.GetStringValue();
+			if (nd.flags & DEPF_C_INCLUDE_NONSTR) {
+				fn = fn.replace(new RegExp('[<>]', 'g'), '');
+			}
+			if (!(nd.flags & DEPF_C_INCLUDE_NONSTR)) {
+				let fn_test = path.resolve(path.dirname(nd.Root().data), fn);
+				if (fs.existsSync(fn_test)) {
+					return fn_test;
+				}
+			}
+			for (let dir of depends.c_include_paths) {
+				let fn_test = path.resolve(dir, fn);
+				if (fs.existsSync(fn_test)) {
+					return fn_test;
+				}
+			}
+			return depends.oracle(fn, nd.Root().data);
+		} else if ((nd.flags & DEP_TYPE_MASK) == DEP_JS_REQUIRE) {
+			//reuse the builtin searcher __ResolveJSRequire
+			if (nd.c && nd.c.node_class == N_STRING) {
+				return __ResolveJSRequire(__filename, nd.c.GetStringValue()) || depends.oracle(nd.c.GetStringValue(), nd.Root().data);
 			}
 		}
-		for (let dir of depends.c_include_paths) {
-			let fn_test = path.resolve(dir, fn);
-			if (fs.existsSync(fn_test)) {
-				return fn_test;
+		return undefined;
+	} else {
+		if (nd.isStatement('#include') && nd.c && nd.c.node_class == N_STRING) {
+			let fn = nd.c.GetStringValue();
+			if (nd.c.flags & STRING_C_STD_INCLUDE) {
+				fn = fn.replace(new RegExp('[<>]', 'g'), '');
 			}
+			if (!(nd.c.flags & STRING_C_STD_INCLUDE)) {
+				let fn_test = path.resolve(path.dirname(nd.Root().data), fn);
+				if (fs.existsSync(fn_test)) {
+					return fn_test;
+				}
+			}
+			for (let dir of depends.c_include_paths) {
+				let fn_test = path.resolve(dir, fn);
+				if (fs.existsSync(fn_test)) {
+					return fn_test;
+				}
+			}
+			return depends.oracle(fn, nd.Root().data);
 		}
-		return depends.oracle(fn, nd.Root().data);
-	} else if ((nd.flags & DEP_TYPE_MASK) == DEP_JS_REQUIRE) {
-		//reuse the builtin searcher __ResolveJSRequire
-		if (nd.c && nd.c.node_class == N_STRING) {
-			return __ResolveJSRequire(__filename, nd.c.GetStringValue()) || depends.oracle(nd.c.GetStringValue(), nd.Root().data);
+		if (nd.node_class == N_CALL && nd.c.isRef('require') && nd.c.s && !nd.c.s.s && nd.c.s.node_class == N_STRING) {
+			return __ResolveJSRequire(__filename, nd.c.s.GetStringValue()) || depends.oracle(nd.c.s.GetStringValue(), nd.Root().data);
+		}
+		if (nd.node_class == N_IMPORT) {
+			let nd_import = nd.c;
+			let nd_from = nd.c.s;
+			//ES6 / Python / Java: generally not file-based
+			if (nd_from.node_class == N_STRING) {
+				//assume ES6
+				return __ResolveJSRequire(__filename, nd_from.GetStringValue()) || depends.oracle(nd.c.s.GetStringValue(), nd.Root().data);
+			}
+			return undefined; 
 		}
 	}
-	return undefined;
 };
 
 depends.cache = new Map();
@@ -73,16 +108,32 @@ depends.ListAllDependency = function(nd_root, include_system_headers) {
 	let Q = [nd_root];
 	for (let qi = 0; qi < Q.length; qi++) {
 		let nd_root = Q[qi];
-		for (let ndi of nd_root.FindAll(N_DEPENDENCY, null)) {
-			if (!include_system_headers && (ndi.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE && ( ndi.flags & DEPF_C_INCLUDE_NONSTR )) {
-				continue;
+		if (Node.ParseDependency) {
+			for (let ndi of nd_root.FindAll(N_DEPENDENCY, null)) {
+				if (!include_system_headers && (ndi.flags & DEP_TYPE_MASK) == DEP_C_INCLUDE && ( ndi.flags & DEPF_C_INCLUDE_NONSTR )) {
+					continue;
+				}
+				let fn_dep = depends.Resolve(ndi);
+				if (fn_dep && !ret.has(fn_dep)) {
+					ret.add(fn_dep);
+					let nd_root_dep = depends.LoadFile(fn_dep);
+					if (nd_root_dep) {
+						Q.push(nd_root_dep);
+					}
+				}
 			}
-			let fn_dep = depends.Resolve(ndi);
-			if (fn_dep && !ret.has(fn_dep)) {
-				ret.add(fn_dep);
-				let nd_root_dep = depends.LoadFile(fn_dep);
-				if (nd_root_dep) {
-					Q.push(nd_root_dep);
+		} else {
+			for (let ndi of nd_root.FindAll(N_KSTMT, '#include').concat(nd_root.FindAll(N_CALL, 'require')).concat(nd_root.FindAll(N_IMPORT))) {
+				if (!include_system_headers && ndi.isStatement('#include') && ndi.c && ndi.c.node_class == N_STRING && (ndi.c.flags & STRING_C_STD_INCLUDE)) {
+					continue;
+				}
+				let fn_dep = depends.Resolve(ndi);
+				if (fn_dep && !ret.has(fn_dep)) {
+					ret.add(fn_dep);
+					let nd_root_dep = depends.LoadFile(fn_dep);
+					if (nd_root_dep) {
+						Q.push(nd_root_dep);
+					}
 				}
 			}
 		}
@@ -124,4 +175,11 @@ depends.ListLoadedFiles = function() {
 depends.DropCache = function() {
 	depends.cache = new Map();
 	depends.dependency_cache = [new Map(), new Map()];
+};
+
+/*
+#filter Dump dependency
+*/
+depends.Dump = function(nd_root) {
+	console.log(JSON.stringify(depends.ListAllDependency(nd_root).map(nd => nd.data), null, 1));
 };

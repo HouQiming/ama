@@ -276,12 +276,13 @@ jsism.EnableJSON = function(nd_root) {
 				if (type.Root() == nd_root) {
 					type.ParentStatement().Insert(POS_AFTER, nd_gentag.setCommentsBefore('\n'));
 				} else {
-					let deps = nd_root.FindAll(N_DEPENDENCY, null);
-					if (deps.length) {
-						deps[deps.length - 1].Insert(POS_AFTER, nd_gentag.setCommentsBefore('\n'));
-					} else {
-						nd_root.Insert(POS_FRONT, nd_gentag);
-					}
+					//let deps = nd_root.FindAll(N_DEPENDENCY, null);
+					//if (deps.length) {
+					//	deps[deps.length - 1].Insert(POS_AFTER, nd_gentag.setCommentsBefore('\n'));
+					//} else {
+					//	nd_root.Insert(POS_FRONT, nd_gentag);
+					//}
+					nd_root.Insert(POS_BACK, nd_gentag);
 				}
 			}
 		}

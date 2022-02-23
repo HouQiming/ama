@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include "../util/jc_array.h"
 #include "../util/unicode.hpp"
@@ -66,7 +67,9 @@ namespace ama {
 			}
 			case ama::N_STRING:{
 				if ( nd->flags & ama::LITERAL_PARSED ) {
-					if ( nd->flags & ama::STRING_SHELL_LIKE ) {
+					if (nd->flags & ama::STRING_C_STD_INCLUDE) {
+						this->code--->push(nd->data);
+					} else if ( nd->flags & ama::STRING_SHELL_LIKE ) {
 						ama::escapeStringBody(this->code, nd->data);
 						if ( !(nd->flags & ama::STRING_SHELL_LIKE_END) ) {
 							this->code.push_back('$');
@@ -166,6 +169,7 @@ namespace ama {
 			//	break;
 			//}
 			case ama::N_DEPENDENCY:{
+				std::cerr << ("N_DEPENDENCY is obsolete!") << std::endl;
 				if ( (nd->flags & ama::DEP_TYPE_MASK) == ama::DEP_C_INCLUDE ) {
 					this->code--->push("#include");
 					this->GenerateSpaceBefore(nd->c);
@@ -332,6 +336,38 @@ namespace ama {
 			case ama::N_TYPED_OBJECT:{
 				this->Generate(nd->c);
 				this->Generate(nd->c->s);
+				break;
+			}
+			case ama::N_IMPORT:{
+				if (nd->flags & ama::IMPORT_FROM_FIRST) {
+					if (nd->flags & ama::IMPORT_HAS_FROM) {
+						this->code--->push("from");
+						this->GenerateSpaceBefore(nd->c->s);
+						this->Generate(nd->c->s);
+					}
+					if (nd->flags & ama::IMPORT_HAS_IMPORT) {
+						if (nd->flags & ama::IMPORT_HAS_FROM) {
+							this->GenerateSpaceAfter(nd->c->s);
+						}
+						this->code--->push("import");
+						this->GenerateSpaceBefore(nd->c);
+						this->Generate(nd->c);
+					}
+				} else {
+					if (nd->flags & ama::IMPORT_HAS_IMPORT) {
+						this->code--->push("import");
+						this->GenerateSpaceBefore(nd->c);
+						this->Generate(nd->c);
+					}
+					if (nd->flags & ama::IMPORT_HAS_FROM) {
+						if (nd->flags & ama::IMPORT_HAS_IMPORT) {
+							this->GenerateSpaceAfter(nd->c);
+						}
+						this->code--->push("from");
+						this->GenerateSpaceBefore(nd->c->s);
+						this->Generate(nd->c->s);
+					}
+				}
 				break;
 			}
 		}

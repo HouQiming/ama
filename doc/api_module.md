@@ -572,6 +572,12 @@ After:
 void* g_ptr = nullptr;
 ```
 
+### depends.Dump
+
+- Syntax: `require("depends").Dump`
+- Description: Dump dependency
+
+
 ### dump_ast
 
 - Syntax: `require("dump_ast")`

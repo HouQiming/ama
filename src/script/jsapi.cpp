@@ -270,8 +270,9 @@ namespace ama {
 		//from here on, N_RAW no longer includes the root scope
 		ama::CleanupDummyRaws(nd_root);
 		ama::ConvertRootToFile(nd_root, options);
-		ama::ParseDependency(nd_root, options);
+		ama::ParseCInclude(nd_root);
 		ama::ParsePostfix(nd_root, options);
+		ama::ParseImport(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		ama::CleanupDummyRaws(nd_root);
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_keyword_statements"), 1) ) {
@@ -550,7 +551,9 @@ namespace ama {
 		NodeFilterDesc{"DelimitCLikeStatements", nullptr, ama::DelimitCLikeStatements},
 		NodeFilterDesc{"CleanupDummyRaws", ama::CleanupDummyRaws, nullptr},
 		NodeFilterDesc{"ConvertRootToFile", nullptr, ama::ConvertRootToFile},
-		NodeFilterDesc{"ParseDependency", nullptr, ama::ParseDependency},
+		//NodeFilterDesc{"ParseDependency", NULL, ama::ParseDependency},
+		NodeFilterDesc{"ParseCInclude", ama::ParseCInclude, nullptr},
+		NodeFilterDesc{"ParseImport", ama::ParseImport, nullptr},
 		NodeFilterDesc{"ParsePostfix", nullptr, ama::ParsePostfix},
 		NodeFilterDesc{"SanitizeCommentPlacement", ama::SanitizeCommentPlacement, nullptr},
 		NodeFilterDesc{"ParseKeywordStatements", nullptr, ama::ParseKeywordStatements},

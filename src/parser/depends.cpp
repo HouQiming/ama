@@ -8,15 +8,15 @@
 #include "depends.hpp"
 namespace ama {
 	//requires DelimitCLikeStatements, preferrably before ParsePostfix
-	void ParseCInclude(ama::Node* nd_root) {
+	ama::Node* ParseCInclude(ama::Node* nd_root) {
 		std::string dir_base = (nd_root->data.empty() ? "." : path::dirname(nd_root->data));
 		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( (nd_raw->flags & 0xffff) != 0 ) { continue; }
 			if ( !(nd_raw->c && nd_raw->c->node_class == ama::N_REF && nd_raw->c->data == "#include") ) { continue; }
-			uint32_t flags = ama::DEP_C_INCLUDE;
+			//u32 flags = ama::DEP_C_INCLUDE;
 			if ( !nd_raw->c->s || nd_raw->c->s->s || nd_raw->c->s->node_class != ama::N_STRING ) {
 				//#include <foo/bar.baz>, join all children and make them string
-				flags |= ama::DEPF_C_INCLUDE_NONSTR;
+				//flags |= ama::DEPF_C_INCLUDE_NONSTR;
 				std::string comments_before{};
 				std::string include_expr{};
 				std::string comments_after{};
@@ -46,62 +46,102 @@ namespace ama {
 					ndi->FreeASTStorage();
 				}
 				nd_real_include->p = nd_raw;
+				nd_real_include->flags = ama::LITERAL_PARSED | ama::STRING_C_STD_INCLUDE;
 				nd_raw->c->Insert(ama::POS_AFTER, nd_real_include);
 			}
 			ama::Node* nd_included = nd_raw->c->BreakSibling();
 			assert(nd_included->node_class == ama::N_STRING);
 			ama::gcstring fn_included = nd_included->GetStringValue();
-			nd_raw->ReplaceWith(ama::nDependency(nd_included)->setFlags(flags));
+			nd_raw->ReplaceWith(ama::CreateNode(ama::N_KEYWORD_STATEMENT, nd_included)->setData("#include"));
 			nd_raw->FreeASTStorage();
 		}
+		return nd_root;
 	}
-	void ParseJSRequire(ama::Node* nd_root) {
-		std::vector<ama::gcstring> js_require_paths{};
-		JSValue js_js_require_paths = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), "js_require_paths");
-		if ( !JS_IsUndefined(js_js_require_paths) ) {
-			int32_t lg = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, js_js_require_paths, "length"), 0);
-			for (int i = 0; i < lg; i += 1) {
-				js_require_paths.push_back(ama::UnwrapString(
-					JS_GetPropertyUint32(ama::jsctx, js_js_require_paths, i)
-				));
+	static const int32_t MODE_NONE = 0;
+	static const int32_t MODE_FROM = 1;
+	static const int32_t MODE_IMPORT = 2;
+	ama::Node* ParseImport(ama::Node* nd_root) {
+		//here we only clean up just enough to resolve the target file path (or URL)
+		//resolve the imported names separately when necessary
+		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
+			if ( (nd_raw->flags & 0xffff) != 0 ) { continue; }
+			if ( !(nd_raw->c && nd_raw->c->node_class == ama::N_REF && (nd_raw->c->data == "from" || nd_raw->c->data == "import")) ) { continue; }
+			ama::Node* ndi = nd_raw->c;
+			ama::Node* nd_from = nullptr;
+			ama::Node* nd_import = nullptr;
+			int32_t mode = MODE_NONE;
+			uint32_t flags = 0;
+			while (ndi) {
+				again:
+				ama::Node* ndi_next = ndi->s;
+				if (ndi->isRef("from") && !(flags & ama::IMPORT_HAS_FROM)) {
+					flags |= ama::IMPORT_HAS_FROM;
+					if (mode == MODE_NONE) {flags |= ama::IMPORT_FROM_FIRST;}
+					nd_from = ndi;
+					mode = MODE_FROM;
+				} else if (ndi->isRef("import") && !(flags & ama::IMPORT_HAS_IMPORT)) {
+					flags |= ama::IMPORT_HAS_IMPORT;
+					nd_import = ndi;
+					mode = MODE_IMPORT;
+				}
+				if (ndi_next) {
+					if (mode == MODE_IMPORT && ndi_next->isSymbol(".*")) {
+						ndi->MergeCommentsAfter(ndi_next);
+						ndi_next->Unlink();
+						ama::Node* nd_tmp = ama::GetPlaceHolder();
+						ndi->ReplaceWith(nd_tmp);
+						nd_tmp->ReplaceWith(ama::nPostfix(ndi, ".*")->setCommentsAfter(ndi_next->comments_after));
+						goto again;
+					} else if (mode == MODE_IMPORT && ndi_next->isRef("as") && ndi_next->s) {
+						//the `as` operator, make binop no matter what ndi is (it could be '*')
+						ama::Node* nd_alias = ndi_next->s;
+						ndi->MergeCommentsAfter(ndi_next);
+						nd_alias->MergeCommentsBefore(ndi_next);
+						ndi_next->Unlink();
+						ama::Node* nd_binop = ama::CreateNode(ama::N_BINOP, nullptr)->setData("as");
+						ndi->ReplaceUpto(nd_alias, nd_binop);
+						//ndi is still connected to nd_alias
+						nd_binop->Insert(ama::POS_FRONT, ndi);
+						ndi = nd_binop;
+						goto again;
+					}
+				}
+				ndi = ndi_next;
 			}
-		}
-		std::string dir_base = (nd_root->data.empty() ? "." : path::dirname(nd_root->data));
-		for ( ama::Node * nd_require: nd_root->FindAllWithin(0, ama::N_CALL, "require") ) {
-			if ( !nd_require->c->s || nd_require->c->s->node_class != ama::N_STRING || nd_require->c->s->s ) { continue; }
-			ama::gcstring fn_required = nd_require->c->s->GetStringValue();
-			nd_require->ReplaceWith(ama::nDependency(nd_require->c->BreakSibling())->setFlags(ama::DEP_JS_REQUIRE));
-			nd_require->FreeASTStorage();
-		}
-		//re-check all nDependency and fill .data
-		for ( ama::Node * nd_dep: nd_root->FindAllWithin(0, ama::N_DEPENDENCY) ) {
-			if ( (nd_dep->flags & ama::DEP_TYPE_MASK) == ama::DEP_JS_REQUIRE && nd_dep->data.empty() ) {
-				ama::gcstring fn_required = nd_dep->GetName();
-				if ( fn_required.empty() ) { continue; }
-				ama::gcstring fn_commonjs{};
-				for ( ama::gcstring const & dir: js_require_paths ) {
-					fn_commonjs = ama::FindCommonJSModuleByPath(ama::gcstring(path::normalize(JC::string_concat(dir, path::sep, fn_required))));
-					if ( !fn_commonjs.empty() ) { break; }
-				}
-				if ( fn_commonjs.empty() ) {
-					fn_commonjs = ama::FindCommonJSModule(fn_required, ama::gcstring(dir_base));
-				}
-				if ( !fn_commonjs.empty() ) {
-					fn_commonjs = ama::gcstring(path::CPathResolver{}.add(fn_commonjs)->done());
-					nd_dep->data = fn_commonjs;
+			ama::Node* nd_final = ama::CreateNode(ama::N_IMPORT, nullptr)->setFlags(flags);
+			ama::Node* nd_from_body = nullptr;
+			ama::Node* nd_import_body = nullptr;
+			if (nd_from) {
+				if (nd_from->Prev()) {
+					nd_from->Prev()->MergeCommentsAfter(nd_from);
+				} else {
+					std::swap(nd_final->comments_before, nd_from->comments_before);
 				}
 			}
-		}
-	}
-	ama::Node* ParseDependency(ama::Node* nd_root, JSValueConst options) {
-		int32_t enable_c_include = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "enable_c_include"), 1);
-		if ( enable_c_include ) {
-			ParseCInclude(nd_root);
-		}
-		/////////////////
-		int32_t enable_js_require = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "enable_js_require"), 1);
-		if ( enable_js_require ) {
-			ParseJSRequire(nd_root);
+			if (nd_import) {
+				if (nd_import->Prev()) {
+					nd_import->Prev()->MergeCommentsAfter(nd_import);
+				} else {
+					std::swap(nd_final->comments_before, nd_import->comments_before);
+				}
+			}
+			//////////////
+			if (nd_from) {
+				nd_from_body = nd_from->BreakSibling()->toSingleNode();
+				nd_from_body->MergeCommentsBefore(nd_from);
+				nd_from->Unlink();
+			} else {
+				nd_from_body = ama::nAir();
+			}
+			if (nd_import) {
+				nd_import_body = nd_import->BreakSibling()->toSingleNode();
+				nd_import_body->MergeCommentsBefore(nd_import);
+				nd_import->Unlink();
+			} else {
+				nd_import_body = ama::nAir();
+			}
+			nd_final->Insert(ama::POS_FRONT, ama::cons(nd_import_body, nd_from_body));
+			nd_raw->ReplaceWith(nd_final);
 		}
 		return nd_root;
 	}

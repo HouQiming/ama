@@ -135,6 +135,7 @@ namespace ama {
 	//  In any case, `nodes` packs one string. However, it can also be an arbitrary expression in presence of advanced
 	//  C preprocessor techniques like `#include ADD_FANCY_DIRECTORY("name." HEADER_EXTENSION)`.
 	//  - `DEP_JS_REQUIRE` stands for Javascript `require`, `nodes` packs one require argument
+	//Obsolete since 2022/02/23 
 	static const uint8_t N_DEPENDENCY = 16;
 	//`nBinop(nd_a, operator, nd_b)`
 	//
@@ -252,10 +253,14 @@ namespace ama {
 	//
 	//JS object / C++ initializer
 	static const uint8_t N_OBJECT = 33;
-	//`nTypedObject(...nodes)`
+	//`nTypedObject(nd_type, nd_body)`
 	//
 	//C++ Foo{} object
 	static const uint8_t N_TYPED_OBJECT = 34;
+	//`nImport(nd_import, nd_from)`
+	//
+	//Python / Java / ES6 import statement
+	static const uint8_t N_IMPORT = 35;
 	/////////////////
 	//don't start any other constant with "N_", jsgen.cpp depends on this
 	/////////////////
@@ -280,6 +285,7 @@ namespace ama {
 	static const uint32_t STRING_SHELL_LIKE = 4u;
 	static const uint32_t STRING_SHELL_LIKE_START = 8u;
 	static const uint32_t STRING_SHELL_LIKE_END = 16u;
+	static const uint32_t STRING_C_STD_INCLUDE = 32u;
 	static const uint32_t DOT_PTR = 1u;
 	static const uint32_t DOT_CLASS = 2u;
 	static const uint32_t DEP_C_INCLUDE = 0u;
@@ -290,6 +296,9 @@ namespace ama {
 	static const uint32_t PARAMLIST_UNWRAPPED = 2u;
 	static const uint32_t SEMICOLON_COMMA = 1u;
 	static const uint32_t DELIMITED_COMMA = 1u;
+	static const uint32_t IMPORT_HAS_FROM = 1u;
+	static const uint32_t IMPORT_HAS_IMPORT = 2u;
+	static const uint32_t IMPORT_FROM_FIRST = 4u;
 	//for Node::indent_level, reserve 1 bit for future use
 	static const intptr_t MAX_INDENT = 63;
 	/////////////////
