@@ -29,3 +29,7 @@ unsigned long long
 namespace ama {
 	struct Node;
 };
+{d0:d1,d2:[d3,d4],d5}=destructured();
+auto [da0,da1]=destructured();
+auto &[dr0,dr1]=destructured();
+(t0,t1,)=destructured();

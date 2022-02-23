@@ -896,6 +896,7 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_not_variable_name = ama::GetPrioritizedList(options, "keywords_not_variable_name");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
+		int32_t parse_destructuring = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_destructuring"), 1);
 		//pull types out of comma
 		//for ( ama::Node * nd_comma: nd_root->FindAllWithin(0, ama::N_COMMA) ) {
 		for (ama::Node* ndi = nd_root->PostorderFirst(); ndi; ndi = ndi->PostorderNext(nd_root)) {
@@ -969,37 +970,16 @@ namespace ama {
 					//updating assignment
 					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_RW;
 				}
-			} else if ( nd_stmt->p->node_class == ama::N_SCOPE && nd_owner && nd_asgn && nd_asgn->data.empty() && nd_owner->isAncestorOf(nd_asgn) && nd_asgn->c->isAncestorOf(nd_stmt) ) {
-				//could be {} nd_destructuring, here nd_stmt is BS
-				//`type {...,foo,...}=...; {"bar":foo}=...;`
-				ama::Node* nd_destructuring = nd_ref;
-				int destructured = 0;
-				while ( nd_destructuring != nd_stmt ) {
-					if ( nd_destructuring->node_class == ama::N_SCOPE || 
-					nd_destructuring->node_class == ama::N_ARRAY || nd_destructuring->isRawNode('[', ']') || 
-					nd_destructuring->isRawNode('{', '}') || nd_destructuring->isRawNode('(', ')') ) {
-						destructured = 1;
-						break;
-					}
-					if ( nd_destructuring->p && nd_destructuring->p->node_class == ama::N_LABELED && nd_destructuring == nd_destructuring->p->c ) {
-						//used as a label in JS destructuring, drop it
-						destructured = 0;
-						break;
-					}
-					nd_destructuring = nd_destructuring->p;
-				}
-				if ( destructured ) {
-					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
-				}
 			}
 			//Rust / JS / Go var / let keyword
 			//C/C++ `type foo, *foo[bar], foo=bar, foo(bar), foo{bar,baz};`
 			//C++/JS LHS {} destructuring
 			ama::Node* nd_cdecl = nd_ref;
+			ama::Node* nd_before_destructuring = nullptr;
 			ama::Node* nd_to_fix_core = nullptr;
-			int32_t is_array_assignment = 0;
-			int32_t got_type = 0;
-			int32_t past_mov = 0;
+			bool got_type = false;
+			bool past_mov = false;
+			bool destructured = false;
 			while ( nd_cdecl && nd_cdecl != nd_stmt ) {
 				if ( nd_cdecl->p->isRawNode(0, 0) ) {
 					ama::Node* nd_core = nd_cdecl;
@@ -1012,15 +992,13 @@ namespace ama {
 						nd_cdecl = nd_core;
 					}
 					//assume N_ITEM and N_CALL as C array declaration `baz foo[bar]`
-					is_array_assignment = 0;
 					break;
 				}
 				if (!past_mov && parse_cpp_declaration_initialization && 
 				(nd_cdecl->p->node_class == ama::N_ITEM || nd_cdecl->p->node_class == ama::N_CALL) && nd_cdecl == nd_cdecl->p->c) {
 					//could be either an array assignment `foo[bar]=baz;` or a C array declaration `baz foo[bar]`
 					//the same applies for `foo(bar)=baz` vs `baz foo(bar)`
-					is_array_assignment = 1;
-				} else if (!past_mov && parse_cpp_declaration_initialization && (  
+				} else if (!past_mov && parse_cpp_declaration_initialization && (
 				(nd_cdecl->p->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(nd_cdecl->p->data) && nd_cdecl == nd_cdecl->p->c->s) || 
 				nd_cdecl->p->node_class == ama::N_PREFIX) ) {
 					//foo* bar
@@ -1030,12 +1008,23 @@ namespace ama {
 						nd_to_fix_core = nd_cdecl;
 					}
 					if (nd_cdecl->p->node_class != ama::N_PREFIX || nd_cdecl->node_class == ama::N_REF && keywords_numerical_qualifier--->get(nd_cdecl->p->data, 0)) {
-						got_type |= 1;
+						got_type = true;
 					}
 				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->isRawNode('(', ')') && !(
 					nd_cdecl->p->p && nd_cdecl->p->p->node_class == ama::N_SSTMT && nd_cdecl->p->p->data--->startsWith("for") && nd_cdecl->p->p->c == nd_cdecl->p
 				)) {
 					//(*foo)[bar]
+				} else if (!past_mov && parse_destructuring && (
+					nd_cdecl->p->node_class == ama::N_ARRAY || nd_cdecl->p->node_class == ama::N_OBJECT ||
+					nd_cdecl->p->node_class == ama::N_COMMA && nd_cdecl->p->p && (nd_cdecl->p->p->isRawNode('(', ')') || nd_cdecl->p->p->node_class == ama::N_MOV) ||
+					nd_cdecl->p->node_class == ama::N_DELIMITED && nd_cdecl->p->flags == ama::DELIMITED_COMMA ||
+					nd_cdecl->p->node_class == ama::N_LABELED && (nd_cdecl->p->c != nd_cdecl || nd_cdecl->p->c->s->node_class == ama::N_AIR)
+				)) {
+					//destructuring: [foo]=..., {foo}=..., foo,bar=..., (foo,bar,)=...
+					if (!nd_before_destructuring) {
+						nd_before_destructuring = nd_cdecl;
+					}
+					destructured = true;
 				} else if (parse_cpp_declaration_initialization && nd_cdecl->p->node_class == ama::N_TYPED_OBJECT) {
 					//foo{bar}
 				} else if (nd_cdecl->p->node_class == ama::N_MOV && nd_cdecl->p->c == nd_cdecl) {
@@ -1047,6 +1036,11 @@ namespace ama {
 					break;
 				}
 				nd_cdecl = nd_cdecl->p;
+			}
+			//destructured requires assignment
+			if (destructured && !past_mov) {
+				destructured = false;
+				nd_cdecl = nd_before_destructuring;
 			}
 			if ( nd_cdecl != nd_ref && !(nd_ref->p->node_class == ama::N_RAW && nd_ref->s && nd_ref->s->node_class == ama::N_REF) && !keywords_not_variable_name[nd_ref->data]) {
 				//we found at least one feasible declaration-ish

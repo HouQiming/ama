@@ -49,6 +49,7 @@ __global.default_options = {
 	parse_cpp11_lambda: 1,
 	parse_declarations: 1,
 	parse_cpp_declaration_initialization: 1,
+	parse_destructuring: 1,
 	parse_c_conditional: 1,
 	parse_labels: 1,
 	parse_air_object: 1,
@@ -87,7 +88,7 @@ __global.default_options = {
 	//`case` is better treated as a part of a label
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
 	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template import package',
-	keywords_operator_escape: 'case operator',
+	keywords_operator_escape: 'case operator auto',
 	keywords_numerical_qualifier: 'unsigned signed long short',
 	///////////
 	//codegen

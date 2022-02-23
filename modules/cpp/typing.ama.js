@@ -221,7 +221,7 @@ typing.ComputeDeclaredTypeRaw = function(nd_def) {
 		} else if (ndi.node_class == N_CLASS || ndi.node_class == N_FUNCTION) {
 			type = ndi;
 			break;
-		} else if (ndi.node_class == N_SEMICOLON || ndi.node_class == N_SCOPE || ndi.node_class == N_PARAMETER_LIST) {
+		} else if (ndi.node_class == N_DELIMITED && !ndi.flags || ndi.node_class == N_SCOPE || ndi.node_class == N_PARAMETER_LIST) {
 			break;
 		}
 	}
