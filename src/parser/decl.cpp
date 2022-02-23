@@ -557,6 +557,10 @@ namespace ama {
 								nd_core_scope->ReplaceWith(nd_tmp);
 								nd_func->Insert(ama::POS_FRONT, ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, nd_core_scope))));
 								nd_tmp->ReplaceWith(nd_func);
+								for (ama::Node* ndi = nd_func->p; ndi; ndi = ndi->p) {
+									nd_func->AdjustIndentLevel(-ndi->indent_level);
+									if (ndi == nd_func_postfix) {break;}
+								}
 								nd_func = nd_func_postfix;
 							} else {
 								ama::ConvertToScope(ndi);
