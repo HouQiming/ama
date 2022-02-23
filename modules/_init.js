@@ -555,10 +555,11 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 		//we need <> parsing for .ama.js
 		//p.splice(p.indexOf('ParsePointedBrackets'),1);
 		p.unshift({
+			keywords_statement: 'return throw break continue',
 			prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
 			postfix_operators: '++ --',
 			cv_qualifiers: '',
-			named_operators: 'typeof delete await new in of instanceof as',
+			named_operators: 'typeof delete await new in of instanceof as void',
 			parse_js_regexp: 1,
 			shell_string_quotes:'`',
 		});
