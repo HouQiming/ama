@@ -451,6 +451,7 @@ namespace ama {
 		int isStatement(std::span<char> name)const;
 		int isSymbol(std::span<char> name)const;
 		int isRef(std::span<char> name)const;
+		int isBinop(std::span<char> name)const;
 		//Return true if `nd` is an ancestor of `nd_maybe_child`
 		int isAncestorOf(ama::Node const* nd_maybe_child)const;
 		//Find an ancestor node with node_class nc, return NULL if not found

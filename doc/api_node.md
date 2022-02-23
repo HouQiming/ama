@@ -80,7 +80,7 @@ __global.default_options = {
 	keywords_class: 'class struct union namespace interface impl trait',
 	keywords_scoped_statement: 'enum if for while do try switch',
 	keywords_extension_clause: 'until else elif except catch finally while',
-	keywords_function: 'extern function fn def inline',
+	keywords_function: 'extern function fn def',
 	keywords_after_class_name: ': extends implements for where final',
 	keywords_after_prototype: ': -> => throw const noexcept override',
 	keywords_not_a_function: 'switch case #define #if #else #elif return',
@@ -238,6 +238,7 @@ The definition of statements are lexical: they are immediate children of `N_FILE
 - `nd.isStatement(name)`
 - `nd.isSymbol(name)`
 - `nd.isRef(name)`
+- `nd.isBinop(name)`
 
 Test for specific nodes. They are cheaper than the Javascript-only `nd.Match`.
 

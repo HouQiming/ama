@@ -187,9 +187,7 @@ namespace ama {
 				}
 				continue;
 			}
-			if (nd_raw->isRawNode('`', '`')) {
-				continue;
-			}
+			if (nd_raw->isRawNode('`', '`')) {continue;}
 			std::vector<ama::Node*> new_children{};
 			ama::Node* ndi = nd_raw->c;
 			if (ndi) {new_children.push_back(ndi);}
@@ -216,7 +214,8 @@ namespace ama {
 						new_children.push_back(ndi_next);
 					}
 				} else if ( ndi->isRawNode('{', '}') || ndi->node_class == ama::N_SCOPE ) {
-					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || ndi->s->isSymbol("=") || ndi->s->isSymbol(",") || ndi->s->isSymbol(":")) ) {
+					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || 
+					ndi->s->isSymbol("=") || ndi->s->isSymbol(",") || ndi->s->isSymbol(":") || ndi->s->isRawNode('(', ')') || ndi->s->isSymbol(".")) ) {
 						ndi = ndi_next;
 						continue;
 					}

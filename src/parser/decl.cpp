@@ -181,6 +181,12 @@ namespace ama {
 	//	assert(0);
 	//	return NULL;
 	//}
+	static ama::Node* GetMisparsedFunctionPostfixBody(ama::Node* nd) {
+		while (nd && (nd->node_class == ama::N_CALL || nd->node_class == ama::N_DOT)) {
+			nd = nd->c;
+		}
+		return nd && nd->node_class == ama::N_SCOPE ? nd : nullptr;
+	}
 	ama::Node* ParseScopedStatements(ama::Node* nd_root, JSValue options) {
 		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
@@ -241,7 +247,12 @@ namespace ama {
 						after_colon += 1;
 					}
 				}
-				if ( !nd_keyword && (ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL) ) {
+				if ( parse_cpp11_lambda && ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_ARRAY ) {
+					//C++11 lambda
+					nd_prototype_start = ndi;
+					kw_mode = KW_FUNC;
+					nd_keyword = nullptr;
+				} else if ( !nd_keyword && (ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_REF) ) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
 					ama::gcstring name = ndi->GetName();
 					if ( !name.empty() ) {
@@ -275,6 +286,7 @@ namespace ama {
 							kw_mode = KW_STMT;
 							continue;
 						} else if ( keywords_function--->get(name) ) {
+							nd_prototype_start = ndi;
 							nd_keyword = ndi;
 							kw_mode = KW_FUNC;
 							continue;
@@ -323,10 +335,10 @@ namespace ama {
 					nd_prototype_start = ndi_next;
 					kw_mode = KW_NONE;
 					nd_keyword = nullptr;
-				} else if ( (ndi->node_class == ama::N_ARRAY || ndi->isRawNode('[', ']')) && ndi_next && ndi_next->isRawNode('(', ')') ) {
+				} else if ( parse_cpp11_lambda && (ndi->node_class == ama::N_ARRAY || ndi->isRawNode('[', ']')) && ndi_next && ndi_next->isRawNode('(', ')') ) {
 					//C++11 lambda
 					nd_prototype_start = ndi;
-					kw_mode = KW_NONE;
+					kw_mode = KW_FUNC;
 					nd_keyword = nullptr;
 				} else if (struct_can_be_type_prefix && kw_mode == KW_CLASS && ndi->node_class == ama::N_SYMBOL && ambiguous_type_suffix--->get(ndi->data) && c_type_prefix_operators--->get(nd_keyword->data)) {
 					//struct / union as prefix operator: `struct foo*`
@@ -334,7 +346,7 @@ namespace ama {
 				} else if (struct_can_be_type_prefix && kw_mode == KW_CLASS && ndi != nd_keyword && ndi->node_class == ama::N_REF && ndi->s && ndi->s->node_class == ama::N_REF && c_type_prefix_operators--->get(nd_keyword->data)) {
 					//struct / union as prefix operator: `struct foo bar`
 					kw_class_could_be_type_prefix = 1;
-				} else if (ndi->node_class == ama::N_SCOPE && nd_prototype_start && nd_prototype_start != ndi) {
+				} else if ((ndi->node_class == ama::N_SCOPE || kw_mode == KW_FUNC && GetMisparsedFunctionPostfixBody(ndi)) && nd_prototype_start && nd_prototype_start != ndi) {
 					switch ( kw_mode ) {
 						case KW_CLASS:{
 							//search for the class name
@@ -537,8 +549,19 @@ namespace ama {
 							//}
 							nd_before = ama::toSingleNode(nd_before);
 							nd_after = ama::toSingleNode(nd_after);
-							ama::ConvertToScope(ndi);
-							nd_func->Insert(ama::POS_FRONT, ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, ndi))));
+							ama::Node* nd_core_scope = GetMisparsedFunctionPostfixBody(ndi);
+							if (kw_mode == KW_FUNC && ndi->node_class != ama::N_SCOPE && nd_core_scope) {
+								ama::Node* nd_func_postfix = ndi;
+								nd_func->ReplaceWith(nd_func_postfix);
+								ama::Node* nd_tmp = ama::GetPlaceHolder();
+								nd_core_scope->ReplaceWith(nd_tmp);
+								nd_func->Insert(ama::POS_FRONT, ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, nd_core_scope))));
+								nd_tmp->ReplaceWith(nd_func);
+								nd_func = nd_func_postfix;
+							} else {
+								ama::ConvertToScope(ndi);
+								nd_func->Insert(ama::POS_FRONT, ama::cons(nd_before, ama::cons(nd_paramlist, ama::cons(nd_after, ndi))));
+							}
 							//nd_func.data = GetFunctionName(kw_mode == KW_FUNC, nd_func);
 							ndi = nd_func;
 							nd_prototype_start = ndi->s;
@@ -1018,9 +1041,10 @@ namespace ama {
 					nd_cdecl->p->node_class == ama::N_ARRAY || nd_cdecl->p->node_class == ama::N_OBJECT ||
 					nd_cdecl->p->node_class == ama::N_COMMA && nd_cdecl->p->p && (nd_cdecl->p->p->isRawNode('(', ')') || nd_cdecl->p->p->node_class == ama::N_MOV) ||
 					nd_cdecl->p->node_class == ama::N_DELIMITED && nd_cdecl->p->flags == ama::DELIMITED_COMMA ||
-					nd_cdecl->p->node_class == ama::N_LABELED && (nd_cdecl->p->c != nd_cdecl || nd_cdecl->p->c->s->node_class == ama::N_AIR)
+					nd_cdecl->p->node_class == ama::N_LABELED && (nd_cdecl->p->c != nd_cdecl || nd_cdecl->p->c->s->node_class == ama::N_AIR) ||
+					nd_cdecl->p->isBinop("as") && nd_cdecl->p->c->s == nd_cdecl
 				)) {
-					//destructuring: [foo]=..., {foo}=..., foo,bar=..., (foo,bar,)=...
+					//destructuring: [foo]=..., {foo}=..., foo,bar=..., (foo,bar,)=..., {foo:bar}, {foo as bar}
 					if (!nd_before_destructuring) {
 						nd_before_destructuring = nd_cdecl;
 					}

@@ -718,6 +718,9 @@ int ama::Node::isSymbol(std::span<char> name) const {
 int ama::Node::isRef(std::span<char> name) const {
 	return this->node_class == ama::N_REF && this->data == name;
 }
+int ama::Node::isBinop(std::span<char> name) const {
+	return this->node_class == ama::N_BINOP && this->data == name;
+}
 int ama::Node::isMethodCall(std::span<char> name) const {
 	return this->node_class == ama::N_CALL && this->c->node_class == ama::N_DOT && this->c->data == name;
 }

@@ -13,9 +13,9 @@ function BidirTransform(nd_root, is_forward) {
 	//`type foo{};` as the default
 	for (let nd_ref of nd_root.FindAll(N_REF, null)) {
 		if (!(nd_ref.flags & REF_DECLARED)) {continue;}
-		if (nd_ref.p.node_class != N_RAW) {continue;}
+		if (nd_ref.p.node_class != N_RAW && !(nd_ref.p.node_class == N_TYPED_OBJECT && nd_ref.p.p.node_class == N_RAW)) {continue;}
 		let nd_stmt = nd_ref.ParentStatement();
-		if (nd_stmt.node_class != N_SEMICOLON || nd_stmt.c != nd_ref.p) {continue;}
+		if (nd_stmt.node_class != N_SEMICOLON || nd_stmt.c != nd_ref.p && !(nd_ref.p.node_class == N_TYPED_OBJECT && nd_stmt.c == nd_ref.p.p)) {continue;}
 		let nd_owner = nd_stmt.Owner();
 		if (nd_owner.node_class == N_CLASS && nd_owner.data == 'union') {continue;}
 		if (is_forward) {
