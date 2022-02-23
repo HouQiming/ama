@@ -187,13 +187,18 @@ namespace ama {
 				}
 				continue;
 			}
+			if (nd_raw->isRawNode('`', '`')) {
+				continue;
+			}
 			std::vector<ama::Node*> new_children{};
 			ama::Node* ndi = nd_raw->c;
 			if (ndi) {new_children.push_back(ndi);}
 			char changed = 0;
+			bool has_semicolon = false;
 			int after_cpp_macro = 0;
 			while ( ndi ) {
 				ama::Node* ndi_next = ndi->s;
+				if (ndi->isSymbol(";")) {has_semicolon = true;}
 				if ( ndi->isRawNode(0, 0) || (ndi_next && ndi_next->isRawNode(0, 0)) ) {
 					//already delimited, keep it
 					if ( !changed ) { changed = ','; }
@@ -201,10 +206,8 @@ namespace ama {
 					if ( ndi_next ) {
 						new_children.push_back(ndi_next);
 					}
-				} else if ( (ndi->isSymbol(";") && !
-				(ndi_next && ndi_next->node_class == ama::N_REF && keywords_extension_clause--->get(ndi_next->data))) || 
-				(ndi_next && ndi_next->isSymbol(";") && !
-				(ndi_next->s && ndi_next->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi_next->s->data))) ) {
+				} else if ( (ndi->isSymbol(";") && !(ndi_next && ndi_next->node_class == ama::N_REF && keywords_extension_clause--->get(ndi_next->data))) || 
+				(ndi_next && ndi_next->isSymbol(";") && !(ndi_next->s && ndi_next->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi_next->s->data))) ) {
 					//after_cpp_macro=0
 					//separate ; into its own statement
 					changed = ';';
@@ -213,7 +216,7 @@ namespace ama {
 						new_children.push_back(ndi_next);
 					}
 				} else if ( ndi->isRawNode('{', '}') || ndi->node_class == ama::N_SCOPE ) {
-					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || ndi->s->isSymbol("=") || ndi->s->isSymbol(",")) ) {
+					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || ndi->s->isSymbol("=") || ndi->s->isSymbol(",") || ndi->s->isSymbol(":")) ) {
 						ndi = ndi_next;
 						continue;
 					}
@@ -243,7 +246,7 @@ namespace ama {
 				ndi = ndi_next;
 			}
 			//no , delimiting in root
-			if ( changed != ';' && nd_raw->p ) {
+			if ( !has_semicolon && changed != ';' && nd_raw->p ) {
 				std::vector<ama::Node*> comma_children{};
 				changed = ' ';
 				for ( ama::Node * ndj: new_children ) {

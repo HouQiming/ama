@@ -32,4 +32,5 @@ namespace ama {
 {d0:d1,d2:[d3,d4],d5}=destructured();
 auto [da0,da1]=destructured();
 auto &[dr0,dr1]=destructured();
+const auto &[dcr0,dcr1]=destructured();
 (t0,t1,)=destructured();

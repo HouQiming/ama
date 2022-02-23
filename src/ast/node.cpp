@@ -878,7 +878,7 @@ int ama::Node::ValidateEx(intptr_t max_depth, int quiet) {
 		printf("=== source code\n");
 		fflush(stdout);
 		{
-			auto const& object0 = this->toSource();
+			auto const & object0 = this->toSource();
 			printf("%.*s\n", int(object0.size()), object0.data());
 		}
 		assert(0);
