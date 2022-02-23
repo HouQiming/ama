@@ -544,6 +544,9 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 		p.splice(p.indexOf('ParseSimplePairing')+1,0,'ConvertIndentToScope');
 		p.splice(p.indexOf('ParsePointedBrackets'),1);
 		p.unshift({
+			binary_operators: 'or\n and\n |\n ^\n &\n == != === !==\n < <= > >= in of is\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
+			named_operators: 'and or is yield in of as not',
+			prefix_operators: '++ -- ! ~ + - * && & yield not',
 			enable_hash_comment: 1,
 			parse_indent_as_scope: 1,
 			parse_js_regexp: 0,

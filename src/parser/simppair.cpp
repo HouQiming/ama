@@ -103,7 +103,16 @@ static ama::gcstring FormatComment(std::vector<char>& tmp, intptr_t& comment_ind
 static int canHaveRegexpAfter(ama::Node* nd) {
 	//the first node can be regexp
 	if ( !nd ) { return 1; }
-	if ( nd->isSymbol("=") || nd->isSymbol(";") || nd->isSymbol(",") || nd->isSymbol(":") || nd->isSymbol("+") || nd->isSymbol("-") || nd->isRef("return")) { return 1; }
+	if ( 
+		nd->isSymbol("=") || nd->isSymbol(";") || nd->isSymbol(",") || 
+		nd->isSymbol(":") || nd->isSymbol("+") || nd->isSymbol("-") || 
+		nd->isSymbol("||") || nd->isSymbol("&&") || nd->isSymbol("!") || 
+		nd->isSymbol("==") || nd->isSymbol("!=") || 
+		nd->isSymbol("===") || nd->isSymbol("!==") ||
+		nd->isSymbol(">") || nd->isSymbol(">=") ||
+		nd->isSymbol("<") || nd->isSymbol("<=") ||
+		nd->isRef("return")
+	) { return 1; }
 	return 0;
 }
 static uint8_t g_utf8_bof[3] = {0xef, 0xbb, 0xbf};
