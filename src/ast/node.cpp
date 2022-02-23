@@ -529,7 +529,7 @@ ama::gcstring ama::Node::GetStringValue() {
 	} else if (nd_this->flags & ama::STRING_SHELL_LIKE) {
 		//we need to handle all combinations of ` / $
 		//we could have ``, `$, .$, .`
-		std::span<char> string_body = nd_this->data--->subarray(0, nd_this->data.size() - 1);
+		std::span<char> string_body = nd_this->data--->subarray(0, nd_this->data.size() - ((nd_this->flags & ama::STRING_SHELL_LIKE_END) ? 0 : 1));
 		//if ((nd_this->flags & STRING_SHELL_LIKE_START) && nd_this->data.size() >= 1) {
 		//	string_body = string_body--->subarray(1);
 		//}
