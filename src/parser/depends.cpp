@@ -65,7 +65,10 @@ namespace ama {
 		//resolve the imported names separately when necessary
 		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( (nd_raw->flags & 0xffff) != 0 ) { continue; }
-			if ( !(nd_raw->c && nd_raw->c->node_class == ama::N_REF && (nd_raw->c->data == "from" || nd_raw->c->data == "import")) ) { continue; }
+			if ( !(nd_raw->c && nd_raw->c->node_class == ama::N_REF && (
+				nd_raw->c->data == "from" && nd_raw->c->s && (nd_raw->c->s->node_class == ama::N_REF || nd_raw->c->s->node_class == ama::N_STRING) || 
+				nd_raw->c->data == "import"
+			)) ) { continue; }
 			ama::Node* ndi = nd_raw->c;
 			ama::Node* nd_from = nullptr;
 			ama::Node* nd_import = nullptr;
