@@ -58,6 +58,7 @@ __global.default_options = {
 	parse_c_forward_declarations: 1,
 	parse_comma_expr: 1,
 	parse_typed_object: 1,
+	parse_arrow_as_dot: 1,
 	struct_can_be_type_prefix: 1,
 	parse_js_regexp: 1,
 	//enable_c_include: 1,

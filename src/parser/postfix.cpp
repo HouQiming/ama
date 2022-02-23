@@ -117,6 +117,7 @@ namespace ama {
 		}
 		int32_t parse_air_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1);
 		int32_t parse_typed_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_typed_object"), 1);
+		int32_t parse_arrow_as_dot = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_arrow_as_dot"), 1);
 		std::vector<ama::Node*> a = (std::vector<ama::Node*>{nd_root})--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
 		for (intptr_t i = intptr_t(a.size()) - 1; i >= 0; --i) {
 			ama::Node* ndi = a[i]->c;
@@ -170,7 +171,7 @@ namespace ama {
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					continue;
 				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
-				(ndi_next->data == "." || (!isCPPLambda(ndi) && ndi_next->data == "->") || ndi_next->data == "::") && 
+				(ndi_next->data == "." || (!isCPPLambda(ndi) && parse_arrow_as_dot && ndi_next->data == "->") || ndi_next->data == "::") && 
 				ndi_next->s && ndi_next->s->node_class == ama::N_REF) {
 					//dot
 					int dot_flags = 0;
