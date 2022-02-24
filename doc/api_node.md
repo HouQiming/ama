@@ -90,7 +90,7 @@ __global.default_options = {
 	//`case` is better treated as a part of a label
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
 	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template package',
-	keywords_operator_escape: 'case operator auto',
+	keywords_operator_escape: 'case operator auto in of as const volatile',
 	keywords_numerical_qualifier: 'unsigned signed long short',
 	///////////
 	//codegen
@@ -893,6 +893,7 @@ Alias of `N_KEYWORD_STATEMENT`
 A Javascript regular expression in the form of `/foo/flags`.
 
 - `.data` stores the original textual form of the regular expression.
+- `.flags` can be `REGEXP_ERROR` for detected erroneous regexps
 
 
 --------------

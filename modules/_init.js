@@ -382,7 +382,7 @@ __global.default_options = {
 	//`case` is better treated as a part of a label
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
 	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template package',
-	keywords_operator_escape: 'case operator auto',
+	keywords_operator_escape: 'case operator auto in of as const volatile',
 	keywords_numerical_qualifier: 'unsigned signed long short',
 	///////////
 	//codegen
@@ -546,6 +546,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 		p.unshift({
 			binary_operators: 'or\n and\n |\n ^\n &\n == != === !==\n < <= > >= in of is\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
 			named_operators: 'and or is yield in of as not',
+			keywords_operator_escape: 'case operator auto and or is yield in of as not',
 			prefix_operators: '++ -- ! ~ + - * && & yield not',
 			enable_hash_comment: 1,
 			parse_indent_as_scope: 1,

@@ -282,10 +282,10 @@ namespace ama {
 								backslash_counter ^= 1;
 							} else {
 								if ( !backslash_counter ) {
-									if ( uint32_t(ch_i) == ch_closing ) {
+									if ( uint32_t(ch_i) == ch_closing && !in_charset ) {
 										if (bracket_counter > 0) {
 											//unmatched group error, but we aren't checking it
-											flags = REGEXP_ERROR;
+											flags = ama::REGEXP_ERROR;
 										}
 										break;
 									}
