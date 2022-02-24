@@ -252,14 +252,21 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_FUNC;
 					nd_keyword = nullptr;
-				} else if ( !nd_keyword && (ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_REF) ) {
+				} else if ( (!nd_keyword || kw_mode == KW_STMT || kw_mode == KW_EXT) &&
+				(ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_REF)) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
 					ama::gcstring name = ndi->GetName();
 					if ( !name.empty() ) {
-						if ( keywords_class--->get(name) ) {
+						if (nd_keyword) {
+							//likely unscoped-scoped/unscoped nesting
+							if ( keywords_scoped_statement--->get(name) || keywords_function--->get(name) || keywords_class--->get(name) ) {
+								break;
+							}
+						} else if ( keywords_class--->get(name) ) {
 							nd_keyword = ndi;
 							kw_mode = KW_CLASS;
 							kw_class_could_be_type_prefix = 0;
+							ndi = ndi_next;
 							continue;
 						} else if ( keywords_extension_clause--->get(name) ) {
 							if (name == "while" && !(nd_last_scoped_stmt && nd_last_scoped_stmt->data == "do") && !(nd_keyword && nd_keyword->data == "do")) {
@@ -267,6 +274,7 @@ namespace ama {
 							} else if ( nd_last_scoped_stmt ) {
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
+								ndi = ndi_next;
 								continue;
 							} else if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 								//extension of unscoped statement
@@ -276,6 +284,7 @@ namespace ama {
 								nd_last_scoped_stmt = nd_stmt;
 								nd_keyword = ndi;
 								kw_mode = KW_EXT;
+								ndi = ndi_next;
 								continue;
 							} else {
 								//fall through: could be `while`
@@ -284,15 +293,18 @@ namespace ama {
 						if ( keywords_scoped_statement--->get(name) ) {
 							nd_keyword = ndi;
 							kw_mode = KW_STMT;
+							ndi = ndi_next;
 							continue;
 						} else if ( keywords_function--->get(name) ) {
 							nd_prototype_start = ndi;
 							nd_keyword = ndi;
 							kw_mode = KW_FUNC;
+							ndi = ndi_next;
 							continue;
 						} else if ( keywords_not_a_function--->get(name) ) {
 							nd_keyword = ndi;
 							kw_mode = KW_NOT_FUNC;
+							ndi = ndi_next;
 							continue;
 						}
 					}
