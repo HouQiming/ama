@@ -347,9 +347,15 @@ namespace ama {
 			lines.push_back(nd_scope->c);
 			//delimit first
 			for (ama::Node* ndi = nd_scope->c; ndi; ndi = ndi->s) {
-				if ( ndi->comments_before--->indexOf('\n') >= 0 ) {
-					passed_newline = 1;
+				for (intptr_t i = 0; i < ndi->comments_before.size(); i++) {
+					if (ndi->comments_before[i] == '\n' && (!i || ndi->comments_before[i - 1] != '\\')) {
+						passed_newline = 1;
+						break;
+					}
 				}
+				//if ( ndi->comments_before--->indexOf('\n') >= 0 ) {
+				//	passed_newline = 1;
+				//}
 				if ( passed_newline ) {
 					if ( ndi != lines.back() ) {
 						lines.push_back(ndi->BreakSelf());
