@@ -67,7 +67,7 @@ function CreateNodeAPIItem(name,nd_func,doc){
 	let n_tmp_optionals=0;
 	for(let ndi=nd_paramlist.c;ndi;ndi=ndi.s){
 		let name=ndi.GetName();
-		if(ndi.Find(N_SYMBOL,'...')){
+		if(ndi.Find(N_SYMBOL,'...')||ndi.Find(N_PREFIX,'...')){
 			name='...'+name;
 		}
 		if(ndi.node_class==N_ASSIGNMENT&&ndi.c.s.node_class!=N_AIR){

@@ -562,7 +562,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 		//p.splice(p.indexOf('ParsePointedBrackets'),1);
 		p.unshift({
 			keywords_statement: 'return throw break continue',
-			prefix_operators: '++ -- ! ~ + - * && & typeof void delete await new void',
+			prefix_operators: '++ -- ! ~ + - * && & ... typeof void delete await new void',
 			postfix_operators: '++ --',
 			cv_qualifiers: '',
 			named_operators: 'typeof delete await new in of instanceof as void',
