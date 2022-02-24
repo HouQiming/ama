@@ -270,6 +270,7 @@ namespace ama {
 						int bracket_counter = 0;
 						int in_charset = 0;
 						int premature_close = 0;
+						uint32_t flags = 0;
 						for (; ;) {
 							uint8_t ch_i = feed[lg];
 							if ( ch_i == 0 ) {
@@ -281,7 +282,11 @@ namespace ama {
 								backslash_counter ^= 1;
 							} else {
 								if ( !backslash_counter ) {
-									if ( bracket_counter <= 0 && uint32_t(ch_i) == ch_closing ) {
+									if ( uint32_t(ch_i) == ch_closing ) {
+										if (bracket_counter > 0) {
+											//unmatched group error, but we aren't checking it
+											flags = REGEXP_ERROR;
+										}
 										break;
 									}
 									if ( in_charset ) {
@@ -306,6 +311,7 @@ namespace ama {
 						ama::Node* nd = ama::CreateNode(ama::N_JS_REGEXP, nullptr);
 						nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 						nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
+						nd->flags = flags;
 						if ( premature_close && finish_incomplete_code ) {
 							std::string tmp_buffer(feed, feed_end - feed);
 							if ( backslash_counter ) {

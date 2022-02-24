@@ -240,6 +240,7 @@ namespace ama {
 	//
 	//A Javascript regular expression in the form of `/foo/flags`.
 	//- `.data` stores the original textual form of the regular expression.
+	//- `.flags` can be `REGEXP_ERROR` for detected erroneous regexps
 	static const uint8_t N_JS_REGEXP = 30;
 	//`nComma(...nodes)`
 	//
@@ -299,6 +300,7 @@ namespace ama {
 	static const uint32_t IMPORT_HAS_FROM = 1u;
 	static const uint32_t IMPORT_HAS_IMPORT = 2u;
 	static const uint32_t IMPORT_FROM_FIRST = 4u;
+	static const uint32_t REGEXP_ERROR = 1u;
 	//for Node::indent_level, reserve 1 bit for future use
 	static const intptr_t MAX_INDENT = 63;
 	/////////////////
