@@ -547,7 +547,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 		p.unshift({
 			binary_operators: 'or\n and\n |\n ^\n &\n == != === !==\n < <= > >= in of is\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
 			named_operators: 'and or is yield in of as not',
-			keywords_operator_escape: 'case operator auto and or is yield in of as not',
+			keywords_operator_escape: 'case operator auto and or is yield in of as not from',
 			prefix_operators: '++ -- ! ~ + - * && & yield not',
 			enable_hash_comment: 1,
 			parse_indent_as_scope: 1,
