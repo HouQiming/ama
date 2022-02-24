@@ -138,16 +138,26 @@ namespace ama {
 		}
 		return 0;
 	}
-	ama::Node* InsertJSSemicolons(ama::Node* nd_root) {
+	ama::Node* InsertJSSemicolons(ama::Node* nd_root, JSValue options) {
+		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
+		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
+		for (auto const &it: keywords_extension_clause) {
+			keywords_scoped_statement[it.first] = 1;
+		}
 		//just insert ';', leave the original RAW structure untouched
 		for (ama::Node* nd_raw: nd_root->FindAllWithin(0, ama::N_RAW)) {
 			//only in scopes / statements
 			if (!(nd_raw->isRawNode(0, 0) || nd_raw->isRawNode('{', '}'))) { continue;}
 			ama::Node* nd_last = nullptr;
+			bool past_keyword = false;
 			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
 				nd_last = ndi->Prev();
 				//search for newline in-between
-				if (!(nd_last && (hasTrailingNewline(nd_last->comments_after) || hasLeadingNewline(ndi->comments_before)))) { continue;}
+				if (past_keyword && ndi->isRawNode('(', ')')) {past_keyword = false;ndi = ndi->s;if (!ndi) {break;} else { continue;}}
+				past_keyword = false;
+				if (ndi->node_class == ama::N_REF && keywords_scoped_statement--->get(ndi->data)) {past_keyword = true;}
+				if (!nd_last) {continue;}
+				if (!((hasTrailingNewline(nd_last->comments_after) || hasLeadingNewline(ndi->comments_before)))) { continue;}
 				//allow operators to cross line boundary
 				if (nd_last->node_class == ama::N_SYMBOL && nd_last->data != "--" && nd_last->data != "++" ||
 				ndi->node_class == ama::N_SYMBOL && ndi->data != "--" && ndi->data != "++") {

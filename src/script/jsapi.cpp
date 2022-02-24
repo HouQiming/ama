@@ -547,7 +547,7 @@ namespace ama {
 		///////////////
 		NodeFilterDesc{"ConvertIndentToScope", nullptr, ama::ConvertIndentToScope},
 		NodeFilterDesc{"ParsePointedBrackets", ama::ParsePointedBrackets, nullptr},
-		NodeFilterDesc{"InsertJSSemicolons", ama::InsertJSSemicolons, nullptr},
+		NodeFilterDesc{"InsertJSSemicolons", nullptr, ama::InsertJSSemicolons},
 		NodeFilterDesc{"DelimitCLikeStatements", nullptr, ama::DelimitCLikeStatements},
 		NodeFilterDesc{"CleanupDummyRaws", ama::CleanupDummyRaws, nullptr},
 		NodeFilterDesc{"ConvertRootToFile", nullptr, ama::ConvertRootToFile},
