@@ -169,6 +169,7 @@ namespace ama {
 		int32_t tab_indent = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "tab_indent"), 2);
 		int32_t parse_js_regexp = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_js_regexp"), 1);
 		int32_t finish_incomplete_code = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "finish_incomplete_code"), 0);
+		int32_t parse_triple_quotes = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_triple_quotes"), 1);
 		//create char LUT
 		std::array<uint8_t, 256> char_lut{};
 		memset(char_lut.data(), CHAR_TYPE_SYMBOL, char_lut.size());
@@ -503,6 +504,7 @@ namespace ama {
 					int backslash_counter = 0;
 					bool premature_close = false;
 					bool is_shell_string = char_lut[intptr_t(ch)] == CHAR_TYPE_SHELL_STRING;
+					bool in_triple_quote = false;
 					char is_shell_arg = 0;
 					int done = 0;
 					for (; ;) {
@@ -516,6 +518,19 @@ namespace ama {
 							backslash_counter ^= 1;
 						} else {
 							if ( uint32_t(ch_i) == ch_closing && !backslash_counter ) {
+								if (parse_triple_quotes && !is_shell_string && lg == 2L && feed[lg] == ch_closing) {
+									//start triple quote
+									in_triple_quote = true;
+									lg += intptr_t(1L);
+									continue;
+								}
+								if (in_triple_quote) {
+									if (feed[lg] == ch_closing && feed[lg + 1] == ch_closing) {
+										lg += intptr_t(2L);
+									} else {
+										continue;
+									}
+								}
 								break;
 							}
 							if (is_shell_string && ch_i == '$' && feed[lg] == '{') {

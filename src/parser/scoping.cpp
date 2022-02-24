@@ -185,6 +185,13 @@ namespace ama {
 	}
 	ama::Node* DelimitCLikeStatements(ama::Node* nd_root, JSValue options) {
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
+		std::unordered_map<ama::gcstring, int> named_binary_operators = ama::GetPrioritizedList(options, "binary_operators");
+		std::unordered_map<ama::gcstring, int> named_operators = ama::GetPrioritizedList(options, "named_operators");
+		for (auto &it: named_binary_operators) {
+			if (!named_operators--->get(it.first)) {
+				it.second = 0;
+			}
+		}
 		std::vector<ama::Node*> all_raws = nd_root->FindAllWithin(0, ama::N_RAW);
 		for (intptr_t i = intptr_t(all_raws.size()) - 1; i >= 0; --i) {
 			ama::Node* nd_raw = all_raws[i];
@@ -228,7 +235,7 @@ namespace ama {
 						new_children.push_back(ndi_next);
 					}
 				} else if ( ndi->isRawNode('{', '}') || ndi->node_class == ama::N_SCOPE ) {
-					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && keywords_extension_clause--->get(ndi->s->data)) || 
+					if ( ndi->s && ((ndi->s->node_class == ama::N_REF && (keywords_extension_clause--->get(ndi->s->data) || named_binary_operators--->get(ndi->s->data, 0))) || 
 					ndi->s->isSymbol("=") || ndi->s->isSymbol(",") || ndi->s->isSymbol(":") || ndi->s->isRawNode('(', ')') || ndi->s->isSymbol(".")) ) {
 						ndi = ndi_next;
 						continue;
