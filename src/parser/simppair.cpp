@@ -111,6 +111,7 @@ static int canHaveRegexpAfter(ama::Node* nd) {
 		nd->isSymbol("===") || nd->isSymbol("!==") ||
 		nd->isSymbol(">") || nd->isSymbol(">=") ||
 		nd->isSymbol("<") || nd->isSymbol("<=") ||
+		nd->isSymbol("?") || nd->isSymbol(":") ||
 		nd->isRef("return")
 	) { return 1; }
 	return 0;
