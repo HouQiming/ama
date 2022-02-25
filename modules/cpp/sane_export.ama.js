@@ -15,6 +15,10 @@ function BidirTransform(nd_root, is_forward) {
 			//don't do the static magic on method implementations
 			continue;
 		}
+		if (nd_func.c.Find(N_PREFIX, '~')) {
+			//or destructors
+			continue;
+		}
 		if (nd_func.LastChild().node_class != N_SCOPE) {
 			//don't do it on forward declarations
 			continue;
