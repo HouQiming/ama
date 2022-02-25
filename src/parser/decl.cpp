@@ -251,6 +251,45 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_FUNC;
 					nd_keyword = nullptr;
+				} else if ( parse_python_multi_word_things && kw_mode == KW_STMT && nd_keyword && nd_keyword->isRef("if") && ndi->isRef("else") && ndi != nd_keyword->s) {
+					//Python `a if b else c`
+					//a and b and c aren't their own nodes yet: delimit with = and ,
+					ama::Node* nd_true = nd_prototype_start;
+					bool keyword_after_prototype_start = false;
+					for (ama::Node* ndj = nd_true; ndj; ndj = ndj->s) {
+						if (ndj == nd_keyword) {
+							keyword_after_prototype_start = true;
+							break;
+						}
+						if (ndj->isSymbol("=") || ndj->isSymbol(",")) {
+							nd_true = ndj->s;
+						}
+					}
+					ama::Node* nd_end = ndi->s;
+					if (nd_true != nd_keyword && nd_end) {
+						while (nd_end->s) {
+							if (nd_end->s->isSymbol("=") || nd_end->s->isSymbol(",")) {
+								break;
+							}
+							nd_end = nd_end->s;
+						}
+						////////////////////
+						ama::Node* nd_after = nd_end->BreakSibling();
+						ama::Node* nd_false = ndi->BreakSibling();
+						ndi->Unlink();
+						ama::Node* nd_cond = nd_keyword->BreakSibling();
+						ama::Node* nd_pycond = ama::CreateNode(ama::N_CONDITIONAL, nullptr)->setFlags(ama::CONDITIONAL_PYTHON);
+						nd_true->ReplaceUpto(nd_keyword, nd_pycond);
+						nd_pycond->Insert(ama::POS_BACK, nd_cond->toSingleNode());
+						nd_pycond->Insert(ama::POS_BACK, nd_true->toSingleNode());
+						nd_pycond->Insert(ama::POS_BACK, nd_false->toSingleNode());
+						if (nd_after) {nd_pycond->Insert(ama::POS_AFTER, nd_after);}
+						nd_keyword->Unlink();
+						ndi = nd_pycond;
+						kw_mode = KW_NONE;
+						nd_keyword = nullptr;
+						continue;
+					}
 				} else if ( (!nd_keyword || kw_mode == KW_STMT || kw_mode == KW_EXT || kw_mode == KW_NOT_FUNC) &&
 				(ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_REF)) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.

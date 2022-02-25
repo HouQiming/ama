@@ -267,15 +267,27 @@ namespace ama {
 				break;
 			}
 			case ama::N_CONDITIONAL:{
-				this->Generate(nd->c);
-				this->GenerateSpaceAfter(nd->c);
-				this->code--->push('?');
-				this->GenerateSpaceBefore(nd->c->s);
-				this->Generate(nd->c->s);
-				this->GenerateSpaceAfter(nd->c->s);
-				this->code--->push(':');
-				this->GenerateSpaceBefore(nd->c->s->s);
-				this->Generate(nd->c->s->s);
+				if (nd->flags & CONDITIONAL_PYTHON) {
+					this->Generate(nd->c->s);
+					this->GenerateSpaceAfter(nd->c->s);
+					this->code--->push("if");
+					this->GenerateSpaceBefore(nd->c);
+					this->Generate(nd->c);
+					this->GenerateSpaceAfter(nd->c);
+					this->code--->push("else");
+					this->GenerateSpaceBefore(nd->c->s->s);
+					this->Generate(nd->c->s->s);
+				} else {
+					this->Generate(nd->c);
+					this->GenerateSpaceAfter(nd->c);
+					this->code--->push('?');
+					this->GenerateSpaceBefore(nd->c->s);
+					this->Generate(nd->c->s);
+					this->GenerateSpaceAfter(nd->c->s);
+					this->code--->push(':');
+					this->GenerateSpaceBefore(nd->c->s->s);
+					this->Generate(nd->c->s->s);
+				}
 				break;
 			}
 			case ama::N_LABELED:{

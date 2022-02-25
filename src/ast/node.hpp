@@ -301,6 +301,7 @@ namespace ama {
 	static const uint32_t IMPORT_HAS_IMPORT = 2u;
 	static const uint32_t IMPORT_FROM_FIRST = 4u;
 	static const uint32_t REGEXP_ERROR = 1u;
+	static const uint32_t CONDITIONAL_PYTHON = 1u;
 	//for Node::indent_level, reserve 1 bit for future use
 	static const intptr_t MAX_INDENT = 63;
 	/////////////////

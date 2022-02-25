@@ -39,7 +39,7 @@ namespace ama {
 			nd->node_class == ama::N_TYPED_OBJECT || nd->node_class == ama::N_COMMA ||
 			nd->node_class == ama::N_BINOP || nd->node_class == ama::N_POSTFIX || 
 			nd->node_class == ama::N_DOT || nd->node_class == ama::N_ITEM || nd->node_class == ama::N_FUNCTION || 
-			nd->node_class == ama::N_ASSIGNMENT || nd->node_class == ama::N_CONDITIONAL || 
+			nd->node_class == ama::N_ASSIGNMENT || nd->node_class == ama::N_CONDITIONAL && !nd->flags || 
 			nd->node_class == ama::N_LABELED || nd->node_class == ama::N_DELIMITED ||
 			nd->node_class == ama::N_PARAMETER_LIST && (nd->flags & ama::PARAMLIST_UNWRAPPED) || 
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
