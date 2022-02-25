@@ -47,7 +47,9 @@ namespace ama {
 					nd->comments_before = (nd->comments_before + nd->c->comments_before);
 					nd->AdjustIndentLevel(nd->c->indent_level);
 					nd->c->comments_before = "";
-					nd->c->indent_level = 0;
+					for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
+						ndi->AdjustIndentLevel(-nd->indent_level);
+					}
 				}
 			}
 			if ( nd->c && 

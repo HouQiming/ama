@@ -8,6 +8,7 @@
 #include "operator.hpp"
 #include "scoping.hpp"
 #include "../util/jc_array.h"
+
 namespace ama {
 	ama::Node* ConvertToParameterList(ama::Node* nd_raw) {
 		uint32_t flags = 0;
@@ -208,18 +209,6 @@ namespace ama {
 				//the `defined()` in #if defined(){}
 				continue;
 			}
-			//int in_paramlist = 0;
-			//ama::Node* nd_paramlist = nd_raw->Owning(ama::N_PARAMETER_LIST);
-			//if (nd_paramlist) {
-			//	//ignore `class foo` in parameter lists
-			//	in_paramlist = 1;
-			//	for (ama::Node* ndj = nd_raw; ndj != nd_paramlist; ndj = ndj.p) {
-			//		if (ndj.node_class == ama::N_SCOPE) {
-			//			in_paramlist = 0;
-			//			break;
-			//		}
-			//	}
-			//}
 			ama::Node* ndi = nd_raw->c;
 			ama::Node* nd_prototype_start = ndi;
 			ama::Node* nd_last_scoped_stmt{};
@@ -231,12 +220,14 @@ namespace ama {
 			int kw_class_could_be_type_prefix = 0;
 			while ( ndi ) {
 				ama::Node* ndi_next = ndi->s;
+				//console.log(ndi->dump(), '...', kw_mode, ndi->p->dump());
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && ndi == nd_keyword->s && 
 				(ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL) && keywords_scoped_statement--->get(ndi->GetName()) ) {
 					//`else if` case: translate if into N_RAW and queue it
 					is_elseif = 1;
 					break;
 				}
+				//lone ':' enables ',' in function prototype (C++ constructor's member part)
 				if (ndi->isSymbol("?")) {
 					after_qmark += 1;
 				}
@@ -246,6 +237,10 @@ namespace ama {
 					} else {
 						after_colon += 1;
 					}
+				}
+				//they also enable ',' in function prototype (Java after-prototype stuff)
+				if (ndi->isRef("throws") || ndi->isRef("throw")) {
+					after_colon += 1;
 				}
 				if ( parse_cpp11_lambda && ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_ARRAY ) {
 					//C++11 lambda
@@ -310,7 +305,7 @@ namespace ama {
 					}
 				} else if ( ndi->isSymbol(";") || after_colon == 0 && ndi->isSymbol(",") ) {
 					//we can't just delimit with "," everywhere: C++ constructor parameter list
-					//but we DO need to delimit with "," for mixed C++ / C declarations like `int a(0),b`
+					//but we DO need to delimit with "," so that mixed C++ / C declarations like `int a(0),b{3};` won't get mistaken as a function
 					//so test for ':' before that isn't paired with '?'
 					if ( struct_can_be_type_prefix && nd_keyword && nd_keyword->data == "enum" ) {
 						kw_mode = KW_NONE;
