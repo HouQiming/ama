@@ -95,13 +95,13 @@ namespace ama {
 		nd_arglist->c = nullptr;
 		return ndi;
 	}
-	ama::Node* TranslateImplicitConcat(ama::Node* nd) {
+	ama::Node* TranslateImplicitConcat(std::unordered_map<ama::gcstring, int> const &named_operators, ama::Node* nd) {
 		//we don't really have a node for that, but we can isolate the concat group into a separate N_RAW
 		ama::Node* nd_end = nd;
 		while (
 			nd_end->s &&
-			(nd_end->node_class == ama::N_STRING || nd_end->node_class == ama::N_REF) &&
-			(nd_end->s->node_class == ama::N_STRING || nd_end->s->node_class == ama::N_REF) &&
+			(nd_end->node_class == ama::N_STRING || nd_end->node_class == ama::N_REF && !named_operators--->get(nd_end->data)) &&
+			(nd_end->s->node_class == ama::N_STRING || nd_end->s->node_class == ama::N_REF && !named_operators--->get(nd_end->s->data)) &&
 			(nd_end->node_class == ama::N_STRING || nd_end->s->node_class == ama::N_STRING)
 		) {
 			nd_end = nd_end->s;
@@ -118,6 +118,7 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
+		std::unordered_map<ama::gcstring, int> named_operators = ama::GetPrioritizedList(options, "named_operators");
 		for (auto iter: keywords_class) {
 			keywords_statement--->set(iter.first, 1);
 		}
@@ -147,11 +148,11 @@ namespace ama {
 					if (keywords_class--->get(ndi->data)) {
 						after_class = 1;
 					}
-				} else if ((ndi->node_class == ama::N_STRING || ndi->node_class == ama::N_REF) &&
-				ndi_next && (ndi_next->node_class == ama::N_STRING || ndi_next->node_class == ama::N_REF) &&
+				} else if ((ndi->node_class == ama::N_STRING || ndi->node_class == ama::N_REF && !named_operators--->get(ndi->data)) &&
+				ndi_next && (ndi_next->node_class == ama::N_STRING || ndi_next->node_class == ama::N_REF && !named_operators--->get(ndi_next->data)) &&
 				(ndi->node_class == ama::N_STRING || ndi_next->node_class == ama::N_STRING)) {
 					//implicit concat
-					ndi = TranslateImplicitConcat(ndi);
+					ndi = TranslateImplicitConcat(named_operators, ndi);
 					continue;
 				} else if ( parse_air_object && 
 				ndi->node_class == ama::N_SYMBOL && (ndi->data == "." || ndi->data == "::") && 

@@ -551,6 +551,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			named_operators: 'and or is yield in of as not await',
 			prefix_operators: '++ -- ! ~ + - * && & yield not await',
 			keywords_operator_escape: 'case operator auto and or is yield in of as not from import',
+			keywords_extension_clause: 'else elif except finally import',
 			enable_cpp_comment: 0,
 			enable_hash_comment: 1,
 			parse_indent_as_scope: 1,
@@ -572,7 +573,8 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			named_operators: 'typeof delete await new in of instanceof as void yield',
 			parse_js_regexp: 1,
 			shell_string_quotes:'`',
-			keywords_operator_escape: 'case in of as const',
+			keywords_operator_escape: 'case in of as const import',
+			keywords_extension_clause: 'until else elif catch finally while from',
 		});
 		if(Node.InsertJSSemicolons){
 			p.splice(p.indexOf('DelimitCLikeStatements'),0,'InsertJSSemicolons');
