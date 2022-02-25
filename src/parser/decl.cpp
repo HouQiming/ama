@@ -359,8 +359,12 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_FUNC;
 					nd_keyword = nullptr;
-				} else if (struct_can_be_type_prefix && kw_mode == KW_CLASS && ndi->node_class == ama::N_SYMBOL && ambiguous_type_suffix--->get(ndi->data) && c_type_prefix_operators--->get(nd_keyword->data)) {
+				} else if (struct_can_be_type_prefix && kw_mode == KW_CLASS && ndi->node_class == ama::N_SYMBOL && (
+					ambiguous_type_suffix--->get(ndi->data) && c_type_prefix_operators--->get(nd_keyword->data) ||
+					ndi->data == "="
+				)) {
 					//struct / union as prefix operator: `struct foo*`
+					//and we could have: struct foo bar={};
 					kw_class_could_be_type_prefix = 1;
 				} else if (struct_can_be_type_prefix && kw_mode == KW_CLASS && ndi != nd_keyword && ndi->node_class == ama::N_REF && ndi->s && ndi->s->node_class == ama::N_REF && c_type_prefix_operators--->get(nd_keyword->data)) {
 					//struct / union as prefix operator: `struct foo bar`
@@ -1113,6 +1117,10 @@ namespace ama {
 					is_ok = 1;
 				} else if ( ama::isUnderParameter(nd_cdecl)) {
 					//foo in `type foo;` or `type bar,*foo[8];`
+					is_ok = 1;
+				} else if ( nd_cdecl->p && nd_cdecl->p->p && nd_cdecl->p->isRawNode('(', ')') &&
+				nd_cdecl->p->p->isStatement("if") && nd_cdecl->p == nd_cdecl->p->p->c && got_type) {
+					//foo in `if(int foo=42){}`
 					is_ok = 1;
 				} else if ( nd_cdecl->p && nd_cdecl->p->p && nd_cdecl->p->p->c == nd_cdecl->p &&
 				nd_cdecl->p->isRawNode('(', ')') && nd_cdecl->p->p->node_class == ama::N_SSTMT && nd_cdecl->p->p->data--->startsWith("for") && got_type) {
