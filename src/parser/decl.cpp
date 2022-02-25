@@ -253,6 +253,10 @@ namespace ama {
 				} else if ( (!nd_keyword || kw_mode == KW_STMT || kw_mode == KW_EXT || kw_mode == KW_NOT_FUNC) &&
 				(ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_REF)) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
+					if ( struct_can_be_type_prefix && ndi->node_class == ama::N_CALL && nd_keyword && nd_keyword->data == "enum" ) {
+						kw_mode = KW_NONE;
+						nd_keyword = nullptr;
+					}
 					ama::gcstring name = ndi->GetName();
 					if ( !name.empty() ) {
 						if (nd_keyword && kw_mode != KW_NOT_FUNC) {
