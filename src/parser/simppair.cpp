@@ -153,7 +153,7 @@ namespace ama {
 				}
 			}
 		}
-		symbol_array--->sortby([](auto item)->uint32_t{ return (uint32_t(item[0]) << 8) + uint32_t(255u - item.size()); });
+		symbol_array--->sortby([](auto item)->uint32_t { return (uint32_t(item[0]) << 8) + uint32_t(255u - item.size()); });
 		if ( symbol_array.size() > 256 ) {
 			fprintf(stderr, "we only support up to 256 symbols\n");
 			symbol_array.resize(256);

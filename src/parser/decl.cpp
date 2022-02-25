@@ -242,7 +242,10 @@ namespace ama {
 				if (ndi->isRef("throws") || ndi->isRef("throw")) {
 					after_colon += 1;
 				}
-				if ( parse_cpp11_lambda && ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_ARRAY ) {
+				if ( parse_cpp11_lambda && (
+					ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_ARRAY || 
+					ndi->node_class == ama::N_ARRAY && ndi->s && ndi->s->node_class == ama::N_SCOPE
+				) ) {
 					//C++11 lambda
 					nd_prototype_start = ndi;
 					kw_mode = KW_FUNC;
@@ -534,6 +537,11 @@ namespace ama {
 									break;
 								}
 							}
+							bool paramlist_omitten = false;
+							if (parse_cpp11_lambda && !nd_paramlist && nd_paramlist_start->node_class == ama::N_ARRAY) {
+								nd_paramlist = ama::CreateNode(ama::N_RAW, nullptr)->setFlags(0x2928);
+								paramlist_omitten = true;
+							}
 							if ( !nd_paramlist ) {
 								goto not_declaration;
 							}
@@ -562,6 +570,9 @@ namespace ama {
 								nd_after = ama::nAir();
 							}
 							nd_paramlist = ConvertToParameterList(nd_paramlist);
+							if (paramlist_omitten) {
+								nd_paramlist->flags |= ama::PARAMLIST_UNWRAPPED;
+							}
 							//if (is_unwrapped_parameter_list) {
 							//	nd_paramlist->flags = ama::PARAMLIST_UNWRAPPED;
 							//}

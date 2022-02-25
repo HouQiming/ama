@@ -45,10 +45,11 @@ namespace ama {
 			(nd->node_class == ama::N_RAW && (nd->flags & 0xffff) == 0)) ) {
 				if ( nd->c->comments_before.size() ) {
 					nd->comments_before = (nd->comments_before + nd->c->comments_before);
+					int32_t delta = nd->c->indent_level;
 					nd->AdjustIndentLevel(nd->c->indent_level);
 					nd->c->comments_before = "";
 					for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
-						ndi->AdjustIndentLevel(-nd->indent_level);
+						ndi->AdjustIndentLevel(-delta);
 					}
 				}
 			}

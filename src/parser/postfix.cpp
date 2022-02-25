@@ -6,7 +6,7 @@
 #include "postfix.hpp"
 namespace ama {
 	static inline int isCPPLambda(ama::Node* ndi) {
-		return ndi->node_class == ama::N_CALL && ndi->c->isRawNode('[', ']');
+		return ndi->node_class == ama::N_CALL && (ndi->c->node_class == ama::N_ARRAY || ndi->c->isRawNode('[', ']'));
 	}
 	ama::Node* TranslatePostfixCall(ama::Node* ndi) {
 		ama::Node* nd_arglist = ndi->s;
@@ -134,7 +134,8 @@ namespace ama {
 		int32_t parse_air_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1);
 		int32_t parse_typed_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_typed_object"), 1);
 		int32_t parse_arrow_as_dot = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_arrow_as_dot"), 1);
-		std::vector<ama::Node*> all_raws = (std::vector<ama::Node*>{nd_root})--->concat(nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
+		std::vector<ama::Node*> all_raws{};
+		all_raws--->push(nd_root, nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
 		for (intptr_t i = intptr_t(all_raws.size()) - 1; i >= 0; --i) {
 			ama::Node* ndi = all_raws[i]->c;
 			int32_t after_class = 0;
