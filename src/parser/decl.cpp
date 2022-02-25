@@ -252,12 +252,12 @@ namespace ama {
 					nd_prototype_start = ndi;
 					kw_mode = KW_FUNC;
 					nd_keyword = nullptr;
-				} else if ( (!nd_keyword || kw_mode == KW_STMT || kw_mode == KW_EXT) &&
+				} else if ( (!nd_keyword || kw_mode == KW_STMT || kw_mode == KW_EXT || kw_mode == KW_NOT_FUNC) &&
 				(ndi->node_class == ama::N_REF || ndi->node_class == ama::N_CALL && ndi->c && ndi->c->node_class == ama::N_REF)) {
 					//keywords are not necessarily statement starters: template<>, weird macro, label, etc.
 					ama::gcstring name = ndi->GetName();
 					if ( !name.empty() ) {
-						if (nd_keyword) {
+						if (nd_keyword && kw_mode != KW_NOT_FUNC) {
 							//likely unscoped-scoped/unscoped nesting
 							if ( keywords_scoped_statement--->get(name) || keywords_function--->get(name) || keywords_class--->get(name) ) {
 								break;
@@ -344,9 +344,12 @@ namespace ama {
 						}
 						continue;
 					}
-					nd_prototype_start = ndi_next;
-					kw_mode = KW_NONE;
-					nd_keyword = nullptr;
+					if (!(kw_mode == KW_CLASS && ndi->isSymbol(","))) {
+						//allow base class list
+						nd_prototype_start = ndi_next;
+						kw_mode = KW_NONE;
+						nd_keyword = nullptr;
+					}
 				} else if ( parse_cpp11_lambda && (ndi->node_class == ama::N_ARRAY || ndi->isRawNode('[', ']')) && ndi_next && ndi_next->isRawNode('(', ')') ) {
 					//C++11 lambda
 					nd_prototype_start = ndi;

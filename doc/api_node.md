@@ -27,7 +27,7 @@ __global.default_options = {
 	enable_cpp_comment: 1,
 	//whether to enable `#foo` comments
 	enable_hash_comment: 0,
-	symbols: '!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->* <<< //',
+	symbols: '!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->* <<< ?. //',
 	shell_string_quotes: '`',
 	//we treat # as an identifier character to make C stuff like `#define` more idiosyncratic
 	identifier_charset: '0-9A-Za-z_$#',
@@ -70,7 +70,7 @@ __global.default_options = {
 	///////////
 	//binary operators, each \n denotes a change of priority level, it must be followed by a ' '
 	//the 'of' operator is a hack to improve JS for-of parsing
-	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in of instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
+	binary_operators: '||\n &&\n |\n ^\n &\n == != === !==\n < <= > >= in of instanceof\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n ?. .* ->*\n',
 	prefix_operators: '++ -- ! ~ + - * && & typeof void delete sizeof await co_await new const volatile unsigned signed long short struct union',
 	postfix_operators: 'const volatile ++ --',
 	lower_than_assignment_operators: '? : , ;',

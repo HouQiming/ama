@@ -181,6 +181,8 @@ namespace ama {
 				}
 				//allow () [] {} on the next line
 				if (ndi->isRawNode('(', ')') || ndi->isRawNode('[', ']') || ndi->isRawNode('{', '}')) {continue;}
+				//allow ?:
+				if (ndi->isSymbol("?") || ndi->isSymbol(":")) {continue;}
 				//certain keywords are valid at eol
 				if (nd_last->isRef("function") || nd_last->isRef("class") || nd_last->isRef("async") || 
 				nd_last->isRef("await") || nd_last->isRef("case") || nd_last->isRef("else") ||
