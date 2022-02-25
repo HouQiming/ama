@@ -1039,6 +1039,7 @@ namespace ama {
 			ama::Node* nd_to_fix_core = nullptr;
 			bool got_type = false;
 			bool past_mov = false;
+			bool past_comma = false;
 			bool destructured = false;
 			while ( nd_cdecl && nd_cdecl != nd_stmt ) {
 				if ( nd_cdecl->p->isRawNode(0, 0) ) {
@@ -1093,6 +1094,7 @@ namespace ama {
 					past_mov = true;
 				} else if (nd_cdecl->p->node_class == ama::N_COMMA && nd_cdecl->p->p && nd_cdecl->p->p->node_class == ama::N_RAW) {
 					//the last multi-var comma layer
+					past_comma = true;
 				} else {
 					break;
 				}
@@ -1141,7 +1143,7 @@ namespace ama {
 				}
 				if ( is_ok ) {
 					if (!nd_to_fix_core) {nd_to_fix_core = nd_ref;}
-					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, keywords_numerical_qualifier, nd_to_fix_core, true);
+					FixTypeSuffixFromInnerRef(ambiguous_type_suffix, keywords_numerical_qualifier, nd_to_fix_core, past_comma);
 					nd_ref->flags |= ama::REF_WRITTEN | ama::REF_DECLARED;
 				}
 			}
