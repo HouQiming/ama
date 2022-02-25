@@ -65,7 +65,8 @@ namespace ama {
 				}
 			}
 		}
-		if (!nd_arg && nd_keyword && (nd_keyword->data == "if" || nd_keyword->data == "while") && nd_body && 
+		if (!nd_arg && nd_keyword && nd_keyword->node_class == ama::N_REF &&
+		(nd_keyword->data == "if" || nd_keyword->data == "while") && nd_body && 
 		nd_body->node_class != ama::N_LABELED && nd_body->node_class != ama::N_RAW) {
 			ama::Node* nd_last_colon = nullptr;
 			for (ama::Node* ndi = nd_body; ndi; ndi = ndi->s) {
@@ -103,24 +104,6 @@ namespace ama {
 		}
 		ama::Node* nd_stmt = ama::CreateNode(ama::N_SSTMT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
 		nd_body = ama::toSingleNode(nd_body);
-		//if (!is_elseif) {
-		//	ama::Node* nd_scoped_body = ama::CreateNode(ama::N_SCOPE, nd_body);
-		//	if ( nd_body->comments_before--->indexOf('\n') < 0 ) {
-		//		std::swap(nd_scoped_body->comments_before, nd_body->comments_before);
-		//	}
-		//	if ( nd_body->comments_after--->indexOf('\n') < 0 ) {
-		//		std::swap(nd_scoped_body->comments_after, nd_body->comments_after);
-		//	}
-		//	nd_scoped_body->indent_level = nd_keyword->indent_level;
-		//	if ( nd_body->comments_after--->indexOf('\n') >= 0 && nd_stmt->comments_after--->indexOf('\n') < 0 ) {
-		//		nd_stmt->comments_after = (ama::gcscat(nd_stmt->comments_after, "\n"));
-		//	}
-		//	if ( nd_body->comments_before--->indexOf('\n') >= 0 && nd_body->comments_after--->indexOf('\n') < 0 ) {
-		//		nd_body->comments_after = (ama::gcscat(nd_body->comments_after, "\n"));
-		//	}
-		//	nd_body->AdjustIndentLevel(-nd_scoped_body->indent_level);
-		//	nd_body = nd_scoped_body;
-		//}
 		nd_stmt->Insert(
 			ama::POS_FRONT,
 			ama::cons(ama::toSingleNode(nd_arg)->MergeCommentsBefore(nd_keyword), nd_body)
@@ -668,19 +651,35 @@ namespace ama {
 					nd_raw->Insert(ama::POS_BACK, nd_semicolon);
 				}
 				ama::Node* ndi = nd_raw->LastChild();
-				ama::Node* nd_stmt{};
+				ama::Node* nd_stmt = nullptr;
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
 					nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
+				} else if (parse_python_multi_word_things && nd_keyword->GetName() == "for" && nd_keyword->Prev() && nd_raw->p && nd_raw->p->node_class == ama::N_ARRAY) {
+					//Python [foo for bar [if]]
+					if (nd_keyword->node_class == ama::N_CALL) {
+						nd_keyword = ama::UnparseCall(nd_keyword);
+					}
+					ama::Node* nd_for_arg = nd_keyword->BreakSibling();
+					ama::Node* nd_if = nullptr;
+					for (ama::Node* ndj = nd_for_arg; ndj; ndj = ndj->s) {
+						if (ndj->isRef("if")) {
+							nd_if = ndj;
+							break;
+						}
+					}
+					nd_stmt = ama::CreateNode(ama::N_SSTMT, nd_for_arg->toSingleNode()->MergeCommentsBefore(nd_keyword))->setData("for")->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
+					if (nd_if) {
+						ama::Node* nd_cond = nd_if->BreakSibling()->toSingleNode();
+						nd_if->Unlink();
+						nd_if = ama::CreateNode(ama::N_SSTMT, ama::cons(nd_cond, ama::nAir()))->setData("if")->setCommentsBefore(nd_if->comments_before)->setIndent(nd_if->indent_level);
+						nd_stmt->Insert(ama::POS_BACK, nd_if);
+					} else {
+						nd_stmt->Insert(ama::POS_BACK, ama::nAir());
+					}
+					nd_keyword->Unlink();
+					nd_raw->Insert(ama::POS_BACK, nd_stmt);
 				} else {
 					nd_stmt = TranslateCUnscopedStatement(Q, nd_keyword, ndi, is_elseif);
-					//if (is_elseif) {
-					//	//re-queue the if part
-					//	ama::Node* nd_elseif = nd_stmt->LastChild();
-					//	//the counter-example where it's not N_RAW: `#define for if (0) {} else for`
-					//	if (nd_elseif->node_class == ama::N_RAW) {
-					//		Q.push_back(nd_elseif);
-					//	}
-					//}
 				}
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 					nd_stmt->node_class = ama::N_EXTENSION_CLAUSE;
