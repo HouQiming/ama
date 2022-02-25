@@ -609,7 +609,7 @@ namespace ama {
 						}
 						was_ref = 0;
 						continue;
-					} else if ( ndi->data == "||" || ndi->data == "&&" ) {
+					} else if ( ndi->data == "||" || ndi->data == "&&" || ndi->data == ";" ) {
 						stack.clear();
 					}
 				}
