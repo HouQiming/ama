@@ -101,7 +101,8 @@ namespace ama {
 		while (
 			nd_end->s &&
 			(nd_end->node_class == ama::N_STRING || nd_end->node_class == ama::N_REF) &&
-			(nd_end->s->node_class == ama::N_STRING || nd_end->s->node_class == ama::N_REF)
+			(nd_end->s->node_class == ama::N_STRING || nd_end->s->node_class == ama::N_REF) &&
+			(nd_end->node_class == ama::N_STRING || nd_end->s->node_class == ama::N_STRING)
 		) {
 			nd_end = nd_end->s;
 		}
@@ -147,7 +148,8 @@ namespace ama {
 						after_class = 1;
 					}
 				} else if ((ndi->node_class == ama::N_STRING || ndi->node_class == ama::N_REF) &&
-				ndi_next && (ndi_next->node_class == ama::N_STRING || ndi_next->node_class == ama::N_REF)) {
+				ndi_next && (ndi_next->node_class == ama::N_STRING || ndi_next->node_class == ama::N_REF) &&
+				(ndi->node_class == ama::N_STRING || ndi_next->node_class == ama::N_STRING)) {
 					//implicit concat
 					ndi = TranslateImplicitConcat(ndi);
 					continue;

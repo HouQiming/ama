@@ -389,6 +389,8 @@ namespace ama {
 	}
 	static ama::Node* FoldPostfix(ama::Node* nd_operand, ama::Node* nd_operator) {
 		ama::Node* nd_prefix_core = nd_operand;
+		//the s-reset is mandatory
+		nd_operand->s = nullptr;
 		while ( nd_prefix_core->node_class == ama::N_PREFIX ) {
 			nd_prefix_core = nd_prefix_core->c;
 		}
@@ -419,6 +421,7 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
+		int32_t parse_c_style_cast = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_style_cast"), 1);
 		//treat statement / escape keywords as named ops: they cannot be operands
 		for (auto iter: keywords_statement) {
 			named_ops--->set(iter.first, 1);
@@ -438,6 +441,7 @@ namespace ama {
 		//sentenial operand
 		//we need to leave uninterpreted structures alone
 		//reverse() to fold smaller raws first
+		//ignore paren-target C-style cast like (foo)(bar) - there's no way we can tell them apart from a call!
 		std::vector<ama::Node*> raws = nd_root->FindAllWithin(0, ama::N_RAW);
 		for (intptr_t i = intptr_t(raws.size()) - 1; i >= 0; --i) {
 			//binary and unary in one pass
@@ -482,15 +486,25 @@ namespace ama {
 					}
 				} else {
 					//operand, fold prefix
-					while ( stack.size() >= 1 && stack.back()->node_class == ama::N_SYMBOL && prefix_ops--->get(stack.back()->data) ) {
-						if ( stack.size() >= 2 && stack[stack.size() - 2]->node_class != ama::N_SYMBOL && binop_priority--->get(stack.back()->data) ) {
+					//C-style cast `(foo)bar` counts as prefix
+					while ( stack.size() >= 1 && stack.back()->node_class == ama::N_SYMBOL && prefix_ops--->get(stack.back()->data) ||
+					parse_c_style_cast && stack.size() >= 1 && stack.back()->isRawNode('(', ')') && stack.back()->c && !stack.back()->c->s) {
+						if ( stack.size() >= 2 && stack[stack.size() - 2]->node_class != ama::N_SYMBOL && 
+						stack.back()->node_class == ama::N_SYMBOL && binop_priority--->get(stack.back()->data) ) {
 							//prefix-binary ambiguity: assume binary
 							break;
 						}
 						ama::Node* nd_prefix_operator = stack--->pop();
-						ndi = ama::nPrefix(nd_prefix_operator->data, ndi->MergeCommentsBefore(nd_prefix_operator))->setCommentsBefore(nd_prefix_operator->comments_before);
-						nd_prefix_operator->p = nullptr;
-						nd_prefix_operator->FreeASTStorage();
+						if (nd_prefix_operator->node_class == ama::N_SYMBOL) {
+							ndi = ama::nPrefix(nd_prefix_operator->data, ndi->MergeCommentsBefore(nd_prefix_operator))->setCommentsBefore(nd_prefix_operator->comments_before);
+							nd_prefix_operator->p = nullptr;
+							nd_prefix_operator->FreeASTStorage();
+						} else {
+							//C-style cast
+							//COULDDO: a dedicated node class
+							//but we aren't too confident here: the syntax is too generic to unambiguously conclude that it's a cast
+							ndi = ama::CreateNode(ama::N_RAW, ama::cons(nd_prefix_operator, ama::cons(ndi, nullptr)));
+						}
 						changed = 1;
 					}
 					if ( stack.size() >= 1 && stack.back()->node_class != ama::N_SYMBOL ) {
