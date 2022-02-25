@@ -495,7 +495,7 @@ namespace ama {
 								//prefix-binary ambiguity: assume binary
 								break;
 							}
-							if (stack.back()->node_class == ama::N_SYMBOL && ndi->isRawNode('(', ')') && ndi->c && !ndi->c->s && ndi_next && ndi_next->node_class != ama::N_SYMBOL) {
+							if (parse_c_style_cast && stack.back()->node_class == ama::N_SYMBOL && ndi->isRawNode('(', ')') && ndi->c && !ndi->c->s && ndi_next && ndi_next->node_class != ama::N_SYMBOL) {
 								//defer prefixop before type cast
 								break;
 							}

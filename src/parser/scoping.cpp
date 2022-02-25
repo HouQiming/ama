@@ -152,11 +152,13 @@ namespace ama {
 			bool past_keyword = false;
 			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
 				nd_last = ndi->Prev();
-				//search for newline in-between
+				//at `if()\n`, we need to skip an extra node so that no ; is added after the ()
 				if (past_keyword && ndi->isRawNode('(', ')')) {past_keyword = false;ndi = ndi->s;if (!ndi) {break;} else { continue;}}
 				past_keyword = false;
-				if (ndi->node_class == ama::N_REF && keywords_scoped_statement--->get(ndi->data)) {past_keyword = true;}
+				//const foo=Symbol.for()
+				if (ndi->node_class == ama::N_REF && keywords_scoped_statement--->get(ndi->data) && !(nd_last && nd_last->isSymbol("."))) {past_keyword = true;}
 				if (!nd_last) {continue;}
+				//search for newline in-between
 				if (!((hasTrailingNewline(nd_last->comments_after) || hasLeadingNewline(ndi->comments_before)))) { continue;}
 				//allow operators to cross line boundary
 				if (nd_last->node_class == ama::N_SYMBOL && nd_last->data != "--" && nd_last->data != "++" ||
