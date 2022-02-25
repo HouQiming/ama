@@ -153,9 +153,9 @@ namespace ama {
 			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
 				nd_last = ndi->Prev();
 				//at `if()\n`, we need to skip an extra node so that no ; is added after the ()
+				//but `const foo=Symbol.for()` needs ';'
 				if (past_keyword && ndi->isRawNode('(', ')')) {past_keyword = false;ndi = ndi->s;if (!ndi) {break;} else { continue;}}
 				past_keyword = false;
-				//const foo=Symbol.for()
 				if (ndi->node_class == ama::N_REF && keywords_scoped_statement--->get(ndi->data) && !(nd_last && nd_last->isSymbol("."))) {past_keyword = true;}
 				if (!nd_last) {continue;}
 				//search for newline in-between

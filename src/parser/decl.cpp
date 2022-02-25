@@ -312,6 +312,10 @@ namespace ama {
 					//we can't just delimit with "," everywhere: C++ constructor parameter list
 					//but we DO need to delimit with "," for mixed C++ / C declarations like `int a(0),b`
 					//so test for ':' before that isn't paired with '?'
+					if ( struct_can_be_type_prefix && nd_keyword && nd_keyword->data == "enum" ) {
+						kw_mode = KW_NONE;
+						nd_keyword = nullptr;
+					}
 					if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 						//unscoped statement
 						//ndi_next = ndi.BreakSibling();
@@ -596,6 +600,10 @@ namespace ama {
 					nd_last_scoped_stmt = nullptr;
 				}
 				ndi = ndi_next;
+			}
+			if ( struct_can_be_type_prefix && nd_keyword && nd_keyword->data == "enum" ) {
+				kw_mode = KW_NONE;
+				nd_keyword = nullptr;
 			}
 			if ( nd_keyword && (kw_mode == KW_STMT || kw_mode == KW_EXT) ) {
 				//C unscoped statement
