@@ -201,6 +201,7 @@ namespace ama {
 		int32_t parse_c_forward_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_forward_declarations"), 1);
 		int32_t parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp11_lambda"), 1);
 		int32_t struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "struct_can_be_type_prefix"), 1);
+		int32_t parse_python_multi_word_things = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_python_multi_word_things"), 1);
 		std::vector<ama::Node*> Q = nd_root->FindAllWithin(0, ama::N_RAW);
 		for ( intptr_t qi = 0; qi < intptr_t(Q.size()); qi++ ) {
 			ama::Node* nd_raw = Q[qi];

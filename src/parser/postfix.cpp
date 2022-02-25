@@ -134,6 +134,7 @@ namespace ama {
 		int32_t parse_air_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_air_object"), 1);
 		int32_t parse_typed_object = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_typed_object"), 1);
 		int32_t parse_arrow_as_dot = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_arrow_as_dot"), 1);
+		int32_t parse_python_multi_word_things = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_python_multi_word_things"), 1);
 		std::vector<ama::Node*> all_raws{};
 		all_raws--->push(nd_root, nd_root->FindAllWithin(0, ama::N_SCOPE), nd_root->FindAllWithin(0, ama::N_RAW));
 		for (intptr_t i = intptr_t(all_raws.size()) - 1; i >= 0; --i) {
@@ -143,6 +144,21 @@ namespace ama {
 				ama::Node* ndi_next = ndi->s;
 				//for struct foo bar{}
 				if (ndi->node_class == ama::N_REF) {after_class = 0;}
+				if (parse_python_multi_word_things) {
+					//two-word operators
+					if (ndi_next && (ndi->isRef("not") && ndi_next->isRef("in") || ndi->isRef("is") && ndi_next->isRef("not"))) {
+						//ndi->MergeCommentsAfter(ndi_next);
+						if (ndi_next->s) {
+							ndi_next->s->MergeCommentsBefore(ndi_next);
+						} else {
+							ndi->comments_after = ndi->comments_after + ndi_next->comments_after;
+						}
+						ndi->data = ndi->data + " " + ndi_next->data;
+						ndi_next->Unlink();
+						//re-fetch next
+						continue;
+					}
+				}
 				if (ndi->node_class == ama::N_REF && keywords_statement--->get(ndi->data, 0)) {
 					//it's a statement keyword, do nothing: it cannot dot or call
 					//the C++ 'operator' keyword also ends here

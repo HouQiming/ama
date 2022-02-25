@@ -354,8 +354,9 @@ __global.default_options = {
 	parse_arrow_as_dot: 1,
 	parse_triple_quotes: 1,
 	parse_c_style_cast: 1,
-	struct_can_be_type_prefix: 1,
+	parse_python_multi_word_things: 1,
 	parse_js_regexp: 1,
+	struct_can_be_type_prefix: 1,
 	//enable_c_include: 1,
 	//enable_js_require: 1,
 	//enable_python_java_es6_import: 1,
@@ -548,8 +549,8 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 		p.splice(p.indexOf('ParseSimplePairing')+1,0,'ConvertIndentToScope');
 		p.splice(p.indexOf('ParsePointedBrackets'),1);
 		p.unshift({
-			binary_operators: 'or\n and\n |\n ^\n &\n == != === !==\n < <= > >= in of is\n <=>\n << >> >>>\n + -\n * / // %\n **\n as\n',
-			named_operators: 'and or is yield in of as not await',
+			binary_operators: 'or\n and\n |\n ^\n &\n == != === !==\n < <= > >= in of is is\rnot not\rin\n <=>\n << >> >>>\n + -\n * / // %\n **\n as\n',
+			named_operators: 'and or is yield in of as not await is\rnot not\rin',
 			prefix_operators: '++ -- ! ~ + - * && & yield not await',
 			keywords_operator_escape: 'case operator auto and or is yield in of as not from import',
 			keywords_extension_clause: 'else elif except finally import',

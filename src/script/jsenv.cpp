@@ -127,6 +127,7 @@ namespace ama {
 		int priority = 1;
 		//coulddo: SSE / NEON vectorization
 		size_t I0 = intptr_t(0L);
+		//hack: Python has 'not in' and 'is not' operators
 		for (size_t I = 0; I <= s_binops.size(); ++I) {
 			//char ch=(I<str.size()?str[I]:0)
 			if ( I >= s_binops.size() || s_binops[I] == ' ' ) {
@@ -135,6 +136,9 @@ namespace ama {
 				I0 = I + 1;
 				//the return will be replaced
 				std::span<char> s_binop(s_binops.data() + I00, I - I00);
+				for (size_t j = 0; j < s_binop.size(); ++j) {
+					if (s_binop[j] == '\r') {s_binop[j] = ' ';}
+				}
 				if ( s_binop--->endsWith('\n') ) {
 					ret--->set(ama::gcstring(s_binop--->subarray(0, s_binop.size() - 1)), priority);
 					priority += 1;
