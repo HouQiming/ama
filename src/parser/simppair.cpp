@@ -203,6 +203,7 @@ namespace ama {
 		char_lut[')'] = CHAR_TYPE_CLOSING;
 		char_lut[']'] = CHAR_TYPE_CLOSING;
 		char_lut['}'] = CHAR_TYPE_CLOSING;
+		int32_t enable_cpp_comment = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "enable_cpp_comment"), 1); 
 		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "enable_hash_comment"), 0) ) {
 			char_lut['#'] = CHAR_TYPE_SLASH;
 		}
@@ -245,11 +246,11 @@ namespace ama {
 			// [ \t\r] \n "' / 0-9 A-Za-z_\u0080+
 			switch ( char_lut[intptr_t(ch)] ) {
 				case CHAR_TYPE_SLASH:{
-					if ( ch == '#' || feed[intptr_t(1L)] == '/' ) {
+					if ( ch == '#' || enable_cpp_comment && feed[intptr_t(1L)] == '/' ) {
 						feed = ama::SkipChars(feed, g_not_newline);
 						comment_end = feed;
 						break;
-					} else if ( feed[intptr_t(1L)] == '*' ) {
+					} else if ( enable_cpp_comment && feed[intptr_t(1L)] == '*' ) {
 						intptr_t lg = intptr_t(2L);
 						for (; ;) {
 							if ( !feed[lg] ) {

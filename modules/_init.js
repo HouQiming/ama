@@ -242,7 +242,7 @@ Node.StripRedundantPrefixSpace = function(aggressive) {
 		return s&&!s.trim()&&(aggressive||s.indexOf('\n')<0);
 	}
 	for (let ndi = this; ndi; ndi = ndi.PreorderNext(this)) {
-		if(ndi.node_class===N_KEYWORD_STATEMENT&&ndi.data==='#define'){
+		if(ndi.node_class===N_KEYWORD_STATEMENT&&(ndi.data==='#define'||ndi.data=='#')){
 			ndi=ndi.PreorderSkip();
 			continue;
 		}
@@ -316,9 +316,10 @@ Node.GetFunctionNameNode=function() {
 __global.default_options = {
 	//The default_options tries to be generic enough for any language.
 	/////////////////////////
+	enable_cpp_comment: 1,
 	//whether to enable `#foo` comments
 	enable_hash_comment: 0,
-	symbols: '!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->* <<<',
+	symbols: '!== != && ++ -- -> ... .. :: << <= === == => >= >>> >> || <=> ** .* ->* <<< //',
 	shell_string_quotes:'`',
 	//we treat # as an identifier character to make C stuff like `#define` more idiosyncratic
 	identifier_charset: '0-9A-Za-z_$#',
@@ -378,11 +379,12 @@ __global.default_options = {
 	keywords_function: 'extern function fn def',
 	keywords_after_class_name: ': extends implements for where final',
 	keywords_after_prototype: ': -> => throw const noexcept override',
-	keywords_not_a_function: 'switch case #include #define #if #else #elif return',
+	keywords_not_a_function: 'switch case #include # #define #if #else #elif return',
 	keywords_not_variable_name: 'static const volatile private public protected final noexcept throw override virtual operator',
 	//`case` is better treated as a part of a label
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
-	keywords_statement: 'return typedef using throw goto #pragma #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template package',
+	//the standalone `#` is for things like `# define`
+	keywords_statement: 'return typedef using throw raise goto #pragma # #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template package',
 	keywords_operator_escape: 'case operator auto in of as const volatile',
 	keywords_numerical_qualifier: 'unsigned signed long short',
 	///////////
@@ -545,10 +547,11 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 		p.splice(p.indexOf('ParseSimplePairing')+1,0,'ConvertIndentToScope');
 		p.splice(p.indexOf('ParsePointedBrackets'),1);
 		p.unshift({
-			binary_operators: 'or\n and\n |\n ^\n &\n == != === !==\n < <= > >= in of is\n <=>\n << >> >>>\n + -\n * / %\n **\n as\n .* ->*\n',
-			named_operators: 'and or is yield in of as not',
-			keywords_operator_escape: 'case operator auto and or is yield in of as not from',
-			prefix_operators: '++ -- ! ~ + - * && & yield not',
+			binary_operators: 'or\n and\n |\n ^\n &\n == != === !==\n < <= > >= in of is\n <=>\n << >> >>>\n + -\n * / // %\n **\n as\n .* ->*\n',
+			named_operators: 'and or is yield in of as not await',
+			prefix_operators: '++ -- ! ~ + - * && & yield not await',
+			keywords_operator_escape: 'case operator auto and or is yield in of as not from import',
+			enable_cpp_comment: 0,
 			enable_hash_comment: 1,
 			parse_indent_as_scope: 1,
 			parse_js_regexp: 0,
