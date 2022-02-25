@@ -385,7 +385,7 @@ __global.default_options = {
 	//`template` is parsed by the non-scoped statement parser, but it's created as N_SCOPED_STATEMENT
 	//the standalone `#` is for things like `# define`
 	keywords_statement: 'return typedef using throw raise goto #pragma # #define #undef #if #ifdef #ifndef #elif #else #endif #line break continue template package',
-	keywords_operator_escape: 'case operator auto in of as const volatile',
+	keywords_operator_escape: 'static virtual final case operator auto in of as const volatile',
 	keywords_numerical_qualifier: 'unsigned signed long short',
 	///////////
 	//codegen
@@ -573,7 +573,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			named_operators: 'typeof delete await new in of instanceof as void yield',
 			parse_js_regexp: 1,
 			shell_string_quotes:'`',
-			keywords_operator_escape: 'case in of as const import',
+			keywords_operator_escape: 'static case in of as const import',
 			keywords_extension_clause: 'until else elif catch finally while from',
 		});
 		if(Node.InsertJSSemicolons){

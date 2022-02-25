@@ -487,25 +487,31 @@ namespace ama {
 				} else {
 					//operand, fold prefix
 					//C-style cast `(foo)bar` counts as prefix
-					while ( stack.size() >= 1 && stack.back()->node_class == ama::N_SYMBOL && prefix_ops--->get(stack.back()->data) ||
-					parse_c_style_cast && stack.size() >= 1 && stack.back()->isRawNode('(', ')') && stack.back()->c && !stack.back()->c->s) {
-						if ( stack.size() >= 2 && stack[stack.size() - 2]->node_class != ama::N_SYMBOL && 
-						stack.back()->node_class == ama::N_SYMBOL && binop_priority--->get(stack.back()->data) ) {
-							//prefix-binary ambiguity: assume binary
-							break;
+					if (ndi->node_class != ama::N_SCOPE) {
+						while ( stack.size() >= 1 && stack.back()->node_class == ama::N_SYMBOL && prefix_ops--->get(stack.back()->data) ||
+						parse_c_style_cast && stack.size() >= 1 && stack.back()->isRawNode('(', ')') && stack.back()->c && !stack.back()->c->s) {
+							if ( stack.size() >= 2 && stack[stack.size() - 2]->node_class != ama::N_SYMBOL && 
+							stack.back()->node_class == ama::N_SYMBOL && binop_priority--->get(stack.back()->data) ) {
+								//prefix-binary ambiguity: assume binary
+								break;
+							}
+							if (stack.back()->node_class == ama::N_SYMBOL && ndi->isRawNode('(', ')') && ndi->c && !ndi->c->s && ndi_next && ndi_next->node_class != ama::N_SYMBOL) {
+								//defer prefixop before type cast
+								break;
+							}
+							ama::Node* nd_prefix_operator = stack--->pop();
+							if (nd_prefix_operator->node_class == ama::N_SYMBOL) {
+								ndi = ama::nPrefix(nd_prefix_operator->data, ndi->MergeCommentsBefore(nd_prefix_operator))->setCommentsBefore(nd_prefix_operator->comments_before);
+								nd_prefix_operator->p = nullptr;
+								nd_prefix_operator->FreeASTStorage();
+							} else {
+								//C-style cast
+								//COULDDO: a dedicated node class
+								//but we aren't too confident here: the syntax is too generic to unambiguously conclude that it's a cast
+								ndi = ama::CreateNode(ama::N_RAW, ama::cons(nd_prefix_operator, ama::cons(ndi, nullptr)));
+							}
+							changed = 1;
 						}
-						ama::Node* nd_prefix_operator = stack--->pop();
-						if (nd_prefix_operator->node_class == ama::N_SYMBOL) {
-							ndi = ama::nPrefix(nd_prefix_operator->data, ndi->MergeCommentsBefore(nd_prefix_operator))->setCommentsBefore(nd_prefix_operator->comments_before);
-							nd_prefix_operator->p = nullptr;
-							nd_prefix_operator->FreeASTStorage();
-						} else {
-							//C-style cast
-							//COULDDO: a dedicated node class
-							//but we aren't too confident here: the syntax is too generic to unambiguously conclude that it's a cast
-							ndi = ama::CreateNode(ama::N_RAW, ama::cons(nd_prefix_operator, ama::cons(ndi, nullptr)));
-						}
-						changed = 1;
 					}
 					if ( stack.size() >= 1 && stack.back()->node_class != ama::N_SYMBOL ) {
 						//pushing an operand while we have another operand, fold binop
