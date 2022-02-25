@@ -173,7 +173,8 @@ namespace ama {
 					continue;
 				} else if ( parse_air_object && 
 				ndi->node_class == ama::N_SYMBOL && (ndi->data == "." || ndi->data == "::") && 
-				ndi->s && ndi->s->node_class == ama::N_REF ) {
+				ndi_next && ndi_next->node_class == ama::N_REF &&
+				!(parse_python_multi_word_things && ndi->data == "." && ndi_next->data == "import")) {
 					//dot
 					int dot_flags = 0;
 					if ( ndi->data == "->" ) {
