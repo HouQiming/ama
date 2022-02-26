@@ -102,6 +102,16 @@ namespace ama {
 				nd_body = nd_last_colon->BreakSibling();
 			}
 		}
+		ama::Node* nd_misgrouped_while = nullptr;
+		if (nd_keyword->data != "do") {
+			//find ';while' in nd_body and break that if we're not `do`, it's always safe to insert after nd_stmt
+			for (ama::Node* ndi = nd_body; ndi; ndi = ndi->s) {
+				if (ndi->s && ndi->isSymbol(";") && ndi->s->GetName() == "while") {
+					nd_misgrouped_while = ndi->BreakSibling();
+					break;
+				}
+			}
+		}
 		ama::Node* nd_stmt = ama::CreateNode(ama::N_SSTMT, nullptr)->setData(nd_keyword->data)->setCommentsBefore(nd_keyword->comments_before)->setIndent(nd_keyword->indent_level);
 		nd_body = ama::toSingleNode(nd_body);
 		nd_stmt->Insert(
@@ -109,6 +119,9 @@ namespace ama {
 			ama::cons(ama::toSingleNode(nd_arg)->MergeCommentsBefore(nd_keyword), nd_body)
 		);
 		nd_tmp->ReplaceWith(nd_stmt);
+		if (nd_misgrouped_while) {
+			nd_stmt->Insert(ama::POS_AFTER, nd_misgrouped_while);
+		}
 		nd_keyword->s = nullptr;
 		nd_keyword->FreeASTStorage();
 		if (nd_body->node_class == ama::N_RAW) {
@@ -194,9 +207,10 @@ namespace ama {
 				continue;
 			}
 			ama::Node* ndi = nd_raw->c;
+			reparse_after_while_breakoff:
 			ama::Node* nd_prototype_start = ndi;
-			ama::Node* nd_last_scoped_stmt{};
-			ama::Node* nd_keyword{};
+			ama::Node* nd_last_scoped_stmt = nullptr;
+			ama::Node* nd_keyword = nullptr;
 			int kw_mode = KW_NONE;
 			int is_elseif = 0;
 			int after_qmark = 0;
@@ -650,7 +664,7 @@ namespace ama {
 					nd_semicolon->Unlink();
 					nd_raw->Insert(ama::POS_BACK, nd_semicolon);
 				}
-				ama::Node* ndi = nd_raw->LastChild();
+				ndi = nd_raw->LastChild();
 				ama::Node* nd_stmt = nullptr;
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
 					nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
@@ -681,10 +695,19 @@ namespace ama {
 				} else {
 					nd_stmt = TranslateCUnscopedStatement(Q, nd_keyword, ndi, is_elseif);
 				}
+				//we could have broken off a `while`, restart the parsing loop when necessary
+				bool gotta_go_back = false;
+				if (nd_stmt->s && nd_stmt->p == nd_raw) {
+					ndi = nd_stmt->s;
+					gotta_go_back = (ndi != nullptr);
+				}
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt ) {
 					nd_stmt->node_class = ama::N_EXTENSION_CLAUSE;
 					nd_stmt->Unlink();
 					nd_last_scoped_stmt->Insert(ama::POS_BACK, nd_stmt);
+				}
+				if (gotta_go_back) {
+					goto reparse_after_while_breakoff;
 				}
 			} else if ( kw_mode == KW_FUNC && nd_keyword && parse_c_forward_declarations && 
 			nd_raw->isRawNode(0, 0) && nd_raw->p && (nd_raw->p->node_class == ama::N_SCOPE || nd_raw->p->node_class == ama::N_FILE) ) {
