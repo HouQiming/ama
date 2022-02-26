@@ -552,12 +552,13 @@ namespace ama {
 									if ( start_was_paramlist ) {
 										nd_prototype_start = nd_keyword;
 									}
+									assert(nd_keyword->s);
 									nd_paramlist_start = nd_keyword->s;
 								}
 							}
 							ama::Node* nd_paramlist = nullptr;
 							//int is_unwrapped_parameter_list = 0;
-							for (ama::Node* ndj = nd_paramlist_start; ndj != ndi; ndj = ndj->s) {
+							for (ama::Node* ndj = nd_paramlist_start; ndj && ndj != ndi; ndj = ndj->s) {
 								if ( ndj->isRawNode('(', ')') || ndj->node_class == ama::N_CALL ) {
 									nd_paramlist = ndj;
 								} else if ( (ndj->node_class == ama::N_SYMBOL || ndj->node_class == ama::N_REF) && keywords_after_prototype--->get(ndj->data) ) {
@@ -579,7 +580,7 @@ namespace ama {
 								}
 							}
 							bool paramlist_omitten = false;
-							if (parse_cpp11_lambda && !nd_paramlist && nd_paramlist_start->node_class == ama::N_ARRAY) {
+							if (parse_cpp11_lambda && !nd_paramlist && nd_paramlist_start && nd_paramlist_start->node_class == ama::N_ARRAY) {
 								nd_paramlist = ama::CreateNode(ama::N_RAW, nullptr)->setFlags(0x2928);
 								paramlist_omitten = true;
 							}
@@ -668,7 +669,21 @@ namespace ama {
 				ama::Node* nd_stmt = nullptr;
 				if ( kw_mode == KW_EXT && nd_last_scoped_stmt && (nd_keyword->GetName() == "while" || nd_keyword->GetName() == "until") ) {
 					nd_stmt = TranslateDoWhileClause(nd_keyword, ndi);
-				} else if (parse_python_multi_word_things && nd_keyword->GetName() == "for" && nd_keyword->Prev() && nd_raw->p && nd_raw->p->node_class == ama::N_ARRAY) {
+				} else if (parse_python_multi_word_things && nd_keyword->GetName() == "for" && nd_keyword->Prev() && nd_raw->p && 
+				(nd_raw->p->node_class == ama::N_ARRAY || nd_raw->p->node_class == ama::N_CALL && nd_raw->p->GetName() == "tuple")) {
+					//we could have mistakenly split stuff after the first ','
+					while (nd_raw->s) {
+						ama::Node* nd_raw_next = nd_raw->s;
+						nd_raw_next->Unlink();
+						if (nd_raw->p->node_class == ama::N_CALL) {
+							nd_raw->Insert(ama::POS_BACK, ama::nSymbol(","));
+						}
+						if (nd_raw_next->node_class == ama::N_RAW) {
+							nd_raw->Insert(ama::POS_BACK, nd_raw_next->BreakChild());
+						} else {
+							nd_raw->Insert(ama::POS_BACK, nd_raw_next);
+						}
+					}
 					//Python [foo for bar [if]]
 					if (nd_keyword->node_class == ama::N_CALL) {
 						nd_keyword = ama::UnparseCall(nd_keyword);
