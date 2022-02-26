@@ -577,6 +577,7 @@ namespace ama {
 			//actually split it
 			std::vector<ama::Node*> stack{};
 			int was_ref = 0;
+			bool in_rvalue = false;
 			for (ama::Node* ndi = nd_raw->c; ndi; ndi = ndi->s) {
 				if ( ndi->node_class == ama::N_SYMBOL ) {
 					if (stack.size() >= 1 && ndi->data == ">=") {
@@ -591,6 +592,11 @@ namespace ama {
 					if ( was_ref && ndi->data == "<" ) {
 						stack.push_back(ndi);
 					} else if ( (ndi->data == ">" || ndi->data == ">>" || ndi->data == ">>>") && stack.size() >= ndi->data.size() ) {
+						if (ndi->s) {
+							//check for likely false positives: foo=bar<...>baz; bar<...>0
+							if (in_rvalue && ndi->s->node_class == ama::N_REF) {continue;}
+							if (ndi->s->node_class == ama::N_NUMBER || ndi->s->node_class == ama::N_STRING) {continue;}
+						}
 						intptr_t n_levels = ndi->data.size();
 						for (int j = 0; j < n_levels; j += 1) {
 							ama::Node* ndi0 = stack--->pop();
@@ -617,8 +623,14 @@ namespace ama {
 						}
 						was_ref = 0;
 						continue;
-					} else if ( ndi->data == "||" || ndi->data == "&&" || ndi->data == ";" ) {
+					} else if ( ndi->data == "||" || ndi->data == "&&" ) {
 						stack.clear();
+					} else if (!stack.size() && ndi->data == "=") {
+						stack.clear();
+						in_rvalue = true;
+					} else if (ndi->data == ";") {
+						stack.clear();
+						in_rvalue = false;
 					}
 				}
 				was_ref = ndi->node_class == ama::N_REF;

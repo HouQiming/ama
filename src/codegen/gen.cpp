@@ -267,7 +267,7 @@ namespace ama {
 				break;
 			}
 			case ama::N_CONDITIONAL:{
-				if (nd->flags & CONDITIONAL_PYTHON) {
+				if (nd->flags & ama::CONDITIONAL_PYTHON) {
 					this->Generate(nd->c->s);
 					this->GenerateSpaceAfter(nd->c->s);
 					this->code--->push("if");
