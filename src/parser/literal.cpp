@@ -7,7 +7,7 @@
 namespace ama {
 	static char const* g_hex = "0123456789abcdef";
 	static const std::array<uint32_t, 8> g_hex_charset = ama::CreateCharSet("0-9A-Fa-f");
-	void escapeStringBody(std::string &ret, std::span<char> s) {
+	void escapeStringBody(std::string &ret, std::span<char> s, uint32_t flags) {
 		for ( char const & ch: s ) {
 			switch ( ch ) {
 				default:{
@@ -24,7 +24,11 @@ namespace ama {
 					break;
 				}
 				case'\t':{
-					ret--->push('\\', 't');
+					if (flags & ama::FLAG_ESCAPE_NEWLINE) {
+						ret--->push('\\', 't');
+					} else {
+						ret.push_back('\t');
+					}
 					break;
 				}
 				case'\b':{
@@ -32,11 +36,19 @@ namespace ama {
 					break;
 				}
 				case'\r':{
-					ret--->push('\\', 'r');
+					if (flags & ama::FLAG_ESCAPE_NEWLINE) {
+						ret--->push('\\', 'r');
+					} else {
+						ret.push_back('\r');
+					}
 					break;
 				}
 				case'\n':{
-					ret--->push('\\', 'n');
+					if (flags & ama::FLAG_ESCAPE_NEWLINE) {
+						ret--->push('\\', 'n');
+					} else {
+						ret.push_back('\n');
+					}
 					break;
 				}
 				case'\\':{
@@ -44,7 +56,17 @@ namespace ama {
 					break;
 				}
 				case'\'':{
-					ret--->push('\\', '\'');
+					if (flags & ama::FLAG_ESCAPE_SINGLE_QUOTE) {
+						ret.push_back('\\');
+					}
+					ret.push_back('\'');
+					break;
+				}
+				case'\"':{
+					if (flags & ama::FLAG_ESCAPE_DOUBLE_QUOTE) {
+						ret.push_back('\\');
+					}
+					ret.push_back('"');
 					break;
 				}
 			}
@@ -53,7 +75,7 @@ namespace ama {
 	std::string escapeJSString(std::span<char> s) {
 		std::string ret{};
 		ret--->push('\'');
-		escapeStringBody(ret, s);
+		escapeStringBody(ret, s, ama::FLAG_ESCAPE_SINGLE_QUOTE | ama::FLAG_ESCAPE_NEWLINE);
 		ret--->push('\'');
 		return std::move(ret);
 	}

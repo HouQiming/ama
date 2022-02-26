@@ -70,13 +70,25 @@ namespace ama {
 					if (nd->flags & ama::STRING_C_STD_INCLUDE) {
 						this->code--->push(nd->data);
 					} else if ( nd->flags & ama::STRING_SHELL_LIKE ) {
-						ama::escapeStringBody(this->code, nd->data);
+						ama::escapeStringBody(this->code, nd->data, 0);
 						if ( !(nd->flags & ama::STRING_SHELL_LIKE_END) ) {
 							this->code.push_back('$');
 						}
+					} else if ( nd->flags & ama::STRING_TRIPLE_QUOTE ) {
+						if ( nd->flags & ama::STRING_SINGLE_QUOTED ) {
+							this->code--->push("'''");
+						} else {
+							this->code--->push("\"\"\"");
+						}
+						ama::escapeStringBody(this->code, nd->data, 0);
+						if ( nd->flags & ama::STRING_SINGLE_QUOTED ) {
+							this->code--->push("'''");
+						} else {
+							this->code--->push("\"\"\"");
+						}
 					} else if ( nd->flags & ama::STRING_SINGLE_QUOTED ) {
 						this->code.push_back('\'');
-						ama::escapeStringBody(this->code, nd->data);
+						ama::escapeStringBody(this->code, nd->data, ama::FLAG_ESCAPE_SINGLE_QUOTE | ama::FLAG_ESCAPE_NEWLINE);
 						this->code.push_back('\'');
 					} else {
 						this->code--->push(JSON::stringify(nd->data));

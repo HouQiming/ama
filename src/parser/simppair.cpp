@@ -565,6 +565,9 @@ namespace ama {
 						if (ss_start == ch) {nd->flags |= ama::STRING_SHELL_LIKE_START;}
 						if (ss_end == ch) {nd->flags |= ama::STRING_SHELL_LIKE_END;}
 					}
+					if (in_triple_quote) {
+						nd->flags |= ama::STRING_TRIPLE_QUOTE;
+					}
 					nd->comments_before = FormatComment(comment_buffer, comment_indent_level, tab_width, comment_begin, comment_end);
 					nd->indent_level = ama::ClampIndentLevel(comment_indent_level - state_stack.back().indent_level);
 					if ( premature_close && finish_incomplete_code ) {

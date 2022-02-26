@@ -536,6 +536,14 @@ ama::gcstring ama::Node::GetStringValue() {
 		nd_this->data = ama::gcstring(ama::ParseStringBody(string_body));
 		nd_this->flags |= ama::LITERAL_PARSED;
 		return nd_this->data;
+	} else if (nd_this->flags & ama::STRING_TRIPLE_QUOTE) {
+		if ( nd_this->data.size() && nd_this->data[intptr_t(0L)] == '\'' ) {
+			nd_this->flags |= ama::STRING_SINGLE_QUOTED;
+		}
+		std::span<char> string_body = nd_this->data--->subarray(3, nd_this->data.size() - 6);
+		nd_this->data = ama::gcstring(ama::ParseStringBody(string_body));
+		nd_this->flags |= ama::LITERAL_PARSED;
+		return nd_this->data;
 	} else {
 		//process on demand
 		if ( nd_this->data.size() && nd_this->data[intptr_t(0L)] == '\'' ) {

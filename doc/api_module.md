@@ -584,6 +584,18 @@ void* g_ptr = nullptr;
 - Description: Dump the AST (Abstract Syntax Tree).
 
 
+### dump_ast.Strings
+
+- Syntax: `require("dump_ast").Strings`
+- Description: Dump parsed string values
+
+
+### dump_ast.Declarations
+
+- Syntax: `require("dump_ast").Declarations`
+- Description: Dump detected declarations
+
+
 ### dump_decl
 
 - Syntax: `require("dump_decl")`

@@ -287,6 +287,7 @@ namespace ama {
 	static const uint32_t STRING_SHELL_LIKE_START = 8u;
 	static const uint32_t STRING_SHELL_LIKE_END = 16u;
 	static const uint32_t STRING_C_STD_INCLUDE = 32u;
+	static const uint32_t STRING_TRIPLE_QUOTE = 64u;
 	static const uint32_t DOT_PTR = 1u;
 	static const uint32_t DOT_CLASS = 2u;
 	static const uint32_t DEP_C_INCLUDE = 0u;
@@ -710,6 +711,9 @@ namespace ama {
 	static inline ama::Node* nTypedObject(Node* nd_type, Node* nd_object) {
 		assert(nd_object->node_class == N_OBJECT);
 		return ama::CreateNode(N_TYPED_OBJECT, cons(nd_type, cons(nd_object, nullptr)));
+	}
+	static inline ama::Node* nReturn(Node* nd_value) {
+		return CreateNode(N_KEYWORD_STATEMENT, nd_value)->setData("return");
 	}
 	///////////////
 	static inline ama::Node* GetPlaceHolder() {
