@@ -3,6 +3,7 @@
 #include "../util/jc_array.h"
 #include "../ast/node.hpp"
 #include "../script/jsenv.hpp"
+#include "postfix.hpp"
 #include "operator.hpp"
 namespace ama {
 	ama::Node* ParseCommaExpr(ama::Node* nd_root) {
@@ -410,6 +411,9 @@ namespace ama {
 		}
 		return nd_operand;
 	}
+	static bool CanBeCStyleCastType(ama::Node* nd_type) {
+		return nd_type->isRawNode('(', ')') && nd_type->c && !nd_type->c->s || nd_type->node_class == ama::N_CALL && CanBeCStyleCastType(nd_type->c);
+	}
 	ama::Node* ParseOperators(ama::Node* nd_root, JSValueConst options) {
 		std::unordered_map<ama::gcstring, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
 		std::unordered_map<ama::gcstring, int> prefix_ops = ama::GetPrioritizedList(options, "prefix_operators");
@@ -489,13 +493,13 @@ namespace ama {
 					//C-style cast `(foo)bar` counts as prefix
 					if (ndi->node_class != ama::N_SCOPE) {
 						while ( stack.size() >= 1 && stack.back()->node_class == ama::N_SYMBOL && prefix_ops--->get(stack.back()->data) ||
-						parse_c_style_cast && stack.size() >= 1 && stack.back()->isRawNode('(', ')') && stack.back()->c && !stack.back()->c->s) {
+						parse_c_style_cast && stack.size() >= 1 && CanBeCStyleCastType(stack.back())) {
 							if ( stack.size() >= 2 && stack[stack.size() - 2]->node_class != ama::N_SYMBOL && 
 							stack.back()->node_class == ama::N_SYMBOL && binop_priority--->get(stack.back()->data) ) {
 								//prefix-binary ambiguity: assume binary
 								break;
 							}
-							if (parse_c_style_cast && stack.back()->node_class == ama::N_SYMBOL && ndi->isRawNode('(', ')') && ndi->c && !ndi->c->s && ndi_next && ndi_next->node_class != ama::N_SYMBOL) {
+							if (parse_c_style_cast && stack.back()->node_class == ama::N_SYMBOL && CanBeCStyleCastType(ndi) && ndi_next && ndi_next->node_class != ama::N_SYMBOL) {
 								//defer prefixop before type cast
 								break;
 							}
@@ -506,9 +510,13 @@ namespace ama {
 								nd_prefix_operator->FreeASTStorage();
 							} else {
 								//C-style cast
+								assert(parse_c_style_cast);
 								//COULDDO: a dedicated node class
 								//but we aren't too confident here: the syntax is too generic to unambiguously conclude that it's a cast
 								ndi = ama::CreateNode(ama::N_RAW, ama::cons(nd_prefix_operator, ama::cons(ndi, nullptr)));
+								while (nd_prefix_operator->node_class == ama::N_CALL) {
+									nd_prefix_operator = ama::UnparseCall(nd_prefix_operator);
+								}
 							}
 							changed = 1;
 						}
