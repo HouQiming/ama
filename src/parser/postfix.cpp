@@ -211,14 +211,24 @@ namespace ama {
 					ndi_next->p = nullptr; ndi_next->FreeASTStorage();
 					continue;
 				} else if (ndi_next && ndi_next->node_class == ama::N_SYMBOL && 
-				(ndi_next->data == "." || (!isCPPLambda(ndi) && parse_arrow_as_dot && ndi_next->data == "->") || ndi_next->data == "::") && 
-				ndi_next->s && ndi_next->s->node_class == ama::N_REF) {
+				((
+					ndi_next->data == "." || (!isCPPLambda(ndi) && parse_arrow_as_dot && ndi_next->data == "->") || 
+					ndi_next->data == "::" 
+				) && ndi_next->s && ndi_next->s->node_class == ama::N_REF || (
+					ndi_next->data == "?" && ndi_next->s && ndi_next->s->isSymbol(".") &&
+					ndi_next->s->s && ndi_next->s->s->node_class == ama::N_REF
+				))) {
 					//dot
 					int dot_flags = 0;
 					if ( ndi_next->data == "->" ) {
 						dot_flags = ama::DOT_PTR;
 					} else if ( ndi_next->data == "::" ) {
 						dot_flags = ama::DOT_CLASS;
+					} else if ( ndi_next->data == "?" ) {
+						ama::Node* nd_dot = ndi_next->s;
+						nd_dot->Unlink();
+						ndi_next->comments_after = ndi_next->comments_after + nd_dot->comments_before + nd_dot->comments_after;
+						dot_flags = ama::DOT_MAYBE;
 					}
 					ama::Node* nd_name = ndi_next->s;
 					nd_name->MergeCommentsBefore(ndi_next);

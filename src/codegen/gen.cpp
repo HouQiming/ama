@@ -103,7 +103,9 @@ namespace ama {
 			case ama::N_DOT:{
 				//this->RebuildOperand(nd, nd.c, ama::OPERAND_POSTFIX);
 				this->Generate(nd->c);
-				if ( nd->flags == ama::DOT_CLASS ) {
+				if ( nd->flags == ama::DOT_MAYBE ) {
+					this->code--->push("?.");
+				} else if ( nd->flags == ama::DOT_CLASS ) {
 					this->code--->push("::");
 				} else if ( nd->flags == ama::DOT_PTR ) {
 					this->code--->push("->");

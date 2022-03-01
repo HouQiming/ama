@@ -290,6 +290,7 @@ namespace ama {
 	static const uint32_t STRING_TRIPLE_QUOTE = 64u;
 	static const uint32_t DOT_PTR = 1u;
 	static const uint32_t DOT_CLASS = 2u;
+	static const uint32_t DOT_MAYBE = 4u;
 	static const uint32_t DEP_C_INCLUDE = 0u;
 	static const uint32_t DEP_JS_REQUIRE = 1u;
 	static const uint32_t DEP_TYPE_MASK = 31u;
