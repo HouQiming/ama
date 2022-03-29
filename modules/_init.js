@@ -600,6 +600,10 @@ __global.CppComputeType=function(nd){
 	return __require(__init_js_path,'cpp/typing').ComputeType(nd);
 }
 
+__global.CppLookupSymbol=function(nd){
+	return __require(__init_js_path,'cpp/typing').LookupSymbol(nd,true);
+}
+
 __global.CppDropTypeCache=function(){
 	__require(__init_js_path,'cpp/typing').DropCache();
 }

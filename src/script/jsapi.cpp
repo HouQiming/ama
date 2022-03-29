@@ -1017,6 +1017,21 @@ namespace ama {
 		JS_FreeValue(ama::jsctx, ret);
 		return nd_ret;
 	}
+	ama::Node* LookupSymbol(ama::Node* nd) {
+		LazyInitScriptEnv();
+		JSValue val_arg = ama::WrapNode(nd);
+		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppLookupSymbol");
+		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 1, &val_arg);
+		JS_FreeAtom(ama::jsctx, atom_method);
+		JS_FreeValue(ama::jsctx, val_arg);
+		if ( JS_IsException(ret) ) {
+			ama::DumpError(ama::jsctx);
+			return nullptr;
+		}
+		ama::Node* nd_ret = ama::UnwrapNode(ret);
+		JS_FreeValue(ama::jsctx, ret);
+		return nd_ret;
+	}
 	void DropTypeCache() {
 		LazyInitScriptEnv();
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppDropTypeCache");
