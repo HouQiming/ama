@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <thread>
 #include <stdio.h>
 #include "../util/jc_array.h"
 #include "../util/fs.hpp"
@@ -13,6 +14,7 @@ struct PackageJSON {
 namespace ama {
 	JSContext* jsctx{};
 	JSContext* GetGlobalJSContext() {return jsctx;}
+	std::mutex g_js_mutex{};
 	JSRuntime* g_runtime_handle{};
 	uint32_t g_node_classid = 0u;
 	JSValue g_node_proto = JS_NULL;
@@ -169,6 +171,18 @@ namespace ama {
 			JS_NewString(jsctx, "./."),
 			JS_NewString(jsctx, name)
 		});
+	}
+	void EnterJS() {
+		if (ama::enable_threading) {
+			ama::g_js_mutex.lock();
+			//console.log(std::this_thread::get_id(), 'ama::g_js_mutex.lock();');
+		}
+	}
+	void LeaveJS() {
+		if (ama::enable_threading) {
+			//console.log(std::this_thread::get_id(), 'ama::g_js_mutex.unlock();');
+			ama::g_js_mutex.unlock();
+		}
 	}
 };
 #pragma gen_begin(JSON::parse<PackageJSON>)

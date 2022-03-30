@@ -585,7 +585,6 @@ namespace ama {
 		//Return a list of all `N_REF` nodes with the `REF_DECLARED` flag under `nd`.
 		std::vector<ama::Node*> FindAllDef();
 	};
-	extern ama::Node* g_placeholder;
 	ama::Node* AllocNode();
 	//All nodes are allocated from a dedicated pool, as a side effect, we can
 	//check whether an arbitrary pointer is a valid Node in O(1).
@@ -717,15 +716,8 @@ namespace ama {
 		return CreateNode(N_KEYWORD_STATEMENT, nd_value)->setData("return");
 	}
 	///////////////
-	static inline ama::Node* GetPlaceHolder() {
-		assert(!g_placeholder->p);
-		assert(!g_placeholder->s);
-		g_placeholder->indent_level = 0;
-		g_placeholder->comments_before = "";
-		g_placeholder->comments_after = "";
-		g_placeholder->c = nullptr;
-		return g_placeholder;
-	}
+	extern int8_t enable_threading;
+	ama::Node* GetPlaceHolder();
 	static inline int isValidPreviousSibling(Node const* v) {
 		return v && !(intptr_t(v) & 1);
 	}
@@ -743,7 +735,7 @@ namespace ama {
 	//the non-method toSingleNode doesn't need -fno-delete-null-pointer-checks
 	ama::Node* toSingleNode(ama::Node* nd_child);
 	ama::Node* UnparseRaw(ama::Node* nd_raw);
-	extern ama::Node* g_free_nodes;
+	extern thread_local ama::Node* g_free_nodes;
 	int ValidateChildRange(ama::Node* p0, ama::Node* p1);
 	void DeleteChildRange(ama::Node* nd0, ama::Node* nd1);
 	ama::Node* ReplaceChildRange(ama::Node* nd0, ama::Node* nd1, ama::Node* nd_new);

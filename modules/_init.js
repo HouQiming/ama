@@ -601,7 +601,7 @@ __global.CppComputeType=function(nd){
 }
 
 __global.CppLookupSymbol=function(nd){
-	return __require(__init_js_path,'cpp/typing').LookupSymbol(nd,true);
+	return __require(__init_js_path,'cpp/typing').LookupSymbol(nd,false);
 }
 
 __global.CppDropTypeCache=function(){

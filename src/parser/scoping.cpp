@@ -139,8 +139,10 @@ namespace ama {
 		return 0;
 	}
 	ama::Node* InsertJSSemicolons(ama::Node* nd_root, JSValue options) {
+		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
+		ama::LeaveJS();
 		for (auto const &it: keywords_extension_clause) {
 			keywords_scoped_statement[it.first] = 1;
 		}
@@ -198,9 +200,11 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* DelimitCLikeStatements(ama::Node* nd_root, JSValue options) {
+		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		std::unordered_map<ama::gcstring, int> named_binary_operators = ama::GetPrioritizedList(options, "binary_operators");
 		std::unordered_map<ama::gcstring, int> named_operators = ama::GetPrioritizedList(options, "named_operators");
+		ama::LeaveJS();
 		for (auto &it: named_binary_operators) {
 			if (!named_operators--->get(it.first)) {
 				it.second = 0;
@@ -338,9 +342,11 @@ namespace ama {
 		int32_t lineno{};
 	};
 	ama::Node* ConvertIndentToScope(ama::Node* nd_root, JSValue options) {
+		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		int32_t auto_curly_bracket = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "auto_curly_bracket"), 0);
 		int32_t but_merge_cpp_ctor_lines = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_indent_as_scope_but_merge_cpp_ctor_lines"), 0);
+		ama::LeaveJS();
 		std::vector<ama::Node*> scopes = nd_root->FindAllWithin(0, ama::N_SCOPE);
 		for ( ama::Node * nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( nd_raw->isRawNode('{', '}') ) {

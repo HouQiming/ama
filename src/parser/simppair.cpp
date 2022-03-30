@@ -137,6 +137,7 @@ namespace ama {
 		//char const* feed_all_begin = feed;
 		//use a shared buffer to avoid excessive allocations
 		std::vector<char> comment_buffer{};
+		ama::EnterJS();
 		ama::gcstring s_symbols = ama::UnwrapString(JS_GetPropertyStr(ama::jsctx, options, "symbols"));
 		std::vector<std::span<char>> symbol_array{};
 		size_t I0 = intptr_t(0L);
@@ -230,6 +231,7 @@ namespace ama {
 		std::array<uint32_t, 8> cset_hex_number = GetOptionCSet(options, "hex_number_charset");
 		std::array<uint32_t, 8> cset_exponent = GetOptionCSet(options, "exponent_charset");
 		std::array<uint32_t, 8> cset_regexp_flags = GetOptionCSet(options, "regexp_flags_charset");
+		ama::LeaveJS();
 		//UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, ''),0)
 		ama::Node* nd_root = ama::CreateNode(ama::N_RAW, nullptr);
 		std::vector<ParserState> state_stack{

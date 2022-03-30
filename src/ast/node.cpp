@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <mutex>
 #include "../util/jc_array.h"
 #include "../../modules/cpp/json/json.h"
 #include "../parser/literal.hpp"
@@ -15,7 +16,11 @@ namespace ama {
 	//the node pool
 	static const intptr_t NODE_BLOCK_SIZE = (intptr_t(1L) << 21) - intptr_t(64L);
 	static ama::TMemoryPool g_node_pool{};
-	ama::Node* g_free_nodes{};
+	//the thread model is: fork worker thread, do work, join them, gc
+	//if any other thread has non-null g_free_nodes, gc leads to use-after-free
+	int8_t enable_threading = 0;
+	thread_local ama::Node* g_free_nodes{};
+	static std::mutex g_pool_alloc_mutex{};
 	static ama::gcstring g_empty_comment = "";
 	ama::Node* AllocNode() {
 		ama::Node* ret{};
@@ -24,7 +29,9 @@ namespace ama {
 			g_free_nodes = ret->s;
 			memset((void*)(ret), 0, sizeof(ama::Node));
 		} else {
+			if (ama::enable_threading) {g_pool_alloc_mutex.lock();}
 			ret = (ama::Node*)(ama::poolAllocAligned(&g_node_pool, sizeof(ama::Node), sizeof(void*), NODE_BLOCK_SIZE));
+			if (ama::enable_threading) {g_pool_alloc_mutex.unlock();}
 		}
 		assert(!(ret->tmp_flags & ama::TMPF_IS_NODE));
 		ret->tmp_flags = ama::TMPF_IS_NODE;
@@ -33,7 +40,19 @@ namespace ama {
 		ret->comments_after = g_empty_comment;
 		return ret;
 	}
-	ama::Node* g_placeholder = AllocNode();
+	thread_local ama::Node* g_placeholder = nullptr;
+	ama::Node* GetPlaceHolder() {
+		if (!g_placeholder) {
+			g_placeholder = AllocNode();
+		}
+		assert(!g_placeholder->p);
+		assert(!g_placeholder->s);
+		g_placeholder->indent_level = 0;
+		g_placeholder->comments_before = "";
+		g_placeholder->comments_after = "";
+		g_placeholder->c = nullptr;
+		return g_placeholder;
+	}
 	int isValidNodePointer(ama::Node const* nd_tentative) {
 		int in_block = 0;
 		for (ama::TBlockHeader const* block = g_node_pool.block; block; block = block->next) {
@@ -591,6 +610,7 @@ static void dfsFreeChildrenStorage(ama::Node* nd) {
 }
 void ama::Node::FreeASTStorage() {
 	//do not wipe .data and stuff, we could use them again in a C++ expr
+	if (ama::enable_threading) {return;}
 	assert(!this->p);
 	dfsFreeChildrenStorage(this);
 	if ( DEBUG_NODE_ALLOCATOR ) {

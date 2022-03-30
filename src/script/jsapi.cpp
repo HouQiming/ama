@@ -248,22 +248,35 @@ namespace ama {
 		nd_root->node_class = ama::N_FILE;
 		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
 		nd_root->flags = (nd_root->flags & 0x10000) ? ama::FILE_SPACE_INDENT : 0;
+		ama::EnterJS();
 		JSValue full_path = JS_GetPropertyStr(ama::jsctx, options, "full_path");
 		if (JS_IsString(full_path)) {
 			nd_root->data = ama::UnwrapString(full_path);
 		}
 		JS_FreeValue(ama::jsctx, full_path);
+		ama::LeaveJS();
 		return nd_root;
 	}
 	ama::Node* DefaultParseCode(char const* code) {
 		//for external code that calls ParseCode as an API
+		ama::EnterJS();
 		LazyInitScriptEnv();
 		JSValue options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), "default_options");
+		int has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_conditional"), 1);
+		int has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_labels"), 1);
+		int parse_keyword_statements = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_keyword_statements"), 1);
+		int parse_scoped_statements = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_scoped_statements"), 1);
+		int parse_comma_expr = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_comma_expr"), 1);
+		int parse_operators = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_operators"), 1);
+		int parse_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_declarations"), 1);
+		int parse_indent_as_scope = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_indent_as_scope"), 0);
+		int parse_pointed_brackets = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_pointed_brackets"), 1);
+		ama::LeaveJS();
 		ama::Node* nd_root = ama::ParseSimplePairing(code, options);
-		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_indent_as_scope"), 0) ) {
+		if (parse_indent_as_scope) {
 			ama::ConvertIndentToScope(nd_root, options);
 		}
-		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_pointed_brackets"), 1) ) {
+		if (parse_pointed_brackets) {
 			ama::ParsePointedBrackets(nd_root);
 		}
 		ama::DelimitCLikeStatements(nd_root, options);
@@ -275,30 +288,27 @@ namespace ama {
 		ama::ParseImport(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		ama::CleanupDummyRaws(nd_root);
-		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_keyword_statements"), 1) ) {
+		if ( parse_keyword_statements ) {
 			ama::ParseKeywordStatements(nd_root, options);
 		}
-		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_scoped_statements"), 1) ) {
+		if (parse_scoped_statements) {
 			ama::ParseScopedStatements(nd_root, options);
 		}
 		ama::ParseAssignment(nd_root, options);
-		int has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_conditional"), 1);
-		int has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_labels"), 1);
 		if ( has_c_conditional || has_labels ) {
 			ama::ParseColons(nd_root, options);
 		}
 		//need to handle comma-inside-?: above
-		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_comma_expr"), 1) ) {
+		if (parse_comma_expr) {
 			ama::ParseCommaExpr(nd_root);
 		}
 		//nd_root.Validate();
-		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_operators"), 1) ) {
+		if ( parse_operators ) {
 			ama::ParseOperators(nd_root, options);
 		}
-		//TODO: ParseCommas
 		ama::CleanupDummyRaws(nd_root);
 		//ama::FixPriorityReversal(nd_root);
-		if ( ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_declarations"), 1) ) {
+		if (parse_declarations) {
 			ama::ParseDeclarations(nd_root, options);
 		}
 		//DumpASTAsJSON(nd_root);
@@ -306,10 +316,13 @@ namespace ama {
 		ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		assert(!nd_root->p);
+		ama::EnterJS();
 		JS_FreeValue(ama::jsctx, options);
+		ama::LeaveJS();
 		return nd_root;
 	}
 	ama::Node* LoadFile(char const* fn) {
+		ama::EnterJS();
 		LazyInitScriptEnv();
 		JSValue val_fn = JS_NewString(ama::jsctx, fn);
 		JSAtom atom_lf = JS_NewAtom(ama::jsctx, "LoadFile");
@@ -321,6 +334,7 @@ namespace ama {
 		}
 		ama::Node* nd_ret = ama::UnwrapNode(ret);
 		JS_FreeValue(ama::jsctx, ret);
+		ama::LeaveJS();
 		return nd_ret;
 	}
 	static JSValueConst JSParseSimplePairing(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
