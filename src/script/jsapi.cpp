@@ -90,7 +90,7 @@ namespace ama {
 	void LazyInitScriptEnv();
 };
 namespace ama {
-	static JSValueConst g_require_cache = JS_NULL;
+	static thread_local JSValueConst g_require_cache = JS_NULL;
 	static std::string GetScriptJSCode(std::span<char> fn) {
 		std::string their_extname = unicode::toLowerASCII(path::extname(fn));
 		JC::StringOrError s_code = fs::readFileSync(fn);
@@ -248,18 +248,15 @@ namespace ama {
 		nd_root->node_class = ama::N_FILE;
 		//reset the flag, it could have been changed to '{','}' by ConvertIndentToScope
 		nd_root->flags = (nd_root->flags & 0x10000) ? ama::FILE_SPACE_INDENT : 0;
-		ama::EnterJS();
 		JSValue full_path = JS_GetPropertyStr(ama::jsctx, options, "full_path");
 		if (JS_IsString(full_path)) {
 			nd_root->data = ama::UnwrapString(full_path);
 		}
 		JS_FreeValue(ama::jsctx, full_path);
-		ama::LeaveJS();
 		return nd_root;
 	}
 	ama::Node* DefaultParseCode(char const* code) {
 		//for external code that calls ParseCode as an API
-		ama::EnterJS();
 		LazyInitScriptEnv();
 		JSValue options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), "default_options");
 		int has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_conditional"), 1);
@@ -271,7 +268,6 @@ namespace ama {
 		int parse_declarations = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_declarations"), 1);
 		int parse_indent_as_scope = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_indent_as_scope"), 0);
 		int parse_pointed_brackets = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_pointed_brackets"), 1);
-		ama::LeaveJS();
 		ama::Node* nd_root = ama::ParseSimplePairing(code, options);
 		if (parse_indent_as_scope) {
 			ama::ConvertIndentToScope(nd_root, options);
@@ -316,13 +312,10 @@ namespace ama {
 		ama::CleanupDummyRaws(nd_root);
 		ama::SanitizeCommentPlacement(nd_root);
 		assert(!nd_root->p);
-		ama::EnterJS();
 		JS_FreeValue(ama::jsctx, options);
-		ama::LeaveJS();
 		return nd_root;
 	}
 	ama::Node* LoadFile(char const* fn) {
-		ama::EnterJS();
 		LazyInitScriptEnv();
 		JSValue val_fn = JS_NewString(ama::jsctx, fn);
 		JSAtom atom_lf = JS_NewAtom(ama::jsctx, "LoadFile");
@@ -334,7 +327,6 @@ namespace ama {
 		}
 		ama::Node* nd_ret = ama::UnwrapNode(ret);
 		JS_FreeValue(ama::jsctx, ret);
-		ama::LeaveJS();
 		return nd_ret;
 	}
 	static JSValueConst JSParseSimplePairing(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
@@ -870,8 +862,8 @@ namespace ama {
 			ama::std_module_dir_global = "/usr/local/share/ama_modules";
 		#endif
 	}
-	static uint32_t g_native_library_classid = 0u;
-	static JSValue g_native_library_proto = JS_UNDEFINED;
+	static thread_local uint32_t g_native_library_classid = 0u;
+	static thread_local JSValue g_native_library_proto = JS_UNDEFINED;
 	static JSValueConst JSLoadNativeLibrary(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if ( argc < 1 ) {
 			return JS_ThrowReferenceError(ctx, "need a file name");
@@ -925,9 +917,9 @@ namespace ama {
 		int32_t ret_code = NativeLibraryFunction(addr)(argc < 2 ? JS_UNDEFINED : argv[1]);
 		return JS_NewInt32(ctx, ret_code);
 	}
-	static JSContext* g_sandbox_base_context = nullptr;
-	static JSRuntime* g_sandbox_runtime = nullptr;
-	static JSValue g_sandbox_object = JS_UNDEFINED;
+	static thread_local JSContext* g_sandbox_base_context = nullptr;
+	static thread_local JSRuntime* g_sandbox_runtime = nullptr;
+	static thread_local JSValue g_sandbox_object = JS_UNDEFINED;
 	static JSValueConst JSRunInSandbox(JSContext* ctx, JSValueConst this_val, int argc, JSValue* argv) {
 		if (argc < 1 || !JS_IsString(argv[0])) {
 			return JS_ThrowReferenceError(ctx, "need script code");

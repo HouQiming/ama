@@ -185,7 +185,6 @@ namespace ama {
 		return nd && nd->node_class == ama::N_SCOPE ? nd : nullptr;
 	}
 	ama::Node* ParseScopedStatements(ama::Node* nd_root, JSValue options) {
-		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
@@ -199,7 +198,6 @@ namespace ama {
 		int32_t parse_cpp11_lambda = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp11_lambda"), 1);
 		int32_t struct_can_be_type_prefix = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "struct_can_be_type_prefix"), 1);
 		int32_t parse_python_multi_word_things = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_python_multi_word_things"), 1);
-		ama::LeaveJS();
 		std::vector<ama::Node*> Q = nd_root->FindAllWithin(0, ama::N_RAW);
 		for ( intptr_t qi = 0; qi < intptr_t(Q.size()); qi++ ) {
 			ama::Node* nd_raw = Q[qi];
@@ -841,9 +839,7 @@ namespace ama {
 		return nd_root;
 	}
 	ama::Node* ParseKeywordStatements(ama::Node* nd_root, JSValue options) {
-		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
-		ama::LeaveJS();
 		for ( ama::Node * nd_keyword: nd_root->FindAllWithin(0, ama::N_REF) ) {
 			if ( !keywords_statement--->get(nd_keyword->data) ) { continue; }
 			ama::Node* nd_parent = nd_keyword->p;
@@ -1034,7 +1030,6 @@ namespace ama {
 	ama::Node* ParseDeclarations(ama::Node* nd_root, JSValue options) {
 		//find declaratives and set REF_DECLARED
 		//also find writes and set REF_WRITTEN
-		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> ambiguous_type_suffix = ama::GetPrioritizedList(options, "ambiguous_type_suffix");
 		std::unordered_map<ama::gcstring, int> keywords_numerical_qualifier = ama::GetPrioritizedList(options, "keywords_numerical_qualifier");
 		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
@@ -1043,7 +1038,6 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		int32_t parse_cpp_declaration_initialization = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_cpp_declaration_initialization"), 1);
 		int32_t parse_destructuring = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_destructuring"), 1);
-		ama::LeaveJS();
 		//pull types out of comma
 		//for ( ama::Node * nd_comma: nd_root->FindAllWithin(0, ama::N_COMMA) ) {
 		for (ama::Node* ndi = nd_root->PostorderFirst(); ndi; ndi = ndi->PostorderNext(nd_root)) {

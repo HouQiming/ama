@@ -151,9 +151,7 @@ namespace ama {
 		return nd_next;
 	}
 	ama::Node* ParseColons(ama::Node* nd_root, JSValueConst options) {
-		ama::EnterJS();
 		int has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_conditional"), 1);
-		ama::LeaveJS();
 		//int has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_labels"), 1);
 		for ( ama::Node* const & nd_raw: nd_root->FindAllWithin(0, ama::N_RAW) ) {
 			if ( !nd_raw->c ) { continue; }
@@ -253,10 +251,8 @@ namespace ama {
 		}
 	}
 	ama::Node* ParseAssignment(ama::Node* nd_root, JSValueConst options) {
-		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
 		std::unordered_map<ama::gcstring, int> lower_than_assignment_operators = ama::GetPrioritizedList(options, "lower_than_assignment_operators");
-		ama::LeaveJS();
 		std::vector<ama::Node*> Q = nd_root->FindAllWithin(0, ama::N_RAW);
 		for (intptr_t i = 0; i < intptr_t(Q.size()); i++) {
 			ama::Node* nd_raw = Q[i];
@@ -419,7 +415,6 @@ namespace ama {
 		return nd_type->isRawNode('(', ')') && nd_type->c && !nd_type->c->s || nd_type->node_class == ama::N_CALL && CanBeCStyleCastType(nd_type->c);
 	}
 	ama::Node* ParseOperators(ama::Node* nd_root, JSValueConst options) {
-		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> binop_priority = ama::GetPrioritizedList(options, "binary_operators");
 		std::unordered_map<ama::gcstring, int> prefix_ops = ama::GetPrioritizedList(options, "prefix_operators");
 		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
@@ -431,7 +426,6 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_scoped_statement = ama::GetPrioritizedList(options, "keywords_scoped_statement");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		int32_t parse_c_style_cast = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_style_cast"), 1);
-		ama::LeaveJS();
 		//treat statement / escape keywords as named ops: they cannot be operands
 		for (auto iter: keywords_statement) {
 			named_ops--->set(iter.first, 1);

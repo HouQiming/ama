@@ -496,11 +496,9 @@ namespace ama {
 	//this is exposed to JS with a non-standard wrapper, so make it a non-method
 	std::string GenerateCode(ama::Node* nd, JSValueConst options) {
 		ama::CodeGenerator ctx{};
-		ama::EnterJS();
 		ctx.tab_width = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "tab_width"), 4);
 		ctx.auto_space = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "auto_space"), 1);
 		ctx.tab_indent = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "tab_indent"), 2);
-		ama::LeaveJS();
 		if ( ctx.tab_indent == 2 ) {
 			ama::Node* nd_root = nd->Root();
 			if ( nd_root->node_class == ama::N_FILE && (nd_root->flags & ama::FILE_SPACE_INDENT) ) {

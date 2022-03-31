@@ -22,7 +22,7 @@ void thread_main(){
 }
 
 int main(){
-	ama::enable_threading=1;
+	//ama::enable_threading=1;
 	ama::LazyInitScriptEnv();
 	std::thread other_thread(thread_main);
 	test(0);

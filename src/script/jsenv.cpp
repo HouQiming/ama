@@ -1,7 +1,6 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <thread>
 #include <stdio.h>
 #include "../util/jc_array.h"
 #include "../util/fs.hpp"
@@ -12,18 +11,17 @@ struct PackageJSON {
 	std::string main{};
 };
 namespace ama {
-	JSContext* jsctx{};
+	thread_local JSContext* jsctx{};
 	JSContext* GetGlobalJSContext() {return jsctx;}
-	static thread_local int g_in_js = 0;
-	std::mutex g_js_mutex{};
-	JSRuntime* g_runtime_handle{};
-	uint32_t g_node_classid = 0u;
-	JSValue g_node_proto = JS_NULL;
-	std::string std_module_dir{};
-	std::string std_module_dir_global{};
-	std::vector<char const*> g_builder_names{};
-	std::vector<char const*> g_node_class_names{};
-	std::unordered_map<ama::Node const*, JSValue> g_js_node_map{};
+	thread_local std::mutex g_js_mutex{};
+	thread_local JSRuntime* g_runtime_handle{};
+	thread_local uint32_t g_node_classid = 0u;
+	thread_local JSValue g_node_proto = JS_NULL;
+	thread_local std::string std_module_dir{};
+	thread_local std::string std_module_dir_global{};
+	thread_local std::vector<char const*> g_builder_names{};
+	thread_local std::vector<char const*> g_node_class_names{};
+	thread_local std::unordered_map<ama::Node const*, JSValue> g_js_node_map{};
 	JSValueConst WrapNode(ama::Node const* nd) {
 		if ( !nd ) {
 			return JS_NULL;
@@ -172,24 +170,6 @@ namespace ama {
 			JS_NewString(jsctx, "./."),
 			JS_NewString(jsctx, name)
 		});
-	}
-	void EnterJS() {
-		if (ama::enable_threading) {
-			if (!g_in_js) {
-				ama::g_js_mutex.lock();
-			}
-			g_in_js += 1;
-			//console.log(std::this_thread::get_id(), 'ama::g_js_mutex.lock();');
-		}
-	}
-	void LeaveJS() {
-		if (ama::enable_threading) {
-			//console.log(std::this_thread::get_id(), 'ama::g_js_mutex.unlock();');
-			g_in_js -= 1;
-			if (!g_in_js) {
-				ama::g_js_mutex.unlock();
-			}
-		}
 	}
 };
 #pragma gen_begin(JSON::parse<PackageJSON>)

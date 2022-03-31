@@ -112,7 +112,6 @@ namespace ama {
 	}
 	ama::Node* ParsePostfix(ama::Node* nd_root, JSValue options) {
 		//note: if we do it forward, the free-ed N_RAW() / N_RAW[] will get enumerated later and cause all kinds of issues
-		ama::EnterJS();
 		std::unordered_map<ama::gcstring, int> postfix_ops = ama::GetPrioritizedList(options, "postfix_operators");
 		std::unordered_map<ama::gcstring, int> keywords_class = ama::GetPrioritizedList(options, "keywords_class");
 		std::unordered_map<ama::gcstring, int> keywords_statement = ama::GetPrioritizedList(options, "keywords_statement");
@@ -120,7 +119,6 @@ namespace ama {
 		std::unordered_map<ama::gcstring, int> keywords_extension_clause = ama::GetPrioritizedList(options, "keywords_extension_clause");
 		std::unordered_map<ama::gcstring, int> keywords_operator_escape = ama::GetPrioritizedList(options, "keywords_operator_escape");
 		std::unordered_map<ama::gcstring, int> named_operators = ama::GetPrioritizedList(options, "named_operators");
-		ama::LeaveJS();
 		for (auto iter: keywords_class) {
 			keywords_statement--->set(iter.first, 1);
 		}

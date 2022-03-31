@@ -24,10 +24,10 @@
 /*#pragma add("c_files", "./quickjs/src/libunicode.c");*/
 /*#pragma add("c_files", "./quickjs/src/cutils.c");*/
 namespace ama {
-	extern JSContext* jsctx;
-	extern JSRuntime* g_runtime_handle;
-	extern std::mutex g_js_mutex;
-	extern std::string std_module_dir;
+	extern thread_local JSContext* jsctx;
+	extern thread_local JSRuntime* g_runtime_handle;
+	extern thread_local std::mutex g_js_mutex;
+	extern thread_local std::string std_module_dir;
 	JSContext* GetGlobalJSContext();
 	void DumpError(JSContext* ctx);
 	static inline ama::gcstring UnwrapString(JSValueConst val) {
@@ -61,9 +61,9 @@ namespace ama {
 		}
 		return ret;
 	}
-	extern uint32_t g_node_classid;
-	extern JSValue g_node_proto;
-	extern std::unordered_map<ama::Node const*, JSValue> g_js_node_map;
+	extern thread_local uint32_t g_node_classid;
+	extern thread_local JSValue g_node_proto;
+	extern thread_local std::unordered_map<ama::Node const*, JSValue> g_js_node_map;
 	static inline ama::Node* UnwrapNode(JSValueConst val) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(val, g_node_classid));
 		if (nd) {assert(nd->tmp_flags & ama::TMPF_IS_NODE);}
@@ -88,16 +88,14 @@ namespace ama {
 	}
 	std::string FindCommonJSModuleByPath(std::span<char> fn);
 	std::string FindCommonJSModule(std::span<char> fn_required, std::span<char> dir_base);
-	extern std::vector<char const*> g_builder_names;
-	extern std::vector<char const*> g_node_class_names;
-	extern std::vector<char const*> g_builtin_modules;
+	extern thread_local std::vector<char const*> g_builder_names;
+	extern thread_local std::vector<char const*> g_node_class_names;
+	extern thread_local std::vector<char const*> g_builtin_modules;
 	std::unordered_map<ama::gcstring, int> GetPrioritizedList(JSValueConst options, char const* name);
-	extern std::string std_module_dir_global;
+	extern thread_local std::string std_module_dir_global;
 	JSValue CallJSMethod(JSValue this_val, char const* name, std::span<JSValue> args);
 	JSValue CallJSMethodFree(JSValue this_val, char const* name, std::span<JSValue> args);
 	JSValue RequireJSModule(char const* name);
-	void EnterJS();
-	void LeaveJS();
 };
 
 #endif

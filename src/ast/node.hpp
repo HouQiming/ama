@@ -716,7 +716,6 @@ namespace ama {
 		return CreateNode(N_KEYWORD_STATEMENT, nd_value)->setData("return");
 	}
 	///////////////
-	extern int8_t enable_threading;
 	ama::Node* GetPlaceHolder();
 	static inline int isValidPreviousSibling(Node const* v) {
 		return v && !(intptr_t(v) & 1);

@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
-#include <mutex>
 #include "../util/jc_array.h"
 #include "../../modules/cpp/json/json.h"
 #include "../parser/literal.hpp"
@@ -15,13 +14,11 @@ namespace ama {
 	///////////////////
 	//the node pool
 	static const intptr_t NODE_BLOCK_SIZE = (intptr_t(1L) << 21) - intptr_t(64L);
-	static ama::TMemoryPool g_node_pool{};
+	static thread_local ama::TMemoryPool g_node_pool{};
 	//the thread model is: fork worker thread, do work, join them, gc
 	//if any other thread has non-null g_free_nodes, gc leads to use-after-free
-	int8_t enable_threading = 0;
 	thread_local ama::Node* g_free_nodes{};
-	static std::mutex g_pool_alloc_mutex{};
-	static ama::gcstring g_empty_comment = "";
+	static thread_local ama::gcstring g_empty_comment = "";
 	ama::Node* AllocNode() {
 		ama::Node* ret{};
 		if ( g_free_nodes ) {
@@ -29,9 +26,7 @@ namespace ama {
 			g_free_nodes = ret->s;
 			memset((void*)(ret), 0, sizeof(ama::Node));
 		} else {
-			if (ama::enable_threading) {g_pool_alloc_mutex.lock();}
 			ret = (ama::Node*)(ama::poolAllocAligned(&g_node_pool, sizeof(ama::Node), sizeof(void*), NODE_BLOCK_SIZE));
-			if (ama::enable_threading) {g_pool_alloc_mutex.unlock();}
 		}
 		assert(!(ret->tmp_flags & ama::TMPF_IS_NODE));
 		ret->tmp_flags = ama::TMPF_IS_NODE;
@@ -610,7 +605,6 @@ static void dfsFreeChildrenStorage(ama::Node* nd) {
 }
 void ama::Node::FreeASTStorage() {
 	//do not wipe .data and stuff, we could use them again in a C++ expr
-	if (ama::enable_threading) {return;}
 	assert(!this->p);
 	dfsFreeChildrenStorage(this);
 	if ( DEBUG_NODE_ALLOCATOR ) {

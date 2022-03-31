@@ -1,15 +1,10 @@
-#include <mutex>
 #include "gcstring.h"
 #pragma no_auto_header()
 
-namespace ama {
-	extern int8_t enable_threading;
-}
-
-static ama::gcstring_long* g_null_hash = nullptr;
-static ama::gcstring_long** g_hash = &g_null_hash;
-static size_t g_hash_size = 1;
-static size_t g_n_elements = 0;
+thread_local static ama::gcstring_long* g_null_hash = nullptr;
+thread_local static ama::gcstring_long** g_hash = &g_null_hash;
+thread_local static size_t g_hash_size = 1;
+thread_local static size_t g_n_elements = 0;
 
 //use the same hash as QuickJS
 static inline uint64_t hash_string8(uint8_t const* str, size_t len, uint64_t h) {
@@ -19,7 +14,6 @@ static inline uint64_t hash_string8(uint8_t const* str, size_t len, uint64_t h) 
 	return h;
 }
 
-static std::mutex g_gcstring_mutex{};
 ama::gcstring_long * ama::toGCStringLongCat(char const* data0, size_t length0, char const* data1, size_t length1) {
 	//printf("%p %d %p %d\n",data0,int(length0),data1,int(length1));
 	size_t length = length0 + length1;
@@ -29,10 +23,8 @@ ama::gcstring_long * ama::toGCStringLongCat(char const* data0, size_t length0, c
 	//the single instruction loading the pointer is slower than std::string construction
 	//it's faster without the hash test
 	//p->hash == h && 
-	if (ama::enable_threading) {g_gcstring_mutex.lock();}
 	for (ama::gcstring_long* p = g_hash[h & (g_hash_size - 1)]; p; p = p->next) {
 		if (p->length == length && memcmp(p->data(), data0, length0) == 0 && memcmp(p->data() + length0, data1, length1) == 0) {
-			if (ama::enable_threading) {g_gcstring_mutex.unlock();}
 			return p;
 		}
 	}
@@ -76,7 +68,6 @@ ama::gcstring_long * ama::toGCStringLongCat(char const* data0, size_t length0, c
 	memcpy(p_new->data() + length0, data1, length1);
 	p_new->data()[length] = 0;
 	//fprintf(stderr,"alloc string %p %s\n",p_new,p_new->data());
-	if (ama::enable_threading) {g_gcstring_mutex.unlock();}
 	return p_new;
 }
 
