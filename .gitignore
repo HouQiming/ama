@@ -10,3 +10,4 @@ a.out
 /test/test_auto_header.hpp
 *.audit
 *.exe
+perf.data

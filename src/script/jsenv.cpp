@@ -14,6 +14,7 @@ struct PackageJSON {
 namespace ama {
 	JSContext* jsctx{};
 	JSContext* GetGlobalJSContext() {return jsctx;}
+	static thread_local int g_in_js = 0;
 	std::mutex g_js_mutex{};
 	JSRuntime* g_runtime_handle{};
 	uint32_t g_node_classid = 0u;
@@ -174,14 +175,20 @@ namespace ama {
 	}
 	void EnterJS() {
 		if (ama::enable_threading) {
-			ama::g_js_mutex.lock();
+			if (!g_in_js) {
+				ama::g_js_mutex.lock();
+			}
+			g_in_js += 1;
 			//console.log(std::this_thread::get_id(), 'ama::g_js_mutex.lock();');
 		}
 	}
 	void LeaveJS() {
 		if (ama::enable_threading) {
 			//console.log(std::this_thread::get_id(), 'ama::g_js_mutex.unlock();');
-			ama::g_js_mutex.unlock();
+			g_in_js -= 1;
+			if (!g_in_js) {
+				ama::g_js_mutex.unlock();
+			}
 		}
 	}
 };
