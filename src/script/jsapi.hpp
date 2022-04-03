@@ -22,6 +22,7 @@ namespace ama {
 	void DropDependsCache();
 	JSValue MatchAll(ama::Node* nd, ama::Node* nd_pattern);
 	ama::Node* LookupSymbol(ama::Node* nd);
+	void TearDownScriptEnv();
 };
 
 #endif

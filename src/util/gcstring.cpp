@@ -28,6 +28,8 @@ ama::gcstring_long * ama::toGCStringLongCat(char const* data0, size_t length0, c
 			return p;
 		}
 	}
+	//increment g_n_elements first to avoid overwriting g_null_hash
+	g_n_elements += 1;
 	if (g_n_elements >= g_hash_size) {
 		//resize
 		uint64_t old_size = g_hash_size;
@@ -57,7 +59,6 @@ ama::gcstring_long * ama::toGCStringLongCat(char const* data0, size_t length0, c
 			//just give up, do nothing
 		}
 	}
-	g_n_elements += 1;
 	uint64_t hp = h & (g_hash_size - 1);
 	ama::gcstring_long* p_new = (ama::gcstring_long*)malloc(sizeof(ama::gcstring_long) + length + 1);
 	p_new->length = length;
@@ -94,6 +95,19 @@ void ama::gcstring_gcsweep() {
 		}
 		*pp_last = nullptr;
 	}
+	if (!g_n_elements) {
+		ama::gcstring_drop_pool();
+	}
+}
+
+void ama::gcstring_drop_pool() {
+	if (g_hash != &g_null_hash) {
+		free(g_hash);
+	}
+	::g_null_hash = nullptr;
+	::g_hash = &g_null_hash;
+	::g_hash_size = 1;
+	::g_n_elements = 0;
 }
 
 ama::gcstring ama::gcscat(std::span<char> a, std::span<char> b) {

@@ -290,7 +290,7 @@ function Generate(version,nd_root) {
 	let p_placeholder=code.length;
 	code.push(
 		'',
-		'JSValueConst global = JS_GetGlobalObject(ama::jsctx);'
+		'JSValueConst global = ama::g_js_global;'
 	);
 	//JS global constants
 	let n_largest = 0;

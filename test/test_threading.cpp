@@ -3,7 +3,7 @@
 #include "../src/script/jsapi.hpp"
 #include "../src/ast/nodegc.hpp"
 
-int n=100000;
+int n=20000;
 
 void test(int id){
 	std::vector<ama::Node*> nds;
@@ -15,6 +15,18 @@ void test(int id){
 		if(i%10000==0){printf("thread %d: validate %d\n",id,i);}
 		nds[i]->Validate();
 	}
+	nds.clear();
+	ama::gc();
+	for(int i=0;i<n;i++){
+		if(i%10000==0){printf("thread %d: parse %d\n",id,i);}
+		nds.push_back(ama::DefaultParseCode("function test(){return 42+'test';}"));
+	}
+	for(int i=0;i<n;i++){
+		if(i%10000==0){printf("thread %d: validate %d\n",id,i);}
+		nds[i]->Validate();
+	}
+	nds.clear();
+	ama::gc();
 }
 
 void thread_main(){
@@ -28,6 +40,8 @@ int main(){
 	test(0);
 	other_thread.join();
 	ama::gc();
+	ama::TearDownScriptEnv();
+	ama::DropAllMemoryPools();
 	puts("good");
 	return 0;
 }

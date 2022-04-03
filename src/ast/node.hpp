@@ -734,12 +734,14 @@ namespace ama {
 	//the non-method toSingleNode doesn't need -fno-delete-null-pointer-checks
 	ama::Node* toSingleNode(ama::Node* nd_child);
 	ama::Node* UnparseRaw(ama::Node* nd_raw);
-	extern thread_local ama::Node* g_free_nodes;
 	int ValidateChildRange(ama::Node* p0, ama::Node* p1);
 	void DeleteChildRange(ama::Node* nd0, ama::Node* nd1);
 	ama::Node* ReplaceChildRange(ama::Node* nd0, ama::Node* nd1, ama::Node* nd_new);
 	//it's in JSAPI
 	void DumpASTAsJSON(ama::Node* nd);
+	/////////////
+	extern thread_local ama::Node* g_free_nodes;
+	extern thread_local ama::Node* g_placeholder;
 };
 
 #endif

@@ -186,7 +186,11 @@ namespace ama {
 			};
 			if ( ext == ".so" || ext == ".dll" || ext == ".dylib" || ext == ".amaso" ) {
 				JSValue js_fn_final = ama::WrapString(fn_final);
-				JSValueConst ret = JS_Invoke(ctx, JS_GetGlobalObject(ctx), JS_NewAtom(ctx, "__RequireNativeLibrary"), 4, module_args.data());
+				JSValue global = JS_GetGlobalObject(ctx);
+				JSAtom atom_rnl = JS_NewAtom(ctx, "__RequireNativeLibrary");
+				JSValueConst ret = JS_Invoke(ctx, global, atom_rnl, 4, module_args.data());
+				JS_FreeAtom(ctx, atom_rnl);
+				JS_FreeValue(ctx, global);
 				for (intptr_t i = 0; i < 4; i++) {
 					JS_FreeValue(ctx, module_args[i]);
 				}
@@ -211,7 +215,9 @@ namespace ama {
 					JS_SetPropertyStr(ctx, g_require_cache, fn_final.c_str(), JS_UNDEFINED);
 					return ret;
 				}
-				JSValueConst ret_module = JS_Call(ctx, ret, JS_GetGlobalObject(ctx), 4, module_args.data());
+				JSValue global = JS_GetGlobalObject(ctx);
+				JSValueConst ret_module = JS_Call(ctx, ret, global, 4, module_args.data());
+				JS_FreeValue(ctx, global);
 				for (intptr_t i = 0; i < 4; i++) {
 					JS_FreeValue(ctx, module_args[i]);
 				}
@@ -258,7 +264,7 @@ namespace ama {
 	ama::Node* DefaultParseCode(char const* code) {
 		//for external code that calls ParseCode as an API
 		LazyInitScriptEnv();
-		JSValue options = JS_GetPropertyStr(ama::jsctx, JS_GetGlobalObject(ama::jsctx), "default_options");
+		JSValue options = JS_GetPropertyStr(ama::jsctx, ama::g_js_global, "default_options");
 		int has_c_conditional = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_c_conditional"), 1);
 		int has_labels = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_labels"), 1);
 		int parse_keyword_statements = ama::UnwrapInt32(JS_GetPropertyStr(ama::jsctx, options, "parse_keyword_statements"), 1);
@@ -319,7 +325,7 @@ namespace ama {
 		LazyInitScriptEnv();
 		JSValue val_fn = JS_NewString(ama::jsctx, fn);
 		JSAtom atom_lf = JS_NewAtom(ama::jsctx, "LoadFile");
-		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_lf, 1, &val_fn);
+		JSValueConst ret = JS_Invoke(ama::jsctx, ama::g_js_global, atom_lf, 1, &val_fn);
 		JS_FreeAtom(ama::jsctx, atom_lf);
 		JS_FreeValue(ama::jsctx, val_fn);
 		if ( JS_IsException(ret) ) {
@@ -403,7 +409,7 @@ namespace ama {
 			ama::WrapString(path::toAbsolute(dirname)),
 			JS_NewString(ama::jsctx, file_data)
 		};
-		JSValueConst ret_script = JS_Call(ama::jsctx, ret, JS_GetGlobalObject(ama::jsctx), 3, module_args.data());
+		JSValueConst ret_script = JS_Call(ama::jsctx, ret, ama::g_js_global, 3, module_args.data());
 		for (intptr_t i = 0; i < 3; i++) {
 			JS_FreeValue(ama::jsctx, module_args[i]);
 		}
@@ -967,16 +973,17 @@ namespace ama {
 		}
 		//run the script in a temporary context
 		JSContext* sbctx = JS_NewContext(g_sandbox_runtime);
-		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "Sandbox", JS_DupValue(sbctx, g_sandbox_object));
+		JSValueConst global = JS_GetGlobalObject(sbctx);
+		JS_SetPropertyStr(sbctx, global, "Sandbox", JS_DupValue(sbctx, g_sandbox_object));
 		//JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "console", JS_DupValue(sbctx, g_sandbox_object));
-		JS_SetPropertyStr(sbctx, JS_GetGlobalObject(sbctx), "__global", JS_GetGlobalObject(sbctx));
+		JS_SetPropertyStr(sbctx, global, "__global", global);
 		std::string code = ama::UnwrapStringResizable(argv[0]);
 		JSValueConst ret = JS_Eval(
 			sbctx, code.c_str(),
 			code.size(), "sandboxed code", JS_EVAL_TYPE_GLOBAL
 		);
 		if (JS_IsFunction(sbctx, ret)) {
-			JSValue ret2 = JS_Call(sbctx, ret, JS_GetGlobalObject(sbctx), 0, nullptr);
+			JSValue ret2 = JS_Call(sbctx, ret, global, 0, nullptr);
 			JS_FreeValue(sbctx, ret);
 			ret = ret2;
 		}
@@ -1012,7 +1019,7 @@ namespace ama {
 		LazyInitScriptEnv();
 		JSValue val_arg = ama::WrapNode(nd);
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppComputeType");
-		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 1, &val_arg);
+		JSValueConst ret = JS_Invoke(ama::jsctx, ama::g_js_global, atom_method, 1, &val_arg);
 		JS_FreeAtom(ama::jsctx, atom_method);
 		JS_FreeValue(ama::jsctx, val_arg);
 		if ( JS_IsException(ret) ) {
@@ -1027,7 +1034,7 @@ namespace ama {
 		LazyInitScriptEnv();
 		JSValue val_arg = ama::WrapNode(nd);
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppLookupSymbol");
-		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 1, &val_arg);
+		JSValueConst ret = JS_Invoke(ama::jsctx, ama::g_js_global, atom_method, 1, &val_arg);
 		JS_FreeAtom(ama::jsctx, atom_method);
 		JS_FreeValue(ama::jsctx, val_arg);
 		if ( JS_IsException(ret) ) {
@@ -1041,7 +1048,7 @@ namespace ama {
 	void DropTypeCache() {
 		LazyInitScriptEnv();
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppDropTypeCache");
-		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 0, nullptr);
+		JSValueConst ret = JS_Invoke(ama::jsctx, ama::g_js_global, atom_method, 0, nullptr);
 		if ( JS_IsException(ret) ) {
 			ama::DumpError(ama::jsctx);
 		}
@@ -1050,7 +1057,7 @@ namespace ama {
 	void DropDependsCache() {
 		LazyInitScriptEnv();
 		JSAtom atom_method = JS_NewAtom(ama::jsctx, "CppDropDependsCache");
-		JSValueConst ret = JS_Invoke(ama::jsctx, JS_GetGlobalObject(ama::jsctx), atom_method, 0, nullptr);
+		JSValueConst ret = JS_Invoke(ama::jsctx, ama::g_js_global, atom_method, 0, nullptr);
 		if ( JS_IsException(ret) ) {
 			ama::DumpError(ama::jsctx);
 		}
@@ -1094,8 +1101,10 @@ namespace ama {
 		ama::g_node_proto = JS_NewObject(ama::jsctx);
 		///////////
 		SetupConfigDirs();
-		ama::GeneratedJSBindings();
 		JSValueConst global = JS_GetGlobalObject(ama::jsctx);
+		ama::g_js_global = global;
+		ama::GeneratedJSBindings();
+		//this drops g_js_global's refcount
 		JS_SetPropertyStr(ama::jsctx, global, "__global", global);
 		JSValue js_node_class_names_array = JS_NewArray(ama::jsctx);
 		JS_SetPropertyStr(ama::jsctx, global, "__node_class_names", js_node_class_names_array);
@@ -1408,5 +1417,25 @@ namespace ama {
 		if ( ama::g_runtime_handle ) { return; }
 		InitScriptEnv();
 	}
-	ama::Node* Unparse();
+	void TearDownScriptEnv() {
+		if ( !ama::g_runtime_handle ) { return; }
+		//ama::std_module_dir.clear();
+		//ama::std_module_dir_global.clear();
+		ama::g_js_node_map.clear();
+		ama::g_builder_names.clear();
+		ama::g_node_class_names.clear();
+		ama::g_builtin_modules.clear();
+		if (g_sandbox_base_context) {
+			JS_FreeContext(ama::g_sandbox_base_context);
+			ama::g_sandbox_base_context = nullptr;
+		}
+		if (g_sandbox_runtime) {
+			JS_FreeRuntime(ama::g_sandbox_runtime);
+			ama::g_sandbox_runtime = nullptr;
+		}
+		JS_FreeContext(ama::jsctx);
+		JS_FreeRuntime(ama::g_runtime_handle);
+		ama::jsctx = nullptr;
+		ama::g_runtime_handle = nullptr;
+	}
 };

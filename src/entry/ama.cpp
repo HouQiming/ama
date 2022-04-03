@@ -13,7 +13,7 @@
 static int RunCommandLineUtility(int argc, char const* const* argv) {
 	ama::LazyInitScriptEnv();
 	JSContext* ctx = ama::GetGlobalJSContext();
-	JSValue obj_process = JS_GetPropertyStr(ctx, JS_GetGlobalObject(ctx), "process");
+	JSValue obj_process = JS_GetPropertyStr(ctx, ama::g_js_global, "process");
 	JSValue obj_argv = JS_GetPropertyStr(ctx, obj_process, "argv");
 	JS_FreeValue(ctx, obj_process);
 	for (int ai = 0; ai < argc; ai += 1) {
@@ -22,7 +22,7 @@ static int RunCommandLineUtility(int argc, char const* const* argv) {
 	JS_FreeValue(ctx, obj_argv);
 	//JSValue arg = JS_NewString(ctx, argv[i] + 2);
 	JSAtom atom = JS_NewAtom(ctx, "RunCommandLineUtility");
-	JSValue ret = JS_Invoke(ctx, JS_GetGlobalObject(ctx), atom, 0, nullptr);
+	JSValue ret = JS_Invoke(ctx, ama::g_js_global, atom, 0, nullptr);
 	JS_FreeAtom(ctx, atom);
 	int ret_code = 1;
 	if (JS_IsException(ret)) {

@@ -14,7 +14,7 @@ namespace ama {
 	///////////////////
 	//the node pool
 	static const intptr_t NODE_BLOCK_SIZE = (intptr_t(1L) << 21) - intptr_t(64L);
-	static thread_local ama::TMemoryPool g_node_pool{};
+	thread_local ama::TMemoryPool g_node_pool{};
 	//the thread model is: fork worker thread, do work, join them, gc
 	//if any other thread has non-null g_free_nodes, gc leads to use-after-free
 	thread_local ama::Node* g_free_nodes{};

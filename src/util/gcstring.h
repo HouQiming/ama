@@ -137,6 +137,7 @@ namespace ama{
 		}
 	};
 	void gcstring_gcsweep();
+	void gcstring_drop_pool();
 	ama::gcstring gcscat(std::span<char> a,std::span<char> b);
 }
 namespace JC{

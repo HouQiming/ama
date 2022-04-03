@@ -672,7 +672,7 @@ namespace ama {
 		JS_SetPropertyStr(jsctx, ama::g_node_proto, "FindAllDef", JS_NewCFunction(jsctx, (NodeCall_FindAllDef), "Node.FindAllDef", 0));
 		ama::g_node_class_names.resize(36);
 		ama::g_builder_names.resize(36);
-		JSValueConst global = JS_GetGlobalObject(ama::jsctx);
+		JSValueConst global = ama::g_js_global;
 		ama::g_node_class_names[N_NONE] = "N_NONE";
 		ama::g_builder_names[N_NONE] = "nNone";
 		ama::g_node_class_names[N_RAW] = "N_RAW";

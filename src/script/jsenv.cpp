@@ -13,10 +13,10 @@ struct PackageJSON {
 namespace ama {
 	thread_local JSContext* jsctx{};
 	JSContext* GetGlobalJSContext() {return jsctx;}
-	thread_local std::mutex g_js_mutex{};
 	thread_local JSRuntime* g_runtime_handle{};
 	thread_local uint32_t g_node_classid = 0u;
 	thread_local JSValue g_node_proto = JS_NULL;
+	thread_local JSValue g_js_global = JS_NULL;
 	thread_local std::string std_module_dir{};
 	thread_local std::string std_module_dir_global{};
 	thread_local std::vector<char const*> g_builder_names{};
@@ -166,7 +166,7 @@ namespace ama {
 		return ret;
 	}
 	JSValue RequireJSModule(char const* name) {
-		return CallJSMethod(JS_GetGlobalObject(jsctx), "__require", std::vector<JSValue>{
+		return CallJSMethod(ama::g_js_global, "__require", std::vector<JSValue>{
 			JS_NewString(jsctx, "./."),
 			JS_NewString(jsctx, name)
 		});

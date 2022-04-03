@@ -1,8 +1,10 @@
+#include <vector>
 #include "node.hpp"
 #include "../script/jsenv.hpp"
-#include <vector>
 #include "../util/jc_array.h"
+#include "../util/mempool.hpp"
 namespace ama {
+	extern thread_local ama::TMemoryPool g_node_pool;
 	static inline void mark(std::vector<ama::Node*>& Q, ama::Node* nd) {
 		if ( nd && !(nd->tmp_flags & ama::TMPF_GC_MARKED) ) {
 			assert(nd->tmp_flags & ama::TMPF_IS_NODE);
@@ -45,7 +47,7 @@ namespace ama {
 			//	}
 			//}
 		}
-		ama::mark(Q, ama::GetPlaceHolder());
+		//ama::mark(Q, ama::g_placeholder);
 		//recursion
 		for (size_t i = intptr_t(0L); i < Q.size(); i += intptr_t(1L)) {
 			ama::Node* nd = Q[i];
@@ -53,14 +55,25 @@ namespace ama {
 			ama::mark(Q, nd->s);
 		}
 		//sweep
-		std::vector<ama::Node*> node_ranges = ama::GetAllPossibleNodeRanges();
 		intptr_t n_freed = intptr_t(0L);
 		intptr_t n_kept = intptr_t(0L);
 		intptr_t n_swept = intptr_t(0L);
 		//reorganize the free list
+		//just drop the placeholder
+		ama::g_placeholder = nullptr;
 		ama::g_free_nodes = nullptr;
-		for (int i = 0; i < node_ranges.size(); i += 2) {
-			for (ama::Node* nd = node_ranges[i]; nd != node_ranges[i + 1]; nd += 1) {
+		std::vector<ama::TBlockHeader*> blocks_kept{};
+		for (ama::TBlockHeader* block = g_node_pool.block; block;) {
+			ama::Node* nd_begin = (ama::Node*)(uintptr_t(block) + sizeof(ama::TBlockHeader));
+			ama::Node* nd_end = nullptr;
+			if (block == g_node_pool.block) {
+				nd_end = ((ama::Node*)g_node_pool.front);
+			} else {
+				nd_end = ((ama::Node*)(uintptr_t(block) + sizeof(ama::TBlockHeader) + (block->size - sizeof(ama::TBlockHeader)) / sizeof(ama::Node) * sizeof(ama::Node)));
+			}
+			ama::Node* nd_free_node_before = ama::g_free_nodes;
+			intptr_t n_kept_before = n_kept;
+			for (ama::Node* nd = nd_begin; nd != nd_end; nd += 1) {
 				n_swept += 1;
 				if ( (nd->tmp_flags & (ama::TMPF_GC_MARKED | ama::TMPF_IS_NODE)) == ama::TMPF_IS_NODE ) {
 					//unreachable but un-free, release
@@ -90,9 +103,40 @@ namespace ama {
 					ama::g_free_nodes = nd;
 				}
 			}
+			ama::TBlockHeader* block_next = block->next;
+			if (n_kept_before < n_kept) {
+				//keep the block
+				blocks_kept.push_back(block);
+				//console.log('keep', block);
+			} else {
+				//free the block
+				if (block == g_node_pool.block) {
+					//if we free the current block, reset front and sz_free
+					g_node_pool.block = nullptr;
+					g_node_pool.front = nullptr;
+					g_node_pool.sz_free = 0;
+				}
+				//remove the current block from the free list
+				ama::g_free_nodes = nd_free_node_before;
+				//console.log('free', block);
+				free(block);
+			}
+			block = block_next;
 		}
+		//rebuild the memory pool linked list
+		g_node_pool.block = nullptr;
+		for (intptr_t i = blocks_kept.size() - 1; i >= 0; i--) {
+			blocks_kept[i]->next = g_node_pool.block;
+			g_node_pool.block = blocks_kept[i];
+		}
+		//console.log((void*)g_node_pool.block, (void*)g_node_pool.front, g_node_pool.sz_free, g_node_pool.block_size, ama::g_free_nodes);
 		//fprintf(stderr, "n_kept = %d, n_freed = %d, n_swept = %lld\n", int(n_kept), int(n_freed), (long long)n_swept);
 		ama::gcstring_gcsweep();
 		return n_freed;
 	}
-};
+	void DropAllMemoryPools() {
+		ama::poolRelease(&g_node_pool);
+		ama::gcstring_drop_pool();
+		ama::g_free_nodes = nullptr;
+	}
+}

@@ -7,7 +7,6 @@
 #include "../util/jc_array.h"
 #include "../util/gcstring.h"
 #include <unordered_map>
-#include <mutex>
 /*#pragma add("jc_files", "./jsenv.jc");*/
 /*#pragma add("h_files", "./quickjs/src/quickjs.h");*/
 /*#pragma add("h_files", "./quickjs/src/cutils.h");*/
@@ -26,7 +25,6 @@
 namespace ama {
 	extern thread_local JSContext* jsctx;
 	extern thread_local JSRuntime* g_runtime_handle;
-	extern thread_local std::mutex g_js_mutex;
 	extern thread_local std::string std_module_dir;
 	JSContext* GetGlobalJSContext();
 	void DumpError(JSContext* ctx);
@@ -63,6 +61,7 @@ namespace ama {
 	}
 	extern thread_local uint32_t g_node_classid;
 	extern thread_local JSValue g_node_proto;
+	extern thread_local JSValue g_js_global;
 	extern thread_local std::unordered_map<ama::Node const*, JSValue> g_js_node_map;
 	static inline ama::Node* UnwrapNode(JSValueConst val) {
 		ama::Node* nd = (ama::Node*)(JS_GetOpaque(val, g_node_classid));
