@@ -227,10 +227,10 @@ namespace ama {
 				}
 				JS_FreeValue(ctx, ret);
 			}
-			//after SetPropertyStr obj_module may have gotten freed
-			//}
-			//set it in the end so that one can re-require a module after an exception
-			//JS_FreeValue(ctx,obj_module2)
+			//obj_module gets freed by the JS_Call above
+		} else {
+			//obj_module would leak if we don't free it here
+			JS_FreeValue(ctx, obj_module);
 		}
 		return JS_GetPropertyStr(ctx, obj_module, "exports");
 	}

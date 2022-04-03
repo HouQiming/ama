@@ -21,6 +21,7 @@ namespace ama {
 			//check that we don't have premature TMPF_GC_MARKED
 			std::vector<ama::Node*> node_ranges = ama::GetAllPossibleNodeRanges();
 			for (int i = 0; i < node_ranges.size(); i += 2) {
+				//console.log('test', node_ranges[i], node_ranges[i + 1]);
 				for (ama::Node* nd = node_ranges[i]; nd != node_ranges[i + 1]; nd += 1) {
 					assert(!(nd->tmp_flags & ama::TMPF_GC_MARKED));
 				}
@@ -128,6 +129,10 @@ namespace ama {
 		for (intptr_t i = blocks_kept.size() - 1; i >= 0; i--) {
 			blocks_kept[i]->next = g_node_pool.block;
 			g_node_pool.block = blocks_kept[i];
+		}
+		if (!g_node_pool.front && !g_node_pool.sz_free && g_node_pool.block) {
+			//fake a front-at-end-of-block to return something sane in the next GetAllPossibleNodeRanges
+			g_node_pool.front = (char*)(((ama::Node*)(uintptr_t(g_node_pool.block) + sizeof(ama::TBlockHeader) + (g_node_pool.block->size - sizeof(ama::TBlockHeader)) / sizeof(ama::Node) * sizeof(ama::Node))));
 		}
 		//console.log((void*)g_node_pool.block, (void*)g_node_pool.front, g_node_pool.sz_free, g_node_pool.block_size, ama::g_free_nodes);
 		//fprintf(stderr, "n_kept = %d, n_freed = %d, n_swept = %lld\n", int(n_kept), int(n_freed), (long long)n_swept);
