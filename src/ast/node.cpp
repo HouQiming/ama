@@ -200,7 +200,7 @@ namespace ama {
 		if ( !nd_new ) {
 			DeleteChildRange(nd0, nd1);
 		} else {
-			ama::Node* nd_deleted_head{};
+			ama::Node* nd_deleted_head = nullptr;
 			if ( nd0 != nd1 ) {
 				nd_deleted_head = nd0->s;
 				DeleteChildRange(nd_deleted_head, nd1);
@@ -657,6 +657,7 @@ static ama::Node* PreorderSkipChildren(ama::Node* nd_self, ama::Node* nd_root) {
 }
 
 static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t boundary, int node_class, ama::gcstring data, std::vector<ama::Node*>* ret) {
+	uint8_t u_node_class = uint8_t(node_class);
 	ama::Node* nd_ret{};
 	for (ama::Node* nd = nd_root; nd; nd = nd->PreorderNext(nd_root)) {
 		skip_children:
@@ -664,7 +665,7 @@ static ama::Node* FindImpl(ama::Node* nd_root, ama::Node* nd_before, int32_t bou
 			break;
 		}
 		int32_t my_boundary = ama::BOUNDARY_ONE_LEVEL;
-		if ( int(nd->node_class) == node_class || node_class == ama::N_NONE ) {
+		if ( nd->node_class == u_node_class || u_node_class == ama::N_NONE ) {
 			int matched = 1;
 			if ( !data.empty() ) {
 				matched = nd->GetName() == data;

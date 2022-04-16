@@ -18,13 +18,20 @@ namespace ama {
 						//trailing ',', ignore
 						continue;
 					}
-					ama::Node* nd_next = ndi->BreakSibling();
-					if (!nd_next) {nd_next = ama::nAir();}
+					ama::Node* nd_next = ndi->s;
 					ndi->Unlink();
-					ama::Node* nd_last = nd_raw->BreakChild();
-					nd_raw->Insert(ama::POS_FRONT, nd_next);
+					ama::Node* nd_last = nullptr;
+					if (nd_raw->c != nd_next) {
+						if (nd_next) {
+							nd_last = nd_raw->c;
+							nd_last->ReplaceUpto(nd_next->Prev(), nullptr);
+						} else {
+							nd_last = nd_raw->BreakChild();
+						}
+					}
 					comma_children.push_back(nd_last->toSingleNode());
 					ndi = nd_next;
+					if (!nd_next) {break;}
 					goto again;
 				}
 			}
