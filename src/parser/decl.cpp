@@ -574,7 +574,7 @@ namespace ama {
 										nd_paramlist = ndj->Prev();
 										break;
 									}
-								} else if ( parse_cpp11_lambda && (ndj->node_class == ama::N_ARRAY || ndj->isRawNode('[', ']')) && ndj->s->isRawNode('(', ')') ) {
+								} else if ( parse_cpp11_lambda && (ndj->node_class == ama::N_ARRAY || ndj->isRawNode('[', ']')) && ndj->s && ndj->s->isRawNode('(', ')') ) {
 									nd_paramlist = ndj->s;
 									break;
 								}
