@@ -367,6 +367,7 @@ namespace ama {
 						break;
 					}
 				}
+				//console.log(i32(ndi->indent_level), JSON::stringify(ndi->toSource()));
 				//if ( ndi->comments_before--->indexOf('\n') >= 0 ) {
 				//	passed_newline = 1;
 				//}
@@ -392,7 +393,7 @@ namespace ama {
 			if ( lines.size() <= 1 ) { continue; }
 			for (int i = 0; i < lines.size(); i += 1) {
 				lines[i] = ama::toSingleNode(lines[i]);
-				//console.log(i, lines[i].toSource());
+				//console.log(i, i32(lines[i]->indent_level), JSON::stringify(lines[i]->toSource()));
 			}
 			//check indent levels after
 			std::vector<IndentStackItem> istk{};

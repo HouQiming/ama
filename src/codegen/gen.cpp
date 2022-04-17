@@ -243,7 +243,8 @@ namespace ama {
 				this->code--->push(nd->data);
 				if ( nd->c && !(
 					nd->c->node_class == ama::N_EXTENSION_CLAUSE || nd->c->node_class == ama::N_SCOPE || 
-					nd->c->node_class == ama::N_AIR || nd->c->node_class == ama::N_PARAMETER_LIST
+					nd->c->node_class == ama::N_AIR || nd->c->node_class == ama::N_PARAMETER_LIST ||
+					nd->c->isSymbol(":")
 				) ) {
 					this->GenerateSpaceBefore(nd->c);
 				}

@@ -271,20 +271,19 @@ namespace ama {
 							nd_end = nd_end->s;
 						}
 						////////////////////
-						ama::Node* nd_after = nd_end->BreakSibling();
-						ama::Node* nd_false = ndi->BreakSibling();
-						ndi->Unlink();
-						ama::Node* nd_cond = nd_keyword->BreakSibling();
 						ama::Node* nd_pycond = ama::CreateNode(ama::N_CONDITIONAL, nullptr)->setFlags(ama::CONDITIONAL_PYTHON);
-						nd_true->ReplaceUpto(nd_keyword, nd_pycond);
+						nd_true->ReplaceUpto(nd_end, nd_pycond);
+						ama::Node* nd_false = ndi->BreakSibling();
+						ama::Node* nd_cond = nd_keyword->BreakSibling();
+						ndi->Prev()->BreakSibling();
+						nd_keyword->Prev()->BreakSibling();
 						nd_pycond->Insert(ama::POS_BACK, nd_cond->toSingleNode());
 						nd_pycond->Insert(ama::POS_BACK, nd_true->toSingleNode());
 						nd_pycond->Insert(ama::POS_BACK, nd_false->toSingleNode());
-						if (nd_after) {nd_pycond->Insert(ama::POS_AFTER, nd_after);}
-						nd_keyword->Unlink();
-						ndi = nd_pycond;
-						kw_mode = KW_NONE;
+						nd_prototype_start = nd_pycond;
 						nd_keyword = nullptr;
+						kw_mode = KW_NONE;
+						ndi = nd_pycond;
 						continue;
 					}
 				} else if ( (!nd_keyword || kw_mode == KW_STMT || kw_mode == KW_EXT || kw_mode == KW_NOT_FUNC) &&
