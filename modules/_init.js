@@ -440,7 +440,7 @@ function ParsePythonLambdas(nd_root){
 			let nd_labeled=nd_lambda.p;
 			let nd_body=nd_labeled.c.s;
 			let nd_lambda_func=nd_labeled.ReplaceWith(nFunction(
-				nd_lambda,
+				nd_lambda.Unlink(),
 				nParameterList().setFlags(PARAMLIST_UNWRAPPED),
 				nSymbol(':'),
 				nd_body.Unlink()
