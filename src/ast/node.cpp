@@ -414,7 +414,7 @@ ama::Node* ama::Node::Insert(int pos, ama::Node* nd_new) {
 			this->c->v = ama::PackTailPointer(nd_tail);
 			break;
 		}
-		case ama::POS_REPLACE:{
+		case ama::POS_REPLACE:case ama::POS_REPLACE_RAW:{
 			nd_tail->s = this->s;
 			if ( this->s ) {
 				this->s->v = nd_tail;

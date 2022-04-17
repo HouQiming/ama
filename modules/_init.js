@@ -435,6 +435,18 @@ __global.default_pipeline=[
 function ParsePythonLambdas(nd_root){
 	//parse: Python lambda
 	for(let nd_lambda of nd_root.FindAll(N_REF,'lambda')){
+		if(nd_lambda.p.node_class===N_LABELED){
+			//void function -- lambda: foo
+			let nd_labeled=nd_lambda.p;
+			let nd_body=nd_labeled.c.s;
+			let nd_lambda_func=nd_labeled.ReplaceWith(nFunction(
+				nd_lambda,
+				nParameterList().setFlags(PARAMLIST_UNWRAPPED),
+				nSymbol(':'),
+				nd_body.Unlink()
+			))
+			continue;
+		}
 		if(nd_lambda.p.node_class!==N_RAW){continue;}
 		let nd_raw=nd_lambda.p;
 		if(nd_raw.p.node_class===N_ASSIGNMENT&&nd_raw.p.p&&nd_lambda.s){
@@ -478,11 +490,23 @@ function ParsePythonLambdas(nd_root){
 		}
 		if(nd_raw.p.node_class===N_CALL){
 			//misparsed multi-parameter lambda inside a call
-			let ndi=nd_raw;
-			while(ndi&&ndi.node_class!==N_LABELED){
+			let ndi=nd_raw.s;
+			while(ndi&&ndi.node_class===N_REF){
 				ndi=ndi.s;
 			}
-			if(!ndi){continue;}
+			if(ndi.node_class===N_CONDITIONAL&&ndi.c.s.node_class===N_LABELED&&ndi.c.s.c.node_class===N_REF){
+				//f(lambda foo, bar: baz if baz else baz)
+				let nd_labeled=ndi.c.s;
+				let nd_then=nd_labeled.c.s.Unlink();
+				nd_labeled.Insert(POS_REPLACE_RAW,nd_then);
+				ndi.Insert(POS_REPLACE_RAW,nd_labeled);
+				nd_labeled.Insert(POS_BACK,ndi);
+				nd_labeled.comments_before=ndi.comments_before+nd_labeled.comments_before;
+				ndi.comments_before=nd_then.comments_before;
+				nd_then.comments_before='';
+				ndi=nd_labeled;
+			}
+			if(!ndi||ndi.node_class!==N_LABELED){continue;}
 			let ndi_prev=ndi.Prev();
 			nd_raw.ReplaceUpto(ndi_prev,null);
 			let nd_other_args=nd_raw.BreakSibling();
@@ -497,15 +521,17 @@ function ParsePythonLambdas(nd_root){
 		let nd_labeled=nd_raw.p;
 		if(nd_labeled.node_class!==N_LABELED){continue;}
 		let params=[];
-		for(let ndi=nd_raw.c.s;ndi;ndi=ndi.s){
+		for(let ndi=nd_raw.c.s;ndi;){
+			let ndi_next=ndi.s;
 			if(ndi.node_class===N_REF){
-				params.push(nAssignment(ndi.Clone(),nAir()));
+				params.push(nAssignment(ndi.Unlink(),nAir()));
 			}else if(ndi.node_class===N_ASSIGNMENT){
-				params.push(ndi.Clone());
+				params.push(ndi.Unlink());
 			}
+			ndi=ndi_next;
 		}
 		let nd_body=nd_labeled.c.s;
-		nd_labeled.ReplaceWith(nFunction(
+		let nd_lambda_func=nd_labeled.ReplaceWith(nFunction(
 			nd_raw.c.Unlink(),
 			nParameterList.apply(null,params).setFlags(PARAMLIST_UNWRAPPED).SanitizeCommentPlacement(),
 			nSymbol(':').setCommentsBefore(nd_raw.comments_after),

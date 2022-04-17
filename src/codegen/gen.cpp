@@ -257,7 +257,7 @@ namespace ama {
 				for (ama::Node* ndi = nd->c; ndi; ndi = ndi->s) {
 					if ( ndi->node_class == ama::N_EXTENSION_CLAUSE || ndi->node_class == ama::N_SCOPE || 
 					ndi->node_class == ama::N_SYMBOL && ndi->data != ":" ||
-					ndi_last && ndi->node_class == ama::N_PARAMETER_LIST && (ndi->flags & ama::PARAMLIST_UNWRAPPED) ||
+					ndi_last && ndi->node_class == ama::N_PARAMETER_LIST && (ndi->flags & ama::PARAMLIST_UNWRAPPED) && ndi->c ||
 					ndi_last && ndi_last->node_class == ama::N_SYMBOL) {
 						//`[]{}` could end up as `[]  {}` without this test
 						if (!this->code--->endsWith(' ')) {

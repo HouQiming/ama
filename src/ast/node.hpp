@@ -313,6 +313,7 @@ namespace ama {
 	static const int POS_FRONT = 2;
 	static const int POS_BACK = 3;
 	static const int POS_REPLACE = 4;
+	static const int POS_REPLACE_RAW = 5; //POS_REPLACE_RAW doesn't hack comments / indents
 	/////////////////
 	//for Node::FindAllWithin 
 	static const int32_t BOUNDARY_FUNCTION = 1;
