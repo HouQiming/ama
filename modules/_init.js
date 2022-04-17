@@ -435,7 +435,7 @@ __global.default_pipeline=[
 function ParsePythonLambdas(nd_root){
 	//parse: Python lambda
 	for(let nd_lambda of nd_root.FindAll(N_REF,'lambda')){
-		if(nd_lambda.p.node_class===N_LABELED){
+		if(nd_lambda.p.node_class===N_LABELED&&nd_lambda===nd_lambda.p.c){
 			//void function -- lambda: foo
 			let nd_labeled=nd_lambda.p;
 			let nd_body=nd_labeled.c.s;
@@ -444,7 +444,7 @@ function ParsePythonLambdas(nd_root){
 				nParameterList().setFlags(PARAMLIST_UNWRAPPED),
 				nSymbol(':'),
 				nd_body.Unlink()
-			))
+			));
 			continue;
 		}
 		if(nd_lambda.p.node_class!==N_RAW){continue;}
@@ -519,7 +519,7 @@ function ParsePythonLambdas(nd_root){
 			//COULDDO: add back comma if removed
 		}
 		let nd_labeled=nd_raw.p;
-		if(nd_labeled.node_class!==N_LABELED){continue;}
+		if(nd_labeled.node_class!==N_LABELED||nd_labeled.c!==nd_raw){continue;}
 		let params=[];
 		for(let ndi=nd_raw.c.s;ndi;){
 			let ndi_next=ndi.s;

@@ -191,9 +191,13 @@ namespace ama {
 					}
 				} else if ( ndi->isSymbol(":") ) {
 					assert(cstk.size() > 0);
-					while ( cstk.back().nd_colon ) {
+					while ( cstk.back().nd_qmark && cstk.back().nd_colon ) {
 						assert(cstk.size() > 0);
 						ndi = FoldColonStack(cstk, ndi);
+					}
+					if (cstk.back().nd_colon) {
+						ama::Node* nd_colon = cstk.back().nd_colon;
+						cstk--->push(ColonStackItem{.nd_head = nd_colon->s, .nd_qmark = nullptr, .nd_colon = nullptr});
 					}
 					//conditional -- foo?bar:
 					//label -- bar:
