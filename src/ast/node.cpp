@@ -1112,3 +1112,22 @@ std::vector<ama::Node*> ama::Node::FindAllDef() {
 	ret.resize(n2);
 	return std::move(ret);
 }
+
+intptr_t ama::Node::ComputeMaxDepth() const {
+	intptr_t depth = 0;
+	intptr_t max_depth = 0;
+	for (ama::Node const* nd_loop = this; nd_loop;) {
+		if ( nd_loop->c ) {
+			nd_loop = nd_loop->c;
+			depth += 1;
+			if (max_depth < depth) {max_depth = depth;}
+		} else {
+			for (ama::Node const* ndi = nd_loop; ndi && ndi != this; ndi = ndi->p, depth -= 1) {
+				if ( ndi->s ) { nd_loop = ndi->s;goto has_next; }
+			}
+			break;
+			has_next:;
+		}
+	}
+	return max_depth;
+}

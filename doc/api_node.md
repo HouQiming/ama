@@ -434,6 +434,11 @@ Compute the number of `nd`'s child nodes.
 
 Return a list of all `N_REF` nodes with the `REF_DECLARED` flag under `nd`.
 
+--------------
+- `nd.ComputeMaxDepth()`
+
+Compute the max depth under `nd`. Returns 0 for leaf nodes.
+
 
 --------------
 - `nd.NodeofToASTExpression()`

@@ -582,9 +582,11 @@ namespace ama {
 		//Return 1 if whether `nd_child` gets executed depends on `nd`, `nd_child` must be a child of `nd`.
 		int isChildCFGDependent(ama::Node const* nd_child)const;
 		//Compute the number of `nd`'s child nodes.
-		intptr_t ComputeChildCount() const;
+		intptr_t ComputeChildCount()const;
 		//Return a list of all `N_REF` nodes with the `REF_DECLARED` flag under `nd`.
 		std::vector<ama::Node*> FindAllDef();
+		//Compute the max depth under `nd`. Returns 0 for leaf nodes.
+		intptr_t ComputeMaxDepth()const;
 	};
 	ama::Node* AllocNode();
 	//All nodes are allocated from a dedicated pool, as a side effect, we can
