@@ -315,6 +315,9 @@ namespace ama {
 				std::swap(new_children, comma_children);
 				if ( changed == ',' && nd_raw->isRawNode('{', '}') ) {
 					ConvertToOA(nd_raw, ama::N_OBJECT);
+				} else if ( !nd_raw->c && nd_raw->isRawNode('{', '}') && nd_raw->Prev() && nd_raw->Prev()->isSymbol("=") ) {
+					//={} hack
+					ConvertToOA(nd_raw, ama::N_OBJECT);
 				} else if ( nd_raw->isRawNode('[', ']') ) {
 					ConvertToOA(nd_raw, ama::N_ARRAY);
 				}
@@ -395,8 +398,8 @@ namespace ama {
 					//leave them a newline for sanity
 					if (auto_curly_bracket) {
 						ndi->s->comments_before = "\n";
-						//}
 					}
+					//}
 				}
 				if ( ndi->comments_after--->indexOf('\n') >= 0 ) {
 					passed_newline = 1;
