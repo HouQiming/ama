@@ -21,7 +21,7 @@ namespace ama {
 		nd_raw->node_class = new_node_class;
 		nd_raw->flags = 0;
 	}
-	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<ama::gcstring, int> const& keywords_extension_clause, int32_t but_merge_cpp_ctor_lines, std::span<ama::Node*> lines_out) {
+	static std::vector<ama::Node*> MergeScopesIntoStatements(std::unordered_map<ama::gcstring, int> const& keywords_extension_clause, int32_t auto_curly_bracket, int32_t but_merge_cpp_ctor_lines, std::span<ama::Node*> lines_out) {
 		std::vector<ama::Node*> line_group{};
 		std::vector<ama::Node*> line_out_final{};
 		int could_be_in_ctor = 0;
@@ -38,8 +38,10 @@ namespace ama {
 				but_merge_cpp_ctor_lines && could_be_in_ctor && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(","))) ||
 				but_merge_cpp_ctor_lines && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->c->isRef("template") && (lines_out[i1 - 1]->LastChild()->isSymbol(">") || lines_out[i1 - 1]->LastChild()->isSymbol(">>")))
 				) {
-					if ( (lines_out[i1 - 1]->node_class == ama::N_SCOPE || lines_out[i1 - 1]->isRawNode('{', '}')) && lines_out[i1]->comments_before--->startsWith('\n') ) {
-						lines_out[i1]->comments_before = ama::gcstring(lines_out[i1]->comments_before--->subarray(1));
+					if (auto_curly_bracket) {
+						if ( (lines_out[i1 - 1]->node_class == ama::N_SCOPE || lines_out[i1 - 1]->isRawNode('{', '}')) && lines_out[i1]->comments_before--->startsWith('\n') ) {
+							lines_out[i1]->comments_before = ama::gcstring(lines_out[i1]->comments_before--->subarray(1));
+						}
 					}
 					if (but_merge_cpp_ctor_lines && (lines_out[i1 - 1]->node_class == ama::N_RAW && lines_out[i1 - 1]->c && lines_out[i1 - 1]->LastChild()->isSymbol(":"))) {
 						could_be_in_ctor = 1;
@@ -60,19 +62,22 @@ namespace ama {
 							ndj_last->comments_after = (ndj_last->comments_after + ndj->comments_after);
 						}
 						for (ama::Node* ndi = ndj->c; ndi; ndi = ndi->s) {
-							{
-								ndi->AdjustIndentLevel(ndj->indent_level);
-								line_group.push_back(ndi);
-							}
+							ndi->AdjustIndentLevel(ndj->indent_level);
+							line_group.push_back(ndi);
 						}
 					} else {
 						line_group.push_back(ndj);
 					}
 				}
 				assert(line_group.size() > 1);
+				//for (auto j = 0; j < line_group.size() ; j++) {
+				//	ama::Node* ndj = line_group[j];
+				//	console.log('merge', j, ndj->dump());
+				//	ndj->Unlink();
+				//}
 				ama::Node* nd_raw = ama::CreateNodeFromChildren(ama::N_RAW, line_group);
 				nd_raw->indent_level = line_group[0]->indent_level;
-				for ( ama::Node * ndj: line_group ) {
+				for ( ama::Node* ndj: line_group ) {
 					ndj->AdjustIndentLevel(-nd_raw->indent_level);
 				}
 				line_out_final.push_back(nd_raw);
@@ -86,9 +91,10 @@ namespace ama {
 	std::vector<ama::Node*>& lines_out, int32_t level, intptr_t lineno, int32_t auto_curly_bracket, 
 	int32_t but_merge_cpp_ctor_lines, ama::Node* nd_nextline) {
 		for (intptr_t i = lineno; i < intptr_t(lines_out.size()); i += 1) {
+			//console.log(i, i32(level), JSON::stringify(lines_out[i]->toSource()));
 			lines_out[i]->AdjustIndentLevel(-level);
 		}
-		ama::Node* nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(keywords_extension_clause, but_merge_cpp_ctor_lines, lines_out--->subarray(lineno))));
+		ama::Node* nd_new_scope = ama::CreateNode(ama::N_SCOPE, ama::InsertMany(MergeScopesIntoStatements(keywords_extension_clause, auto_curly_bracket, but_merge_cpp_ctor_lines, lines_out--->subarray(lineno))));
 		if (!auto_curly_bracket) {
 			nd_new_scope->flags = ama::SCOPE_FROM_INDENT;
 		}
@@ -108,13 +114,15 @@ namespace ama {
 			//MergeCommentsAfter(nd_nextline);
 			//console.log(JSON.stringify(nd_new_scope.comments_after))
 		} else {
-			if ( nd_new_scope->c ) {
-				ama::Node* nd_last = nd_new_scope->LastChild();
-				if ( nd_last->comments_after--->indexOf('\n') < intptr_t(0L) ) {
-					nd_last->comments_after = (ama::gcscat(nd_last->comments_after, "\n"));
+			if (auto_curly_bracket) {
+				if ( nd_new_scope->c ) {
+					ama::Node* nd_last = nd_new_scope->LastChild();
+					if ( nd_last->comments_after--->indexOf('\n') < intptr_t(0L) ) {
+						nd_last->comments_after = (ama::gcscat(nd_last->comments_after, "\n"));
+					}
 				}
+				nd_new_scope->comments_after = "\n";
 			}
-			nd_new_scope->comments_after = "\n";
 		}
 		lines_out.resize(lineno);
 		lines_out.push_back(nd_new_scope);
@@ -348,7 +356,9 @@ namespace ama {
 			}
 		}
 		scopes.push_back(nd_root);
-		for ( ama::Node * nd_scope: scopes ) {
+		//DumpASTAsJSON(nd_root);
+		//console.log('--------')
+		for ( ama::Node* nd_scope: scopes ) {
 			if (nd_scope->p && nd_scope->p->isRawNode('(', ')')) {
 				ama::Node* nd_prev = nd_scope->Prev();
 				if (!nd_prev || nd_prev->isSymbol(",")) {
@@ -383,8 +393,10 @@ namespace ama {
 					//if (ndi->comments_after--->endsWith('\n')) {
 					//ndi->comments_after = ndi->comments_after--->subarray(0, ndi->comments_after.size() - 1);
 					//leave them a newline for sanity
-					ndi->s->comments_before = "\n";
-					//}
+					if (auto_curly_bracket) {
+						ndi->s->comments_before = "\n";
+						//}
+					}
 				}
 				if ( ndi->comments_after--->indexOf('\n') >= 0 ) {
 					passed_newline = 1;
@@ -420,13 +432,11 @@ namespace ama {
 				istk--->pop();
 			}
 			//merge scopes into surrounding raws
-			std::vector<ama::Node*> line_out_final = MergeScopesIntoStatements(keywords_extension_clause, but_merge_cpp_ctor_lines, lines_out);
+			std::vector<ama::Node*> line_out_final = MergeScopesIntoStatements(keywords_extension_clause, auto_curly_bracket, but_merge_cpp_ctor_lines, lines_out);
 			//replace old children
 			for ( ama::Node * ndi: line_out_final ) {
 				ndi->p = nd_scope;
-				//if( ndi.s ) {
-				//	console.log('has s', ndi.toSource());
-				//}
+				//console.log('>>', JSON::stringify(ndi->toSource()));
 				assert(!ndi->s);
 			}
 			nd_scope->c = nullptr;

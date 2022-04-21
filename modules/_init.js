@@ -572,7 +572,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 	let ext=filename.substr(pdot).toLowerCase();
 	let p=(default_pipeline||__global.default_pipeline).map(s=>s);
 	if(ext==='.py'){
-		p.splice(p.indexOf('ParseSimplePairing')+1,0,'ConvertIndentToScope');
+		//p.splice(p.indexOf('ParseSimplePairing')+1,0,'ConvertIndentToScope');
 		p.splice(p.indexOf('ParsePointedBrackets'),1);
 		p.unshift({
 			binary_operators: 'or\n and\n |\n ^\n &\n == != === !==\n < <= > >= in of is is\rnot not\rin\n <=>\n << >> >>>\n + -\n * / // %\n **\n as\n',

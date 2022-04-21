@@ -397,6 +397,18 @@ std::string MakeSomeString() {
 }
 ```
 
+### cpp/range_check.EnableVectorRangeCheck
+
+- Syntax: `require("cpp/range_check").EnableVectorRangeCheck`
+- Description: Transform `[]` on `std::vector` into `.at()`, should be used after `require("sane_types")`.
+
+
+### cpp/range_check.DisableVectorRangeCheck
+
+- Syntax: `require("cpp/range_check").DisableVectorRangeCheck`
+- Description: Transform `.at()` on `std::vector` into `[]`, should be used before `require("sane_types").inverse`.
+
+
 ### cpp/sane_export
 
 - Syntax: `require("cpp/sane_export")`

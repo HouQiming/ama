@@ -81,7 +81,8 @@ module.exports = function(nd_root) {
 			nd_test.node_class === N_EXTENSION_CLAUSE) && nd_test.c) {
 				nd_test=nd_test.LastChild()
 			}
-			if (nd_test.node_class !== N_SCOPE && (ndi.node_class === N_KEYWORD_STATEMENT && !ndi.data.startsWith('#') || 
+			if (nd_test.node_class !== N_SCOPE && (
+				ndi.node_class === N_KEYWORD_STATEMENT && !ndi.data.startsWith('#') || 
 				ndi.node_class === N_ASSIGNMENT || 
 				ndi.node_class === N_CALL
 			)) {
