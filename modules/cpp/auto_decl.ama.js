@@ -50,7 +50,11 @@ int main(int argc){
 let g_builtins = new Set([
 	'bool', 'char', 'int8_t', 'uint8_t', 'short', 'int16_t', 'uint16_t', 'int', 'long', 'unsigned', 'int32_t', 'uint32_t', 'int64_t', 'uint64_t',
 	'__half', 'half', 'float', 'double',
-	'let', 'var', 'function', 'def', 'const', 'volatile'
+	'let', 'var', 'function', 'def', 'const', 'volatile',
+	//for sane_types
+	'i8','i16','i32','i64',
+	'u8','u16','u32','u64',
+	'f32','f64'
 ]);
 function Translate(nd_root, options) {
 	let all_refs = nd_root.FindAll(N_REF, null);
