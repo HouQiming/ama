@@ -608,6 +608,12 @@ void* g_ptr = nullptr;
 - Description: Dump detected declarations
 
 
+### dump_ast.Classes
+
+- Syntax: `require("dump_ast").Classes`
+- Description: Dump detected classes
+
+
 ### dump_decl
 
 - Syntax: `require("dump_decl")`

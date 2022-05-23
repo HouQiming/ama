@@ -31,3 +31,26 @@ dump_ast.Declarations = function(nd_root) {
 	}
 	console.log('----------');
 };
+
+/*
+#filter Dump detected classes
+*/
+dump_ast.Classes = function(nd_root) {
+	const classes = require('class');
+	for (let nd_class of nd_root.FindAll(N_CLASS)) {
+		let desc = nd_class.ParseClass();
+		if (desc) {
+			desc.nd = desc.nd.dump();
+			for (let i = 0; i < desc.base_classes.length; i++) {
+				desc.base_classes[i] = desc.base_classes[i].dump();
+			}
+			for (let i = 0; i < desc.properties.length; i++) {
+				if (desc.properties[i].node) {
+					desc.properties[i].node = desc.properties[i].node.dump();
+				}
+			}
+		}
+		console.log(nd_class.data + ':', desc);
+	}
+	console.log('----------');
+};
