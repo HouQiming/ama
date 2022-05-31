@@ -1241,9 +1241,16 @@ namespace ama {
 			if (nd_before->node_class == ama::N_RAW) {
 				for (ama::Node* ndi = nd_before->c; ndi; ndi = ndi->s) {
 					//we could have mistaken it for binop due to type shenanigans
+					//it could also be a template specialization
 					ama::Node* ndj = ndi;
-					while ( ndj->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(ndj->data) ) {
-						ndj = ndj->c->s;
+					for (; ;) {
+						if (ndj->node_class == ama::N_BINOP && ambiguous_type_suffix--->get(ndj->data)) {
+							ndj = ndj->c->s;
+						} else if (ndj->node_class == ama::N_CALL_TEMPLATE) {
+							ndj = ndj->c;
+						} else {
+							break;
+						}
 					}
 					if ( ndj->node_class == ama::N_REF || ndj->node_class == ama::N_DOT ) {
 						//the starting keyword doesn't count

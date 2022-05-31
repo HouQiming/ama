@@ -113,6 +113,9 @@ namespace ama{
 		operator std::span<char>()const {
 			return std::span<char>(this->data(),this->size());
 		}
+		operator std::string()const {
+			return std::string(this->data(),this->data()+this->size());
+		}
 		template<typename T>
 		typename std::enable_if<
 			std::is_same<typename std::remove_cv<typename std::remove_reference<T>::type>::type, gcstring>::value, 

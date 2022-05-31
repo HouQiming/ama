@@ -14,7 +14,7 @@ extern"C" char __executable_start;
 extern"C" char __etext;
 namespace DumpStack {
 	volatile int g_dump_all_threads = 0;
-	volatile int g_is_our_abort = 0;
+	static volatile int g_is_our_abort = 0;
 	void PrintCallStack() {
 		pid_t pid = getpid();
 		void * bt_addresses[64] = {};

@@ -373,7 +373,7 @@ public:
 	}
 	template<typename U>
 	inline std::span<U> as(){
-		return std::span<U>(reinterpret_cast<U*>(this->data()),this->size()*sizeof(T)/sizeof(U));
+		return std::span<U>((U*)(intptr_t)(this->data()),this->size()*sizeof(T)/sizeof(U));
 	}
 	template<typename U>
 	inline void fill(U&& value){

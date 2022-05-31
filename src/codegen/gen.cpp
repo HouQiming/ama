@@ -228,7 +228,7 @@ namespace ama {
 			}
 			case ama::N_ASSIGNMENT:{
 				this->Generate(nd->c);
-				if ( nd->c->s->node_class == ama::N_AIR ) {
+				if ( !nd->c->s || nd->c->s->node_class == ama::N_AIR ) {
 					//do nothing
 				} else {
 					this->GenerateSpaceAfter(nd->c);
@@ -308,10 +308,12 @@ namespace ama {
 			case ama::N_LABELED:{
 				this->Generate(nd->c);
 				this->code--->push(':');
-				if (nd->c->s->node_class != ama::N_AIR) {
-					this->GenerateSpaceBefore(nd->c->s);
+				if (nd->c->s) {
+					if (nd->c->s->node_class != ama::N_AIR) {
+						this->GenerateSpaceBefore(nd->c->s);
+					}
+					this->Generate(nd->c->s);
 				}
-				this->Generate(nd->c->s);
 				break;
 			}
 			case ama::N_AIR:{
@@ -319,7 +321,9 @@ namespace ama {
 				break;
 			}
 			case ama::N_DELIMITED:{
-				this->Generate(nd->c);
+				if (nd->c) {
+					this->Generate(nd->c);
+				}
 				this->code--->push((nd->flags & ama::SEMICOLON_COMMA) ? ',' : ';');
 				break;
 			}
