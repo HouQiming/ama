@@ -8,3 +8,5 @@ class A extends B,C implements D{
 class A:B,C,D{
 	static public final int a;
 };
+//typescript mis-named as .js
+declare function max<T>(a:Array<T>|{[key:any]:T}):T;

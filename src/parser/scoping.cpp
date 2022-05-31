@@ -289,6 +289,8 @@ namespace ama {
 			}
 			//no , delimiting in root
 			if ( !has_semicolon && changed != ';' && nd_raw->p ) {
+				int got_colon = 0;
+				int got_other_scope = 0;
 				std::vector<ama::Node*> comma_children{};
 				changed = ' ';
 				for ( ama::Node * ndj: new_children ) {
@@ -308,12 +310,16 @@ namespace ama {
 							if ( ndi_next ) {
 								comma_children.push_back(ndi_next);
 							}
+						} else if (ndi->isSymbol(":")) {
+							got_colon = 1;
+						} else if (ndi->node_class == ama::N_SCOPE) {
+							got_other_scope = 1;
 						}
 						ndi = ndi_next;
 					}
 				}
 				std::swap(new_children, comma_children);
-				if ( changed == ',' && nd_raw->isRawNode('{', '}') ) {
+				if ( (changed == ',' || got_colon && !got_other_scope) && nd_raw->isRawNode('{', '}') ) {
 					ConvertToOA(nd_raw, ama::N_OBJECT);
 				} else if ( !nd_raw->c && nd_raw->isRawNode('{', '}') && nd_raw->Prev() && nd_raw->Prev()->isSymbol("=") ) {
 					//={} hack
