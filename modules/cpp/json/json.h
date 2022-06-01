@@ -237,7 +237,17 @@ namespace JSON{
 		ReturnType &&ret=parseFrom(ctx,(typename std::remove_const<ReturnType>::type**)NULL);
 		#ifndef NDEBUG
 			if(ctx.error){
-				fprintf(stderr,"JSON error at %d: %s\n",(int)(ctx.error_location-s.begin()),ctx.error);
+				fprintf(stderr,"JSON error at %lld: %s\n",(long long)(ctx.error_location-s.begin()),ctx.error);
+				intptr_t lg0=ctx.error_location-s.begin();
+				intptr_t lg1=s.end()-ctx.error_location;
+				char const* s_begin=ctx.error_location-std::min(lg0,intptr_t(16));
+				char const* s_end=ctx.error_location+std::min(lg1,intptr_t(16));
+				while(s_begin!=s_end){
+					fputc(*s_begin,stderr);
+					s_begin++;
+				}
+				fputc('\n',stderr);
+				fflush(stderr);
 			}
 		#endif
 		return std::move(ret);
