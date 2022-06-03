@@ -346,7 +346,8 @@ namespace ama {
 							continue;
 						}
 					}
-				} else if ( ndi->isSymbol(";") || after_colon == 0 && ndi->isSymbol(",") ) {
+				} else if ( ndi->isSymbol(";") || after_colon == 0 && !(nd_keyword && nd_keyword->data == "for") && ndi->isSymbol(",") ) {
+					//test "for" for Python - it's the only statement which could legitimately contain a ',' (for a,b in c)
 					//we can't just delimit with "," everywhere: C++ constructor parameter list
 					//but we DO need to delimit with "," so that mixed C++ / C declarations like `int a(0),b{3};` won't get mistaken as a function
 					//so test for ':' before that isn't paired with '?'
