@@ -580,7 +580,7 @@ __global.GetPipelineFromFilename=function(filename,default_pipeline){
 			prefix_operators: '++ -- ! ~ + - * && & yield not await',
 			keywords_operator_escape: 'case operator auto and or is yield in of as not from import',
 			keywords_extension_clause: 'else elif except finally import',
-			keywords_statement: 'return raise break continue assert',
+			keywords_statement: 'return raise break continue assert print',
 			enable_cpp_comment: 0,
 			enable_hash_comment: 1,
 			parse_indent_as_scope: 1,
