@@ -26,6 +26,12 @@ namespace path {
 	std::string toAbsolute(std::span<char> path);
 	struct CPathJoiner {
 		std::string cur_path{};
+		void append(std::span<char> first) {*this + first;}
+		template<typename... Types>
+		void append(std::span<char> first, Types&&... args) {
+			*this + first;
+			this->append(args...);
+		}
 		CPathJoiner& operator+(std::span<char> b) {
 			if ( this->cur_path.size() ) {
 				this->cur_path--->push(sep);
@@ -50,6 +56,12 @@ namespace path {
 			this->cur_path--->push(b);
 			return this;
 		}
+		void append(std::span<char> first) {this->add(first);}
+		template<typename... Types>
+		void append(std::span<char> first, Types&&... args) {
+			this->add(first);
+			this->append(args...);
+		}
 		CPathResolver& operator+(std::span<char> b) {
 			return *this->add(b);
 		}
@@ -57,20 +69,18 @@ namespace path {
 			return std::move(toAbsolute(this->cur_path));
 		}
 	};
-	#if __cplusplus >= 201703L
-		template<typename... Types>
-		static inline std::string join(Types&&... args) {
-			CPathJoiner a{};
-			(a+...+args);
-			return a.done();
-		}
-		template<typename... Types>
-		static inline std::string resolve(Types&&... args) {
-			CPathResolver a{};
-			(a+...+args);
-			return a.done();
-		}
-	#endif
+	template<typename... Types>
+	static inline std::string join(Types&&... args) {
+		CPathJoiner a{};
+		a.append(args...);
+		return a.done();
+	}
+	template<typename... Types>
+	static inline std::string resolve(Types&&... args) {
+		CPathResolver a{};
+		a.append(args...);
+		return a.done();
+	}
 };
 #pragma gen_begin(JSON::stringify<path::CPathObject>)
 namespace JSON {

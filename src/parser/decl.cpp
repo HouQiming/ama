@@ -236,6 +236,14 @@ namespace ama {
 						after_colon += 1;
 					}
 				}
+				if (ndi->isSymbol("=") && (kw_mode == KW_FUNC && !nd_keyword || kw_mode == KW_NONE)) {
+					//'=' invalidates function
+					nd_prototype_start = ndi_next;
+					kw_mode = KW_NONE;
+					nd_keyword = nullptr;
+					ndi = ndi_next;
+					continue;
+				}
 				//they also enable ',' in function prototype (Java after-prototype stuff)
 				if (ndi->isRef("throws") || ndi->isRef("throw")) {
 					after_colon += 1;

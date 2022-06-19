@@ -132,7 +132,7 @@ Node.dfsMatch = function(ret, nd_pattern) {
 //The returned match objects have the shape `{nd:<matched node>}`
 Node.Match = function(nd_pattern) {
 	let ret = {nd: this};
-	if (this.dfsMatch(ret, nd_pattern)) {
+	if (nd_pattern&&this.dfsMatch(ret, nd_pattern)) {
 		return ret;
 	} else {
 		return undefined;
