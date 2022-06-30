@@ -695,6 +695,10 @@ namespace ama {
 		return CreateNode(N_CALL, NodeList(args...));
 	}
 	template<typename... Types>
+	static inline ama::Node* nCallTemplate(Types... args) {
+		return CreateNode(N_CALL_TEMPLATE, NodeList(args...));
+	}
+	template<typename... Types>
 	static inline ama::Node* nRaw(Types... args) {
 		return CreateNode(N_RAW, NodeList(args...));
 	}

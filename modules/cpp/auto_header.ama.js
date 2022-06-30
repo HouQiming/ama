@@ -72,11 +72,14 @@ function Translate(nd_root, options) {
 	if (!to_sync.length) {return;}
 	//load the header
 	let nd_header = undefined;
+	let header_is_new = false;
 	if (!fs.existsSync(header_file)) {
+		header_is_new = true;
 		let header_name = path.parse(header_file).name.replace(/[^a-zA-Z0-9]+/g, '_').toUpperCase();
 		nd_header = ParseCode([
 			'#ifndef __', header_name, '_HEADER\n',
 			'#define __', header_name, '_HEADER\n',
+			'#pragma add("c_files", ', JSON.stringify(path.relative(path.dirname(header_file), nd_root.data.replace('.ama.', '.'))), ')\n',
 			'#endif\n'
 		].join(''));
 		nd_header.data = header_file;
@@ -120,7 +123,7 @@ function Translate(nd_root, options) {
 		if (!names.length) {continue;}
 		//look up in all possible namespaces
 		let scopes = [nd_header];
-		if (names.length > 1) {
+		if (names.length > 1 && !header_is_new) {
 			//finding in ANY dependent file prevents the sync
 			scopes = typing.LookupClassesByNames(nd_header, names.slice(1), {include_dependency: 1});
 		}
