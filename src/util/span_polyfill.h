@@ -22,6 +22,7 @@ namespace std{
 		span(T const (&data)[size]):m_data((T*)data),m_size((size-1)){}
 		span(const T* data,size_t size):m_data((T*)data),m_size(size){}
 		span(const T* data,const T* data_end):m_data((T*)data),m_size(data_end-data){}
+		span(char const* data):m_data((T*)data),m_size(strlen(data)/sizeof(T)){}
 		T& operator[](intptr_t index)const{
 			assert(size_t(index)<m_size);
 			return m_data[index];
