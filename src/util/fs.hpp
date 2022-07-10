@@ -24,6 +24,7 @@ namespace fs {
 	intptr_t appendFileSync(std::span<char> fn, std::span<char> content);
 	std::vector<Dirent> readdirSync(std::span<char> dir);
 	int SyncTimestamp(std::span<char> fn_src, std::span<char> fn_tar);
+	void mkdirp(std::span<char> dir);
 };
 #pragma gen_begin(JSON::stringify<fs::Dirent>)
 namespace JSON {

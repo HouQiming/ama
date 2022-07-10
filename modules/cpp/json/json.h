@@ -252,6 +252,15 @@ namespace JSON{
 		#endif
 		return std::move(ret);
 	}
+	template<typename ReturnType>
+	static std::vector<ReturnType> lparse(std::span<char> s){
+		std::vector<ReturnType> ret;
+		for(std::span<char> line:s--->split('\n')){
+			if(!line.size()){continue;}
+			ret.push_back(parse<ReturnType>(line));
+		}
+		return std::move(ret);
+	}
 }
 
 #endif

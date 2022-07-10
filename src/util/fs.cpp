@@ -15,6 +15,7 @@
 #include <array>
 #include "jc_array.h"
 #include "fs.hpp"
+#include "path.hpp"
 typedef struct stat stat_t;
 #if defined(_WIN32)
 	std::vector<uint16_t> fs::PathToWindows(std::span<char> s) {
@@ -304,4 +305,12 @@ int fs::SyncTimestamp(std::span<char> fn_src, std::span<char> fn_tar) {
 		times[1] = sb.st_mtim;
 		return utimensat(AT_FDCWD, fn_tarz.c_str(), times, 0) == 0;
 	#endif
+}
+
+void fs::mkdirp(std::span<char> dir) {
+	if ( fs::DirExists(dir) ) { return; }
+	if ( path::dirname(dir) != dir ) {
+		fs::mkdirp(path::dirname(dir));
+	}
+	fs::mkdirSync(dir);
 }
