@@ -44,10 +44,11 @@ function Translate(nd_root, options) {
 	if (!header_file) {
 		header_file = nd_root.data || '';
 		let pdot = header_file.lastIndexOf('.');
+		let old_ext = path.extname(header_file);
 		if (pdot >= 0) {
 			header_file = header_file.substr(0, pdot);
 		}
-		header_file = header_file + '.hpp';
+		header_file = header_file + (old_ext == '.c' ? '.h' : '.hpp');
 	}
 	//search for method implementation and globally exported functions
 	let to_sync = [];

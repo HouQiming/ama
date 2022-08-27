@@ -63,7 +63,7 @@ function Translate(nd_root) {
 				}
 			}
 		}
-		if (ndi.c.node_class !== N_PAREN && !ndi.c.isRawNode('(', ')') && ndi.c.node_class !== N_AIR) {
+		if (ndi.c.node_class !== N_PAREN && !ndi.c.isRawNode('(', ')') && ndi.c.node_class !== N_AIR&&!ndi.c.Find(N_REF,'constexpr')) {
 			let nd_arg = ndi.c;
 			let nd_tmp = Node.GetPlaceHolder()
 			nd_arg.ReplaceWith(nd_tmp);

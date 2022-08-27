@@ -18,7 +18,7 @@ namespace DumpStack {
 	void PrintCallStack() {
 		pid_t pid = getpid();
 		void * bt_addresses[64] = {};
-		int n_levels = (int)backtrace(bt_addresses, 64);
+		int n_levels = (int)backtrace(bt_addresses, 63);
 		char** messages = backtrace_symbols(bt_addresses, n_levels);
 		//level 2 is the offending instruction, anything above that is a call
 		for (int i = 0; i < n_levels; i++) {
@@ -95,6 +95,7 @@ namespace DumpStack {
 		if (!g_is_our_abort) {
 			const char* name = "SIGNAL";
 			switch (sig) {
+			default: name = strsignal(sig); break;
 			case SIGSEGV: name = "SIGSEGV"; break;
 			case SIGABRT: name = "SIGABRT"; break;
 			case SIGBUS: name = "SIGBUS"; break;

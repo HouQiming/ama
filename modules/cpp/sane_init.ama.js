@@ -16,8 +16,17 @@ function BidirTransform(nd_root, is_forward) {
 		if (nd_ref.p.node_class != N_RAW && !(nd_ref.p.node_class == N_TYPED_OBJECT && nd_ref.p.p.node_class == N_RAW)) {continue;}
 		let nd_stmt = nd_ref.ParentStatement();
 		if (nd_stmt.node_class != N_SEMICOLON || nd_stmt.c != nd_ref.p && !(nd_ref.p.node_class == N_TYPED_OBJECT && nd_stmt.c == nd_ref.p.p)) {continue;}
+		let is_template = false;
+		for (let ndj = nd_ref.p; ndj != nd_stmt; ndj = ndj.p) {
+			if (ndj.isStatement('template')) {is_template = true;break;}
+		}
+		if (is_template) {continue;}
 		let nd_owner = nd_stmt.Owner();
 		if (nd_owner.node_class == N_CLASS && nd_owner.data == 'union') {continue;}
+		let nd_scope_stmt = nd_stmt.Owning(N_SCOPE);
+		if (nd_scope_stmt) {nd_scope_stmt = nd_scope_stmt.p;}
+		if (nd_scope_stmt && nd_scope_stmt.node_class == N_RAW && nd_scope_stmt.c && nd_scope_stmt.c.isRef('union')) {continue;}
+		if (nd_ref.comments_before.indexOf('noinit') >= 0) {continue;}
 		if (is_forward) {
 			if (!nd_ref.s && !nd_stmt.Find(N_REF, 'extern') && !nd_stmt.Find(N_REF, 'struct') && !nd_stmt.Find(N_REF, 'class')) {
 				nd_ref.Insert(POS_AFTER, nScope());

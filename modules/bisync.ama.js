@@ -75,7 +75,10 @@ module.exports = function Bisync(options) {
 			if (path.extname(fn_rel_cpp) != ext) {continue;}
 			//COULDDO: ignore patterns
 			if (fn_rel_cpp.indexOf('/build/') >= 0 || fn_rel_cpp.indexOf('\\build\\') >= 0) {continue;}
-			all_cpp_files.add(path.resolve(dir_src, fn_rel_cpp.replace(mext_dot, '.')));
+			let fn_final = path.resolve(dir_src, fn_rel_cpp.replace(mext_dot, '.'));
+			//full name already contains an extra dot: we can't handle such files
+			if (path.basename(fn_final).match(/\..*/).toString() != path.extname(fn_final)) {continue;}
+			all_cpp_files.add(fn_final);
 		}
 	}
 	let rebuild_ama = 'rebuild_' + middle_extension.replace(/\./g, '');

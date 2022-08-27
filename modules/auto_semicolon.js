@@ -76,6 +76,7 @@ module.exports = function(nd_root) {
 		//if(!ndi){continue;}
 		for (let ndi = nd.c; ndi; ndi = ndi.s) {
 			if (ndi.s && (ndi.s.isSymbol(',') || ndi.s.isSymbol(';'))) {continue;}
+			if (ndi.isSymbol('<')) {continue;}
 			let nd_test = ndi;
 			while ((nd_test.node_class === N_SCOPED_STATEMENT || nd_test.node_class === N_KEYWORD_STATEMENT ||
 			nd_test.node_class === N_EXTENSION_CLAUSE) && nd_test.c) {

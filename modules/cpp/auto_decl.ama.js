@@ -95,9 +95,12 @@ function Translate(nd_root, options) {
 			for (let nd_scope = nd_ref; nd_scope; nd_scope = nd_scope.p) {
 				let ctx = scope_to_context.get(nd_scope);
 				if (ctx && ctx.defs.has(nd_ref.data)) {declared = 1;break;}
+				if (nd_scope.isStatement('template')) {declared = 1;break;}
+				if (nd_scope.node_class == N_RAW) {declared = 1;break;}
 			}
 			if (declared) {continue;}
 			//make it a declaration
+			if (nd_ref.ParentStatement().comments_before.indexOf('nodecl') >= 0) {continue;}
 			let nd_tmp = Node.GetPlaceHolder();
 			nd_ref.ReplaceWith(nd_tmp);
 			nd_tmp.ReplaceWith(nRaw(nRef(keyword).setCommentsAfter(' '), nd_ref));

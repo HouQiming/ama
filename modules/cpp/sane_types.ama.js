@@ -56,10 +56,22 @@ function BidirTransform(nd_root, alt_templates, is_forward) {
 	}
 	let match_jobs = [];
 	for (let key in templates) {
+		if (is_forward && key == 'array') {continue;}
 		match_jobs.push(templates[key]);
 	}
 	if (is_forward) {
 		FixArrayTypes(nd_root);
+		let nd_array_from = templates['array'].from;
+		let nd_array_to = templates['array'].to;
+		for (let ndi = nd_root; ndi; ndi = ndi.PreorderNext(nd_root)) {
+			let match = ndi.Match(nd_array_from);
+			if (match && ndi != nd_root && !(ndi.c.node_class == N_REF && (ndi.c.flags & REF_DECLARED))) {
+				for (let param in match) {
+					if (param != 'nd' && match[param].s) {match[param].BreakSibling();}
+				}
+				ndi = ndi.ReplaceWith(nd_array_to.Subst(match));
+			}
+		}
 	}
 	return nd_root.TranslateTemplates(match_jobs, is_forward);
 };
