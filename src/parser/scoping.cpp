@@ -291,6 +291,7 @@ namespace ama {
 			if ( !has_semicolon && changed != ';' && nd_raw->p ) {
 				int got_colon = 0;
 				int got_other_scope = 0;
+				//int got_preprocessor_directive = 0;
 				std::vector<ama::Node*> comma_children{};
 				changed = ' ';
 				for ( ama::Node * ndj: new_children ) {

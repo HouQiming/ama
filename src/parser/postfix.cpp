@@ -249,7 +249,9 @@ namespace ama {
 					ndi = TranslatePostfixCall(ndi);
 					continue;
 				} else if (parse_typed_object && !after_class && ndi_next && 
-				ndi->node_class != ama::N_CALL && ndi->node_class != ama::N_STRING && ndi->node_class != ama::N_ARRAY && !ndi->isRawNode('(', ')') && !ndi->isRef("import") && (
+				ndi->node_class != ama::N_CALL && ndi->node_class != ama::N_STRING && ndi->node_class != ama::N_ARRAY && 
+				!ndi->isRawNode('(', ')') && !ndi->isRef("import") && ndi->node_class != ama::N_KSTMT && ndi->node_class != ama::N_SSTMT && 
+				!(ndi->node_class == ama::N_RAW && ndi->c && ndi->c->node_class == ama::N_REF && ndi->c->data--->startsWith('#')) && (
 					ndi_next->node_class == ama::N_SCOPE && (!ndi_next->c || !ndi_next->c->s) || ndi_next->node_class == ama::N_OBJECT
 				)) {
 					//0-1 children scope / object: N_TYPED_OBJECT
